@@ -20,6 +20,12 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WhatsAppSession, SessionState } from '../../types';
+import { 
+  startLiveSession, 
+  getLiveSessionQr, 
+  getLiveSessionStatus, 
+  DEFAULT_RAILWAY_BACKEND_URL 
+} from '../../services/api';
 
 interface SessionManagerProps {
   sessions: WhatsAppSession[];
@@ -41,6 +47,12 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   const [sessionName, setSessionName] = useState('');
   const [phone, setPhone] = useState('');
   const [channel, setChannel] = useState<'sales' | 'support' | 'vip' | 'general'>('sales');
+
+  // Engine source toggle: simulated instant vs real Railway Cloud Chromium
+  const [engineSource, setEngineSource] = useState<'simulator' | 'railway'>('simulator');
+  const [liveQrImage, setLiveQrImage] = useState<string | null>(null);
+  const [isRequestingLiveQr, setIsRequestingLiveQr] = useState(false);
+  const [liveSessionState, setLiveSessionState] = useState<string>('');
 
   // QR Modal States
   const [pairingMode, setPairingMode] = useState<'qr' | 'code'>('qr');
@@ -80,8 +92,66 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         setPairingSuccess(false);
         setSessionName('');
         setPhone('');
+        setLiveQrImage(null);
+        setLiveSessionState('');
       }, 1400);
     }, 1500);
+  };
+
+  const handleStartLiveRailway = async () => {
+    const key = (sessionName || 'line-' + Math.floor(1000 + Math.random() * 9000))
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-');
+    
+    setIsRequestingLiveQr(true);
+    setLiveSessionState('Initializing headless Chromium instance on Railway...');
+    
+    try {
+      await startLiveSession(key);
+      setLiveSessionState('Booting browser kernel & awaiting QR code...');
+      
+      // Poll QR
+      let attempts = 0;
+      const pollTimer = setInterval(async () => {
+        attempts++;
+        try {
+          const qrRes = await getLiveSessionQr(key);
+          if (qrRes && qrRes.qrCode) {
+            setLiveQrImage(qrRes.qrCode);
+            setLiveSessionState('QR Generated! Scan with WhatsApp on your phone.');
+          }
+          
+          const statusRes = await getLiveSessionStatus(key);
+          if (statusRes && statusRes.status === 'CONNECTED') {
+            clearInterval(pollTimer);
+            setIsRequestingLiveQr(false);
+            setPairingSuccess(true);
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+            setTimeout(() => {
+              onAddSession(
+                sessionName || key,
+                statusRes.phone || '+1 (555) 019-8833',
+                channel
+              );
+              setIsPairModalOpen(false);
+              setPairingSuccess(false);
+              setLiveQrImage(null);
+            }, 1500);
+          }
+        } catch (e) {
+          // keep polling
+        }
+        
+        if (attempts > 30) {
+          clearInterval(pollTimer);
+          setIsRequestingLiveQr(false);
+          setLiveSessionState('QR generation timed out. You can also use Instant Simulation.');
+        }
+      }, 2000);
+    } catch (err: any) {
+      setIsRequestingLiveQr(false);
+      setLiveSessionState('Could not reach Railway engine. Please check backend health.');
+    }
   };
 
   const pairingCode = 'FLOW-9K4M';
@@ -253,25 +323,114 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             {/* Content */}
             <div className="p-5 space-y-4 text-xs">
               
-              {/* Mode Tabs */}
-              <div className="flex bg-[#202c33] p-1 rounded-xl border border-[#2a3942]">
-                <button
-                  onClick={() => setPairingMode('qr')}
-                  className={`flex-1 py-1.5 text-center font-semibold rounded-lg transition-all ${
-                    pairingMode === 'qr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Scan QR Code
-                </button>
-                <button
-                  onClick={() => setPairingMode('code')}
-                  className={`flex-1 py-1.5 text-center font-semibold rounded-lg transition-all ${
-                    pairingMode === 'code' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Link with Phone Code
-                </button>
+              {/* Engine Source Selector */}
+              <div className="flex items-center justify-between bg-[#0b141a] p-2.5 rounded-xl border border-[#2a3942]">
+                <div>
+                  <div className="text-[11px] text-white font-semibold">Engine Source:</div>
+                  <div className="text-[10px] text-slate-400">Select simulated demo or live Railway cloud</div>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setEngineSource('simulator')}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                      engineSource === 'simulator'
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white bg-[#202c33]'
+                    }`}
+                  >
+                    ⚡ Instant Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEngineSource('railway')}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                      engineSource === 'railway'
+                        ? 'bg-indigo-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white bg-[#202c33]'
+                    }`}
+                  >
+                    ☁️ Railway Cloud
+                  </button>
+                </div>
               </div>
+
+              {engineSource === 'railway' ? (
+                <div className="flex flex-col items-center justify-center space-y-3 py-2">
+                  <div className="relative p-4 bg-white rounded-2xl shadow-xl border-4 border-indigo-500/30 flex items-center justify-center min-h-[220px] w-56">
+                    {liveQrImage ? (
+                      <img src={liveQrImage} alt="Live WhatsApp Pairing QR" className="w-48 h-48 object-contain" />
+                    ) : (
+                      <div className="flex flex-col items-center text-center p-3">
+                        {isRequestingLiveQr ? (
+                          <>
+                            <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
+                            <span className="text-xs font-semibold text-slate-800">Spawning Chromium on Railway...</span>
+                            <span className="text-[10px] text-slate-500 mt-1">{liveSessionState}</span>
+                          </>
+                        ) : (
+                          <>
+                            <QrCode className="w-12 h-12 text-slate-400 mb-2" />
+                            <span className="text-xs font-semibold text-slate-800">Railway Engine Ready</span>
+                            <span className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                              Launches isolated Chromium instance with persistent session volume on Railway.
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {liveSessionState && (
+                    <div className="text-[11px] text-center text-indigo-300 bg-indigo-950/50 px-3 py-1.5 rounded-lg border border-indigo-800/40 w-full">
+                      {liveSessionState}
+                    </div>
+                  )}
+
+                  <div className="w-full">
+                    {!liveQrImage ? (
+                      <button
+                        type="button"
+                        onClick={handleStartLiveRailway}
+                        disabled={isRequestingLiveQr}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-indigo-900/30"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>{isRequestingLiveQr ? 'Booting Browser Engine...' : 'Boot Engine & Generate Live QR'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSimulateScan}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Simulate Successful Scan</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Mode Tabs */}
+                  <div className="flex bg-[#202c33] p-1 rounded-xl border border-[#2a3942]">
+                    <button
+                      onClick={() => setPairingMode('qr')}
+                      className={`flex-1 py-1.5 text-center font-semibold rounded-lg transition-all ${
+                        pairingMode === 'qr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Scan QR Code
+                    </button>
+                    <button
+                      onClick={() => setPairingMode('code')}
+                      className={`flex-1 py-1.5 text-center font-semibold rounded-lg transition-all ${
+                        pairingMode === 'code' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Link with Phone Code
+                    </button>
+                  </div>
 
               {pairingMode === 'qr' ? (
                 <div className="flex flex-col items-center justify-center space-y-3 py-2">
@@ -369,6 +528,8 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     </button>
                   </div>
                 </div>
+              )}
+              </>
               )}
 
               {/* Session Details Form */}
