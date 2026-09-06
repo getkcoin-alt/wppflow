@@ -74,3 +74,94 @@ export async function getLiveSessions(baseUrl = DEFAULT_RAILWAY_BACKEND_URL): Pr
     return [];
   }
 }
+
+// --- Authentication & User Management ---
+
+export interface AuthResponse {
+  status: 'success' | 'error';
+  message?: string;
+  token?: string;
+  user?: any;
+}
+
+export const TOKEN_STORAGE_KEY = 'wppflow_auth_token';
+
+export function getStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredToken(token: string) {
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } catch {}
+}
+
+export function clearStoredToken() {
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {}
+}
+
+export async function loginUser(email: string, password: string, baseUrl = DEFAULT_RAILWAY_BACKEND_URL): Promise<AuthResponse> {
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { status: 'error', message: err.message || 'Network error connecting to auth server' };
+  }
+}
+
+export async function signupUser(
+  name: string, 
+  email: string, 
+  password: string, 
+  companyName?: string, 
+  role?: 'admin' | 'user',
+  baseUrl = DEFAULT_RAILWAY_BACKEND_URL
+): Promise<AuthResponse> {
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, companyName, role })
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { status: 'error', message: err.message || 'Network error connecting to auth server' };
+  }
+}
+
+export async function getCurrentUser(token: string, baseUrl = DEFAULT_RAILWAY_BACKEND_URL): Promise<any | null> {
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getTenantUsers(token: string, baseUrl = DEFAULT_RAILWAY_BACKEND_URL): Promise<{ users: any[], database?: any }> {
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/users`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return { users: [] };
+    const data = await res.json();
+    return { users: data.users || [], database: data.database };
+  } catch {
+    return { users: [] };
+  }
+}
+

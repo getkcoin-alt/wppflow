@@ -34,8 +34,11 @@ import {
   BroadcastCampaign, 
   AutomationRule, 
   WebhookLog, 
-  AccountStatus 
+  AccountStatus,
+  AuthUser
 } from './types';
+import { AuthModal } from './components/auth/AuthModal';
+import { getStoredToken, getCurrentUser, clearStoredToken } from './services/api';
 
 export function App() {
   // Navigation View State
@@ -43,6 +46,42 @@ export function App() {
   const [activeUserTab, setActiveUserTab] = useState<UserSubTab>('dashboard');
   const [activeAdminTab, setActiveAdminTab] = useState<AdminSubTab>('users');
   const [activeDevTab, setActiveDevTab] = useState<DevSubTab>('docs');
+
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>({
+    id: 1,
+    name: 'Aarav Mehta',
+    email: 'admin@wppflow.io',
+    company_name: 'Urban Threads',
+    role: 'admin',
+    plan: 'Enterprise',
+    sessions_limit: 25,
+    created_at: new Date().toISOString()
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Restore authenticated session from Railway PostgreSQL
+  React.useEffect(() => {
+    const token = getStoredToken();
+    if (token) {
+      getCurrentUser(token).then(user => {
+        if (user) setCurrentUser(user);
+      });
+    }
+  }, []);
+
+  const handleAuthSuccess = (user: AuthUser, _token: string) => {
+    setCurrentUser(user);
+    if (user.role === 'admin') {
+      setCurrentView('admin');
+    }
+  };
+
+  const handleLogout = () => {
+    clearStoredToken();
+    setCurrentUser(null);
+    setIsAuthModalOpen(true);
+  };
 
   // App Data State
   const [users, setUsers] = useState<UserAccount[]>(initialUsers);
@@ -254,6 +293,9 @@ export function App() {
         currentView={currentView}
         onSelectView={setCurrentView}
         sessions={sessions}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
         onOpenNewSession={() => {
           setCurrentView('user');
           setActiveUserTab('sessions');
@@ -403,6 +445,13 @@ export function App() {
         </main>
 
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
 
     </div>
   );

@@ -21,6 +21,17 @@ export interface UserAccount {
   lastLogin: string;
 }
 
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  company_name: string;
+  role: 'admin' | 'user';
+  plan: string;
+  sessions_limit: number;
+  created_at: string;
+}
+
 export type SessionState = 'CONNECTED' | 'STARTING' | 'QRCODE' | 'DISCONNECTED';
 
 export interface WhatsAppSession {

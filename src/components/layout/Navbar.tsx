@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Smartphone, 
@@ -7,9 +7,13 @@ import {
   CheckCircle2, 
   Bell, 
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  LogIn,
+  LogOut,
+  ChevronDown,
+  User as UserIcon
 } from 'lucide-react';
-import { WhatsAppSession } from '../../types';
+import { WhatsAppSession, AuthUser } from '../../types';
 import { checkBackendHealth, BackendHealth } from '../../services/api';
 
 interface NavbarProps {
@@ -18,6 +22,9 @@ interface NavbarProps {
   sessions: WhatsAppSession[];
   onOpenNewSession: () => void;
   onOpenNewBroadcast: () => void;
+  currentUser: AuthUser | null;
+  onOpenAuthModal: () => void;
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,10 +32,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectView,
   sessions,
   onOpenNewSession,
-  onOpenNewBroadcast
+  onOpenNewBroadcast,
+  currentUser,
+  onOpenAuthModal,
+  onLogout
 }) => {
   const connectedCount = sessions.filter(s => s.status === 'CONNECTED').length;
   const [engineHealth, setEngineHealth] = React.useState<BackendHealth | null>(null);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   React.useEffect(() => {
     let mounted = true;
@@ -157,18 +168,73 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>New Broadcast</span>
           </button>
 
-          {/* Current Profile Avatar */}
-          <div className="flex items-center gap-2 pl-2 border-l border-[#2a3942]">
-            <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&auto=format&fit=crop&q=80"
-              alt="User profile"
-              className="w-8 h-8 rounded-full ring-2 ring-emerald-500/30 object-cover"
-            />
-            <div className="hidden lg:block text-left text-xs leading-tight">
-              <div className="font-semibold text-slate-200">Aarav Mehta</div>
-              <div className="text-[10px] text-emerald-400 font-medium">Urban Threads (Enterprise)</div>
+          {/* Dynamic Profile or Sign In */}
+          {currentUser ? (
+            <div className="relative pl-2 border-l border-[#2a3942]">
+              <button
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center gap-2 p-1 rounded-xl hover:bg-[#202c33] transition-all text-left"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 ring-2 ring-emerald-500/30 flex items-center justify-center font-bold text-xs text-white uppercase shadow-sm">
+                  {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                </div>
+                <div className="hidden lg:block text-left text-xs leading-tight">
+                  <div className="font-semibold text-slate-200 flex items-center gap-1">
+                    <span>{currentUser.name}</span>
+                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                  </div>
+                  <div className="text-[10px] text-emerald-400 font-medium">
+                    {currentUser.company_name} ({currentUser.role === 'admin' ? 'Admin' : currentUser.plan || 'Growth'})
+                  </div>
+                </div>
+              </button>
+
+              {/* Dropdown Menu */}
+              {isProfileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-[#182229] border border-[#2a3942] rounded-2xl shadow-2xl py-2 z-50 text-xs animate-fade-in">
+                  <div className="px-3 py-2 border-b border-[#2a3942]">
+                    <div className="font-bold text-white text-xs">{currentUser.name}</div>
+                    <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser.email}</div>
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>{currentUser.plan || 'Growth'} Plan ({currentUser.sessions_limit || 5} Lines)</span>
+                    </div>
+                  </div>
+
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onSelectView(currentUser.role === 'admin' ? 'admin' : 'user');
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-[#202c33] text-slate-300 hover:text-white flex items-center gap-2"
+                    >
+                      <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Switch to {currentUser.role === 'admin' ? 'Admin Panel' : 'Workspace'}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-rose-950/60 text-rose-400 hover:text-rose-300 flex items-center gap-2 border-t border-[#2a3942]"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={onOpenAuthModal}
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all shadow-md shadow-emerald-900/20"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
 
         </div>
 

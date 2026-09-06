@@ -16,9 +16,12 @@ import {
   TrendingUp,
   Building2,
   Trash2,
-  Edit3
+  Edit3,
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { UserAccount, PlanTier, AccountStatus, UserRole } from '../../types';
+import { getTenantUsers, getStoredToken } from '../../services/api';
 
 interface UserManagementProps {
   users: UserAccount[];
@@ -54,6 +57,28 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   // Edit quota state
   const [editSessionQuota, setEditSessionQuota] = useState(5);
   const [editBroadcastLimit, setEditBroadcastLimit] = useState(50000);
+
+  // Live PostgreSQL State
+  const [dbUsers, setDbUsers] = useState<any[]>([]);
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+  const [dbStatusInfo, setDbStatusInfo] = useState<any>(null);
+
+  const fetchLiveUsers = async () => {
+    setIsSyncingDb(true);
+    const token = getStoredToken();
+    if (token) {
+      const data = await getTenantUsers(token);
+      if (data.users && data.users.length > 0) {
+        setDbUsers(data.users);
+        setDbStatusInfo(data.database);
+      }
+    }
+    setIsSyncingDb(false);
+  };
+
+  React.useEffect(() => {
+    fetchLiveUsers();
+  }, []);
 
   const filteredUsers = users.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -119,13 +144,28 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Add New Tenant User</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {/* Railway DB Indicator */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-[#202c33] border border-[#2a3942] rounded-xl text-xs text-slate-300">
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Railway Postgres: <strong className="text-emerald-400">{dbUsers.length > 0 ? `${dbUsers.length} Users` : 'Active'}</strong></span>
+            <button
+              onClick={fetchLiveUsers}
+              title="Sync from Railway PostgreSQL"
+              className="p-1 hover:bg-[#111b21] rounded text-slate-400 hover:text-white transition-all"
+            >
+              <RefreshCw className={`w-3 h-3 ${isSyncingDb ? 'animate-spin text-emerald-400' : ''}`} />
+            </button>
+          </div>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add New Tenant User</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}

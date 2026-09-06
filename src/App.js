@@ -1,5 +1,5 @@
 import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { UserManagement } from './components/admin/UserManagement';
@@ -13,12 +13,47 @@ import { Contacts } from './components/user/Contacts';
 import { Automations } from './components/user/Automations';
 import { DeveloperGuide } from './components/developer/DeveloperGuide';
 import { initialUsers, initialSessions, initialContacts, initialChats, initialMessages, cannedReplies, initialCampaigns, initialAutomations, apiEndpoints, initialWebhookLogs, clusterMetrics as initialMetrics } from './data/mockData';
+import { AuthModal } from './components/auth/AuthModal';
+import { getStoredToken, getCurrentUser, clearStoredToken } from './services/api';
 export function App() {
     // Navigation View State
     const [currentView, setCurrentView] = useState('user');
     const [activeUserTab, setActiveUserTab] = useState('dashboard');
     const [activeAdminTab, setActiveAdminTab] = useState('users');
     const [activeDevTab, setActiveDevTab] = useState('docs');
+    // Authentication State
+    const [currentUser, setCurrentUser] = useState({
+        id: 1,
+        name: 'Aarav Mehta',
+        email: 'admin@wppflow.io',
+        company_name: 'Urban Threads',
+        role: 'admin',
+        plan: 'Enterprise',
+        sessions_limit: 25,
+        created_at: new Date().toISOString()
+    });
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    // Restore authenticated session from Railway PostgreSQL
+    React.useEffect(() => {
+        const token = getStoredToken();
+        if (token) {
+            getCurrentUser(token).then(user => {
+                if (user)
+                    setCurrentUser(user);
+            });
+        }
+    }, []);
+    const handleAuthSuccess = (user, _token) => {
+        setCurrentUser(user);
+        if (user.role === 'admin') {
+            setCurrentView('admin');
+        }
+    };
+    const handleLogout = () => {
+        clearStoredToken();
+        setCurrentUser(null);
+        setIsAuthModalOpen(true);
+    };
     // App Data State
     const [users, setUsers] = useState(initialUsers);
     const [sessions, setSessions] = useState(initialSessions);
@@ -198,7 +233,7 @@ export function App() {
         };
         setWebhookLogs(prev => [newLog, ...prev]);
     };
-    return (_jsxs("div", { className: "min-h-screen bg-[#0c1317] flex flex-col", children: [_jsx(Navbar, { currentView: currentView, onSelectView: setCurrentView, sessions: sessions, onOpenNewSession: () => {
+    return (_jsxs("div", { className: "min-h-screen bg-[#0c1317] flex flex-col", children: [_jsx(Navbar, { currentView: currentView, onSelectView: setCurrentView, sessions: sessions, currentUser: currentUser, onOpenAuthModal: () => setIsAuthModalOpen(true), onLogout: handleLogout, onOpenNewSession: () => {
                     setCurrentView('user');
                     setActiveUserTab('sessions');
                     setIsPairModalOpen(true);
@@ -221,5 +256,5 @@ export function App() {
                                                     cpuUsagePercent: Math.floor(Math.random() * 15) + 18,
                                                     avgResponseMs: Math.floor(Math.random() * 25) + 120
                                                 }));
-                                            } })), activeAdminTab === 'audit' && (_jsx(AuditLogs, {}))] })), currentView === 'developer' && (_jsx(DeveloperGuide, { endpoints: apiEndpoints, webhookLogs: webhookLogs, onTriggerTestWebhook: handleTriggerTestWebhook, activeDevTab: activeDevTab, onSelectDevTab: setActiveDevTab }))] }) })] })] }));
+                                            } })), activeAdminTab === 'audit' && (_jsx(AuditLogs, {}))] })), currentView === 'developer' && (_jsx(DeveloperGuide, { endpoints: apiEndpoints, webhookLogs: webhookLogs, onTriggerTestWebhook: handleTriggerTestWebhook, activeDevTab: activeDevTab, onSelectDevTab: setActiveDevTab }))] }) })] }), _jsx(AuthModal, { isOpen: isAuthModalOpen, onClose: () => setIsAuthModalOpen(false), onAuthSuccess: handleAuthSuccess })] }));
 }
