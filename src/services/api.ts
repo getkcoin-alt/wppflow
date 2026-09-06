@@ -4,7 +4,6 @@
  */
 
 export const getBaseBackendUrl = (): string => {
-  // If running in browser on Vercel, use same-origin relative proxy (zero CORS, zero DNS delay)
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     return '';
   }
@@ -73,6 +72,20 @@ export async function startLiveSession(sessionName: string, baseUrl = getBaseBac
     body: JSON.stringify({ sessionName })
   });
   return await res.json();
+}
+
+/** Delete/clear a session from the backend's memory (cleans up FAILED sessions) */
+export async function deleteSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
+  try {
+    const token = getStoredToken();
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}`, baseUrl), {
+      method: 'DELETE',
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
+    return await res.json();
+  } catch {
+    return { status: 'error' };
+  }
 }
 
 export async function getLiveSessionQr(sessionName: string, baseUrl = getBaseBackendUrl()) {
@@ -167,7 +180,6 @@ export async function loginUser(email: string, password: string, baseUrl = getBa
     });
     return await res.json();
   } catch (err: any) {
-    // Fallback to direct backend URL if proxy fails
     try {
       const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/login', {
         method: 'POST',
@@ -230,7 +242,7 @@ export async function getCurrentUser(token: string, baseUrl = getBaseBackendUrl(
   }
 }
 
-// ─── DATA API ────────────────────────────────────────────────────────────────
+// ─── DATA API ────────────────────────────────────────────────────────────────────────────
 
 function authHeaders(token?: string | null): Record<string, string> {
   const t = token || getStoredToken();
@@ -308,4 +320,3 @@ export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl(
     return { users: [] };
   }
 }
-

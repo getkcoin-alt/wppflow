@@ -17,7 +17,8 @@ import {
 import confetti from 'canvas-confetti';
 import { WhatsAppSession } from '../../types';
 import { 
-  startLiveSession, 
+  startLiveSession,
+  deleteSession,
   getLiveSessionQr, 
   getLiveSessionStatus,
   closeLiveSession
@@ -32,6 +33,16 @@ interface SessionManagerProps {
   isPairModalOpen: boolean;
   setIsPairModalOpen: (open: boolean) => void;
 }
+
+// WPPConnect statusFind values that mean "still booting / waiting for QR" — NOT errors
+const WPP_LOADING_STATUSES = new Set([
+  'STARTING', 'notLogged', 'isLogged', 'qrReadSuccess',
+  'chatsAvailable', 'inChat', 'QRCODE', 'qrReadFail',
+  'desconnectedMobile', 'deleteToken', 'serverClose',
+]);
+
+// Only these mean a true unrecoverable failure that should show the error screen
+const WPP_FATAL_STATUSES = new Set(['FAILED', 'browserClose', 'autocloseCalled']);
 
 export const SessionManager: React.FC<SessionManagerProps> = ({
   sessions,
@@ -51,13 +62,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
 
-  // Track which session key is currently being paired
   const activeSessionKey = useRef<string | null>(null);
   const pollTimerRef = useRef<any>(null);
-  // Attempts only count during STARTING — paused once QR is on screen
   const startingAttemptsRef = useRef(0);
-  // 180 seconds to cold-start Chromium on Railway (120 × 1500 ms)
-  const MAX_STARTING_ATTEMPTS = 120;
+  const MAX_STARTING_ATTEMPTS = 120; // 180s @ 1500ms
 
   const stopPolling = () => {
     if (pollTimerRef.current) {
@@ -66,18 +74,14 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     }
   };
 
-  // ── Socket-driven real-time updates ─────────────────────────────────────────
-  // Listens for session:qr and session:status on the shared Socket.IO connection.
-  // This gives instant QR delivery without relying solely on HTTP polling.
+  // ── Socket: instant QR + status updates ──────────────────────────────────
   useEffect(() => {
     if (!isPairModalOpen) return;
-
     const sock = getSocket();
 
     const onQr = ({ session, qrcode }: any) => {
-      if (session !== activeSessionKey.current) return;
-      if (!qrcode) return;
-      console.log('⚡ Socket: QR received for', session);
+      if (session !== activeSessionKey.current || !qrcode) return;
+      console.log('⚡ Socket QR:', session);
       setLiveQrImage(qrcode);
       setPairingPhase('qr');
       setStatusMessage('Scan QR Code with WhatsApp on your phone');
@@ -85,46 +89,54 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
     const onStatus = ({ session, status, phone }: any) => {
       if (session !== activeSessionKey.current) return;
-      console.log('⚡ Socket: status', status, 'for', session);
+      console.log('⚡ Socket status:', status, 'for', session);
 
-      if (status === 'CONNECTED') {
+      // WPPConnect connected states
+      if (['CONNECTED', 'isLogged', 'inChat', 'qrReadSuccess', 'chatsAvailable'].includes(status)) {
         stopPolling();
         setPairingPhase('connected');
         setConnectedPhone(phone || 'WhatsApp Connected');
         setStatusMessage('WhatsApp Authenticated Successfully!');
-
         confetti({ particleCount: 100, spread: 75, origin: { y: 0.6 } });
-
         setTimeout(() => {
-          onAddSession(
-            sessionName || session,
-            phone || '+WhatsApp Connected',
-            channel
-          );
+          onAddSession(sessionName || session, phone || '+WhatsApp Connected', channel);
           setIsPairModalOpen(false);
           setPairingPhase('idle');
         }, 1800);
-      } else if (status === 'FAILED') {
+        return;
+      }
+
+      // WPPConnect QR states — show QR screen, poll will fetch the image
+      if (status === 'QRCODE' || status === 'notLogged') {
+        setPairingPhase(prev => prev === 'starting' || prev === 'qr' ? 'qr' : prev);
+        setStatusMessage('Scan QR Code with WhatsApp on your phone');
+        return;
+      }
+
+      // Only show error for truly fatal statuses
+      if (WPP_FATAL_STATUSES.has(status)) {
+        // autocloseCalled just means the QR wasn't scanned in time — let user retry, not a crash
+        if (status === 'autocloseCalled') {
+          stopPolling();
+          setPairingPhase('error');
+          setErrorMessage('QR code expired (not scanned in time). Click Try Again to get a new QR.');
+          return;
+        }
         stopPolling();
         setPairingPhase('error');
-        setErrorMessage('Session failed to start on the cloud engine. Please try again.');
-      } else if (status === 'QRCODE') {
-        // Backend confirms QR state — poll will fetch the image
-        setPairingPhase('qr');
-        setStatusMessage('Scan QR Code with WhatsApp on your phone');
+        setErrorMessage(`Session failed (${status}). Please try again.`);
       }
+      // All other WPPConnect statuses (browserClose etc.) — stay on current phase, don't flip to error
     };
 
     sock.on('session:qr', onQr);
     sock.on('session:status', onStatus);
-
     return () => {
       sock.off('session:qr', onQr);
       sock.off('session:status', onStatus);
     };
   }, [isPairModalOpen, sessionName, channel]);
 
-  // Reset pairing state when modal opens/closes
   useEffect(() => {
     if (isPairModalOpen) {
       setPairingPhase('idle');
@@ -153,59 +165,52 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     setStatusMessage('Booting isolated browser kernel...');
 
     try {
+      // Clear any stale FAILED session on the backend before starting fresh
+      await deleteSession(cleanKey);
+
       await startLiveSession(cleanKey);
       setStatusMessage('Browser launched. Initializing WhatsApp Web...');
 
-      // HTTP polling runs alongside the socket as a fallback.
-      // Only increments the timeout counter while still in 'starting' phase.
       pollTimerRef.current = setInterval(async () => {
         try {
-          // ── Fetch QR (fallback if socket missed it) ──
+          // Always fetch QR — shows as soon as backend has it
           const qrRes = await getLiveSessionQr(cleanKey);
           if (qrRes?.qrcode) {
             setLiveQrImage(qrRes.qrcode);
-            setPairingPhase(prev => prev === 'starting' || prev === 'qr' ? 'qr' : prev);
+            setPairingPhase(prev => (prev === 'starting' || prev === 'qr') ? 'qr' : prev);
             setStatusMessage('Scan QR Code with WhatsApp on your phone');
           }
 
-          // ── Fetch connection status ──
+          // Check connection
           const statusRes = await getLiveSessionStatus(cleanKey);
+          const s = statusRes?.sessionStatus;
 
-          if (statusRes?.sessionStatus === 'CONNECTED') {
+          if (s === 'CONNECTED' || s === 'isLogged' || s === 'inChat' || s === 'chatsAvailable') {
             stopPolling();
             setPairingPhase('connected');
             setConnectedPhone(statusRes.phone || 'WhatsApp Connected');
             setStatusMessage('WhatsApp Authenticated Successfully!');
-
             confetti({ particleCount: 100, spread: 75, origin: { y: 0.6 } });
-
             setTimeout(() => {
-              onAddSession(
-                sessionName || cleanKey,
-                statusRes.phone || '+WhatsApp Connected',
-                channel
-              );
+              onAddSession(sessionName || cleanKey, statusRes.phone || '+WhatsApp Connected', channel);
               setIsPairModalOpen(false);
               setPairingPhase('idle');
             }, 1800);
             return;
           }
 
-          // ── Timeout only applies while still booting (STARTING phase) ──
-          // Once QR is on screen the user just needs time to scan — no timeout.
+          // Only count timeout attempts while Chromium is still booting
+          // Once QR is on screen, pause the clock — user just needs to scan
           setPairingPhase(current => {
             if (current === 'starting') {
               startingAttemptsRef.current += 1;
               if (startingAttemptsRef.current >= MAX_STARTING_ATTEMPTS) {
                 stopPolling();
-                setErrorMessage(
-                  'Browser startup timed out (3 min). The Railway server may be under load — please try again in a moment.'
-                );
+                setErrorMessage('Browser startup timed out. Please try again.');
                 return 'error';
               }
-              // Update progress message every ~15s
               if (startingAttemptsRef.current === 10) setStatusMessage('Chromium initializing...');
-              if (startingAttemptsRef.current === 25) setStatusMessage('Loading WhatsApp Web... (this can take up to 60s)');
+              if (startingAttemptsRef.current === 25) setStatusMessage('Loading WhatsApp Web... (takes up to 60s on cold start)');
               if (startingAttemptsRef.current === 60) setStatusMessage('Still starting — Railway cold boot in progress...');
             }
             return current;
@@ -232,7 +237,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111b21] p-5 rounded-2xl border border-[#2a3942]">
         <div>
           <div className="flex items-center gap-2">
@@ -245,7 +249,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             Pair and orchestrate multiple physical WhatsApp accounts with automated anti-ban warming and persistent session storage.
           </p>
         </div>
-
         <button
           onClick={() => setIsPairModalOpen(true)}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-900/30"
@@ -255,10 +258,9 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         </button>
       </div>
 
-      {/* Empty State */}
       {sessions.length === 0 ? (
         <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl p-10 text-center flex flex-col items-center justify-center max-w-xl mx-auto my-8 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 shadow-lg shadow-emerald-950/40">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
             <QrCode className="w-8 h-8" />
           </div>
           <h3 className="text-lg font-bold text-white mb-2">No WhatsApp Accounts Paired Yet</h3>
@@ -276,94 +278,59 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sessions.map((sess) => (
-            <div 
-              key={sess.id}
-              className="bg-[#111b21] border border-[#2a3942] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition-all shadow-md flex flex-col justify-between"
-            >
+            <div key={sess.id} className="bg-[#111b21] border border-[#2a3942] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition-all shadow-md flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="font-bold text-sm text-white">{sess.displayName}</h2>
-                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#202c33] text-slate-300 border border-[#2a3942]">
-                        {sess.channel}
-                      </span>
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#202c33] text-slate-300 border border-[#2a3942]">{sess.channel}</span>
                     </div>
                     <div className="font-mono text-xs text-slate-400 mt-0.5">{sess.phone}</div>
                   </div>
-
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                    sess.status === 'CONNECTED'
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                      : sess.status === 'QRCODE'
-                      ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                      : 'bg-rose-950 text-rose-400 border border-rose-800'
+                    sess.status === 'CONNECTED' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                    : sess.status === 'QRCODE' ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                    : 'bg-rose-950 text-rose-400 border border-rose-800'
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${sess.status === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                     <span>{sess.status}</span>
                   </span>
                 </div>
-
                 <div className="mt-4 p-3 bg-[#202c33] rounded-xl space-y-2 border border-[#2a3942]/60 text-xs">
                   <div>
                     <div className="flex justify-between items-center text-[11px] mb-1">
-                      <span className="text-slate-300 font-medium flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Anti-Ban Health Score</span>
-                      </span>
+                      <span className="text-slate-300 font-medium flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /><span>Anti-Ban Health Score</span></span>
                       <span className="text-emerald-400 font-mono font-bold">{sess.antiBanHealth}/100</span>
                     </div>
                     <div className="w-full bg-[#111b21] h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-emerald-500 h-full rounded-full"
-                        style={{ width: `${sess.antiBanHealth}%` }}
-                      />
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${sess.antiBanHealth}%` }} />
                     </div>
                   </div>
-
                   <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
-                    <span>Warmup Protocol:</span>
-                    <span className="text-white font-medium">Day {sess.warmupDay} of 14</span>
+                    <span>Warmup Protocol:</span><span className="text-white font-medium">Day {sess.warmupDay} of 14</span>
                   </div>
-
                   <div className="flex justify-between text-[11px] text-slate-300">
-                    <span className="flex items-center gap-1">
-                      {sess.isCharging ? <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" /> : <Battery className="w-3.5 h-3.5 text-slate-400" />}
-                      <span>Device Battery:</span>
-                    </span>
+                    <span className="flex items-center gap-1">{sess.isCharging ? <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" /> : <Battery className="w-3.5 h-3.5 text-slate-400" />}<span>Device Battery:</span></span>
                     <span className="font-mono text-white">{sess.battery}% {sess.isCharging ? '(Charging)' : ''}</span>
                   </div>
-
                   <div className="flex justify-between text-[11px] text-slate-300">
-                    <span className="flex items-center gap-1">
-                      <Globe2 className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Dedicated Proxy:</span>
-                    </span>
+                    <span className="flex items-center gap-1"><Globe2 className="w-3.5 h-3.5 text-indigo-400" /><span>Dedicated Proxy:</span></span>
                     <span className="font-mono text-slate-400 text-[10px]">{sess.proxyIp}</span>
                   </div>
-
                   <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
                     <span>Daily Quota Used:</span>
                     <span className="font-mono text-emerald-400 font-semibold">{sess.messagesSentToday} / {sess.messagesLimitToday}</span>
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center justify-between pt-3 border-t border-[#2a3942] text-xs">
                 <span className="text-[10px] text-slate-400">Status: Active Engine</span>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onRestartSession(sess.id)}
-                    title="Refresh Session Status"
-                    className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all"
-                  >
+                  <button onClick={() => onRestartSession(sess.id)} title="Refresh Session Status" className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all">
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => onDeleteSession(sess.id)}
-                    title="Disconnect & Remove"
-                    className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all"
-                  >
+                  <button onClick={() => onDeleteSession(sess.id)} title="Disconnect & Remove" className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -373,12 +340,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         </div>
       )}
 
-      {/* Real WhatsApp Pairing Modal */}
+      {/* Pairing Modal */}
       {isPairModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
             
-            {/* Modal Header */}
             <div className="p-5 border-b border-[#2a3942] flex items-center justify-between bg-gradient-to-b from-[#182229] to-[#111b21]">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -389,18 +355,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                   <p className="text-[11px] text-slate-400">Scan QR code using WhatsApp on your phone</p>
                 </div>
               </div>
-              <button
-                onClick={handleCloseModal}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#202c33] transition-all"
-              >
-                ✕
-              </button>
+              <button onClick={handleCloseModal} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#202c33] transition-all">✕</button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6 space-y-5 text-xs">
-              
-              {/* Idle — configuration */}
+
               {pairingPhase === 'idle' && (
                 <div className="space-y-4">
                   <div>
@@ -413,104 +372,70 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                       className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs font-medium"
                     />
                   </div>
-
                   <div>
                     <label className="block text-slate-300 mb-1.5 font-medium">Channel Routing Queue</label>
-                    <select
-                      value={channel}
-                      onChange={(e) => setChannel(e.target.value as any)}
-                      className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs"
-                    >
+                    <select value={channel} onChange={(e) => setChannel(e.target.value as any)} className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs">
                       <option value="sales">Sales Line</option>
                       <option value="support">Customer Support</option>
                       <option value="vip">VIP Concierge</option>
                       <option value="general">Warehouse Ops</option>
                     </select>
                   </div>
-
                   <div className="bg-[#202c33]/70 border border-[#2a3942] p-3.5 rounded-2xl space-y-2">
-                    <div className="font-semibold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>How Cloud Pairing Works:</span>
-                    </div>
+                    <div className="font-semibold text-white flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-emerald-400" /><span>How Cloud Pairing Works:</span></div>
                     <ul className="text-slate-400 space-y-1 text-[11px] list-disc list-inside">
                       <li>Launches a secure, dedicated browser instance in the cloud</li>
                       <li>Generates an official WhatsApp Web authentication QR code</li>
                       <li>Encrypted session tokens are safely persisted in your workspace</li>
                     </ul>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleStartPairing}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-900/30 hover:scale-[1.01]"
-                  >
-                    <span>Generate WhatsApp QR Code</span>
-                    <ArrowRight className="w-4 h-4" />
+                  <button type="button" onClick={handleStartPairing} className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-900/30 hover:scale-[1.01]">
+                    <span>Generate WhatsApp QR Code</span><ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               )}
 
-              {/* Starting — Chromium booting */}
               {pairingPhase === 'starting' && (
                 <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                      <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
-                    </div>
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <RefreshCw className="w-8 h-8 animate-spin" />
                   </div>
                   <div>
                     <h3 className="font-bold text-white text-sm">Launching Browser Instance</h3>
                     <p className="text-[11px] text-slate-400 mt-1 max-w-xs">{statusMessage}</p>
-                    <p className="text-[10px] text-slate-500 mt-2">
-                      First launch can take up to 60–90 seconds on Railway cold start
-                    </p>
+                    <p className="text-[10px] text-slate-500 mt-2">First launch can take up to 60–90 seconds on Railway</p>
                   </div>
                 </div>
               )}
 
-              {/* QR ready — waiting for scan */}
               {pairingPhase === 'qr' && (
                 <div className="flex flex-col items-center space-y-4 py-1">
                   <div className="relative p-4 bg-white rounded-2xl shadow-2xl border-4 border-emerald-500/30 flex items-center justify-center">
                     {liveQrImage ? (
-                      <img 
-                        src={liveQrImage} 
-                        alt="Scan WhatsApp QR" 
-                        className="w-56 h-56 object-contain"
-                      />
+                      <img src={liveQrImage} alt="Scan WhatsApp QR" className="w-56 h-56 object-contain" />
                     ) : (
-                      <div className="w-56 h-56 flex flex-col items-center justify-center text-slate-400">
+                      <div className="w-56 h-56 flex flex-col items-center justify-center">
                         <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
-                        <span className="text-xs text-slate-600">Rendering QR Code...</span>
+                        <span className="text-xs text-slate-500">Rendering QR...</span>
                       </div>
                     )}
                   </div>
-
                   <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-medium bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-800/40">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Awaiting phone scan... Session: {sessionName}</span>
+                    <span>Awaiting phone scan… Session: {sessionName}</span>
                   </div>
-
                   <div className="bg-[#202c33] p-3.5 rounded-2xl w-full space-y-1.5 text-slate-300 text-[11px] border border-[#2a3942]">
                     <div className="font-semibold text-white text-xs mb-1">To Link WhatsApp:</div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">1</span>
-                      <span>Open <strong>WhatsApp</strong> on your phone</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">2</span>
-                      <span>Go to <strong>Settings</strong> &gt; <strong>Linked Devices</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">3</span>
-                      <span>Tap <strong>Link a Device</strong> and point your camera at this QR</span>
-                    </div>
+                    {[['1','Open WhatsApp on your phone'],['2','Go to Settings > Linked Devices'],['3','Tap Link a Device and scan this QR']].map(([n, t]) => (
+                      <div key={n} className="flex items-center gap-2">
+                        <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">{n}</span>
+                        <span dangerouslySetInnerHTML={{ __html: t.replace(/WhatsApp|Settings|Linked Devices|Link a Device/g, m => `<strong>${m}</strong>`) }} />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Connected */}
               {pairingPhase === 'connected' && (
                 <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce">
@@ -524,7 +449,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                 </div>
               )}
 
-              {/* Error */}
               {pairingPhase === 'error' && (
                 <div className="py-6 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -534,27 +458,16 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     <h3 className="font-bold text-white text-sm">Pairing Interrupted</h3>
                     <p className="text-[11px] text-rose-300 mt-1 max-w-xs">{errorMessage}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleStartPairing}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-white rounded-xl text-xs font-semibold transition-all border border-[#2a3942] mt-2"
-                  >
+                  <button type="button" onClick={handleStartPairing} className="flex items-center gap-2 px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-white rounded-xl text-xs font-semibold transition-all border border-[#2a3942] mt-2">
                     <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Try Again</span>
                   </button>
                 </div>
               )}
 
-              {/* Cancel */}
               {pairingPhase !== 'connected' && (
                 <div className="flex justify-end pt-2 border-t border-[#2a3942]">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-xl text-xs font-medium transition-all"
-                  >
-                    Cancel
-                  </button>
+                  <button type="button" onClick={handleCloseModal} className="px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-xl text-xs font-medium transition-all">Cancel</button>
                 </div>
               )}
 
