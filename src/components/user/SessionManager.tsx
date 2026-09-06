@@ -22,6 +22,7 @@ import {
   getLiveSessionStatus,
   closeLiveSession
 } from '../../services/api';
+import { getSocket } from '../../services/socket';
 
 interface SessionManagerProps {
   sessions: WhatsAppSession[];
@@ -43,7 +44,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   const [sessionName, setSessionName] = useState('Primary WhatsApp');
   const [channel, setChannel] = useState<'sales' | 'support' | 'vip' | 'general'>('sales');
 
-  // Live Pairing States
   type PairingPhase = 'idle' | 'starting' | 'qr' | 'connected' | 'error';
   const [pairingPhase, setPairingPhase] = useState<PairingPhase>('idle');
   const [liveQrImage, setLiveQrImage] = useState<string | null>(null);
@@ -51,8 +51,13 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
 
-  // Polling ref to clear safely
+  // Track which session key is currently being paired
+  const activeSessionKey = useRef<string | null>(null);
   const pollTimerRef = useRef<any>(null);
+  // Attempts only count during STARTING — paused once QR is on screen
+  const startingAttemptsRef = useRef(0);
+  // 180 seconds to cold-start Chromium on Railway (120 × 1500 ms)
+  const MAX_STARTING_ATTEMPTS = 120;
 
   const stopPolling = () => {
     if (pollTimerRef.current) {
@@ -60,6 +65,64 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
       pollTimerRef.current = null;
     }
   };
+
+  // ── Socket-driven real-time updates ─────────────────────────────────────────
+  // Listens for session:qr and session:status on the shared Socket.IO connection.
+  // This gives instant QR delivery without relying solely on HTTP polling.
+  useEffect(() => {
+    if (!isPairModalOpen) return;
+
+    const sock = getSocket();
+
+    const onQr = ({ session, qrcode }: any) => {
+      if (session !== activeSessionKey.current) return;
+      if (!qrcode) return;
+      console.log('⚡ Socket: QR received for', session);
+      setLiveQrImage(qrcode);
+      setPairingPhase('qr');
+      setStatusMessage('Scan QR Code with WhatsApp on your phone');
+    };
+
+    const onStatus = ({ session, status, phone }: any) => {
+      if (session !== activeSessionKey.current) return;
+      console.log('⚡ Socket: status', status, 'for', session);
+
+      if (status === 'CONNECTED') {
+        stopPolling();
+        setPairingPhase('connected');
+        setConnectedPhone(phone || 'WhatsApp Connected');
+        setStatusMessage('WhatsApp Authenticated Successfully!');
+
+        confetti({ particleCount: 100, spread: 75, origin: { y: 0.6 } });
+
+        setTimeout(() => {
+          onAddSession(
+            sessionName || session,
+            phone || '+WhatsApp Connected',
+            channel
+          );
+          setIsPairModalOpen(false);
+          setPairingPhase('idle');
+        }, 1800);
+      } else if (status === 'FAILED') {
+        stopPolling();
+        setPairingPhase('error');
+        setErrorMessage('Session failed to start on the cloud engine. Please try again.');
+      } else if (status === 'QRCODE') {
+        // Backend confirms QR state — poll will fetch the image
+        setPairingPhase('qr');
+        setStatusMessage('Scan QR Code with WhatsApp on your phone');
+      }
+    };
+
+    sock.on('session:qr', onQr);
+    sock.on('session:status', onStatus);
+
+    return () => {
+      sock.off('session:qr', onQr);
+      sock.off('session:status', onStatus);
+    };
+  }, [isPairModalOpen, sessionName, channel]);
 
   // Reset pairing state when modal opens/closes
   useEffect(() => {
@@ -69,6 +132,8 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
       setErrorMessage(null);
       setStatusMessage('');
       setConnectedPhone(null);
+      activeSessionKey.current = null;
+      startingAttemptsRef.current = 0;
     } else {
       stopPolling();
     }
@@ -79,8 +144,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     const rawKey = sessionName.trim() || 'whatsapp-line';
     const cleanKey = rawKey.toLowerCase().replace(/[^a-z0-9]/g, '-');
 
+    activeSessionKey.current = cleanKey;
+    startingAttemptsRef.current = 0;
     stopPolling();
     setPairingPhase('starting');
+    setLiveQrImage(null);
     setErrorMessage(null);
     setStatusMessage('Booting isolated browser kernel...');
 
@@ -88,34 +156,28 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
       await startLiveSession(cleanKey);
       setStatusMessage('Browser launched. Initializing WhatsApp Web...');
 
-      let attempts = 0;
-      const maxAttempts = 50; // ~75 seconds max poll
-
+      // HTTP polling runs alongside the socket as a fallback.
+      // Only increments the timeout counter while still in 'starting' phase.
       pollTimerRef.current = setInterval(async () => {
-        attempts++;
-
         try {
-          // 1. Check QR code
+          // ── Fetch QR (fallback if socket missed it) ──
           const qrRes = await getLiveSessionQr(cleanKey);
-          if (qrRes && qrRes.qrcode) {
+          if (qrRes?.qrcode) {
             setLiveQrImage(qrRes.qrcode);
-            setPairingPhase('qr');
+            setPairingPhase(prev => prev === 'starting' || prev === 'qr' ? 'qr' : prev);
             setStatusMessage('Scan QR Code with WhatsApp on your phone');
           }
 
-          // 2. Check Connection status
+          // ── Fetch connection status ──
           const statusRes = await getLiveSessionStatus(cleanKey);
-          if (statusRes && statusRes.sessionStatus === 'CONNECTED') {
+
+          if (statusRes?.sessionStatus === 'CONNECTED') {
             stopPolling();
             setPairingPhase('connected');
             setConnectedPhone(statusRes.phone || 'WhatsApp Connected');
             setStatusMessage('WhatsApp Authenticated Successfully!');
 
-            confetti({
-              particleCount: 100,
-              spread: 75,
-              origin: { y: 0.6 }
-            });
+            confetti({ particleCount: 100, spread: 75, origin: { y: 0.6 } });
 
             setTimeout(() => {
               onAddSession(
@@ -126,15 +188,31 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
               setIsPairModalOpen(false);
               setPairingPhase('idle');
             }, 1800);
+            return;
           }
-        } catch (pollErr: any) {
-          console.warn('Poll error:', pollErr);
-        }
 
-        if (attempts >= maxAttempts) {
-          stopPolling();
-          setPairingPhase('error');
-          setErrorMessage('QR generation timed out. Please check your network and try again.');
+          // ── Timeout only applies while still booting (STARTING phase) ──
+          // Once QR is on screen the user just needs time to scan — no timeout.
+          setPairingPhase(current => {
+            if (current === 'starting') {
+              startingAttemptsRef.current += 1;
+              if (startingAttemptsRef.current >= MAX_STARTING_ATTEMPTS) {
+                stopPolling();
+                setErrorMessage(
+                  'Browser startup timed out (3 min). The Railway server may be under load — please try again in a moment.'
+                );
+                return 'error';
+              }
+              // Update progress message every ~15s
+              if (startingAttemptsRef.current === 10) setStatusMessage('Chromium initializing...');
+              if (startingAttemptsRef.current === 25) setStatusMessage('Loading WhatsApp Web... (this can take up to 60s)');
+              if (startingAttemptsRef.current === 60) setStatusMessage('Still starting — Railway cold boot in progress...');
+            }
+            return current;
+          });
+
+        } catch (pollErr: any) {
+          console.warn('Poll error:', pollErr.message);
         }
       }, 1500);
 
@@ -147,6 +225,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
   const handleCloseModal = () => {
     stopPolling();
+    activeSessionKey.current = null;
     setIsPairModalOpen(false);
   };
 
@@ -176,7 +255,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         </button>
       </div>
 
-      {/* Empty State when no accounts paired */}
+      {/* Empty State */}
       {sessions.length === 0 ? (
         <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl p-10 text-center flex flex-col items-center justify-center max-w-xl mx-auto my-8 shadow-2xl">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 shadow-lg shadow-emerald-950/40">
@@ -195,7 +274,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
           </button>
         </div>
       ) : (
-        /* Sessions Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sessions.map((sess) => (
             <div 
@@ -203,7 +281,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
               className="bg-[#111b21] border border-[#2a3942] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition-all shadow-md flex flex-col justify-between"
             >
               <div>
-                {/* Card Header */}
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -227,10 +304,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                   </span>
                 </div>
 
-                {/* Anti-Ban & Health Telemetry */}
                 <div className="mt-4 p-3 bg-[#202c33] rounded-xl space-y-2 border border-[#2a3942]/60 text-xs">
-                  
-                  {/* Health Score */}
                   <div>
                     <div className="flex justify-between items-center text-[11px] mb-1">
                       <span className="text-slate-300 font-medium flex items-center gap-1">
@@ -247,13 +321,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     </div>
                   </div>
 
-                  {/* Warmup Status */}
                   <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
                     <span>Warmup Protocol:</span>
                     <span className="text-white font-medium">Day {sess.warmupDay} of 14</span>
                   </div>
 
-                  {/* Battery & Charging */}
                   <div className="flex justify-between text-[11px] text-slate-300">
                     <span className="flex items-center gap-1">
                       {sess.isCharging ? <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" /> : <Battery className="w-3.5 h-3.5 text-slate-400" />}
@@ -262,7 +334,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     <span className="font-mono text-white">{sess.battery}% {sess.isCharging ? '(Charging)' : ''}</span>
                   </div>
 
-                  {/* Proxy */}
                   <div className="flex justify-between text-[11px] text-slate-300">
                     <span className="flex items-center gap-1">
                       <Globe2 className="w-3.5 h-3.5 text-indigo-400" />
@@ -271,16 +342,13 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     <span className="font-mono text-slate-400 text-[10px]">{sess.proxyIp}</span>
                   </div>
 
-                  {/* Messages sent today */}
                   <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
                     <span>Daily Quota Used:</span>
                     <span className="font-mono text-emerald-400 font-semibold">{sess.messagesSentToday} / {sess.messagesLimitToday}</span>
                   </div>
-
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-between pt-3 border-t border-[#2a3942] text-xs">
                 <span className="text-[10px] text-slate-400">Status: Active Engine</span>
                 <div className="flex items-center gap-2">
@@ -300,7 +368,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                   </button>
                 </div>
               </div>
-
             </div>
           ))}
         </div>
@@ -333,7 +400,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             {/* Modal Body */}
             <div className="p-6 space-y-5 text-xs">
               
-              {/* Session Configuration (shown when idle) */}
+              {/* Idle — configuration */}
               {pairingPhase === 'idle' && (
                 <div className="space-y-4">
                   <div>
@@ -384,7 +451,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                 </div>
               )}
 
-              {/* Starting Phase (launching Chromium) */}
+              {/* Starting — Chromium booting */}
               {pairingPhase === 'starting' && (
                 <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="relative">
@@ -395,15 +462,16 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                   <div>
                     <h3 className="font-bold text-white text-sm">Launching Browser Instance</h3>
                     <p className="text-[11px] text-slate-400 mt-1 max-w-xs">{statusMessage}</p>
+                    <p className="text-[10px] text-slate-500 mt-2">
+                      First launch can take up to 60–90 seconds on Railway cold start
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* QR Code Received Phase */}
+              {/* QR ready — waiting for scan */}
               {pairingPhase === 'qr' && (
                 <div className="flex flex-col items-center space-y-4 py-1">
-                  
-                  {/* Real WhatsApp QR Container */}
                   <div className="relative p-4 bg-white rounded-2xl shadow-2xl border-4 border-emerald-500/30 flex items-center justify-center">
                     {liveQrImage ? (
                       <img 
@@ -419,13 +487,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     )}
                   </div>
 
-                  {/* Status Indicator */}
                   <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-medium bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-800/40">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>Awaiting phone scan... Session: {sessionName}</span>
                   </div>
 
-                  {/* 3 Step Instructions */}
                   <div className="bg-[#202c33] p-3.5 rounded-2xl w-full space-y-1.5 text-slate-300 text-[11px] border border-[#2a3942]">
                     <div className="font-semibold text-white text-xs mb-1">To Link WhatsApp:</div>
                     <div className="flex items-center gap-2">
@@ -441,11 +507,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                       <span>Tap <strong>Link a Device</strong> and point your camera at this QR</span>
                     </div>
                   </div>
-
                 </div>
               )}
 
-              {/* Connected Success Phase */}
+              {/* Connected */}
               {pairingPhase === 'connected' && (
                 <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce">
@@ -459,7 +524,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                 </div>
               )}
 
-              {/* Error Phase */}
+              {/* Error */}
               {pairingPhase === 'error' && (
                 <div className="py-6 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -480,7 +545,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                 </div>
               )}
 
-              {/* Cancel Button */}
+              {/* Cancel */}
               {pairingPhase !== 'connected' && (
                 <div className="flex justify-end pt-2 border-t border-[#2a3942]">
                   <button
@@ -494,11 +559,9 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
               )}
 
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 };
