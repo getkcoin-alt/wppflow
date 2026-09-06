@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar, UserSubTab, AdminSubTab, DevSubTab } from './components/layout/Sidebar';
+import { LoginPage } from './components/auth/LoginPage';
+import { getSocket, disconnectSocket } from './services/socket';
 import { UserManagement } from './components/admin/UserManagement';
 import { ClusterHealth } from './components/admin/ClusterHealth';
 import { AuditLogs } from './components/admin/AuditLogs';
@@ -53,62 +55,101 @@ export function App() {
   const [activeAdminTab, setActiveAdminTab] = useState<AdminSubTab>('users');
   const [activeDevTab, setActiveDevTab] = useState<DevSubTab>('docs');
 
-  // Authentication State (restored from PostgreSQL or null)
+  // Authentication State
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Restore authenticated session from PostgreSQL
-  React.useEffect(() => {
+  // Restore session on load
+  useEffect(() => {
     const token = getStoredToken();
     if (token) {
       getCurrentUser(token).then(user => {
         if (user) setCurrentUser(user);
+        setAuthChecked(true);
       });
+    } else {
+      setAuthChecked(true);
     }
   }, []);
 
   const handleAuthSuccess = (user: AuthUser, _token: string) => {
     setCurrentUser(user);
-    if (user.role === 'admin') {
-      setCurrentView('admin');
-    }
+    if (user.role === 'admin') setCurrentView('admin');
   };
 
   const handleLogout = () => {
     clearStoredToken();
+    disconnectSocket();
     setCurrentUser(null);
-    setIsAuthModalOpen(true);
   };
 
   // App Data State
   const [users, setUsers] = useState<UserAccount[]>(initialUsers);
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
 
-  // Restore live WhatsApp sessions from backend
-  React.useEffect(() => {
+  // Fetch live sessions from backend when user logs in
+  useEffect(() => {
+    if (!currentUser) return;
     getLiveSessions().then(liveList => {
       if (liveList && liveList.length > 0) {
-        const mappedSessions: WhatsAppSession[] = liveList.map((ls) => ({
+        const mapped: WhatsAppSession[] = liveList.map((ls) => ({
           id: `sess_${ls.sessionKey}`,
           sessionKey: ls.sessionKey,
-          displayName: ls.sessionKey.replace(/-/g, ' ').toUpperCase(),
+          displayName: ls.sessionKey.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
           phone: ls.phone || 'WhatsApp Connected',
           status: (ls.status === 'CONNECTED' ? 'CONNECTED' : ls.status === 'QRCODE' ? 'QRCODE' : 'STARTING') as any,
           battery: ls.battery || 100,
           isCharging: true,
           antiBanHealth: ls.antiBanHealth || 98,
-          warmupDay: ls.warmupDay || 1,
-          proxyIp: '198.51.100.42 (Cloud Engine)',
+          warmupDay: ls.warmupDay || 14,
+          proxyIp: 'Railway Cloud Engine',
           messagesSentToday: 0,
           messagesLimitToday: 3000,
           lastActive: ls.lastActive || 'Just now',
           wppVersion: '2.3000.101',
           channel: 'sales'
         }));
-        setSessions(mappedSessions);
+        setSessions(mapped);
       }
     });
-  }, []);
+  }, [currentUser]);
+
+  // Real-time socket: session status & incoming messages
+  useEffect(() => {
+    if (!currentUser) return;
+    const sock = getSocket();
+
+    sock.on('session:status', ({ session, status, phone, battery }: any) => {
+      setSessions(prev => prev.map(s =>
+        s.sessionKey === session
+          ? { ...s, status, ...(phone ? { phone } : {}), ...(battery ? { battery } : {}) }
+          : s
+      ));
+    });
+
+    sock.on('session:message', ({ session, message }: any) => {
+      // Find chat by session/phone and append message
+      setMessages(prev => {
+        const chatId = Object.keys(prev).find(id => id.includes(session)) || `chat_${session}`;
+        const newMsg: ChatMessage = {
+          id: message.id || `m_${Date.now()}`,
+          chatId,
+          sender: 'customer',
+          text: message.body || '',
+          type: 'text',
+          timestamp: message.timestamp || 'Just now',
+          status: 'delivered'
+        };
+        return { ...prev, [chatId]: [...(prev[chatId] || []), newMsg] };
+      });
+    });
+
+    return () => {
+      sock.off('session:status');
+      sock.off('session:message');
+    };
+  }, [currentUser]);
   const [contacts, setContacts] = useState(initialContacts);
   const [chats, setChats] = useState<ChatThread[]>(initialChats);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(initialMessages);
@@ -317,6 +358,20 @@ export function App() {
     setWebhookLogs(prev => [newLog, ...prev]);
   };
 
+  // Show nothing while checking stored token
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#0c1317] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Auth gate — show full-page login if not authenticated
+  if (!currentUser) {
+    return <LoginPage onAuthSuccess={handleAuthSuccess} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0c1317] flex flex-col">
       
@@ -478,7 +533,7 @@ export function App() {
 
       </div>
 
-      {/* Authentication Modal */}
+      {/* Auth Modal (for re-auth flows) */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

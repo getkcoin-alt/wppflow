@@ -63,28 +63,40 @@ export async function checkBackendHealth(baseUrl = getBaseBackendUrl()): Promise
 }
 
 export async function startLiveSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
+  const token = getStoredToken();
   const res = await fetch(resolveEndpoint('/api/sessions/start', baseUrl), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
     body: JSON.stringify({ sessionName })
   });
   return await res.json();
 }
 
 export async function getLiveSessionQr(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/qr`, baseUrl));
+  const token = getStoredToken();
+  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/qr`, baseUrl), {
+    headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+  });
   return await res.json();
 }
 
 export async function getLiveSessionStatus(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/status`, baseUrl));
+  const token = getStoredToken();
+  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/status`, baseUrl), {
+    headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+  });
   return await res.json();
 }
 
 export async function closeLiveSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
   try {
+    const token = getStoredToken();
     const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/close`, baseUrl), {
-      method: 'POST'
+      method: 'POST',
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
     });
     return await res.json();
   } catch (err: any) {
@@ -103,18 +115,14 @@ export async function sendLiveMessage(sessionName: string, phone: string, messag
 
 export async function getLiveSessions(baseUrl = getBaseBackendUrl()): Promise<LiveSessionInfo[]> {
   try {
-    const res = await fetch(resolveEndpoint('/api/sessions', baseUrl));
+    const token = getStoredToken();
+    const res = await fetch(resolveEndpoint('/api/sessions', baseUrl), {
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.sessions || [];
   } catch {
-    try {
-      const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/sessions');
-      if (fallbackRes.ok) {
-        const data = await fallbackRes.json();
-        return data.sessions || [];
-      }
-    } catch {}
     return [];
   }
 }
