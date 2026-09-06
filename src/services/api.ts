@@ -3,7 +3,8 @@
  * Connects frontend to the production Railway backend running Chromium & WPPConnect
  */
 
-export const DEFAULT_RAILWAY_BACKEND_URL = 'https://wppflow-backend-production.up.railway.app';
+export const DEFAULT_RAILWAY_BACKEND_URL = 
+  (import.meta as any).env?.VITE_BACKEND_URL || 'https://wppflow-backend-production.up.railway.app';
 
 export interface BackendHealth {
   status: string;
