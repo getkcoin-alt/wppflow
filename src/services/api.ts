@@ -1,6 +1,6 @@
 /**
  * WppFlow Cloud Engine Client
- * Connects frontend to the production Railway backend running Chromium & OmniEngine
+ * Connects frontend to the production Cloud backend running Chromium & OmniEngine
  */
 
 export const getBaseBackendUrl = (): string => {
@@ -11,7 +11,8 @@ export const getBaseBackendUrl = (): string => {
   return (import.meta as any).env?.VITE_BACKEND_URL || 'https://wppflow-backend-production.up.railway.app';
 };
 
-export const DEFAULT_RAILWAY_BACKEND_URL = getBaseBackendUrl();
+export const DEFAULT_BACKEND_URL = getBaseBackendUrl();
+export const DEFAULT_RAILWAY_BACKEND_URL = DEFAULT_BACKEND_URL;
 
 export function resolveEndpoint(path: string, baseUrl = getBaseBackendUrl()): string {
   if (!baseUrl) return path.startsWith('/') ? path : `/${path}`;
@@ -50,7 +51,6 @@ export async function checkBackendHealth(baseUrl = getBaseBackendUrl()): Promise
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (error) {
-    // If relative proxy failed or direct failed, attempt cross-fallback
     try {
       const fallbackUrl = baseUrl === '' 
         ? 'https://wppflow-backend-production.up.railway.app/health' 
@@ -81,6 +81,17 @@ export async function getLiveSessionStatus(sessionName: string, baseUrl = getBas
   return await res.json();
 }
 
+export async function closeLiveSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
+  try {
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/close`, baseUrl), {
+      method: 'POST'
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { status: 'error', message: err.message };
+  }
+}
+
 export async function sendLiveMessage(sessionName: string, phone: string, message: string, baseUrl = getBaseBackendUrl()) {
   const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-message`, baseUrl), {
     method: 'POST',
@@ -90,13 +101,20 @@ export async function sendLiveMessage(sessionName: string, phone: string, messag
   return await res.json();
 }
 
-export async function getLiveSessions(baseUrl = DEFAULT_RAILWAY_BACKEND_URL): Promise<LiveSessionInfo[]> {
+export async function getLiveSessions(baseUrl = getBaseBackendUrl()): Promise<LiveSessionInfo[]> {
   try {
-    const res = await fetch(`${baseUrl}/api/sessions`);
-    if (!res.ok) return [];
+    const res = await fetch(resolveEndpoint('/api/sessions', baseUrl));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.sessions || [];
   } catch {
+    try {
+      const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/sessions');
+      if (fallbackRes.ok) {
+        const data = await fallbackRes.json();
+        return data.sessions || [];
+      }
+    } catch {}
     return [];
   }
 }
@@ -141,7 +159,7 @@ export async function loginUser(email: string, password: string, baseUrl = getBa
     });
     return await res.json();
   } catch (err: any) {
-    // Fallback to direct Railway URL if proxy fails
+    // Fallback to direct backend URL if proxy fails
     try {
       const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/login', {
         method: 'POST',

@@ -38,7 +38,13 @@ import {
   AuthUser
 } from './types';
 import { AuthModal } from './components/auth/AuthModal';
-import { getStoredToken, getCurrentUser, clearStoredToken } from './services/api';
+import { 
+  getStoredToken, 
+  getCurrentUser, 
+  clearStoredToken,
+  getLiveSessions,
+  closeLiveSession
+} from './services/api';
 
 export function App() {
   // Navigation View State
@@ -47,20 +53,11 @@ export function App() {
   const [activeAdminTab, setActiveAdminTab] = useState<AdminSubTab>('users');
   const [activeDevTab, setActiveDevTab] = useState<DevSubTab>('docs');
 
-  // Authentication State
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>({
-    id: 1,
-    name: 'Aarav Mehta',
-    email: 'admin@wppflow.io',
-    company_name: 'Urban Threads',
-    role: 'admin',
-    plan: 'Enterprise',
-    sessions_limit: 25,
-    created_at: new Date().toISOString()
-  });
+  // Authentication State (restored from PostgreSQL or null)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Restore authenticated session from Railway PostgreSQL
+  // Restore authenticated session from PostgreSQL
   React.useEffect(() => {
     const token = getStoredToken();
     if (token) {
@@ -85,7 +82,33 @@ export function App() {
 
   // App Data State
   const [users, setUsers] = useState<UserAccount[]>(initialUsers);
-  const [sessions, setSessions] = useState<WhatsAppSession[]>(initialSessions);
+  const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
+
+  // Restore live WhatsApp sessions from backend
+  React.useEffect(() => {
+    getLiveSessions().then(liveList => {
+      if (liveList && liveList.length > 0) {
+        const mappedSessions: WhatsAppSession[] = liveList.map((ls) => ({
+          id: `sess_${ls.sessionKey}`,
+          sessionKey: ls.sessionKey,
+          displayName: ls.sessionKey.replace(/-/g, ' ').toUpperCase(),
+          phone: ls.phone || 'WhatsApp Connected',
+          status: (ls.status === 'CONNECTED' ? 'CONNECTED' : ls.status === 'QRCODE' ? 'QRCODE' : 'STARTING') as any,
+          battery: ls.battery || 100,
+          isCharging: true,
+          antiBanHealth: ls.antiBanHealth || 98,
+          warmupDay: ls.warmupDay || 1,
+          proxyIp: '198.51.100.42 (Cloud Engine)',
+          messagesSentToday: 0,
+          messagesLimitToday: 3000,
+          lastActive: ls.lastActive || 'Just now',
+          wppVersion: '2.3000.101',
+          channel: 'sales'
+        }));
+        setSessions(mappedSessions);
+      }
+    });
+  }, []);
   const [contacts, setContacts] = useState(initialContacts);
   const [chats, setChats] = useState<ChatThread[]>(initialChats);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(initialMessages);
@@ -164,25 +187,26 @@ export function App() {
 
   // Add Session Handler
   const handleAddSession = (name: string, phone: string, channel: 'sales' | 'support' | 'vip' | 'general') => {
+    const key = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     const newSession: WhatsAppSession = {
-      id: `sess_${Date.now()}`,
-      sessionKey: name.toLowerCase().replace(/\s+/g, '-'),
+      id: `sess_${key}_${Date.now()}`,
+      sessionKey: key,
       displayName: name,
       phone,
       status: 'CONNECTED',
-      battery: 92,
+      battery: 95,
       isCharging: true,
       antiBanHealth: 99,
       warmupDay: 1,
-      proxyIp: '198.51.100.88 (US Dedicated)',
+      proxyIp: '198.51.100.88 (Cloud Engine)',
       messagesSentToday: 0,
-      messagesLimitToday: 500,
+      messagesLimitToday: 3000,
       lastActive: 'Just now',
       wppVersion: '2.3000.101',
       channel
     };
 
-    setSessions(prev => [newSession, ...prev]);
+    setSessions(prev => [newSession, ...prev.filter(s => s.sessionKey !== key)]);
   };
 
   const handleRestartSession = (sessionId: string) => {
@@ -198,7 +222,15 @@ export function App() {
     }));
   };
 
-  const handleDeleteSession = (sessionId: string) => {
+  const handleDeleteSession = async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      try {
+        await closeLiveSession(session.sessionKey);
+      } catch (e) {
+        console.warn('Error closing session:', e);
+      }
+    }
     setSessions(prev => prev.filter(s => s.id !== sessionId));
   };
 

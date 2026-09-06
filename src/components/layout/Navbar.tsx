@@ -129,20 +129,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Action Controls & Session Pill */}
         <div className="flex items-center gap-3">
           
-          {/* Railway Engine Live Pill */}
-          <a
-            href="https://wppflow-backend-production.up.railway.app/health"
-            target="_blank"
-            rel="noreferrer"
-            title="Railway Cloud Engine Status"
+          {/* Cloud OmniEngine Live Status */}
+          <div
+            title="WppFlow Cloud OmniEngine Status"
             className="hidden sm:flex items-center gap-1.5 bg-[#202c33] border border-[#2a3942] hover:border-emerald-500/50 px-2.5 py-1.5 rounded-lg text-xs transition-all"
           >
             <span className={`w-2 h-2 rounded-full ${engineHealth?.status === 'ok' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
             <span className="text-[11px] text-slate-300 font-medium">
-              Railway Engine: <span className="text-emerald-400 font-bold">{engineHealth?.status === 'ok' ? 'Online (v2.4)' : 'Connecting...'}</span>
+              Cloud OmniEngine: <span className="text-emerald-400 font-bold">{engineHealth?.status === 'ok' ? 'Online (v2.4)' : 'Connecting...'}</span>
             </span>
-            <ExternalLink className="w-3 h-3 text-slate-500" />
-          </a>
+          </div>
 
           {/* Active Sessions Indicator */}
           <div 

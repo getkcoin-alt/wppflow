@@ -145,13 +145,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Railway DB Indicator */}
+          {/* Cloud Database Indicator */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-[#202c33] border border-[#2a3942] rounded-xl text-xs text-slate-300">
             <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Railway Postgres: <strong className="text-emerald-400">{dbUsers.length > 0 ? `${dbUsers.length} Users` : 'Active'}</strong></span>
+            <span>Cloud Database: <strong className="text-emerald-400">{dbUsers.length > 0 ? `${dbUsers.length} Users` : 'Active'}</strong></span>
             <button
               onClick={fetchLiveUsers}
-              title="Sync from Railway PostgreSQL"
+              title="Sync from Cloud Database"
               className="p-1 hover:bg-[#111b21] rounded text-slate-400 hover:text-white transition-all"
             >
               <RefreshCw className={`w-3 h-3 ${isSyncingDb ? 'animate-spin text-emerald-400' : ''}`} />

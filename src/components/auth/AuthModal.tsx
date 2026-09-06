@@ -69,7 +69,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const res = await signupUser(name, email, password, companyName, role);
         if (res.status === 'success' && res.token && res.user) {
           setStoredToken(res.token);
-          setSuccessMsg('Account registered in Railway PostgreSQL! Welcome aboard.');
+          setSuccessMsg('Account registered successfully! Welcome aboard.');
           confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
           setTimeout(() => {
             onAuthSuccess(res.user, res.token!);
@@ -83,19 +83,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError(err.message || 'Unable to connect to authentication server');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fillQuickDemo = (type: 'admin' | 'user') => {
-    setError(null);
-    setSuccessMsg(null);
-    setMode('login');
-    if (type === 'admin') {
-      setEmail('admin@wppflow.io');
-      setPassword('admin123');
-    } else {
-      setEmail('demo@wppflow.io');
-      setPassword('demo123');
     }
   };
 
@@ -126,7 +113,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                {mode === 'login' ? 'Sign in to access your WhatsApp multi-session CRM' : 'Register a new tenant organization in Railway DB'}
+                {mode === 'login' ? 'Sign in to access your WhatsApp multi-session CRM' : 'Register a new tenant organization'}
               </p>
             </div>
           </div>
@@ -289,30 +276,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </>
             )}
           </button>
-
-          {/* Quick Demo Credentials */}
-          <div className="pt-3 border-t border-[#2a3942] space-y-2">
-            <div className="text-[11px] text-slate-400 font-medium">One-Click Demo Credentials:</div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => fillQuickDemo('admin')}
-                className="flex items-center justify-center gap-1.5 p-2 bg-[#202c33] hover:bg-[#2a3942] border border-[#2a3942] text-slate-300 rounded-xl text-[11px] font-medium transition-all"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Admin Demo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillQuickDemo('user')}
-                className="flex items-center justify-center gap-1.5 p-2 bg-[#202c33] hover:bg-[#2a3942] border border-[#2a3942] text-slate-300 rounded-xl text-[11px] font-medium transition-all"
-              >
-                <User className="w-3.5 h-3.5 text-emerald-400" />
-                <span>User Demo</span>
-              </button>
-            </div>
-          </div>
-
         </form>
 
       </div>

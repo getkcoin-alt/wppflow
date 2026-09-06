@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Smartphone, 
   Battery, 
@@ -9,22 +9,18 @@ import {
   Plus, 
   CheckCircle2, 
   AlertCircle, 
-  Layers, 
-  Zap, 
   Globe2, 
   Trash2, 
-  Power,
   Sparkles,
-  Copy,
-  Check
+  ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { WhatsAppSession, SessionState } from '../../types';
+import { WhatsAppSession } from '../../types';
 import { 
   startLiveSession, 
   getLiveSessionQr, 
-  getLiveSessionStatus, 
-  DEFAULT_RAILWAY_BACKEND_URL 
+  getLiveSessionStatus,
+  closeLiveSession
 } from '../../services/api';
 
 interface SessionManagerProps {
@@ -44,128 +40,120 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   isPairModalOpen,
   setIsPairModalOpen
 }) => {
-  const [sessionName, setSessionName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [sessionName, setSessionName] = useState('Primary WhatsApp');
   const [channel, setChannel] = useState<'sales' | 'support' | 'vip' | 'general'>('sales');
 
-  // Engine source toggle: simulated instant vs real Railway Cloud Chromium
-  const [engineSource, setEngineSource] = useState<'simulator' | 'railway'>('simulator');
+  // Live Pairing States
+  type PairingPhase = 'idle' | 'starting' | 'qr' | 'connected' | 'error';
+  const [pairingPhase, setPairingPhase] = useState<PairingPhase>('idle');
   const [liveQrImage, setLiveQrImage] = useState<string | null>(null);
-  const [isRequestingLiveQr, setIsRequestingLiveQr] = useState(false);
-  const [liveSessionState, setLiveSessionState] = useState<string>('');
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
 
-  // QR Modal States
-  const [pairingMode, setPairingMode] = useState<'qr' | 'code'>('qr');
-  const [countdown, setCountdown] = useState(30);
-  const [isSimulatingPairing, setIsSimulatingPairing] = useState(false);
-  const [pairingSuccess, setPairingSuccess] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
+  // Polling ref to clear safely
+  const pollTimerRef = useRef<any>(null);
 
-  // Countdown timer for QR code freshness
-  useEffect(() => {
-    let timer: any;
-    if (isPairModalOpen && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown(prev => (prev > 1 ? prev - 1 : 30));
-      }, 1000);
+  const stopPolling = () => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
     }
-    return () => clearInterval(timer);
-  }, [isPairModalOpen, countdown]);
-
-  const handleSimulateScan = () => {
-    setIsSimulatingPairing(true);
-    setTimeout(() => {
-      setIsSimulatingPairing(false);
-      setPairingSuccess(true);
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      setTimeout(() => {
-        onAddSession(
-          sessionName || 'New WhatsApp Line',
-          phone || '+1 (555) 019-8833',
-          channel
-        );
-        setIsPairModalOpen(false);
-        setPairingSuccess(false);
-        setSessionName('');
-        setPhone('');
-        setLiveQrImage(null);
-        setLiveSessionState('');
-      }, 1400);
-    }, 1500);
   };
 
-  const handleStartLiveRailway = async () => {
-    const key = (sessionName || 'line-' + Math.floor(1000 + Math.random() * 9000))
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-');
-    
-    setIsRequestingLiveQr(true);
-    setLiveSessionState('Initializing headless Chromium instance on Railway...');
-    
+  // Reset pairing state when modal opens/closes
+  useEffect(() => {
+    if (isPairModalOpen) {
+      setPairingPhase('idle');
+      setLiveQrImage(null);
+      setErrorMessage(null);
+      setStatusMessage('');
+      setConnectedPhone(null);
+    } else {
+      stopPolling();
+    }
+    return () => stopPolling();
+  }, [isPairModalOpen]);
+
+  const handleStartPairing = async () => {
+    const rawKey = sessionName.trim() || 'whatsapp-line';
+    const cleanKey = rawKey.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+    stopPolling();
+    setPairingPhase('starting');
+    setErrorMessage(null);
+    setStatusMessage('Booting isolated browser kernel...');
+
     try {
-      await startLiveSession(key);
-      setLiveSessionState('Booting browser kernel & awaiting QR code...');
-      
-      // Poll QR
+      await startLiveSession(cleanKey);
+      setStatusMessage('Browser launched. Initializing WhatsApp Web...');
+
       let attempts = 0;
-      const pollTimer = setInterval(async () => {
+      const maxAttempts = 50; // ~75 seconds max poll
+
+      pollTimerRef.current = setInterval(async () => {
         attempts++;
+
         try {
-          const qrRes = await getLiveSessionQr(key);
-          if (qrRes && qrRes.qrCode) {
-            setLiveQrImage(qrRes.qrCode);
-            setLiveSessionState('QR Generated! Scan with WhatsApp on your phone.');
+          // 1. Check QR code
+          const qrRes = await getLiveSessionQr(cleanKey);
+          if (qrRes && qrRes.qrcode) {
+            setLiveQrImage(qrRes.qrcode);
+            setPairingPhase('qr');
+            setStatusMessage('Scan QR Code with WhatsApp on your phone');
           }
-          
-          const statusRes = await getLiveSessionStatus(key);
-          if (statusRes && statusRes.status === 'CONNECTED') {
-            clearInterval(pollTimer);
-            setIsRequestingLiveQr(false);
-            setPairingSuccess(true);
-            confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+
+          // 2. Check Connection status
+          const statusRes = await getLiveSessionStatus(cleanKey);
+          if (statusRes && statusRes.sessionStatus === 'CONNECTED') {
+            stopPolling();
+            setPairingPhase('connected');
+            setConnectedPhone(statusRes.phone || 'WhatsApp Connected');
+            setStatusMessage('WhatsApp Authenticated Successfully!');
+
+            confetti({
+              particleCount: 100,
+              spread: 75,
+              origin: { y: 0.6 }
+            });
+
             setTimeout(() => {
               onAddSession(
-                sessionName || key,
-                statusRes.phone || '+1 (555) 019-8833',
+                sessionName || cleanKey,
+                statusRes.phone || '+WhatsApp Connected',
                 channel
               );
               setIsPairModalOpen(false);
-              setPairingSuccess(false);
-              setLiveQrImage(null);
-            }, 1500);
+              setPairingPhase('idle');
+            }, 1800);
           }
-        } catch (e) {
-          // keep polling
+        } catch (pollErr: any) {
+          console.warn('Poll error:', pollErr);
         }
-        
-        if (attempts > 30) {
-          clearInterval(pollTimer);
-          setIsRequestingLiveQr(false);
-          setLiveSessionState('QR generation timed out. You can also use Instant Simulation.');
+
+        if (attempts >= maxAttempts) {
+          stopPolling();
+          setPairingPhase('error');
+          setErrorMessage('QR generation timed out. Please check your network and try again.');
         }
-      }, 2000);
+      }, 1500);
+
     } catch (err: any) {
-      setIsRequestingLiveQr(false);
-      setLiveSessionState('Could not reach Railway engine. Please check backend health.');
+      stopPolling();
+      setPairingPhase('error');
+      setErrorMessage(err.message || 'Failed to initialize session on cloud engine.');
     }
   };
 
-  const pairingCode = 'FLOW-9K4M';
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(pairingCode);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+  const handleCloseModal = () => {
+    stopPolling();
+    setIsPairModalOpen(false);
   };
 
   return (
     <div className="space-y-6">
       
-      {/* Header */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111b21] p-5 rounded-2xl border border-[#2a3942]">
         <div>
           <div className="flex items-center gap-2">
@@ -175,411 +163,335 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             <h1 className="text-xl font-bold text-white tracking-tight">WhatsApp Multi-Session Engine</h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Connect and orchestrate multiple physical or business WhatsApp accounts with automated anti-ban warming and proxy routing.
+            Pair and orchestrate multiple physical WhatsApp accounts with automated anti-ban warming and persistent session storage.
           </p>
         </div>
 
         <button
-          onClick={() => {
-            setCountdown(30);
-            setIsPairModalOpen(true);
-          }}
+          onClick={() => setIsPairModalOpen(true)}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-900/30"
         >
           <Plus className="w-4 h-4" />
-          <span>Connect New WhatsApp Account</span>
+          <span>Pair WhatsApp Account</span>
         </button>
       </div>
 
-      {/* Sessions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {sessions.map((sess) => (
-          <div 
-            key={sess.id}
-            className="bg-[#111b21] border border-[#2a3942] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition-all shadow-md flex flex-col justify-between"
-          >
-            <div>
-              {/* Card Header */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-sm text-white">{sess.displayName}</h2>
-                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#202c33] text-slate-300 border border-[#2a3942]">
-                      {sess.channel}
-                    </span>
-                  </div>
-                  <div className="font-mono text-xs text-slate-400 mt-0.5">{sess.phone}</div>
-                </div>
-
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                  sess.status === 'CONNECTED'
-                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                    : sess.status === 'QRCODE'
-                    ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                    : 'bg-rose-950 text-rose-400 border border-rose-800'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${sess.status === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                  <span>{sess.status}</span>
-                </span>
-              </div>
-
-              {/* Anti-Ban & Health Telemetry */}
-              <div className="mt-4 p-3 bg-[#202c33] rounded-xl space-y-2 border border-[#2a3942]/60 text-xs">
-                
-                {/* Health Score */}
-                <div>
-                  <div className="flex justify-between items-center text-[11px] mb-1">
-                    <span className="text-slate-300 font-medium flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Anti-Ban Health Score</span>
-                    </span>
-                    <span className="text-emerald-400 font-mono font-bold">{sess.antiBanHealth}/100</span>
-                  </div>
-                  <div className="w-full bg-[#111b21] h-1.5 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-emerald-500 h-full rounded-full"
-                      style={{ width: `${sess.antiBanHealth}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Warmup Status */}
-                <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
-                  <span>Warmup Protocol:</span>
-                  <span className="text-white font-medium">Day {sess.warmupDay} of 14</span>
-                </div>
-
-                {/* Battery & Charging */}
-                <div className="flex justify-between text-[11px] text-slate-300">
-                  <span className="flex items-center gap-1">
-                    {sess.isCharging ? <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" /> : <Battery className="w-3.5 h-3.5 text-slate-400" />}
-                    <span>Device Battery:</span>
-                  </span>
-                  <span className="font-mono text-white">{sess.battery}% {sess.isCharging ? '(Charging)' : ''}</span>
-                </div>
-
-                {/* Proxy IP */}
-                <div className="flex justify-between text-[11px] text-slate-300">
-                  <span className="flex items-center gap-1">
-                    <Globe2 className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Isolated Proxy:</span>
-                  </span>
-                  <span className="font-mono text-slate-400 text-[10px]">{sess.proxyIp}</span>
-                </div>
-
-                {/* Messages sent today */}
-                <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
-                  <span>Daily Quota Used:</span>
-                  <span className="font-mono text-emerald-400 font-semibold">{sess.messagesSentToday} / {sess.messagesLimitToday}</span>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-[#2a3942] text-xs">
-              <span className="text-[10px] text-slate-400">Engine: WppFlow Core v2.4</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onRestartSession(sess.id)}
-                  title="Restart Chromium Session"
-                  className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onDeleteSession(sess.id)}
-                  title="Disconnect & Remove"
-                  className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
+      {/* Empty State when no accounts paired */}
+      {sessions.length === 0 ? (
+        <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl p-10 text-center flex flex-col items-center justify-center max-w-xl mx-auto my-8 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 shadow-lg shadow-emerald-950/40">
+            <QrCode className="w-8 h-8" />
           </div>
-        ))}
-      </div>
+          <h3 className="text-lg font-bold text-white mb-2">No WhatsApp Accounts Paired Yet</h3>
+          <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+            Link your phone to activate real-time inbox chat, automated customer responses, and multi-agent broadcast dispatching.
+          </p>
+          <button
+            onClick={() => setIsPairModalOpen(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02]"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Pair First WhatsApp Number</span>
+          </button>
+        </div>
+      ) : (
+        /* Sessions Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {sessions.map((sess) => (
+            <div 
+              key={sess.id}
+              className="bg-[#111b21] border border-[#2a3942] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition-all shadow-md flex flex-col justify-between"
+            >
+              <div>
+                {/* Card Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold text-sm text-white">{sess.displayName}</h2>
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#202c33] text-slate-300 border border-[#2a3942]">
+                        {sess.channel}
+                      </span>
+                    </div>
+                    <div className="font-mono text-xs text-slate-400 mt-0.5">{sess.phone}</div>
+                  </div>
 
-      {/* QR Code / Phone Pairing Modal */}
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
+                    sess.status === 'CONNECTED'
+                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                      : sess.status === 'QRCODE'
+                      ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                      : 'bg-rose-950 text-rose-400 border border-rose-800'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${sess.status === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                    <span>{sess.status}</span>
+                  </span>
+                </div>
+
+                {/* Anti-Ban & Health Telemetry */}
+                <div className="mt-4 p-3 bg-[#202c33] rounded-xl space-y-2 border border-[#2a3942]/60 text-xs">
+                  
+                  {/* Health Score */}
+                  <div>
+                    <div className="flex justify-between items-center text-[11px] mb-1">
+                      <span className="text-slate-300 font-medium flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Anti-Ban Health Score</span>
+                      </span>
+                      <span className="text-emerald-400 font-mono font-bold">{sess.antiBanHealth}/100</span>
+                    </div>
+                    <div className="w-full bg-[#111b21] h-1.5 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-full rounded-full"
+                        style={{ width: `${sess.antiBanHealth}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Warmup Status */}
+                  <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
+                    <span>Warmup Protocol:</span>
+                    <span className="text-white font-medium">Day {sess.warmupDay} of 14</span>
+                  </div>
+
+                  {/* Battery & Charging */}
+                  <div className="flex justify-between text-[11px] text-slate-300">
+                    <span className="flex items-center gap-1">
+                      {sess.isCharging ? <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" /> : <Battery className="w-3.5 h-3.5 text-slate-400" />}
+                      <span>Device Battery:</span>
+                    </span>
+                    <span className="font-mono text-white">{sess.battery}% {sess.isCharging ? '(Charging)' : ''}</span>
+                  </div>
+
+                  {/* Proxy */}
+                  <div className="flex justify-between text-[11px] text-slate-300">
+                    <span className="flex items-center gap-1">
+                      <Globe2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Dedicated Proxy:</span>
+                    </span>
+                    <span className="font-mono text-slate-400 text-[10px]">{sess.proxyIp}</span>
+                  </div>
+
+                  {/* Messages sent today */}
+                  <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
+                    <span>Daily Quota Used:</span>
+                    <span className="font-mono text-emerald-400 font-semibold">{sess.messagesSentToday} / {sess.messagesLimitToday}</span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-3 border-t border-[#2a3942] text-xs">
+                <span className="text-[10px] text-slate-400">Status: Active Engine</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onRestartSession(sess.id)}
+                    title="Refresh Session Status"
+                    className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onDeleteSession(sess.id)}
+                    title="Disconnect & Remove"
+                    className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Real WhatsApp Pairing Modal */}
       {isPairModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
             
             {/* Modal Header */}
-            <div className="p-4 border-b border-[#2a3942] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-base font-bold text-white">Pair WhatsApp Account</h2>
+            <div className="p-5 border-b border-[#2a3942] flex items-center justify-between bg-gradient-to-b from-[#182229] to-[#111b21]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white tracking-tight">Pair WhatsApp Account</h2>
+                  <p className="text-[11px] text-slate-400">Scan QR code using WhatsApp on your phone</p>
+                </div>
               </div>
               <button
-                onClick={() => setIsPairModalOpen(false)}
-                className="text-slate-400 hover:text-white text-xs"
+                onClick={handleCloseModal}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#202c33] transition-all"
               >
                 ✕
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-5 space-y-4 text-xs">
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 text-xs">
               
-              {/* Engine Source Selector */}
-              <div className="flex items-center justify-between bg-[#0b141a] p-2.5 rounded-xl border border-[#2a3942]">
-                <div>
-                  <div className="text-[11px] text-white font-semibold">Engine Source:</div>
-                  <div className="text-[10px] text-slate-400">Select simulated demo or live Railway cloud</div>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setEngineSource('simulator')}
-                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-                      engineSource === 'simulator'
-                        ? 'bg-emerald-600 text-white shadow'
-                        : 'text-slate-400 hover:text-white bg-[#202c33]'
-                    }`}
-                  >
-                    ⚡ Instant Demo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEngineSource('railway')}
-                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-                      engineSource === 'railway'
-                        ? 'bg-indigo-600 text-white shadow'
-                        : 'text-slate-400 hover:text-white bg-[#202c33]'
-                    }`}
-                  >
-                    ☁️ Railway Cloud
-                  </button>
-                </div>
-              </div>
-
-              {engineSource === 'railway' ? (
-                <div className="flex flex-col items-center justify-center space-y-3 py-2">
-                  <div className="relative p-4 bg-white rounded-2xl shadow-xl border-4 border-indigo-500/30 flex items-center justify-center min-h-[220px] w-56">
-                    {liveQrImage ? (
-                      <img src={liveQrImage} alt="Live WhatsApp Pairing QR" className="w-48 h-48 object-contain" />
-                    ) : (
-                      <div className="flex flex-col items-center text-center p-3">
-                        {isRequestingLiveQr ? (
-                          <>
-                            <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
-                            <span className="text-xs font-semibold text-slate-800">Spawning Chromium on Railway...</span>
-                            <span className="text-[10px] text-slate-500 mt-1">{liveSessionState}</span>
-                          </>
-                        ) : (
-                          <>
-                            <QrCode className="w-12 h-12 text-slate-400 mb-2" />
-                            <span className="text-xs font-semibold text-slate-800">Railway Engine Ready</span>
-                            <span className="text-[10px] text-slate-500 mt-1 leading-relaxed">
-                              Launches isolated Chromium instance with persistent session volume on Railway.
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {liveSessionState && (
-                    <div className="text-[11px] text-center text-indigo-300 bg-indigo-950/50 px-3 py-1.5 rounded-lg border border-indigo-800/40 w-full">
-                      {liveSessionState}
-                    </div>
-                  )}
-
-                  <div className="w-full">
-                    {!liveQrImage ? (
-                      <button
-                        type="button"
-                        onClick={handleStartLiveRailway}
-                        disabled={isRequestingLiveQr}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-indigo-900/30"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>{isRequestingLiveQr ? 'Booting Browser Engine...' : 'Boot Engine & Generate Live QR'}</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleSimulateScan}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Simulate Successful Scan</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Mode Tabs */}
-                  <div className="flex bg-[#202c33] p-1 rounded-xl border border-[#2a3942]">
-                    <button
-                      onClick={() => setPairingMode('qr')}
-                      className={`flex-1 py-1.5 text-center font-semibold rounded-lg transition-all ${
-                        pairingMode === 'qr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Scan QR Code
-                    </button>
-                    <button
-                      onClick={() => setPairingMode('code')}
-                      className={`flex-1 py-1.5 text-center font-semibold rounded-lg transition-all ${
-                        pairingMode === 'code' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Link with Phone Code
-                    </button>
-                  </div>
-
-              {pairingMode === 'qr' ? (
-                <div className="flex flex-col items-center justify-center space-y-3 py-2">
-                  
-                  {/* Dynamic QR Code Box */}
-                  <div className="relative p-4 bg-white rounded-2xl shadow-xl border-4 border-emerald-500/20">
-                    <svg viewBox="0 0 100 100" className="w-48 h-48">
-                      {/* Stylized simulated QR pattern */}
-                      <rect width="100" height="100" fill="white" />
-                      {/* Top-left position marker */}
-                      <rect x="10" y="10" width="25" height="25" fill="#111b21" />
-                      <rect x="15" y="15" width="15" height="15" fill="white" />
-                      <rect x="18" y="18" width="9" height="9" fill="#111b21" />
-                      {/* Top-right position marker */}
-                      <rect x="65" y="10" width="25" height="25" fill="#111b21" />
-                      <rect x="70" y="15" width="15" height="15" fill="white" />
-                      <rect x="73" y="18" width="9" height="9" fill="#111b21" />
-                      {/* Bottom-left position marker */}
-                      <rect x="10" y="65" width="25" height="25" fill="#111b21" />
-                      <rect x="15" y="70" width="15" height="15" fill="white" />
-                      <rect x="18" y="73" width="9" height="9" fill="#111b21" />
-                      {/* QR Data Dots */}
-                      <rect x="42" y="12" width="6" height="6" fill="#111b21" />
-                      <rect x="52" y="18" width="6" height="6" fill="#111b21" />
-                      <rect x="42" y="30" width="12" height="6" fill="#111b21" />
-                      <rect x="12" y="44" width="8" height="6" fill="#111b21" />
-                      <rect x="25" y="48" width="12" height="8" fill="#111b21" />
-                      <rect x="44" y="44" width="12" height="12" fill="#25D366" />
-                      <rect x="62" y="44" width="8" height="8" fill="#111b21" />
-                      <rect x="78" y="44" width="12" height="6" fill="#111b21" />
-                      <rect x="42" y="62" width="8" height="14" fill="#111b21" />
-                      <rect x="56" y="66" width="14" height="6" fill="#111b21" />
-                      <rect x="56" y="78" width="8" height="8" fill="#111b21" />
-                      <rect x="70" y="72" width="18" height="14" fill="#111b21" />
-                    </svg>
-
-                    {isSimulatingPairing && (
-                      <div className="absolute inset-0 bg-emerald-950/80 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center text-emerald-300">
-                        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-2" />
-                        <span className="font-bold text-xs">Exchanging Session Keys...</span>
-                      </div>
-                    )}
-
-                    {pairingSuccess && (
-                      <div className="absolute inset-0 bg-emerald-900/90 rounded-2xl flex flex-col items-center justify-center text-white">
-                        <CheckCircle2 className="w-10 h-10 text-emerald-300 mb-1 animate-bounce" />
-                        <span className="font-bold text-sm">Session Paired!</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Auto-Refresh Countdown */}
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                    <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
-                    <span>QR Code refreshes in <span className="text-white font-mono font-bold">{countdown}s</span></span>
-                  </div>
-
-                  {/* 3 Step Instructions */}
-                  <div className="bg-[#202c33] p-3 rounded-xl w-full space-y-1 text-slate-300 text-[11px]">
-                    <div className="font-semibold text-white text-xs mb-1">To Link WhatsApp Web:</div>
-                    <div>1. Open <strong>WhatsApp</strong> on your phone</div>
-                    <div>2. Tap <strong>Settings</strong> &gt; <strong>Linked Devices</strong></div>
-                    <div>3. Tap <strong>Link a Device</strong> and point camera at screen</div>
-                  </div>
-
-                </div>
-              ) : (
-                <div className="space-y-4 py-2">
-                  <p className="text-slate-300 text-[11px]">
-                    Enter your phone number to receive an 8-character verification code directly in WhatsApp:
-                  </p>
+              {/* Session Configuration (shown when idle) */}
+              {pairingPhase === 'idle' && (
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-slate-300 mb-1 font-medium">WhatsApp Phone Number</label>
+                    <label className="block text-slate-300 mb-1.5 font-medium">Session Identifier / Label</label>
                     <input
                       type="text"
-                      placeholder="+1 (555) 019-8833"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                      placeholder="e.g. Sales Dispatch, Support Desk"
+                      value={sessionName}
+                      onChange={(e) => setSessionName(e.target.value)}
+                      className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs font-medium"
                     />
                   </div>
 
-                  <div className="p-3 bg-[#202c33] rounded-xl border border-[#2a3942] flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">One-Time Pairing Code</div>
-                      <div className="text-lg font-mono font-black text-emerald-400 tracking-wider mt-0.5">
-                        {pairingCode}
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleCopyCode}
-                      className="p-2 bg-[#111b21] hover:bg-[#2a3942] text-slate-300 rounded-lg transition-all"
+                  <div>
+                    <label className="block text-slate-300 mb-1.5 font-medium">Channel Routing Queue</label>
+                    <select
+                      value={channel}
+                      onChange={(e) => setChannel(e.target.value as any)}
+                      className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs"
                     >
-                      {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    </button>
+                      <option value="sales">Sales Line</option>
+                      <option value="support">Customer Support</option>
+                      <option value="vip">VIP Concierge</option>
+                      <option value="general">Warehouse Ops</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-[#202c33]/70 border border-[#2a3942] p-3.5 rounded-2xl space-y-2">
+                    <div className="font-semibold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>How Cloud Pairing Works:</span>
+                    </div>
+                    <ul className="text-slate-400 space-y-1 text-[11px] list-disc list-inside">
+                      <li>Launches a secure, dedicated browser instance in the cloud</li>
+                      <li>Generates an official WhatsApp Web authentication QR code</li>
+                      <li>Encrypted session tokens are safely persisted in your workspace</li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleStartPairing}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-900/30 hover:scale-[1.01]"
+                  >
+                    <span>Generate WhatsApp QR Code</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Starting Phase (launching Chromium) */}
+              {pairingPhase === 'starting' && (
+                <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                      <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm">Launching Browser Instance</h3>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-xs">{statusMessage}</p>
                   </div>
                 </div>
               )}
-              </>
+
+              {/* QR Code Received Phase */}
+              {pairingPhase === 'qr' && (
+                <div className="flex flex-col items-center space-y-4 py-1">
+                  
+                  {/* Real WhatsApp QR Container */}
+                  <div className="relative p-4 bg-white rounded-2xl shadow-2xl border-4 border-emerald-500/30 flex items-center justify-center">
+                    {liveQrImage ? (
+                      <img 
+                        src={liveQrImage} 
+                        alt="Scan WhatsApp QR" 
+                        className="w-56 h-56 object-contain"
+                      />
+                    ) : (
+                      <div className="w-56 h-56 flex flex-col items-center justify-center text-slate-400">
+                        <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
+                        <span className="text-xs text-slate-600">Rendering QR Code...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status Indicator */}
+                  <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-medium bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-800/40">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Awaiting phone scan... Session: {sessionName}</span>
+                  </div>
+
+                  {/* 3 Step Instructions */}
+                  <div className="bg-[#202c33] p-3.5 rounded-2xl w-full space-y-1.5 text-slate-300 text-[11px] border border-[#2a3942]">
+                    <div className="font-semibold text-white text-xs mb-1">To Link WhatsApp:</div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">1</span>
+                      <span>Open <strong>WhatsApp</strong> on your phone</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">2</span>
+                      <span>Go to <strong>Settings</strong> &gt; <strong>Linked Devices</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold">3</span>
+                      <span>Tap <strong>Link a Device</strong> and point your camera at this QR</span>
+                    </div>
+                  </div>
+
+                </div>
               )}
 
-              {/* Session Details Form */}
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#2a3942]">
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium text-[11px]">Session Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Sales Dispatch"
-                    value={sessionName}
-                    onChange={(e) => setSessionName(e.target.value)}
-                    className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-2.5 py-1.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs"
-                  />
+              {/* Connected Success Phase */}
+              {pairingPhase === 'connected' && (
+                <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce">
+                    <CheckCircle2 className="w-9 h-9" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">WhatsApp Paired!</h3>
+                    <p className="text-xs text-emerald-400 font-mono mt-1 font-semibold">{connectedPhone}</p>
+                    <p className="text-[11px] text-slate-400 mt-2">Loading workspace session data...</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium text-[11px]">Channel Route</label>
-                  <select
-                    value={channel}
-                    onChange={(e) => setChannel(e.target.value as any)}
-                    className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500 text-xs"
+              )}
+
+              {/* Error Phase */}
+              {pairingPhase === 'error' && (
+                <div className="py-6 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                    <AlertCircle className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm">Pairing Interrupted</h3>
+                    <p className="text-[11px] text-rose-300 mt-1 max-w-xs">{errorMessage}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleStartPairing}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-white rounded-xl text-xs font-semibold transition-all border border-[#2a3942] mt-2"
                   >
-                    <option value="sales">Sales Line</option>
-                    <option value="support">Customer Support</option>
-                    <option value="vip">VIP Concierge</option>
-                    <option value="general">Warehouse Ops</option>
-                  </select>
+                    <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Try Again</span>
+                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPairModalOpen(false)}
-                  className="px-3.5 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 rounded-xl"
-                >
-                  Cancel
-                </button>
-
-                {/* Instant Simulator Button */}
-                <button
-                  type="button"
-                  onClick={handleSimulateScan}
-                  disabled={isSimulatingPairing || pairingSuccess}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-all shadow-md shadow-emerald-900/30"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isSimulatingPairing ? 'Pairing...' : 'Simulate Instant Pairing'}</span>
-                </button>
-              </div>
+              {/* Cancel Button */}
+              {pairingPhase !== 'connected' && (
+                <div className="flex justify-end pt-2 border-t border-[#2a3942]">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-xl text-xs font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
 
             </div>
 
