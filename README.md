@@ -2,7 +2,7 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fgetkcoin-alt%2Fwppflow)
 
-**WppFlow** is a modern, high-performance WhatsApp CRM, Shared Team Inbox, and Broadcast Automation platform engineered on top of the open-source **[WPPConnect](https://wppconnect.io/)** ecosystem. 
+**WppFlow** is a modern, high-performance WhatsApp CRM, Shared Team Inbox, and Broadcast Automation platform. 
 
 It is specifically designed to eliminate the crippling conversation fees, 48-hour template approval delays, and rigid single-number limitations imposed by traditional WhatsApp Business Solution Providers (BSPs) like **[Interakt](https://www.interakt.shop/)**.
 
@@ -10,9 +10,9 @@ It is specifically designed to eliminate the crippling conversation fees, 48-hou
 
 ## 🚀 Why WppFlow is 10x Better than Interakt
 
-| Capability | Interakt.shop (Meta Official BSP) | WppFlow (WPPConnect Engine) |
+| Capability | Interakt.shop (Meta Official BSP) | WppFlow (OmniEngine) |
 |---|---|---|
-| **Meta Conversation Fees** | High monthly plan + \$0.03 – \$0.12 per conversation markups | **$0.00 Meta markups** (Direct WhatsApp Web session connection) |
+| **Meta Conversation Fees** | High monthly plan + \$0.03 – \$0.12 per conversation markups | **$0.00 Meta markups** (Direct WhatsApp session connection) |
 | **Outbound Template Review** | Mandatory 24–48h review; rejections freeze marketing | **Instant sending** with dynamic variables & spin-tax `{Hi\|Hello}` |
 | **WhatsApp Groups Support** | ❌ None (Meta Cloud API limitation) | ✅ **Full Group CRM**: send broadcasts, mention `@everyone`, manage members |
 | **Multi-Number Architecture** | 1 phone number per workspace; costly to add more | ✅ **Multi-Session Hub**: orchestrate 5–20+ WhatsApp numbers seamlessly |
@@ -25,7 +25,7 @@ It is specifically designed to eliminate the crippling conversation fees, 48-hou
 
 ### 1. 👑 Super Admin & Tenant Control
 * **Tenant & User Directory**: Provision workspaces, assign WhatsApp session quotas (1-25 instances), set monthly broadcast caps, and control roles.
-* **WPPConnect Cluster Health**: Live telemetry for Headless Chromium worker pools, RAM/CPU allocation, WebSocket streams, and proxy health.
+* **Cloud Cluster Health**: Live telemetry for Headless Chromium worker pools, RAM/CPU allocation, WebSocket streams, and proxy health.
 * **Audit & Security Logs**: Comprehensive audit trail of QR pairings, token generations, and quota adjustments.
 
 ### 2. 💬 10x Shared Team Inbox

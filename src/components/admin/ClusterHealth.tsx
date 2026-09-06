@@ -45,7 +45,7 @@ export const ClusterHealth: React.FC<ClusterHealthProps> = ({
             <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <Server className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">WPPConnect Cluster & Node Health</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">WppFlow Cloud Cluster & Node Health</h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
             Real-time telemetry for Headless Chromium worker pools, WebSocket sessions, and Anti-Ban proxy routes.
@@ -164,7 +164,7 @@ export const ClusterHealth: React.FC<ClusterHealthProps> = ({
       <div className="bg-[#111b21] rounded-2xl border border-[#2a3942] p-5">
         <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
           <Terminal className="w-4 h-4 text-indigo-400" />
-          <span>Active Worker Pods (WPPConnect Server v2.3000.101)</span>
+          <span>Active Worker Pods (WppFlow Core Engine v2.4)</span>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">

@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium">
-              Powered by <span className="text-emerald-400 font-semibold">WPPConnect</span> • $0 Meta Conversation Fees
+              Next-Gen WhatsApp CRM & Automation Hub • $0 Meta Conversation Fees
             </p>
           </div>
         </div>

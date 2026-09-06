@@ -297,7 +297,7 @@ export const initialContacts = {
                 id: 'n_4',
                 author: 'Aarav Mehta',
                 authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-                content: 'This group contains our top 250 enterprise buyers. Use WPPConnect group broadcast for product drops.',
+                content: 'This group contains our top 250 enterprise buyers. Use WppFlow group broadcast for product drops.',
                 createdAt: '2026-08-20 10:00'
             }
         ]
@@ -779,8 +779,8 @@ func main() {
     "buttons": [{"id": "b1", "text": "Sales"}, {"id": "b2", "text": "Support"}]
 }
 requests.post("https://api.wppflow.io/api/sales-primary/send-button-list", json=payload, headers=headers)`,
-        phpSnippet: `// Send interactive buttons via WPPConnect`,
-        goSnippet: `// Send interactive buttons via WPPConnect`
+        phpSnippet: `// Send interactive buttons via WppFlow`,
+        goSnippet: `// Send interactive buttons via WppFlow`
     },
     {
         id: 'ep_status_session',
@@ -856,8 +856,8 @@ print(res.json())`,
   participants: ['15553498201', '447700900845']
 }, { headers: { Authorization: 'Bearer YOUR_API_KEY' } });`,
         pythonSnippet: `requests.post("https://api.wppflow.io/api/sales-primary/create-group", json={"groupName": "VIP", "participants": ["15553498201"]}, headers=headers)`,
-        phpSnippet: `// Create group with WPPConnect`,
-        goSnippet: `// Create group with WPPConnect`
+        phpSnippet: `// Create group with WppFlow`,
+        goSnippet: `// Create group with WppFlow`
     }
 ];
 export const initialWebhookLogs = [

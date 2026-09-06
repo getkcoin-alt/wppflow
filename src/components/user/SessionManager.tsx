@@ -84,7 +84,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     }, 1500);
   };
 
-  const pairingCode = 'WPP8-9K4M';
+  const pairingCode = 'FLOW-9K4M';
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(pairingCode);
@@ -208,7 +208,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-[#2a3942] text-xs">
-              <span className="text-[10px] text-slate-400">Engine: WPP {sess.wppVersion}</span>
+              <span className="text-[10px] text-slate-400">Engine: WppFlow Core v2.4</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onRestartSession(sess.id)}

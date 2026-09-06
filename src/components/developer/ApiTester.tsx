@@ -155,7 +155,7 @@ export const ApiTester: React.FC<ApiTesterProps> = ({ endpoints }) => {
 
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Encoding: gzip</span>
-            <span className="text-emerald-400 font-semibold">WPPConnect Server v2.3000.101</span>
+            <span className="text-emerald-400 font-semibold">WppFlow Core API v2.4</span>
           </div>
         </div>
 

@@ -59,7 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               Welcome back, Urban Threads!
             </h1>
             <p className="text-xs text-slate-300 max-w-2xl mt-1 leading-relaxed">
-              Your WPPConnect cluster is actively managing <span className="text-emerald-400 font-bold">{connectedSessions.length} WhatsApp numbers</span> with zero per-message charges and automated anti-ban pacing.
+              Your WppFlow cluster is actively managing <span className="text-emerald-400 font-bold">{connectedSessions.length} WhatsApp numbers</span> with zero per-message charges and automated anti-ban pacing.
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-emerald-400" />
-              <span>Cost Comparison: Interakt (Meta BSP) vs. WppFlow (WPPConnect)</span>
+              <span>Cost Comparison: Interakt (Meta BSP) vs. WppFlow (Direct Session)</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               See how much your business saves annually by removing Meta's $0.05 per-conversation tax.
@@ -211,7 +211,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* WppFlow Cost */}
           <div className="p-4 bg-gradient-to-br from-[#14261c] to-[#111b21] rounded-xl border border-emerald-500/40 shadow-md">
             <div className="flex justify-between items-center text-xs font-semibold text-emerald-400">
-              <span>WppFlow (WPPConnect Engine)</span>
+              <span>WppFlow (OmniEngine)</span>
               <span className="text-xs font-mono font-bold">$0.00 Meta Fees</span>
             </div>
             <div className="mt-3 space-y-1.5 text-[11px] text-slate-300">

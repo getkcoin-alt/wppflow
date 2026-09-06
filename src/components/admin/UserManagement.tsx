@@ -163,7 +163,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           </div>
           <div className="text-2xl font-black text-white mt-1">${totalSavedDollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           <div className="text-[11px] text-slate-300 mt-1">
-            Direct WPPConnect Web bypass
+            Direct WppFlow Session bypass
           </div>
         </div>
       </div>
@@ -445,7 +445,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
               <div className="p-3 bg-[#202c33] rounded-xl space-y-3 border border-[#2a3942]">
                 <div className="font-semibold text-slate-200 flex items-center justify-between">
-                  <span>Allocated WhatsApp Sessions (WPPConnect)</span>
+                  <span>Allocated WhatsApp Sessions (WppFlow Engine)</span>
                   <span className="text-emerald-400 font-bold">{sessionQuota} Numbers</span>
                 </div>
                 <input
