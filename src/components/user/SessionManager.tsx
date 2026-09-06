@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WhatsAppSession } from '../../types';
-import { startLiveSession, deleteSession, getLiveSessionQr, getLiveSessionStatus } from '../../services/api';
+import { startLiveSession, getLiveSessionQr, getLiveSessionStatus } from '../../services/api';
 import { getSocket } from '../../services/socket';
 
 interface SessionManagerProps {
@@ -142,7 +142,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     setStatusMessage('Booting isolated browser kernel...');
 
     try {
-      await deleteSession(cleanKey);  // clear any stale FAILED session
       await startLiveSession(cleanKey);
       setStatusMessage('Browser launched. Initializing WhatsApp Web...');
 
