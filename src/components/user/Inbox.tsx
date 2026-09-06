@@ -27,16 +27,17 @@ import {
   CheckCircle2,
   Filter
 } from 'lucide-react';
-import { ChatThread, ChatMessage, Contact, CustomerOrder } from '../../types';
+import { ChatThread, ChatMessage } from '../../types';
 
 interface InboxProps {
   chats: ChatThread[];
   messages: Record<string, ChatMessage[]>;
-  contacts: Record<string, Contact>;
+  contacts: Record<string, any>;
   cannedReplies: { shortcut: string; title: string; text: string }[];
   onSendMessage: (chatId: string, text: string, isNote?: boolean) => void;
   onAssignAgent: (chatId: string, agentName: string) => void;
   onToggleResolve: (chatId: string) => void;
+  onOpenChat: (chatId: string) => void;
 }
 
 export const Inbox: React.FC<InboxProps> = ({
@@ -46,7 +47,8 @@ export const Inbox: React.FC<InboxProps> = ({
   cannedReplies,
   onSendMessage,
   onAssignAgent,
-  onToggleResolve
+  onToggleResolve,
+  onOpenChat
 }) => {
   const [activeChatId, setActiveChatId] = useState<string>(chats[0]?.id || 'chat_1');
   const [filterTab, setFilterTab] = useState<'all' | 'mine' | 'unread' | 'groups'>('all');
@@ -161,7 +163,7 @@ export const Inbox: React.FC<InboxProps> = ({
           {filteredChats.map((chat) => (
             <div
               key={chat.id}
-              onClick={() => setActiveChatId(chat.id)}
+              onClick={() => { setActiveChatId(chat.id); onOpenChat(chat.id); }}
               className={`p-3 cursor-pointer transition-all flex items-start gap-3 hover:bg-[#202c33]/60 ${
                 chat.id === activeChatId ? 'bg-[#202c33] border-l-4 border-emerald-500' : ''
               }`}
@@ -536,7 +538,7 @@ export const Inbox: React.FC<InboxProps> = ({
               Customer Tags
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {activeContact.tags.map(t => (
+              {(activeContact.tags || []).map((t: string) => (
                 <span
                   key={t}
                   className="px-2 py-0.5 rounded-md bg-[#202c33] text-slate-300 border border-[#2a3942] text-[10px] font-medium"
@@ -557,9 +559,9 @@ export const Inbox: React.FC<InboxProps> = ({
               <span>{activeContact.orders.length} Orders</span>
             </div>
 
-            {activeContact.orders.length > 0 ? (
+            {(activeContact.orders || []).length > 0 ? (
               <div className="space-y-2">
-                {activeContact.orders.map(ord => (
+                {(activeContact.orders || []).map((ord: any) => (
                   <div key={ord.id} className="p-2.5 bg-[#202c33] rounded-xl border border-[#2a3942] text-xs space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-white font-mono">{ord.orderNumber}</span>
@@ -588,10 +590,10 @@ export const Inbox: React.FC<InboxProps> = ({
               Custom Attributes
             </span>
             <div className="space-y-1 text-xs">
-              {Object.entries(activeContact.customTraits).map(([key, val]) => (
+              {Object.entries(activeContact.customTraits || {}).map(([key, val]) => (
                 <div key={key} className="flex justify-between py-1 border-b border-[#2a3942]/40 text-[11px]">
                   <span className="text-slate-400">{key}:</span>
-                  <span className="text-white font-medium text-right">{val}</span>
+                  <span className="text-white font-medium text-right">{String(val)}</span>
                 </div>
               ))}
             </div>
@@ -603,7 +605,7 @@ export const Inbox: React.FC<InboxProps> = ({
               Teammate Notes
             </span>
             <div className="space-y-2">
-              {activeContact.notes.map(n => (
+              {(activeContact.notes || []).map((n: any) => (
                 <div key={n.id} className="p-2.5 bg-amber-950/20 border border-amber-500/30 rounded-xl text-xs space-y-1">
                   <div className="flex items-center justify-between text-[10px] text-amber-400 font-medium">
                     <span>{n.author}</span>

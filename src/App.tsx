@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar, UserSubTab, AdminSubTab, DevSubTab } from './components/layout/Sidebar';
 import { LoginPage } from './components/auth/LoginPage';
+import { AuthModal } from './components/auth/AuthModal';
 import { getSocket, disconnectSocket } from './services/socket';
 import { UserManagement } from './components/admin/UserManagement';
 import { ClusterHealth } from './components/admin/ClusterHealth';
@@ -15,47 +16,34 @@ import { Automations } from './components/user/Automations';
 import { DeveloperGuide } from './components/developer/DeveloperGuide';
 
 import {
-  initialUsers,
-  initialSessions,
-  initialContacts,
-  initialChats,
-  initialMessages,
-  cannedReplies,
-  initialCampaigns,
-  initialAutomations,
-  apiEndpoints,
-  initialWebhookLogs,
-  clusterMetrics as initialMetrics
-} from './data/mockData';
-
-import { 
-  UserAccount, 
-  WhatsAppSession, 
-  ChatThread, 
-  ChatMessage, 
-  BroadcastCampaign, 
-  AutomationRule, 
-  WebhookLog, 
-  AccountStatus,
-  AuthUser
+  UserAccount, WhatsAppSession, ChatThread, ChatMessage,
+  BroadcastCampaign, AutomationRule, WebhookLog, AccountStatus, AuthUser
 } from './types';
-import { AuthModal } from './components/auth/AuthModal';
-import { 
-  getStoredToken, 
-  getCurrentUser, 
-  clearStoredToken,
-  getLiveSessions,
-  closeLiveSession
+
+import {
+  getStoredToken, getCurrentUser, clearStoredToken,
+  getLiveSessions, closeLiveSession,
+  fetchContacts, addContact,
+  fetchChats, addChat, patchChat,
+  fetchMessages, addMessage,
+  fetchCampaigns, addCampaign,
+  fetchAutomations, addAutomation, toggleAutomationApi,
 } from './services/api';
 
+import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
+
+const CLUSTER_METRICS_BASE = {
+  activeContainers: 1, totalSessions: 0, cpuUsagePercent: 24,
+  ramUsagePercent: 42, ramUsageGb: 2.4, totalRamGb: 8.0,
+  queueDepth: 0, avgResponseMs: 142, uptimeHours: 0, systemStatus: 'healthy' as const
+};
+
 export function App() {
-  // Navigation View State
   const [currentView, setCurrentView] = useState<'user' | 'admin' | 'developer'>('user');
   const [activeUserTab, setActiveUserTab] = useState<UserSubTab>('dashboard');
   const [activeAdminTab, setActiveAdminTab] = useState<AdminSubTab>('users');
   const [activeDevTab, setActiveDevTab] = useState<DevSubTab>('docs');
 
-  // Authentication State
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -82,18 +70,35 @@ export function App() {
     clearStoredToken();
     disconnectSocket();
     setCurrentUser(null);
+    setSessions([]);
+    setContacts({});
+    setChats([]);
+    setMessages({});
+    setCampaigns([]);
+    setAutomations([]);
   };
 
-  // App Data State
-  const [users, setUsers] = useState<UserAccount[]>(initialUsers);
+  // ─── App Data State ───────────────────────────────────────────────────────
+  const [users, setUsers] = useState<UserAccount[]>([]);
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
+  const [contacts, setContacts] = useState<Record<string, any>>({});
+  const [chats, setChats] = useState<ChatThread[]>([]);
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [campaigns, setCampaigns] = useState<BroadcastCampaign[]>([]);
+  const [automations, setAutomations] = useState<AutomationRule[]>([]);
+  const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>(initialWebhookLogs);
+  const [metrics, setMetrics] = useState(CLUSTER_METRICS_BASE);
+  const [isPairModalOpen, setIsPairModalOpen] = useState(false);
+  const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
 
-  // Fetch live sessions from backend when user logs in
+  // ─── Load all data when user logs in ─────────────────────────────────────
   useEffect(() => {
     if (!currentUser) return;
+
+    // Sessions
     getLiveSessions().then(liveList => {
-      if (liveList && liveList.length > 0) {
-        const mapped: WhatsAppSession[] = liveList.map((ls) => ({
+      if (liveList?.length > 0) {
+        setSessions(liveList.map(ls => ({
           id: `sess_${ls.sessionKey}`,
           sessionKey: ls.sessionKey,
           displayName: ls.sessionKey.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
@@ -108,14 +113,45 @@ export function App() {
           messagesLimitToday: 3000,
           lastActive: ls.lastActive || 'Just now',
           wppVersion: '2.3000.101',
-          channel: 'sales'
-        }));
-        setSessions(mapped);
+          channel: 'sales' as const
+        })));
       }
     });
+
+    // Contacts
+    fetchContacts().then(d => {
+      const map: Record<string, any> = {};
+      (d.contacts || []).forEach((c: any) => { map[c.id] = c; });
+      setContacts(map);
+    }).catch(() => {});
+
+    // Chats
+    fetchChats().then(d => {
+      setChats(d.chats || []);
+    }).catch(() => {});
+
+    // Campaigns
+    fetchCampaigns().then(d => {
+      setCampaigns(d.campaigns || []);
+    }).catch(() => {});
+
+    // Automations
+    fetchAutomations().then(d => {
+      setAutomations(d.automations || []);
+    }).catch(() => {});
+
   }, [currentUser]);
 
-  // Real-time socket: session status & incoming messages
+  // Load messages when a chat is opened (lazy)
+  const loadMessages = async (chatId: string) => {
+    if (messages[chatId]) return; // already loaded
+    try {
+      const d = await fetchMessages(chatId);
+      setMessages(prev => ({ ...prev, [chatId]: d.messages || [] }));
+    } catch {}
+  };
+
+  // ─── Real-time socket ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!currentUser) return;
     const sock = getSocket();
@@ -129,7 +165,6 @@ export function App() {
     });
 
     sock.on('session:message', ({ session, message }: any) => {
-      // Find chat by session/phone and append message
       setMessages(prev => {
         const chatId = Object.keys(prev).find(id => id.includes(session)) || `chat_${session}`;
         const newMsg: ChatMessage = {
@@ -150,142 +185,71 @@ export function App() {
       sock.off('session:message');
     };
   }, [currentUser]);
-  const [contacts, setContacts] = useState(initialContacts);
-  const [chats, setChats] = useState<ChatThread[]>(initialChats);
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(initialMessages);
-  const [campaigns, setCampaigns] = useState<BroadcastCampaign[]>(initialCampaigns);
-  const [automations, setAutomations] = useState<AutomationRule[]>(initialAutomations);
-  const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>(initialWebhookLogs);
-  const [metrics, setMetrics] = useState(initialMetrics);
 
-  // Global Modals State
-  const [isPairModalOpen, setIsPairModalOpen] = useState(false);
-  const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
-
-  // Calculate global unread count
+  // ─── Derived state ────────────────────────────────────────────────────────
   const unreadChatCount = chats.reduce((acc, c) => acc + (c.unreadCount > 0 ? 1 : 0), 0);
-
-  // Total Meta savings across all campaigns
   const totalSavedDollars = campaigns.reduce((acc, c) => acc + c.costSavedMeta, 0);
 
-  // Message Sending Handler
-  const handleSendMessage = (chatId: string, text: string, isNote: boolean = false) => {
-    const newMsgId = `m_${Date.now()}`;
-    const timestamp = 'Just now';
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
-    const newMsg: ChatMessage = {
-      id: newMsgId,
-      chatId,
-      sender: 'agent',
-      agentName: 'Aarav Mehta',
-      text,
-      type: isNote ? 'internal_note' : 'text',
-      isNote,
-      timestamp,
-      status: 'sent'
+  const handleSendMessage = async (chatId: string, text: string, isNote: boolean = false) => {
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const agentName = currentUser?.name || 'Agent';
+
+    const optimistic: ChatMessage = {
+      id: `m_${Date.now()}`, chatId,
+      sender: 'agent', agentName,
+      text, type: isNote ? 'internal_note' : 'text',
+      isNote, timestamp, status: 'sent'
     };
 
-    // Append to messages
-    setMessages(prev => ({
-      ...prev,
-      [chatId]: [...(prev[chatId] || []), newMsg]
-    }));
+    setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), optimistic] }));
 
-    // Update chat thread preview
     if (!isNote) {
-      setChats(prev => prev.map(c => {
-        if (c.id === chatId) {
-          return {
-            ...c,
-            lastMessage: {
-              text,
-              timestamp,
-              status: 'sent',
-              fromMe: true
-            }
-          };
-        }
-        return c;
-      }));
-
-      // Simulate delivery to device in 800ms
-      setTimeout(() => {
-        setMessages(prev => ({
-          ...prev,
-          [chatId]: (prev[chatId] || []).map(m => m.id === newMsgId ? { ...m, status: 'delivered' } : m)
-        }));
-      }, 800);
-
-      // Simulate customer read tick in 1800ms
-      setTimeout(() => {
-        setMessages(prev => ({
-          ...prev,
-          [chatId]: (prev[chatId] || []).map(m => m.id === newMsgId ? { ...m, status: 'read' } : m)
-        }));
-      }, 1800);
+      setChats(prev => prev.map(c => c.id === chatId
+        ? { ...c, lastMessage: { text, timestamp, status: 'sent', fromMe: true } }
+        : c
+      ));
     }
+
+    try {
+      const d = await addMessage(chatId, { sender: 'agent', agentName, text, type: isNote ? 'internal_note' : 'text', isNote, timestamp, status: 'sent' });
+      // Replace optimistic with real
+      setMessages(prev => ({
+        ...prev,
+        [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? d.message : m)
+      }));
+      if (!isNote) {
+        await patchChat(chatId, { lastMessage: { text, timestamp, status: 'sent', fromMe: true } });
+      }
+    } catch {}
   };
 
-  // Add Session Handler
   const handleAddSession = (name: string, phone: string, channel: 'sales' | 'support' | 'vip' | 'general') => {
     const key = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     const newSession: WhatsAppSession = {
-      id: `sess_${key}_${Date.now()}`,
-      sessionKey: key,
-      displayName: name,
-      phone,
-      status: 'CONNECTED',
-      battery: 95,
-      isCharging: true,
-      antiBanHealth: 99,
-      warmupDay: 1,
-      proxyIp: '198.51.100.88 (Cloud Engine)',
-      messagesSentToday: 0,
-      messagesLimitToday: 3000,
-      lastActive: 'Just now',
-      wppVersion: '2.3000.101',
-      channel
+      id: `sess_${key}_${Date.now()}`, sessionKey: key, displayName: name, phone,
+      status: 'CONNECTED', battery: 95, isCharging: true, antiBanHealth: 99, warmupDay: 1,
+      proxyIp: 'Railway Cloud Engine', messagesSentToday: 0, messagesLimitToday: 3000,
+      lastActive: 'Just now', wppVersion: '2.3000.101', channel
     };
-
     setSessions(prev => [newSession, ...prev.filter(s => s.sessionKey !== key)]);
   };
 
   const handleRestartSession = (sessionId: string) => {
-    setSessions(prev => prev.map(s => {
-      if (s.id === sessionId) {
-        return {
-          ...s,
-          status: 'CONNECTED',
-          lastActive: 'Just now'
-        };
-      }
-      return s;
-    }));
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'CONNECTED', lastActive: 'Just now' } : s));
   };
 
   const handleDeleteSession = async (sessionId: string) => {
     const session = sessions.find(s => s.id === sessionId);
     if (session) {
-      try {
-        await closeLiveSession(session.sessionKey);
-      } catch (e) {
-        console.warn('Error closing session:', e);
-      }
+      try { await closeLiveSession(session.sessionKey); } catch {}
     }
     setSessions(prev => prev.filter(s => s.id !== sessionId));
   };
 
-  // Admin User Handlers
   const handleAddUser = (newUserData: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => {
-    const newUser: UserAccount = {
-      ...newUserData,
-      id: `usr_${Date.now()}`,
-      broadcastsUsed: 0,
-      apiCallsThisMonth: 0,
-      createdAt: '2026-09-06',
-      lastLogin: 'Never'
-    };
-    setUsers(prev => [newUser, ...prev]);
+    setUsers(prev => [{ ...newUserData, id: `usr_${Date.now()}`, broadcastsUsed: 0, apiCallsThisMonth: 0, createdAt: new Date().toISOString().slice(0, 10), lastLogin: 'Never' }, ...prev]);
   };
 
   const handleUpdateStatus = (userId: string, status: AccountStatus) => {
@@ -293,72 +257,64 @@ export function App() {
   };
 
   const handleUpdateQuotas = (userId: string, sessionQuota: number, broadcastLimit: number) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { 
-      ...u, 
-      whatsappSessionsQuota: sessionQuota, 
-      monthlyBroadcastLimit: broadcastLimit 
-    } : u));
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, whatsappSessionsQuota: sessionQuota, monthlyBroadcastLimit: broadcastLimit } : u));
   };
 
   const handleDeleteUser = (userId: string) => {
     setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
-  // Campaign Creation Handler
-  const handleAddCampaign = (campaignData: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => {
-    const newCamp: BroadcastCampaign = {
+  const handleAddCampaign = async (campaignData: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => {
+    const payload = {
       ...campaignData,
-      id: `camp_${Date.now()}`,
       sentCount: campaignData.totalRecipients,
       deliveredCount: Math.floor(campaignData.totalRecipients * 0.98),
       readCount: Math.floor(campaignData.totalRecipients * 0.88),
       repliedCount: Math.floor(campaignData.totalRecipients * 0.18),
       failedCount: Math.floor(campaignData.totalRecipients * 0.02),
-      createdAt: '2026-09-06 08:30'
     };
-    setCampaigns(prev => [newCamp, ...prev]);
+    try {
+      const d = await addCampaign(payload);
+      setCampaigns(prev => [d.campaign, ...prev]);
+    } catch {
+      // optimistic fallback
+      setCampaigns(prev => [{ ...payload, id: `camp_${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+    }
   };
 
-  // Automation Rule Toggle
-  const handleToggleRule = (ruleId: string) => {
+  const handleToggleRule = async (ruleId: string) => {
     setAutomations(prev => prev.map(r => r.id === ruleId ? { ...r, isEnabled: !r.isEnabled } : r));
+    try {
+      const d = await toggleAutomationApi(ruleId);
+      if (d.automation) {
+        setAutomations(prev => prev.map(r => r.id === ruleId ? d.automation : r));
+      }
+    } catch {}
   };
 
-  // Assign Agent in Chat
-  const handleAssignAgent = (chatId: string, agentName: string) => {
+  const handleAssignAgent = async (chatId: string, agentName: string) => {
     setChats(prev => prev.map(c => c.id === chatId ? { ...c, assignedTo: agentName } : c));
+    try { await patchChat(chatId, { assignedTo: agentName }); } catch {}
   };
 
-  // Toggle Resolve
-  const handleToggleResolve = (chatId: string) => {
-    setChats(prev => prev.map(c => c.id === chatId ? { 
-      ...c, 
-      unreadCount: 0,
-      isClosed: !c.isClosed 
-    } : c));
+  const handleToggleResolve = async (chatId: string) => {
+    setChats(prev => prev.map(c => c.id === chatId ? { ...c, unreadCount: 0, isClosed: !c.isClosed } : c));
+    const chat = chats.find(c => c.id === chatId);
+    try { await patchChat(chatId, { isClosed: !chat?.isClosed, unreadCount: 0 }); } catch {}
   };
 
-  // Trigger Mock Webhook Dispatch
   const handleTriggerTestWebhook = () => {
     const newLog: WebhookLog = {
-      id: `wh_${Date.now()}`,
-      event: 'onmessage',
-      session: 'sales-primary',
+      id: `wh_${Date.now()}`, event: 'onmessage', session: 'sales-primary',
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
       status: 'delivered',
-      payload: {
-        id: `true_14158902134@c.us_${Date.now()}`,
-        from: '14158902134@c.us',
-        body: 'Hello, could you share your wholesale catalog prices for Q4?',
-        type: 'chat',
-        notifyName: 'David K. Miller',
-        isGroupMsg: false
-      }
+      payload: { id: `true_14158902134@c.us_${Date.now()}`, from: '14158902134@c.us', body: 'Hello, could you share your wholesale catalog prices for Q4?', type: 'chat', notifyName: 'David K. Miller', isGroupMsg: false }
     };
     setWebhookLogs(prev => [newLog, ...prev]);
   };
 
-  // Show nothing while checking stored token
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-[#0c1317] flex items-center justify-center">
@@ -367,15 +323,13 @@ export function App() {
     );
   }
 
-  // Auth gate — show full-page login if not authenticated
   if (!currentUser) {
     return <LoginPage onAuthSuccess={handleAuthSuccess} />;
   }
 
   return (
     <div className="min-h-screen bg-[#0c1317] flex flex-col">
-      
-      {/* Top Navigation Bar */}
+
       <Navbar
         currentView={currentView}
         onSelectView={setCurrentView}
@@ -383,22 +337,11 @@ export function App() {
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
-        onOpenNewSession={() => {
-          setCurrentView('user');
-          setActiveUserTab('sessions');
-          setIsPairModalOpen(true);
-        }}
-        onOpenNewBroadcast={() => {
-          setCurrentView('user');
-          setActiveUserTab('campaigns');
-          setIsCreateCampaignModalOpen(true);
-        }}
+        onOpenNewSession={() => { setCurrentView('user'); setActiveUserTab('sessions'); setIsPairModalOpen(true); }}
+        onOpenNewBroadcast={() => { setCurrentView('user'); setActiveUserTab('campaigns'); setIsCreateCampaignModalOpen(true); }}
       />
 
-      {/* Main Container */}
       <div className="flex-1 flex overflow-hidden">
-        
-        {/* Left Sidebar */}
         <Sidebar
           currentView={currentView}
           activeUserTab={activeUserTab}
@@ -411,25 +354,17 @@ export function App() {
           totalSavedDollars={totalSavedDollars}
         />
 
-        {/* Dynamic Center Stage */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#0c1317]">
           <div className="max-w-7xl mx-auto">
-            
-            {/* VIEW 1: User Workspace */}
+
             {currentView === 'user' && (
               <>
                 {activeUserTab === 'dashboard' && (
                   <Dashboard
                     sessions={sessions}
                     campaigns={campaigns}
-                    onOpenSessionModal={() => {
-                      setActiveUserTab('sessions');
-                      setIsPairModalOpen(true);
-                    }}
-                    onOpenNewBroadcast={() => {
-                      setActiveUserTab('campaigns');
-                      setIsCreateCampaignModalOpen(true);
-                    }}
+                    onOpenSessionModal={() => { setActiveUserTab('sessions'); setIsPairModalOpen(true); }}
+                    onOpenNewBroadcast={() => { setActiveUserTab('campaigns'); setIsCreateCampaignModalOpen(true); }}
                     onNavigateToInbox={() => setActiveUserTab('inbox')}
                   />
                 )}
@@ -443,6 +378,7 @@ export function App() {
                     onSendMessage={handleSendMessage}
                     onAssignAgent={handleAssignAgent}
                     onToggleResolve={handleToggleResolve}
+                    onOpenChat={loadMessages}
                   />
                 )}
 
@@ -469,9 +405,7 @@ export function App() {
                 {activeUserTab === 'contacts' && (
                   <Contacts
                     contacts={contacts}
-                    onSelectChat={(contactId) => {
-                      setActiveUserTab('inbox');
-                    }}
+                    onSelectChat={() => setActiveUserTab('inbox')}
                   />
                 )}
 
@@ -484,7 +418,6 @@ export function App() {
               </>
             )}
 
-            {/* VIEW 2: Super Admin Console */}
             {currentView === 'admin' && (
               <>
                 {activeAdminTab === 'users' && (
@@ -503,21 +436,19 @@ export function App() {
                     onRefreshMetrics={() => {
                       setMetrics(prev => ({
                         ...prev,
-                        ramUsageGb: Math.max(4.2, +(prev.ramUsageGb + (Math.random() * 0.4 - 0.2)).toFixed(1)),
+                        ramUsageGb: Math.max(1.2, +(prev.ramUsageGb + (Math.random() * 0.4 - 0.2)).toFixed(1)),
                         cpuUsagePercent: Math.floor(Math.random() * 15) + 18,
-                        avgResponseMs: Math.floor(Math.random() * 25) + 120
+                        avgResponseMs: Math.floor(Math.random() * 25) + 120,
+                        totalSessions: sessions.length
                       }));
                     }}
                   />
                 )}
 
-                {activeAdminTab === 'audit' && (
-                  <AuditLogs />
-                )}
+                {activeAdminTab === 'audit' && <AuditLogs />}
               </>
             )}
 
-            {/* VIEW 3: Developer Guide & API Playground */}
             {currentView === 'developer' && (
               <DeveloperGuide
                 endpoints={apiEndpoints}
@@ -530,10 +461,8 @@ export function App() {
 
           </div>
         </main>
-
       </div>
 
-      {/* Auth Modal (for re-auth flows) */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

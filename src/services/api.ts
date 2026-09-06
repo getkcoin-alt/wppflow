@@ -230,6 +230,63 @@ export async function getCurrentUser(token: string, baseUrl = getBaseBackendUrl(
   }
 }
 
+// ─── DATA API ────────────────────────────────────────────────────────────────
+
+function authHeaders(token?: string | null): Record<string, string> {
+  const t = token || getStoredToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (t) headers['Authorization'] = `Bearer ${t}`;
+  return headers;
+}
+
+export async function apiGet(path: string) {
+  const res = await fetch(resolveEndpoint(path), { headers: authHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function apiPost(path: string, body: any) {
+  const res = await fetch(resolveEndpoint(path), { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function apiPatch(path: string, body: any) {
+  const res = await fetch(resolveEndpoint(path), { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function apiDelete(path: string) {
+  const res = await fetch(resolveEndpoint(path), { method: 'DELETE', headers: authHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// Contacts
+export const fetchContacts = () => apiGet('/api/contacts');
+export const addContact = (data: any) => apiPost('/api/contacts', data);
+export const removeContact = (id: string) => apiDelete(`/api/contacts/${id}`);
+
+// Chats
+export const fetchChats = () => apiGet('/api/chats');
+export const addChat = (data: any) => apiPost('/api/chats', data);
+export const patchChat = (id: string, data: any) => apiPatch(`/api/chats/${id}`, data);
+
+// Messages
+export const fetchMessages = (chatId: string) => apiGet(`/api/chats/${chatId}/messages`);
+export const addMessage = (chatId: string, data: any) => apiPost(`/api/chats/${chatId}/messages`, data);
+
+// Campaigns
+export const fetchCampaigns = () => apiGet('/api/campaigns');
+export const addCampaign = (data: any) => apiPost('/api/campaigns', data);
+
+// Automations
+export const fetchAutomations = () => apiGet('/api/automations');
+export const addAutomation = (data: any) => apiPost('/api/automations', data);
+export const toggleAutomationApi = (id: string) => apiPatch(`/api/automations/${id}/toggle`, {});
+export const removeAutomation = (id: string) => apiDelete(`/api/automations/${id}`);
+
 export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl()): Promise<{ users: any[], database?: any }> {
   try {
     const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {
