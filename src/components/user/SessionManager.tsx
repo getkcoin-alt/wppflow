@@ -60,7 +60,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
       console.log('⚡ Status via socket:', status, 'for', session);
 
       // Connected
-      if (['CONNECTED', 'isLogged', 'inChat', 'qrReadSuccess', 'chatsAvailable'].includes(status)) {
+      if (status === 'CONNECTED') {
         stopPolling();
         qrVisibleRef.current = false;
         setPairingPhase('connected');
@@ -159,7 +159,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
           const statusRes = await getLiveSessionStatus(cleanKey);
           const s = statusRes?.sessionStatus;
 
-          if (['CONNECTED', 'isLogged', 'inChat', 'chatsAvailable'].includes(s)) {
+          if (s === 'CONNECTED') {
             stopPolling();
             qrVisibleRef.current = false;
             setPairingPhase('connected');
