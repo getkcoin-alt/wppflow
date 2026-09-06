@@ -2,36 +2,63 @@
  * WppFlow Cloud Engine Client
  * Connects frontend to the production Railway backend running Chromium & OmniEngine
  */
-export const DEFAULT_RAILWAY_BACKEND_URL = import.meta.env?.VITE_BACKEND_URL || 'https://wppflow-backend-production.up.railway.app';
-export async function checkBackendHealth(baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
+export const getBaseBackendUrl = () => {
+    // If running in browser on Vercel, use same-origin relative proxy (zero CORS, zero DNS delay)
+    if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+        return '';
+    }
+    return import.meta.env?.VITE_BACKEND_URL || 'https://wppflow-backend-production.up.railway.app';
+};
+export const DEFAULT_RAILWAY_BACKEND_URL = getBaseBackendUrl();
+export function resolveEndpoint(path, baseUrl = getBaseBackendUrl()) {
+    if (!baseUrl)
+        return path.startsWith('/') ? path : `/${path}`;
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${cleanBase}${cleanPath}`;
+}
+export async function checkBackendHealth(baseUrl = getBaseBackendUrl()) {
     try {
-        const res = await fetch(`${baseUrl}/health`, { method: 'GET' });
+        const res = await fetch(resolveEndpoint('/health', baseUrl), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
         if (!res.ok)
-            return null;
+            throw new Error(`HTTP ${res.status}`);
         return await res.json();
     }
     catch (error) {
+        // If relative proxy failed or direct failed, attempt cross-fallback
+        try {
+            const fallbackUrl = baseUrl === ''
+                ? 'https://wppflow-backend-production.up.railway.app/health'
+                : '/health';
+            const fallbackRes = await fetch(fallbackUrl, { method: 'GET' });
+            if (fallbackRes.ok)
+                return await fallbackRes.json();
+        }
+        catch { }
         return null;
     }
 }
-export async function startLiveSession(sessionName, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
-    const res = await fetch(`${baseUrl}/api/sessions/start`, {
+export async function startLiveSession(sessionName, baseUrl = getBaseBackendUrl()) {
+    const res = await fetch(resolveEndpoint('/api/sessions/start', baseUrl), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionName })
     });
     return await res.json();
 }
-export async function getLiveSessionQr(sessionName, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
-    const res = await fetch(`${baseUrl}/api/sessions/${sessionName}/qr`);
+export async function getLiveSessionQr(sessionName, baseUrl = getBaseBackendUrl()) {
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/qr`, baseUrl));
     return await res.json();
 }
-export async function getLiveSessionStatus(sessionName, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
-    const res = await fetch(`${baseUrl}/api/sessions/${sessionName}/status`);
+export async function getLiveSessionStatus(sessionName, baseUrl = getBaseBackendUrl()) {
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/status`, baseUrl));
     return await res.json();
 }
-export async function sendLiveMessage(sessionName, phone, message, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
-    const res = await fetch(`${baseUrl}/api/sessions/${sessionName}/send-message`, {
+export async function sendLiveMessage(sessionName, phone, message, baseUrl = getBaseBackendUrl()) {
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-message`, baseUrl), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, message })
@@ -71,9 +98,9 @@ export function clearStoredToken() {
     }
     catch { }
 }
-export async function loginUser(email, password, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
+export async function loginUser(email, password, baseUrl = getBaseBackendUrl()) {
     try {
-        const res = await fetch(`${baseUrl}/api/auth/login`, {
+        const res = await fetch(resolveEndpoint('/api/auth/login', baseUrl), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -81,12 +108,22 @@ export async function loginUser(email, password, baseUrl = DEFAULT_RAILWAY_BACKE
         return await res.json();
     }
     catch (err) {
+        // Fallback to direct Railway URL if proxy fails
+        try {
+            const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            return await fallbackRes.json();
+        }
+        catch { }
         return { status: 'error', message: err.message || 'Network error connecting to auth server' };
     }
 }
-export async function signupUser(name, email, password, companyName, role, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
+export async function signupUser(name, email, password, companyName, role, baseUrl = getBaseBackendUrl()) {
     try {
-        const res = await fetch(`${baseUrl}/api/auth/signup`, {
+        const res = await fetch(resolveEndpoint('/api/auth/signup', baseUrl), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password, companyName, role })
@@ -94,12 +131,21 @@ export async function signupUser(name, email, password, companyName, role, baseU
         return await res.json();
     }
     catch (err) {
+        try {
+            const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, companyName, role })
+            });
+            return await fallbackRes.json();
+        }
+        catch { }
         return { status: 'error', message: err.message || 'Network error connecting to auth server' };
     }
 }
-export async function getCurrentUser(token, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
+export async function getCurrentUser(token, baseUrl = getBaseBackendUrl()) {
     try {
-        const res = await fetch(`${baseUrl}/api/auth/me`, {
+        const res = await fetch(resolveEndpoint('/api/auth/me', baseUrl), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok)
@@ -108,12 +154,22 @@ export async function getCurrentUser(token, baseUrl = DEFAULT_RAILWAY_BACKEND_UR
         return data.user || null;
     }
     catch {
+        try {
+            const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (fallbackRes.ok) {
+                const data = await fallbackRes.json();
+                return data.user || null;
+            }
+        }
+        catch { }
         return null;
     }
 }
-export async function getTenantUsers(token, baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
+export async function getTenantUsers(token, baseUrl = getBaseBackendUrl()) {
     try {
-        const res = await fetch(`${baseUrl}/api/auth/users`, {
+        const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok)
@@ -122,6 +178,16 @@ export async function getTenantUsers(token, baseUrl = DEFAULT_RAILWAY_BACKEND_UR
         return { users: data.users || [], database: data.database };
     }
     catch {
+        try {
+            const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (fallbackRes.ok) {
+                const data = await fallbackRes.json();
+                return { users: data.users || [], database: data.database };
+            }
+        }
+        catch { }
         return { users: [] };
     }
 }

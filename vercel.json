@@ -4,6 +4,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/health",
+      "destination": "https://wppflow-backend-production.up.railway.app/health"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://wppflow-backend-production.up.railway.app/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
