@@ -91,6 +91,7 @@ export async function deleteSession(sessionName: string, baseUrl = getBaseBacken
 export async function getLiveSessionQr(sessionName: string, baseUrl = getBaseBackendUrl()) {
   const token = getStoredToken();
   const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/qr`, baseUrl), {
+    cache: 'no-store',
     headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
   });
   return await res.json();
@@ -99,6 +100,7 @@ export async function getLiveSessionQr(sessionName: string, baseUrl = getBaseBac
 export async function getLiveSessionStatus(sessionName: string, baseUrl = getBaseBackendUrl()) {
   const token = getStoredToken();
   const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/status`, baseUrl), {
+    cache: 'no-store',
     headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
   });
   return await res.json();

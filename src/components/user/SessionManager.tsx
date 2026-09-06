@@ -182,6 +182,14 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             return;
           }
 
+          if (s === 'FAILED') {
+            stopPolling();
+            qrVisibleRef.current = false;
+            setPairingPhase('error');
+            setErrorMessage(statusRes.error || 'Session failed to start. Please try again.');
+            return;
+          }
+
           // Only bump timeout counter while still in starting phase (before QR appears)
           setPairingPhase(current => {
             if (current === 'starting') {
