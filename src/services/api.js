@@ -1,8 +1,8 @@
 /**
  * WppFlow Cloud Engine Client
- * Connects frontend to the production Railway backend running Chromium & WPPConnect
+ * Connects frontend to the production Railway backend running Chromium & OmniEngine
  */
-export const DEFAULT_RAILWAY_BACKEND_URL = 'https://wppflow-backend-production.up.railway.app';
+export const DEFAULT_RAILWAY_BACKEND_URL = import.meta.env?.VITE_BACKEND_URL || 'https://wppflow-backend-production.up.railway.app';
 export async function checkBackendHealth(baseUrl = DEFAULT_RAILWAY_BACKEND_URL) {
     try {
         const res = await fetch(`${baseUrl}/health`, { method: 'GET' });

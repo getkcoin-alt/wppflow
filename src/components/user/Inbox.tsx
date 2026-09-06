@@ -377,7 +377,7 @@ export const Inbox: React.FC<InboxProps> = ({
                     </div>
                   )}
 
-                  {/* Interactive Button Messages (WPPConnect Advantage!) */}
+                  {/* Interactive Button Messages (OmniEngine Advantage!) */}
                   {msg.type === 'buttons' && (
                     <div className="space-y-2">
                       <p className="leading-relaxed">{msg.text}</p>

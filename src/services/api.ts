@@ -1,6 +1,6 @@
 /**
  * WppFlow Cloud Engine Client
- * Connects frontend to the production Railway backend running Chromium & WPPConnect
+ * Connects frontend to the production Railway backend running Chromium & OmniEngine
  */
 
 export const DEFAULT_RAILWAY_BACKEND_URL = 
