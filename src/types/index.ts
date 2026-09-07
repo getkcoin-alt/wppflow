@@ -1,6 +1,6 @@
 export type UserRole = 'superadmin' | 'tenant_admin' | 'agent' | 'sales' | 'support';
 export type PlanTier = 'starter' | 'growth' | 'enterprise';
-export type AccountStatus = 'active' | 'suspended' | 'pending';
+export type AccountStatus = 'active' | 'blocked' | 'suspended' | 'pending';
 
 export interface UserAccount {
   id: string;
@@ -29,6 +29,7 @@ export interface AuthUser {
   role: 'superadmin' | 'admin' | 'sales' | 'support' | 'user';
   plan: string;
   sessions_limit: number;
+  status?: AccountStatus;
   created_at: string;
 }
 

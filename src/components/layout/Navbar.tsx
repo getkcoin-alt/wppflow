@@ -39,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const connectedCount = sessions.filter(s => s.status === 'CONNECTED').length;
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-  const isSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
+  const isSuperAdmin = currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
   const [engineHealth, setEngineHealth] = React.useState<BackendHealth | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 

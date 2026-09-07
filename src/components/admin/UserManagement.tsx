@@ -27,6 +27,7 @@ interface UserManagementProps {
   users: UserAccount[];
   onAddUser: (user: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => void | Promise<any>;
   onUpdateStatus: (userId: string, status: AccountStatus) => void;
+  onUpdateUser: (userId: string, updates: Record<string, unknown>) => void | Promise<any>;
   onUpdateQuotas: (userId: string, sessionQuota: number, broadcastLimit: number) => void;
   onDeleteUser: (userId: string) => void;
   isPlatformSuperAdmin?: boolean;
@@ -37,6 +38,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   users,
   onAddUser,
   onUpdateStatus,
+  onUpdateUser,
   onUpdateQuotas,
   onDeleteUser,
   isPlatformSuperAdmin = false,
@@ -61,6 +63,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   // Edit quota state
   const [editSessionQuota, setEditSessionQuota] = useState(5);
   const [editBroadcastLimit, setEditBroadcastLimit] = useState(50000);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('agent');
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Live PostgreSQL State
   const [dbUsers, setDbUsers] = useState<any[]>([]);
@@ -85,6 +91,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     fetchLiveUsers();
   }, []);
 
+  React.useEffect(() => {
+    if (!isPlatformSuperAdmin && role === 'tenant_admin') setRole('sales');
+  }, [isPlatformSuperAdmin, role]);
+
   const liveRows: UserAccount[] = dbUsers.map((entry) => ({
     id: String(entry.id),
     name: entry.name,
@@ -93,7 +103,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     role: entry.role === 'admin' ? 'tenant_admin' : entry.role === 'superadmin' ? 'superadmin' : entry.role === 'support' ? 'support' : entry.role === 'sales' ? 'sales' : 'agent',
     company: entry.company_name || 'WppFlow Workspace',
     plan: String(entry.plan || 'growth').toLowerCase() as PlanTier,
-    status: 'active',
+    status: (entry.status || 'active') as AccountStatus,
     whatsappSessionsQuota: Number(entry.sessions_limit || 5),
     activeSessionsCount: 0,
     monthlyBroadcastLimit: 50000,
@@ -142,11 +152,18 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       : 'User created and credentials emailed.');
   };
 
-  const handleSaveQuotas = (e: React.FormEvent) => {
+  const handleSaveQuotas = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingUser) {
-      onUpdateQuotas(editingUser.id, editSessionQuota, editBroadcastLimit);
-      setEditingUser(null);
+      try {
+        const backendRole = editRole === 'tenant_admin' ? 'admin' : editRole === 'agent' ? 'user' : editRole;
+        await onUpdateUser(editingUser.id, { name: editName, email: editEmail, role: backendRole, sessionsLimit: editSessionQuota });
+        onUpdateQuotas(editingUser.id, editSessionQuota, editBroadcastLimit);
+        setEditingUser(null);
+        await fetchLiveUsers();
+      } catch (error: any) {
+        setActionError(error.message || 'Could not update user.');
+      }
     }
   };
 
@@ -162,6 +179,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-xs text-emerald-200">
           <span>{provisioningNotice}</span>
           <button onClick={() => setProvisioningNotice(null)} className="text-emerald-400 hover:text-white">✕</button>
+        </div>
+      )}
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 text-xs text-rose-200">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-rose-400 hover:text-white">✕</button>
         </div>
       )}
       
@@ -279,6 +302,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             >
               <option value="all" className="bg-[#202c33]">All Statuses</option>
               <option value="active" className="bg-[#202c33]">Active</option>
+              <option value="blocked" className="bg-[#202c33]">Blocked</option>
               <option value="suspended" className="bg-[#202c33]">Suspended</option>
             </select>
           </div>
@@ -397,6 +421,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                           setEditingUser(user);
                           setEditSessionQuota(user.whatsappSessionsQuota);
                           setEditBroadcastLimit(user.monthlyBroadcastLimit);
+                          setEditName(user.name);
+                          setEditEmail(user.email);
+                          setEditRole(user.role);
+                          setActionError(null);
                         }}
                         title="Adjust Quotas"
                         className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all"
@@ -406,8 +434,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
                       {/* Suspend / Activate */}
                       <button
-                        onClick={() => onUpdateStatus(user.id, user.status === 'active' ? 'suspended' : 'active')}
-                        title={user.status === 'active' ? 'Suspend User' : 'Activate User'}
+                        onClick={async () => {
+                          try {
+                            await onUpdateStatus(user.id, user.status === 'active' ? 'blocked' : 'active');
+                            await fetchLiveUsers();
+                          } catch (error: any) {
+                            setActionError(error.message || 'Could not update account status.');
+                          }
+                        }}
+                        title={user.status === 'active' ? 'Block User' : 'Unblock User'}
                         className={`p-1.5 rounded-lg transition-all ${
                           user.status === 'active'
                             ? 'bg-rose-950/40 text-rose-400 hover:bg-rose-900/50'
@@ -419,7 +454,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
                       {/* Delete */}
                       <button
-                        onClick={() => onDeleteUser(user.id)}
+                        onClick={async () => {
+                          if (!window.confirm(`Delete ${user.name}? This removes the account and its workspace data.`)) return;
+                          try {
+                            await onDeleteUser(user.id);
+                            await fetchLiveUsers();
+                          } catch (error: any) {
+                            setActionError(error.message || 'Could not delete user.');
+                          }
+                        }}
                         title="Delete User"
                         className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all"
                       >
@@ -512,7 +555,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                     onChange={(e) => setRole(e.target.value as UserRole)}
                     className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
                   >
-                    <option value="tenant_admin">Tenant Administrator</option>
+                    {isPlatformSuperAdmin && <option value="tenant_admin">Tenant Administrator</option>}
                     <option value="sales">Sales</option>
                     <option value="support">Customer Support</option>
                   </select>
@@ -586,7 +629,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
             <div className="p-5 border-b border-[#2a3942] flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-white">Adjust Quota Limits</h2>
+                <h2 className="text-base font-bold text-white">Edit Account & Quotas</h2>
                 <p className="text-xs text-slate-400">{editingUser.company} ({editingUser.email})</p>
               </div>
               <button
@@ -598,6 +641,26 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             </div>
 
             <form onSubmit={handleSaveQuotas} className="p-5 space-y-4 text-xs">
+              {actionError && <p className="text-rose-300">{actionError}</p>}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Full Name</label>
+                  <input value={editName} onChange={(e) => setEditName(e.target.value)} required className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Work Email</label>
+                  <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Role</label>
+                <select value={editRole} onChange={(e) => setEditRole(e.target.value as UserRole)} className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                  <option value="tenant_admin">Tenant Administrator</option>
+                  <option value="sales">Sales</option>
+                  <option value="support">Customer Support</option>
+                  <option value="agent">Employee</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Max WhatsApp Sessions (Chromium Nodes)</label>
                 <div className="flex items-center gap-3">
@@ -638,7 +701,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   type="submit"
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold"
                 >
-                  Save Quotas
+                  Save Changes
                 </button>
               </div>
             </form>

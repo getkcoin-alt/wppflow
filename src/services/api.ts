@@ -350,3 +350,24 @@ export async function createTenantUser(payload: { name: string; email: string; c
   if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
   return data;
 }
+
+export async function updateTenantUser(userId: string, payload: Record<string, unknown>, baseUrl = getBaseBackendUrl()) {
+  const res = await fetch(resolveEndpoint(`/api/auth/users/${userId}`, baseUrl), {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+export async function deleteTenantUser(userId: string, baseUrl = getBaseBackendUrl()) {
+  const res = await fetch(resolveEndpoint(`/api/auth/users/${userId}`, baseUrl), {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+}

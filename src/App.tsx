@@ -30,7 +30,7 @@ import {
   sendLiveMedia,
   fetchCampaigns, addCampaign,
   fetchAutomations, addAutomation, toggleAutomationApi,
-  createTenantUser,
+  createTenantUser, updateTenantUser, deleteTenantUser,
 } from './services/api';
 
 import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
@@ -51,7 +51,7 @@ export function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const canManageWorkspace = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-  const isPlatformSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
+  const isPlatformSuperAdmin = currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
 
   useEffect(() => {
     if (currentUser && !canManageWorkspace && currentView !== 'user') setCurrentView('user');
@@ -334,15 +334,24 @@ export function App() {
     return result;
   };
 
-  const handleUpdateStatus = (userId: string, status: AccountStatus) => {
+  const handleUpdateStatus = async (userId: string, status: AccountStatus) => {
+    const result = await updateTenantUser(userId, { status });
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
+    return result;
+  };
+
+  const handleUpdateUser = async (userId: string, updates: Record<string, unknown>) => {
+    const result = await updateTenantUser(userId, updates);
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...(updates.name ? { name: String(updates.name) } : {}), ...(updates.email ? { email: String(updates.email) } : {}), ...(updates.status ? { status: updates.status as AccountStatus } : {}) } : u));
+    return result;
   };
 
   const handleUpdateQuotas = (userId: string, sessionQuota: number, broadcastLimit: number) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, whatsappSessionsQuota: sessionQuota, monthlyBroadcastLimit: broadcastLimit } : u));
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
+    await deleteTenantUser(userId);
     setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
@@ -508,6 +517,7 @@ export function App() {
                     users={users}
                     onAddUser={handleAddUser}
                     onUpdateStatus={handleUpdateStatus}
+                    onUpdateUser={handleUpdateUser}
                     onUpdateQuotas={handleUpdateQuotas}
                     onDeleteUser={handleDeleteUser}
                     isPlatformSuperAdmin={isPlatformSuperAdmin}
