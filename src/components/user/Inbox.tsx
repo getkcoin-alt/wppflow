@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   Search, 
   Send, 
@@ -35,6 +35,7 @@ interface InboxProps {
   contacts: Record<string, any>;
   cannedReplies: { shortcut: string; title: string; text: string }[];
   onSendMessage: (chatId: string, text: string, isNote?: boolean) => void;
+  onSendAttachment: (chatId: string, attachment: { data: string; filename: string; kind: string; mimeType: string }) => void;
   onAssignAgent: (chatId: string, agentName: string) => void;
   onToggleResolve: (chatId: string) => void;
   onOpenChat: (chatId: string) => void;
@@ -46,6 +47,7 @@ export const Inbox: React.FC<InboxProps> = ({
   contacts,
   cannedReplies,
   onSendMessage,
+  onSendAttachment,
   onAssignAgent,
   onToggleResolve,
   onOpenChat
@@ -61,6 +63,7 @@ export const Inbox: React.FC<InboxProps> = ({
 
   // Audio playback simulator
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeChat = chats.find(c => c.id === activeChatId) || chats[0];
   const activeContact = activeChat ? contacts[activeChat.contactId] : null;
@@ -339,6 +342,9 @@ export const Inbox: React.FC<InboxProps> = ({
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                   )}
 
+                  {msg.type === 'image' && msg.mediaUrl && <img src={msg.mediaUrl} alt={msg.fileName || 'Image'} className="max-w-full rounded-lg" />}
+                  {msg.type === 'video' && msg.mediaUrl && <video src={msg.mediaUrl} controls className="max-w-full rounded-lg" />}
+
                   {/* Voice Note Simulation */}
                   {msg.type === 'audio' && (
                     <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl">
@@ -474,6 +480,26 @@ export const Inbox: React.FC<InboxProps> = ({
           </div>
 
           <form onSubmit={handleSend} className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file || !activeChat) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : 'document';
+                  onSendAttachment(activeChat.id, { data: String(reader.result), filename: file.name, kind, mimeType: file.type });
+                  event.target.value = '';
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            <button type="button" onClick={() => fileInputRef.current?.click()} title="Attach image, video, audio or document" className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#111b21]">
+              <Paperclip className="w-4 h-4" />
+            </button>
             <div className="flex-1 relative">
               <input
                 type="text"
