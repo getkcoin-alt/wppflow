@@ -307,6 +307,7 @@ export function App() {
   const handleDeleteSession = async (sessionId: string) => {
     const session = sessions.find(s => s.id === sessionId);
     if (!session) return;
+    if (!window.confirm(`Remove ${session.displayName || session.sessionKey}? This deletes its WhatsApp profile and inbox history.`)) return;
     try {
       const result = await closeLiveSession(session.sessionKey);
       if (result?.status !== 'success') throw new Error(result?.message || 'Session cleanup failed');
