@@ -189,7 +189,7 @@ export function App() {
         unreadCount: (c.unreadCount || 0) + 1,
         lastMessage: { text: message.body || '', timestamp: message.timestamp || 'Just now', status: 'delivered', fromMe: false }
       } : c));
-    });
+    };
 
     sock.on('chat:created', onChatCreated);
     sock.on('session:message', onSessionMessage);
