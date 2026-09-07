@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { getBaseBackendUrl } from './api';
+import { getBaseBackendUrl, getStoredToken } from './api';
 
 let socket: Socket | null = null;
 
@@ -8,6 +8,7 @@ export function getSocket(): Socket {
     const url = getBaseBackendUrl() || 'https://wppflow-backend-production.up.railway.app';
     socket = io(url, {
       transports: ['websocket', 'polling'],
+      auth: { token: getStoredToken() },
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
     });

@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'tenant_admin' | 'agent';
+export type UserRole = 'superadmin' | 'tenant_admin' | 'agent' | 'sales' | 'support';
 export type PlanTier = 'starter' | 'growth' | 'enterprise';
 export type AccountStatus = 'active' | 'suspended' | 'pending';
 
@@ -26,7 +26,7 @@ export interface AuthUser {
   email: string;
   name: string;
   company_name: string;
-  role: 'admin' | 'user';
+  role: 'superadmin' | 'admin' | 'sales' | 'support' | 'user';
   plan: string;
   sessions_limit: number;
   created_at: string;
@@ -94,7 +94,7 @@ export interface ChatMessage {
   sender: 'customer' | 'agent' | 'bot';
   agentName?: string;
   text: string;
-  type: 'text' | 'image' | 'audio' | 'document' | 'buttons' | 'list' | 'internal_note';
+  type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'location' | 'contact' | 'buttons' | 'list' | 'internal_note';
   mediaUrl?: string;
   fileName?: string;
   fileSize?: string;
@@ -115,7 +115,7 @@ export interface ChatThread {
   unreadCount: number;
   isGroup: boolean;
   groupMembersCount?: number;
-  channel: 'sales' | 'support' | 'vip';
+  channel: string;
   assignedTo: string;
   assignedAvatar?: string;
   isSnoozed?: boolean;

@@ -38,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout
 }) => {
   const connectedCount = sessions.filter(s => s.status === 'CONNECTED').length;
+  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
   const [engineHealth, setEngineHealth] = React.useState<BackendHealth | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -95,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>User Workspace</span>
           </button>
 
-          <button
+          {canManage && <button
             onClick={() => onSelectView('admin')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               currentView === 'admin'
@@ -108,9 +109,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="bg-indigo-500/30 text-indigo-300 text-[10px] px-1.5 py-0.2 rounded font-mono">
               Admin
             </span>
-          </button>
+          </button>}
 
-          <button
+          {canManage && <button
             onClick={() => onSelectView('developer')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               currentView === 'developer'
@@ -123,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="bg-amber-500/30 text-amber-300 text-[10px] px-1.5 py-0.2 rounded font-mono">
               REST / SDK
             </span>
-          </button>
+          </button>}
         </div>
 
         {/* Action Controls & Session Pill */}
@@ -201,12 +202,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => {
                         setIsProfileMenuOpen(false);
-                        onSelectView(currentUser.role === 'admin' ? 'admin' : 'user');
+                        onSelectView(canManage ? 'admin' : 'user');
                       }}
                       className="w-full text-left px-3 py-2 hover:bg-[#202c33] text-slate-300 hover:text-white flex items-center gap-2"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Switch to {currentUser.role === 'admin' ? 'Admin Panel' : 'Workspace'}</span>
+                      <span>Switch to {canManage ? 'Admin Panel' : 'Workspace'}</span>
                     </button>
                     <button
                       onClick={() => {

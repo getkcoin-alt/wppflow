@@ -134,6 +134,17 @@ export async function sendLiveMessage(sessionName: string, phone: string, messag
   return data;
 }
 
+export async function sendLiveMedia(sessionName: string, phone: string, data: string, filename: string, kind: string, caption = '', baseUrl = getBaseBackendUrl()) {
+  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-media`, baseUrl), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ phone, data, filename, kind, caption }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`);
+  return result;
+}
+
 export async function getLiveSessions(baseUrl = getBaseBackendUrl()): Promise<LiveSessionInfo[]> {
   try {
     const token = getStoredToken();
@@ -327,4 +338,15 @@ export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl(
     } catch {}
     return { users: [] };
   }
+}
+
+export async function createTenantUser(payload: { name: string; email: string; companyName?: string; role?: string; password?: string }, baseUrl = getBaseBackendUrl()) {
+  const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
 }

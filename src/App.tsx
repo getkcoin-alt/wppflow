@@ -27,8 +27,10 @@ import {
   fetchChats, addChat, patchChat,
   fetchMessages, addMessage,
   sendLiveMessage,
+  sendLiveMedia,
   fetchCampaigns, addCampaign,
   fetchAutomations, addAutomation, toggleAutomationApi,
+  createTenantUser,
 } from './services/api';
 
 import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
@@ -48,6 +50,11 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const canManageWorkspace = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+
+  useEffect(() => {
+    if (currentUser && !canManageWorkspace && currentView !== 'user') setCurrentView('user');
+  }, [currentUser, canManageWorkspace, currentView]);
 
   // Restore session on load
   useEffect(() => {
@@ -178,7 +185,8 @@ export function App() {
           chatId,
           sender: 'customer',
           text: message.body || '',
-          type: 'text',
+          type: (message.type === 'image' || message.type === 'video' || message.type === 'audio' || message.type === 'document' ? message.type : 'text') as ChatMessage['type'],
+          mediaUrl: message.mediaUrl,
           timestamp: message.timestamp || 'Just now',
           status: 'delivered'
         };
@@ -251,6 +259,27 @@ export function App() {
     }
   };
 
+  const handleSendAttachment = async (chatId: string, attachment: { data: string; filename: string; kind: string; mimeType: string }) => {
+    const chat = chats.find(c => c.id === chatId);
+    if (!chat?.channel || !chat.phone) return;
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const optimistic: ChatMessage = {
+      id: `m_${Date.now()}`, chatId, sender: 'agent', agentName: currentUser?.name || 'Agent',
+      text: attachment.filename, type: attachment.kind as ChatMessage['type'], mediaUrl: attachment.data,
+      fileName: attachment.filename, timestamp, status: 'sending'
+    };
+    setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), optimistic] }));
+    try {
+      await sendLiveMedia(chat.channel, chat.phone, attachment.data, attachment.filename, attachment.kind);
+      const d = await addMessage(chatId, { sender: 'agent', agentName: currentUser?.name || 'Agent', text: attachment.filename, type: attachment.kind, mediaUrl: attachment.data, fileName: attachment.filename, status: 'sent', timestamp });
+      setMessages(prev => ({ ...prev, [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? d.message : m) }));
+      await patchChat(chatId, { lastMessage: { text: `Attachment: ${attachment.filename}`, timestamp, status: 'sent', fromMe: true } });
+    } catch (error) {
+      console.error('Inbox attachment send failed:', error);
+      setMessages(prev => ({ ...prev, [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? { ...m, status: 'failed' } : m) }));
+    }
+  };
+
   const handleAddSession = (name: string, phone: string, channel: 'sales' | 'support' | 'vip' | 'general') => {
     const key = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     const newSession: WhatsAppSession = {
@@ -274,7 +303,14 @@ export function App() {
     setSessions(prev => prev.filter(s => s.id !== sessionId));
   };
 
-  const handleAddUser = (newUserData: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => {
+  const handleAddUser = async (newUserData: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => {
+    const backendRole = newUserData.role === 'tenant_admin' ? 'admin' : newUserData.role === 'superadmin' ? 'superadmin' : newUserData.role === 'sales' ? 'sales' : 'support';
+    await createTenantUser({
+      name: newUserData.name,
+      email: newUserData.email,
+      companyName: newUserData.company,
+      role: backendRole,
+    });
     setUsers(prev => [{ ...newUserData, id: `usr_${Date.now()}`, broadcastsUsed: 0, apiCallsThisMonth: 0, createdAt: new Date().toISOString().slice(0, 10), lastLogin: 'Never' }, ...prev]);
   };
 
@@ -402,6 +438,7 @@ export function App() {
                     contacts={contacts}
                     cannedReplies={cannedReplies}
                     onSendMessage={handleSendMessage}
+                    onSendAttachment={handleSendAttachment}
                     onAssignAgent={handleAssignAgent}
                     onToggleResolve={handleToggleResolve}
                     onOpenChat={loadMessages}
@@ -444,7 +481,7 @@ export function App() {
               </>
             )}
 
-            {currentView === 'admin' && (
+            {canManageWorkspace && currentView === 'admin' && (
               <>
                 {activeAdminTab === 'users' && (
                   <UserManagement
@@ -475,7 +512,7 @@ export function App() {
               </>
             )}
 
-            {currentView === 'developer' && (
+            {canManageWorkspace && currentView === 'developer' && (
               <DeveloperGuide
                 endpoints={apiEndpoints}
                 webhookLogs={webhookLogs}

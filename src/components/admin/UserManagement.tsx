@@ -25,7 +25,7 @@ import { getTenantUsers, getStoredToken } from '../../services/api';
 
 interface UserManagementProps {
   users: UserAccount[];
-  onAddUser: (user: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => void;
+  onAddUser: (user: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => void | Promise<void>;
   onUpdateStatus: (userId: string, status: AccountStatus) => void;
   onUpdateQuotas: (userId: string, sessionQuota: number, broadcastLimit: number) => void;
   onDeleteUser: (userId: string) => void;
@@ -80,7 +80,26 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     fetchLiveUsers();
   }, []);
 
-  const filteredUsers = users.filter(u => {
+  const liveRows: UserAccount[] = dbUsers.map((entry) => ({
+    id: String(entry.id),
+    name: entry.name,
+    email: entry.email,
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name || 'User')}&background=1f2937&color=fff`,
+    role: entry.role === 'admin' ? 'tenant_admin' : entry.role === 'superadmin' ? 'superadmin' : entry.role === 'support' ? 'support' : entry.role === 'sales' ? 'sales' : 'agent',
+    company: entry.company_name || 'WppFlow Workspace',
+    plan: String(entry.plan || 'growth').toLowerCase() as PlanTier,
+    status: 'active',
+    whatsappSessionsQuota: Number(entry.sessions_limit || 5),
+    activeSessionsCount: 0,
+    monthlyBroadcastLimit: 50000,
+    broadcastsUsed: 0,
+    teamSeats: 1,
+    apiCallsThisMonth: 0,
+    createdAt: entry.created_at || '',
+    lastLogin: '—',
+  }));
+  const displayedUsers = liveRows.length > 0 ? liveRows : users;
+  const filteredUsers = displayedUsers.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           u.company.toLowerCase().includes(searchQuery.toLowerCase());
@@ -89,11 +108,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     return matchesSearch && matchesPlan && matchesStatus;
   });
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !company) return;
 
-    onAddUser({
+    await onAddUser({
       name,
       email,
       avatar: `https://images.unsplash.com/photo-${1535713875000 + Math.floor(Math.random() * 1000)}?w=120&auto=format&fit=crop&q=80`,
@@ -111,6 +130,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setEmail('');
     setCompany('');
     setIsAddModalOpen(false);
+    await fetchLiveUsers();
   };
 
   const handleSaveQuotas = (e: React.FormEvent) => {
@@ -477,7 +497,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                     className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
                   >
                     <option value="tenant_admin">Tenant Administrator</option>
-                    <option value="agent">Support / Sales Agent</option>
+                    <option value="sales">Sales</option>
+                    <option value="support">Customer Support</option>
                     <option value="superadmin">Platform Superadmin</option>
                   </select>
                 </div>
