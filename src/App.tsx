@@ -51,6 +51,7 @@ export function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const canManageWorkspace = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  const isPlatformSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
 
   useEffect(() => {
     if (currentUser && !canManageWorkspace && currentView !== 'user') setCurrentView('user');
@@ -509,6 +510,8 @@ export function App() {
                     onUpdateStatus={handleUpdateStatus}
                     onUpdateQuotas={handleUpdateQuotas}
                     onDeleteUser={handleDeleteUser}
+                    isPlatformSuperAdmin={isPlatformSuperAdmin}
+                    workspaceName={currentUser?.company_name || ''}
                   />
                 )}
 

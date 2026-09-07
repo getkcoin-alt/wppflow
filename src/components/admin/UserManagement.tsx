@@ -29,6 +29,8 @@ interface UserManagementProps {
   onUpdateStatus: (userId: string, status: AccountStatus) => void;
   onUpdateQuotas: (userId: string, sessionQuota: number, broadcastLimit: number) => void;
   onDeleteUser: (userId: string) => void;
+  isPlatformSuperAdmin?: boolean;
+  workspaceName?: string;
 }
 
 export const UserManagement: React.FC<UserManagementProps> = ({
@@ -36,7 +38,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   onAddUser,
   onUpdateStatus,
   onUpdateQuotas,
-  onDeleteUser
+  onDeleteUser,
+  isPlatformSuperAdmin = false,
+  workspaceName = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
@@ -47,7 +51,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   // New user form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [company, setCompany] = useState('');
+  const [company, setCompany] = useState(workspaceName);
   const [role, setRole] = useState<UserRole>('tenant_admin');
   const [plan, setPlan] = useState<PlanTier>('growth');
   const [sessionQuota, setSessionQuota] = useState(5);
@@ -111,14 +115,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !company) return;
+    const targetCompany = isPlatformSuperAdmin ? company : (workspaceName || company);
+    if (!name || !email || !targetCompany) return;
 
     const result = await onAddUser({
       name,
       email,
       avatar: `https://images.unsplash.com/photo-${1535713875000 + Math.floor(Math.random() * 1000)}?w=120&auto=format&fit=crop&q=80`,
       role,
-      company,
+      company: targetCompany,
       plan,
       status: 'active',
       whatsappSessionsQuota: sessionQuota,
@@ -480,9 +485,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   type="text"
                   required
                   placeholder="e.g. Apex Apparel D2C"
-                  value={company}
+                  value={isPlatformSuperAdmin ? company : (workspaceName || company)}
                   onChange={(e) => setCompany(e.target.value)}
-                  className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  readOnly={!isPlatformSuperAdmin}
+                  className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 read-only:opacity-60"
                 />
               </div>
 
@@ -509,7 +515,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                     <option value="tenant_admin">Tenant Administrator</option>
                     <option value="sales">Sales</option>
                     <option value="support">Customer Support</option>
-                    <option value="superadmin">Platform Superadmin</option>
                   </select>
                 </div>
               </div>
