@@ -305,13 +305,14 @@ export function App() {
 
   const handleAddUser = async (newUserData: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => {
     const backendRole = newUserData.role === 'tenant_admin' ? 'admin' : newUserData.role === 'superadmin' ? 'superadmin' : newUserData.role === 'sales' ? 'sales' : 'support';
-    await createTenantUser({
+    const result = await createTenantUser({
       name: newUserData.name,
       email: newUserData.email,
       companyName: newUserData.company,
       role: backendRole,
     });
     setUsers(prev => [{ ...newUserData, id: `usr_${Date.now()}`, broadcastsUsed: 0, apiCallsThisMonth: 0, createdAt: new Date().toISOString().slice(0, 10), lastLogin: 'Never' }, ...prev]);
+    return result;
   };
 
   const handleUpdateStatus = (userId: string, status: AccountStatus) => {

@@ -25,7 +25,7 @@ import { getTenantUsers, getStoredToken } from '../../services/api';
 
 interface UserManagementProps {
   users: UserAccount[];
-  onAddUser: (user: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => void | Promise<void>;
+  onAddUser: (user: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => void | Promise<any>;
   onUpdateStatus: (userId: string, status: AccountStatus) => void;
   onUpdateQuotas: (userId: string, sessionQuota: number, broadcastLimit: number) => void;
   onDeleteUser: (userId: string) => void;
@@ -62,6 +62,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const [dbUsers, setDbUsers] = useState<any[]>([]);
   const [isSyncingDb, setIsSyncingDb] = useState(false);
   const [dbStatusInfo, setDbStatusInfo] = useState<any>(null);
+  const [provisioningNotice, setProvisioningNotice] = useState<string | null>(null);
 
   const fetchLiveUsers = async () => {
     setIsSyncingDb(true);
@@ -112,7 +113,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     e.preventDefault();
     if (!name || !email || !company) return;
 
-    await onAddUser({
+    const result = await onAddUser({
       name,
       email,
       avatar: `https://images.unsplash.com/photo-${1535713875000 + Math.floor(Math.random() * 1000)}?w=120&auto=format&fit=crop&q=80`,
@@ -131,6 +132,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setCompany('');
     setIsAddModalOpen(false);
     await fetchLiveUsers();
+    setProvisioningNotice(result?.temporaryPassword
+      ? `User created. Email delivery is not configured; temporary password: ${result.temporaryPassword}`
+      : 'User created and credentials emailed.');
   };
 
   const handleSaveQuotas = (e: React.FormEvent) => {
@@ -149,6 +153,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
   return (
     <div className="space-y-6">
+      {provisioningNotice && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-xs text-emerald-200">
+          <span>{provisioningNotice}</span>
+          <button onClick={() => setProvisioningNotice(null)} className="text-emerald-400 hover:text-white">✕</button>
+        </div>
+      )}
       
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111b21] p-5 rounded-2xl border border-[#2a3942]">
