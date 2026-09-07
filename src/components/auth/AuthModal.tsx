@@ -195,29 +195,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div>
                 <label className="block text-slate-300 mb-1 font-medium">Initial Role</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRole('user')}
-                    className={`p-2 rounded-xl border text-center transition-all ${
-                      role === 'user'
-                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-400 font-bold'
-                        : 'border-[#2a3942] bg-[#202c33] text-slate-400'
-                    }`}
-                  >
-                    User / Agent (5 Lines)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('admin')}
-                    className={`p-2 rounded-xl border text-center transition-all ${
-                      role === 'admin'
-                        ? 'border-indigo-500 bg-indigo-950/40 text-indigo-400 font-bold'
-                        : 'border-[#2a3942] bg-[#202c33] text-slate-400'
-                    }`}
-                  >
-                    Super Admin (25 Lines)
-                  </button>
+                <div className="rounded-xl border border-[#2a3942] bg-[#202c33] px-3 py-2 text-xs text-slate-400">
+                  New accounts start as employees. Company administrators are invited by the platform administrator.
                 </div>
               </div>
             </>

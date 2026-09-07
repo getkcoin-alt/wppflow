@@ -231,31 +231,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
 
                 <div>
                   <label className="block text-xs text-slate-300 mb-1.5 font-medium">Account Type</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRole('user')}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
-                        role === 'user'
-                          ? 'border-emerald-500 bg-emerald-950/40 text-emerald-400'
-                          : 'border-[#2a3942] bg-[#111b21] text-slate-400 hover:border-slate-600'
-                      }`}
-                    >
-                      User / Agent
-                      <div className="text-[10px] font-normal mt-0.5 opacity-70">5 WhatsApp lines</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRole('admin')}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
-                        role === 'admin'
-                          ? 'border-indigo-500 bg-indigo-950/40 text-indigo-400'
-                          : 'border-[#2a3942] bg-[#111b21] text-slate-400 hover:border-slate-600'
-                      }`}
-                    >
-                      Super Admin
-                      <div className="text-[10px] font-normal mt-0.5 opacity-70">25 WhatsApp lines</div>
-                    </button>
+                  <div className="rounded-xl border border-[#2a3942] bg-[#111b21] px-3 py-2.5 text-xs text-slate-400">
+                    New accounts start as employees. Company administrators are invited by the platform administrator.
                   </div>
                 </div>
               </>
