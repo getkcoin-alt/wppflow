@@ -26,6 +26,7 @@ import {
   fetchContacts, addContact,
   fetchChats, addChat, patchChat,
   fetchMessages, addMessage,
+  sendLiveMessage,
   fetchCampaigns, addCampaign,
   fetchAutomations, addAutomation, toggleAutomationApi,
 } from './services/api';
@@ -164,11 +165,16 @@ export function App() {
       ));
     });
 
-    sock.on('session:message', ({ session, message }: any) => {
+    const onChatCreated = ({ chat }: any) => {
+      if (!chat?.id) return;
+      setChats(prev => prev.some(c => c.id === chat.id) ? prev : [chat, ...prev]);
+    };
+
+    const onSessionMessage = ({ chatId, message }: any) => {
+      if (!chatId || !message) return;
       setMessages(prev => {
-        const chatId = Object.keys(prev).find(id => id.includes(session)) || `chat_${session}`;
         const newMsg: ChatMessage = {
-          id: message.id || `m_${Date.now()}`,
+          id: message.savedMessageId || message.id || `m_${Date.now()}`,
           chatId,
           sender: 'customer',
           text: message.body || '',
@@ -178,11 +184,20 @@ export function App() {
         };
         return { ...prev, [chatId]: [...(prev[chatId] || []), newMsg] };
       });
+      setChats(prev => prev.map(c => c.id === chatId ? {
+        ...c,
+        unreadCount: (c.unreadCount || 0) + 1,
+        lastMessage: { text: message.body || '', timestamp: message.timestamp || 'Just now', status: 'delivered', fromMe: false }
+      } : c));
     });
+
+    sock.on('chat:created', onChatCreated);
+    sock.on('session:message', onSessionMessage);
 
     return () => {
       sock.off('session:status');
-      sock.off('session:message');
+      sock.off('chat:created', onChatCreated);
+      sock.off('session:message', onSessionMessage);
     };
   }, [currentUser]);
 
@@ -213,6 +228,11 @@ export function App() {
     }
 
     try {
+      if (!isNote) {
+        const chat = chats.find(c => c.id === chatId);
+        if (!chat?.channel || !chat.phone) throw new Error('This conversation has no WhatsApp session or phone number.');
+        await sendLiveMessage(chat.channel, chat.phone, text);
+      }
       const d = await addMessage(chatId, { sender: 'agent', agentName, text, type: isNote ? 'internal_note' : 'text', isNote, timestamp, status: 'sent' });
       // Replace optimistic with real
       setMessages(prev => ({
@@ -222,7 +242,13 @@ export function App() {
       if (!isNote) {
         await patchChat(chatId, { lastMessage: { text, timestamp, status: 'sent', fromMe: true } });
       }
-    } catch {}
+    } catch (error) {
+      console.error('Inbox send failed:', error);
+      setMessages(prev => ({
+        ...prev,
+        [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? { ...m, status: 'failed' } : m)
+      }));
+    }
   };
 
   const handleAddSession = (name: string, phone: string, channel: 'sales' | 'support' | 'vip' | 'general') => {

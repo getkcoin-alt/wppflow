@@ -120,12 +120,18 @@ export async function closeLiveSession(sessionName: string, baseUrl = getBaseBac
 }
 
 export async function sendLiveMessage(sessionName: string, phone: string, message: string, baseUrl = getBaseBackendUrl()) {
+  const token = getStoredToken();
   const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-message`, baseUrl), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
     body: JSON.stringify({ phone, message })
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
 }
 
 export async function getLiveSessions(baseUrl = getBaseBackendUrl()): Promise<LiveSessionInfo[]> {
@@ -254,7 +260,7 @@ function authHeaders(token?: string | null): Record<string, string> {
 }
 
 export async function apiGet(path: string) {
-  const res = await fetch(resolveEndpoint(path), { headers: authHeaders() });
+  const res = await fetch(resolveEndpoint(path), { cache: 'no-store', headers: authHeaders() });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
