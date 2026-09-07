@@ -164,7 +164,16 @@ export function App() {
     if (!currentUser) return;
     const sock = getSocket();
 
-    sock.on('session:status', ({ session, status, phone, battery }: any) => {
+    sock.on('session:status', ({ session, status, phone, battery, filesRemoved }: any) => {
+      if (status === 'DISCONNECTED' && filesRemoved) {
+        setSessions(prev => prev.filter(s => s.sessionKey !== session));
+        setChats(prev => {
+          const removedChatIds = new Set(prev.filter(chat => chat.channel === session).map(chat => chat.id));
+          setMessages(previousMessages => Object.fromEntries(Object.entries(previousMessages).filter(([chatId]) => !removedChatIds.has(chatId))));
+          return prev.filter(chat => chat.channel !== session);
+        });
+        return;
+      }
       setSessions(prev => prev.map(s =>
         s.sessionKey === session
           ? { ...s, status, ...(phone ? { phone } : {}), ...(battery ? { battery } : {}) }
@@ -297,8 +306,16 @@ export function App() {
 
   const handleDeleteSession = async (sessionId: string) => {
     const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      try { await closeLiveSession(session.sessionKey); } catch {}
+    if (!session) return;
+    try {
+      const result = await closeLiveSession(session.sessionKey);
+      if (result?.status !== 'success') throw new Error(result?.message || 'Session cleanup failed');
+      const removedChatIds = new Set(chats.filter(chat => chat.channel === session.sessionKey).map(chat => chat.id));
+      setChats(prev => prev.filter(chat => chat.channel !== session.sessionKey));
+      setMessages(prev => Object.fromEntries(Object.entries(prev).filter(([chatId]) => !removedChatIds.has(chatId))));
+    } catch (error) {
+      console.error('Session cleanup failed:', error);
+      return;
     }
     setSessions(prev => prev.filter(s => s.id !== sessionId));
   };

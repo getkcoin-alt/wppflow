@@ -39,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const connectedCount = sessions.filter(s => s.status === 'CONNECTED').length;
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  const isSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
   const [engineHealth, setEngineHealth] = React.useState<BackendHealth | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -105,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Super Admin</span>
+            <span>{isSuperAdmin ? 'Super Admin' : 'Company Admin'}</span>
             <span className="bg-indigo-500/30 text-indigo-300 text-[10px] px-1.5 py-0.2 rounded font-mono">
               Admin
             </span>
