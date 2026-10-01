@@ -318,6 +318,20 @@ export const addAutomation = (data: any) => apiPost('/api/automations', data);
 export const toggleAutomationApi = (id: string) => apiPatch(`/api/automations/${id}/toggle`, {});
 export const removeAutomation = (id: string) => apiDelete(`/api/automations/${id}`);
 
+// Inbox sync — triggers WhatsApp chat import for a connected session
+export async function syncInboxForSession(sessionName: string, baseUrl = getBaseBackendUrl()): Promise<{ status: string; message?: string }> {
+  try {
+    const token = getStoredToken();
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/sync-inbox`, baseUrl), {
+      method: 'POST',
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { status: 'error', message: err.message };
+  }
+}
+
 export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl()): Promise<{ users: any[], database?: any }> {
   try {
     const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {

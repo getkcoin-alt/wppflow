@@ -31,6 +31,7 @@ import {
   fetchCampaigns, addCampaign,
   fetchAutomations, addAutomation, toggleAutomationApi,
   createTenantUser, updateTenantUser, deleteTenantUser,
+  syncInboxForSession,
 } from './services/api';
 
 import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
@@ -355,6 +356,19 @@ export function App() {
     setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
+  const handleSyncInbox = async (sessionKey: string) => {
+    await syncInboxForSession(sessionKey);
+    // Wait 3s for backend sync to complete, then reload chats and contacts
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const [chatsData, contactsData] = await Promise.all([fetchChats(), fetchContacts()]);
+      setChats(chatsData.chats || []);
+      const map: Record<string, any> = {};
+      (contactsData.contacts || []).forEach((c: any) => { map[c.id] = c; });
+      setContacts(map);
+    } catch {}
+  };
+
   const handleAddCampaign = async (campaignData: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => {
     const payload = {
       ...campaignData,
@@ -466,11 +480,13 @@ export function App() {
                     messages={messages}
                     contacts={contacts}
                     cannedReplies={cannedReplies}
+                    sessions={sessions}
                     onSendMessage={handleSendMessage}
                     onSendAttachment={handleSendAttachment}
                     onAssignAgent={handleAssignAgent}
                     onToggleResolve={handleToggleResolve}
                     onOpenChat={loadMessages}
+                    onSyncInbox={handleSyncInbox}
                   />
                 )}
 
