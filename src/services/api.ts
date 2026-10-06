@@ -332,6 +332,34 @@ export async function syncInboxForSession(sessionName: string, baseUrl = getBase
   }
 }
 
+export async function getLiveSessionGroups(sessionName: string, baseUrl = getBaseBackendUrl()): Promise<any[]> {
+  try {
+    const token = getStoredToken();
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/groups`, baseUrl), {
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.groups || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getLiveSessionContacts(sessionName: string, baseUrl = getBaseBackendUrl()): Promise<any[]> {
+  try {
+    const token = getStoredToken();
+    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/contacts`, baseUrl), {
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.contacts || [];
+  } catch {
+    return [];
+  }
+}
+
 export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl()): Promise<{ users: any[], database?: any }> {
   try {
     const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {

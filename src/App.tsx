@@ -31,7 +31,7 @@ import {
   fetchCampaigns, addCampaign,
   fetchAutomations, addAutomation, toggleAutomationApi,
   createTenantUser, updateTenantUser, deleteTenantUser,
-  syncInboxForSession,
+  syncInboxForSession, getLiveSessionGroups, getLiveSessionContacts,
 } from './services/api';
 
 import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
@@ -358,9 +358,63 @@ export function App() {
   };
 
   const handleSyncInbox = async (sessionKey: string) => {
-    await syncInboxForSession(sessionKey);
-    // Wait 3s for backend sync to complete, then reload chats and contacts
-    await new Promise(r => setTimeout(r, 3000));
+    try {
+      await syncInboxForSession(sessionKey);
+    } catch {}
+
+    // Pull live groups and contacts from the connected session directly
+    try {
+      const [liveGroups, liveContacts] = await Promise.all([
+        getLiveSessionGroups(sessionKey),
+        getLiveSessionContacts(sessionKey)
+      ]);
+
+      if (Array.isArray(liveGroups) && liveGroups.length > 0) {
+        for (const g of liveGroups) {
+          const rawId = g.id?._serialized || g.id;
+          if (!rawId || chats.some(c => c.phone === rawId)) continue;
+          try {
+            await addChat({
+              contactName: g.name || g.formattedTitle || 'WhatsApp Group',
+              phone: String(rawId),
+              avatar: g.contact?.profilePicThumbObj?.eurl || '',
+              channel: sessionKey,
+              isGroup: true,
+              groupMembersCount: g.groupMetadata?.participants?.length || 0,
+              lastMessage: { text: '', timestamp: '—', status: 'delivered', fromMe: false },
+              tags: ['Group']
+            });
+          } catch {}
+        }
+      }
+
+      if (Array.isArray(liveContacts) && liveContacts.length > 0) {
+        let count = 0;
+        for (const c of liveContacts) {
+          const rawId = c.id?._serialized || c.id;
+          if (!rawId || String(rawId).includes('@g.us') || rawId === 'status@broadcast') continue;
+          const phone = String(c.id?.user || rawId).replace(/@c\.us$/, '');
+          if (!phone || contacts[phone]) continue;
+          try {
+            await addContact({
+              name: c.name || c.shortName || c.pushname || c.formattedName || phone,
+              phone,
+              avatar: c.profilePicThumbObj?.eurl || '',
+              tags: ['WhatsApp'],
+              channel: sessionKey,
+              lifetimeValue: 0
+            });
+            count++;
+            if (count >= 100) break;
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.warn('Direct live sync error:', e);
+    }
+
+    // Wait a brief moment and reload workspace chats and contacts
+    await new Promise(r => setTimeout(r, 1500));
     try {
       const [chatsData, contactsData] = await Promise.all([fetchChats(), fetchContacts()]);
       setChats(chatsData.chats || []);
