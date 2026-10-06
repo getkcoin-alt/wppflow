@@ -38,6 +38,7 @@ interface InboxProps {
   contacts: Record<string, any>;
   cannedReplies: { shortcut: string; title: string; text: string }[];
   sessions: WhatsAppSession[];
+  selectedChatId?: string | null;
   onSendMessage: (chatId: string, text: string, isNote?: boolean) => void;
   onSendAttachment: (chatId: string, attachment: { data: string; filename: string; kind: string; mimeType: string }) => void;
   onAssignAgent: (chatId: string, agentName: string) => void;
@@ -61,6 +62,7 @@ export const Inbox: React.FC<InboxProps> = ({
   contacts,
   cannedReplies,
   sessions,
+  selectedChatId,
   onSendMessage,
   onSendAttachment,
   onAssignAgent,
@@ -68,9 +70,23 @@ export const Inbox: React.FC<InboxProps> = ({
   onOpenChat,
   onSyncInbox,
 }) => {
-  const [activeChatId, setActiveChatId] = useState<string>(chats[0]?.id || '');
+  const [activeChatId, setActiveChatId] = useState<string>(selectedChatId || chats[0]?.id || '');
   const [filterTab, setFilterTab] = useState<'all' | 'mine' | 'unread' | 'groups'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Automatically select and load messages for the active or first chat
+  React.useEffect(() => {
+    if (selectedChatId && chats.some(c => c.id === selectedChatId)) {
+      setActiveChatId(selectedChatId);
+      onOpenChat(selectedChatId);
+      return;
+    }
+    if ((!activeChatId || !chats.some(c => c.id === activeChatId)) && chats.length > 0) {
+      const firstId = chats[0].id;
+      setActiveChatId(firstId);
+      onOpenChat(firstId);
+    }
+  }, [chats, selectedChatId]);
   
   // Composer state
   const [inputText, setInputText] = useState('');

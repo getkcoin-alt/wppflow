@@ -100,6 +100,7 @@ export function App() {
   const [metrics, setMetrics] = useState(CLUSTER_METRICS_BASE);
   const [isPairModalOpen, setIsPairModalOpen] = useState(false);
   const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   // ─── Load all data when user logs in ─────────────────────────────────────
   useEffect(() => {
@@ -369,6 +370,42 @@ export function App() {
     } catch {}
   };
 
+  const handleOpenContactChat = async (contactId: string) => {
+    const contact = contacts[contactId];
+    if (!contact) {
+      setActiveUserTab('inbox');
+      return;
+    }
+    const cleanPhone = String(contact.phone).replace(/@c\.us$/, '');
+    let existingChat = chats.find(c => c.phone === cleanPhone || c.contactId === contactId || c.phone === contact.phone);
+    if (!existingChat) {
+      try {
+        const activeSessionKey = sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
+        const res = await addChat({
+          contactId: contact.id,
+          contactName: contact.name,
+          phone: cleanPhone,
+          avatar: contact.avatar || '',
+          channel: activeSessionKey,
+          assignedTo: currentUser?.name || 'Agent',
+          isGroup: false,
+          lastMessage: { text: 'Conversation started', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), status: 'sent', fromMe: true },
+          tags: contact.tags || []
+        });
+        if (res?.chat) {
+          existingChat = res.chat;
+          setChats(prev => [res.chat, ...prev]);
+        }
+      } catch (err) {
+        console.error('Failed to create chat for contact:', err);
+      }
+    }
+    if (existingChat) {
+      setSelectedChatId(existingChat.id);
+    }
+    setActiveUserTab('inbox');
+  };
+
   const handleAddCampaign = async (campaignData: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => {
     const payload = {
       ...campaignData,
@@ -481,6 +518,7 @@ export function App() {
                     contacts={contacts}
                     cannedReplies={cannedReplies}
                     sessions={sessions}
+                    selectedChatId={selectedChatId}
                     onSendMessage={handleSendMessage}
                     onSendAttachment={handleSendAttachment}
                     onAssignAgent={handleAssignAgent}
@@ -513,7 +551,7 @@ export function App() {
                 {activeUserTab === 'contacts' && (
                   <Contacts
                     contacts={contacts}
-                    onSelectChat={() => setActiveUserTab('inbox')}
+                    onSelectChat={handleOpenContactChat}
                   />
                 )}
 

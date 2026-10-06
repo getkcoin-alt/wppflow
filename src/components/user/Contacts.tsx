@@ -18,6 +18,15 @@ interface ContactsProps {
   onSelectChat: (contactId: string) => void;
 }
 
+function avatarFallback(name: string): string {
+  const initials = name
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase() || '')
+    .join('');
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials || name)}&background=1f4e3d&color=4ade80&size=128&bold=true&format=svg`;
+}
+
 export const Contacts: React.FC<ContactsProps> = ({ contacts, onSelectChat }) => {
   const [search, setSearch] = useState('');
   const contactList = Object.values(contacts);
@@ -96,9 +105,12 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onSelectChat }) =>
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={c.avatar}
+                        src={c.avatar || avatarFallback(c.name)}
                         alt={c.name}
                         className="w-9 h-9 rounded-full object-cover ring-1 ring-slate-700"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = avatarFallback(c.name);
+                        }}
                       />
                       <div>
                         <div className="font-semibold text-white text-xs">{c.name}</div>
