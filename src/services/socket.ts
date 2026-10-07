@@ -5,11 +5,11 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    const url = getBaseBackendUrl() || 'https://wppflow-backend-production.up.railway.app';
+    const url = (import.meta as any).env?.VITE_BACKEND_URL || 'https://srv1628639.hstgr.cloud';
     socket = io(url, {
       transports: ['websocket', 'polling'],
       auth: { token: getStoredToken() },
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 2000,
     });
 

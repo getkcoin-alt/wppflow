@@ -200,7 +200,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
               }
               if (startingAttemptsRef.current === 10) setStatusMessage('Chromium initializing...');
               if (startingAttemptsRef.current === 25) setStatusMessage('Loading WhatsApp Web... (up to 60s on cold start)');
-              if (startingAttemptsRef.current === 60) setStatusMessage('Still starting — Railway cold boot in progress...');
+              if (startingAttemptsRef.current === 60) setStatusMessage('Still starting — Cloud browser boot in progress...');
             }
             return current;
           });
@@ -320,7 +320,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     <ul className="text-slate-400 space-y-1 text-[11px] list-disc list-inside">
                       <li>Launches a secure browser instance in the cloud</li>
                       <li>Generates an official WhatsApp Web QR code</li>
-                      <li>Session tokens are persisted to your Railway volume</li>
+                      <li>Session tokens are securely persisted on your dedicated cloud server</li>
                     </ul>
                   </div>
                   <button type="button" onClick={handleStartPairing} className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all">
@@ -335,7 +335,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                   <div>
                     <h3 className="font-bold text-white text-sm">Launching Browser Instance</h3>
                     <p className="text-[11px] text-slate-400 mt-1 max-w-xs">{statusMessage}</p>
-                    <p className="text-[10px] text-slate-500 mt-2">First launch takes ~15–30s on Railway</p>
+                    <p className="text-[10px] text-slate-500 mt-2">First launch takes ~10–20s to initialize Chromium</p>
                   </div>
                 </div>
               )}

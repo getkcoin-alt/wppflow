@@ -129,7 +129,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
         {/* Bottom badge */}
         <div className="relative z-10 flex items-center gap-2 text-xs text-slate-500">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>End-to-end encrypted · PostgreSQL-backed · Railway Cloud</span>
+          <span>End-to-end encrypted · PostgreSQL-backed · High-Performance Cloud</span>
         </div>
       </div>
 

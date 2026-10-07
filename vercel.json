@@ -5,11 +5,11 @@
   "rewrites": [
     {
       "source": "/health",
-      "destination": "https://wppflow-backend-production.up.railway.app/health"
+      "destination": "https://srv1628639.hstgr.cloud/health"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://wppflow-backend-production.up.railway.app/api/:path*"
+      "destination": "https://srv1628639.hstgr.cloud/api/:path*"
     },
     {
       "source": "/(.*)",

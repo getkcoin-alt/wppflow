@@ -119,7 +119,7 @@ export function App() {
           isCharging: true,
           antiBanHealth: ls.antiBanHealth || 98,
           warmupDay: ls.warmupDay || 14,
-          proxyIp: 'Railway Cloud Engine',
+          proxyIp: 'Dedicated Cloud VPS',
           messagesSentToday: 0,
           messagesLimitToday: 3000,
           lastActive: ls.lastActive || 'Just now',
@@ -297,7 +297,7 @@ export function App() {
     const newSession: WhatsAppSession = {
       id: `sess_${key}_${Date.now()}`, sessionKey: key, displayName: name, phone,
       status: 'CONNECTED', battery: 95, isCharging: true, antiBanHealth: 99, warmupDay: 1,
-      proxyIp: 'Railway Cloud Engine', messagesSentToday: 0, messagesLimitToday: 3000,
+      proxyIp: 'Dedicated Cloud VPS', messagesSentToday: 0, messagesLimitToday: 3000,
       lastActive: 'Just now', wppVersion: '2.3000.101', channel
     };
     setSessions(prev => [newSession, ...prev.filter(s => s.sessionKey !== key)]);

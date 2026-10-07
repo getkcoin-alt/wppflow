@@ -23,7 +23,7 @@ export const apiEndpoints: ApiEndpoint[] = [
     ],
     sampleBody: { phone: '15553498201@c.us', message: 'Hello! Your order *#SH-9842* has shipped 📦' },
     sampleResponse: { status: 'success', response: { id: 'true_15553498201@c.us_3EB0C34B821A', ack: 1 } },
-    curlSnippet: `curl -X POST "https://wppflow-backend-production.up.railway.app/api/sessions/sales-primary/send-message" \\
+    curlSnippet: `curl -X POST "https://srv1628639.hstgr.cloud/api/sessions/sales-primary/send-message" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"phone":"15553498201@c.us","message":"Hello!"}'`,
@@ -34,7 +34,7 @@ export const apiEndpoints: ApiEndpoint[] = [
 });`,
     pythonSnippet: `import requests
 res = requests.post(
-  'https://wppflow-backend-production.up.railway.app/api/sessions/sales-primary/send-message',
+  'https://srv1628639.hstgr.cloud/api/sessions/sales-primary/send-message',
   json={'phone': '15553498201@c.us', 'message': 'Hello!'},
   headers={'Authorization': 'Bearer YOUR_API_KEY'}
 )`,
@@ -57,7 +57,7 @@ res = requests.post(
     ],
     sampleBody: { phone: '15553498201@c.us', title: 'How can we help?', buttons: [{ id: 'b1', text: '🛍️ Sales' }, { id: 'b2', text: '📦 Track Order' }] },
     sampleResponse: { status: 'success', response: { buttonsSent: 2, status: 'delivered' } },
-    curlSnippet: `curl -X POST "https://wppflow-backend-production.up.railway.app/api/sessions/sales-primary/send-buttons" \\
+    curlSnippet: `curl -X POST "https://srv1628639.hstgr.cloud/api/sessions/sales-primary/send-buttons" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"phone":"15553498201@c.us","title":"How can we help?","buttons":[{"id":"b1","text":"Sales"}]}'`,
@@ -76,7 +76,7 @@ res = requests.post(
     headers: { 'Authorization': 'Bearer YOUR_API_KEY' },
     parameters: [{ name: 'session', type: 'string', required: true, description: 'Session key' }],
     sampleResponse: { status: 'success', sessionStatus: 'CONNECTED', phone: '+15553498201', battery: 89 },
-    curlSnippet: `curl "https://wppflow-backend-production.up.railway.app/api/sessions/sales-primary/status" \\
+    curlSnippet: `curl "https://srv1628639.hstgr.cloud/api/sessions/sales-primary/status" \\
   -H "Authorization: Bearer YOUR_API_KEY"`,
     nodeSnippet: `const res = await fetch('/api/sessions/sales-primary/status', { headers: { Authorization: 'Bearer YOUR_API_KEY' } });`,
     pythonSnippet: `res = requests.get('/api/sessions/sales-primary/status', headers={'Authorization': 'Bearer YOUR_API_KEY'})`,

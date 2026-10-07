@@ -7,11 +7,12 @@ export const getBaseBackendUrl = (): string => {
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     return '';
   }
-  return (import.meta as any).env?.VITE_BACKEND_URL || 'https://wppflow-backend-production.up.railway.app';
+  return (import.meta as any).env?.VITE_BACKEND_URL || 'https://srv1628639.hstgr.cloud';
 };
 
 export const DEFAULT_BACKEND_URL = getBaseBackendUrl();
-export const DEFAULT_RAILWAY_BACKEND_URL = DEFAULT_BACKEND_URL;
+export const DEFAULT_SERVER_BACKEND_URL = DEFAULT_BACKEND_URL;
+export const DEFAULT_RAILWAY_BACKEND_URL = DEFAULT_SERVER_BACKEND_URL; // legacy alias
 
 export function resolveEndpoint(path: string, baseUrl = getBaseBackendUrl()): string {
   if (!baseUrl) return path.startsWith('/') ? path : `/${path}`;
@@ -52,7 +53,7 @@ export async function checkBackendHealth(baseUrl = getBaseBackendUrl()): Promise
   } catch (error) {
     try {
       const fallbackUrl = baseUrl === '' 
-        ? 'https://wppflow-backend-production.up.railway.app/health' 
+        ? 'https://srv1628639.hstgr.cloud/health' 
         : '/health';
       const fallbackRes = await fetch(fallbackUrl, { method: 'GET' });
       if (fallbackRes.ok) return await fallbackRes.json();
@@ -200,7 +201,7 @@ export async function loginUser(email: string, password: string, baseUrl = getBa
     return await res.json();
   } catch (err: any) {
     try {
-      const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/login', {
+      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -228,7 +229,7 @@ export async function signupUser(
     return await res.json();
   } catch (err: any) {
     try {
-      const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/signup', {
+      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, companyName, role })
@@ -249,7 +250,7 @@ export async function getCurrentUser(token: string, baseUrl = getBaseBackendUrl(
     return data.user || null;
   } catch {
     try {
-      const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/me', {
+      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (fallbackRes.ok) {
@@ -370,7 +371,7 @@ export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl(
     return { users: data.users || [], database: data.database };
   } catch {
     try {
-      const fallbackRes = await fetch('https://wppflow-backend-production.up.railway.app/api/auth/users', {
+      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (fallbackRes.ok) {
