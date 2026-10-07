@@ -479,11 +479,19 @@ export const Inbox: React.FC<InboxProps> = ({
                       : 'bg-[#202c33] rounded-tl-xs'
                   }`}
                 >
-                  {/* Sender label for group or agents */}
-                  {msg.agentName && (
-                    <div className="text-[10px] font-bold text-emerald-300">
-                      {msg.agentName} (Agent)
-                    </div>
+                  {/* Sender label for group participants or outgoing agents */}
+                  {isOut ? (
+                    msg.agentName && (
+                      <div className="text-[10px] font-bold text-emerald-300">
+                        {msg.agentName}
+                      </div>
+                    )
+                  ) : (
+                    activeChat?.isGroup && msg.agentName && (
+                      <div className="text-[10px] font-bold text-amber-300">
+                        {msg.agentName}
+                      </div>
+                    )
                   )}
 
                   {/* Standard Text */}

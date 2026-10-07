@@ -153,13 +153,16 @@ export function App() {
 
   }, [currentUser]);
 
-  // Load messages when a chat is opened (lazy)
+  // Load messages when a chat is opened (lazy background sync)
   const loadMessages = async (chatId: string) => {
-    if (messages[chatId]) return; // already loaded
     try {
       const d = await fetchMessages(chatId);
-      setMessages(prev => ({ ...prev, [chatId]: d.messages || [] }));
-    } catch {}
+      if (d.messages && Array.isArray(d.messages)) {
+        setMessages(prev => ({ ...prev, [chatId]: d.messages }));
+      }
+    } catch (err) {
+      console.warn(`Could not load messages for chat ${chatId}:`, err);
+    }
   };
 
   // ─── Real-time socket ─────────────────────────────────────────────────────
@@ -191,23 +194,29 @@ export function App() {
 
     const onSessionMessage = ({ chatId, message }: any) => {
       if (!chatId || !message) return;
+      const isOut = Boolean(message.fromMe);
       setMessages(prev => {
+        const currentList = prev[chatId] || [];
+        const msgId = message.savedMessageId || message.id || `m_${Date.now()}`;
+        if (currentList.some(m => m.id === msgId)) return prev;
+
         const newMsg: ChatMessage = {
-          id: message.savedMessageId || message.id || `m_${Date.now()}`,
+          id: msgId,
           chatId,
-          sender: 'customer',
+          sender: isOut ? 'agent' : 'customer',
+          agentName: message.senderName || (isOut ? 'Chatbot' : ''),
           text: message.body || '',
           type: (message.type === 'image' || message.type === 'video' || message.type === 'audio' || message.type === 'document' ? message.type : 'text') as ChatMessage['type'],
           mediaUrl: message.mediaUrl,
           timestamp: message.timestamp || 'Just now',
-          status: 'delivered'
+          status: isOut ? 'sent' : 'delivered'
         };
-        return { ...prev, [chatId]: [...(prev[chatId] || []), newMsg] };
+        return { ...prev, [chatId]: [...currentList, newMsg] };
       });
       setChats(prev => prev.map(c => c.id === chatId ? {
         ...c,
-        unreadCount: (c.unreadCount || 0) + 1,
-        lastMessage: { text: message.body || '', timestamp: message.timestamp || 'Just now', status: 'delivered', fromMe: false }
+        unreadCount: isOut ? (c.unreadCount || 0) : ((c.unreadCount || 0) + 1),
+        lastMessage: { text: message.body || '', timestamp: message.timestamp || 'Just now', status: isOut ? 'sent' : 'delivered', fromMe: isOut }
       } : c));
     };
 
@@ -262,8 +271,9 @@ export function App() {
     try {
       if (!isNote) {
         const chat = chats.find(c => c.id === chatId);
-        if (!chat?.channel || !chat.phone) throw new Error('This conversation has no WhatsApp session or phone number.');
-        await sendLiveMessage(chat.channel, chat.phone, text);
+        if (!chat?.phone) throw new Error('This conversation has no phone number.');
+        const activeChannel = chat.channel || sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
+        await sendLiveMessage(activeChannel, chat.phone, text);
       }
       const d = await addMessage(chatId, { sender: 'agent', agentName, text, type: isNote ? 'internal_note' : 'text', isNote, timestamp, status: 'sent' });
       // Replace optimistic with real
@@ -285,7 +295,8 @@ export function App() {
 
   const handleSendAttachment = async (chatId: string, attachment: { data: string; filename: string; kind: string; mimeType: string }) => {
     const chat = chats.find(c => c.id === chatId);
-    if (!chat?.channel || !chat.phone) return;
+    if (!chat?.phone) return;
+    const activeChannel = chat.channel || sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const optimistic: ChatMessage = {
       id: `m_${Date.now()}`, chatId, sender: 'agent', agentName: currentUser?.name || 'Agent',
@@ -294,7 +305,7 @@ export function App() {
     };
     setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), optimistic] }));
     try {
-      await sendLiveMedia(chat.channel, chat.phone, attachment.data, attachment.filename, attachment.kind);
+      await sendLiveMedia(activeChannel, chat.phone, attachment.data, attachment.filename, attachment.kind);
       const d = await addMessage(chatId, { sender: 'agent', agentName: currentUser?.name || 'Agent', text: attachment.filename, type: attachment.kind, mediaUrl: attachment.data, fileName: attachment.filename, status: 'sent', timestamp });
       setMessages(prev => ({ ...prev, [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? d.message : m) }));
       await patchChat(chatId, { lastMessage: { text: `Attachment: ${attachment.filename}`, timestamp, status: 'sent', fromMe: true } });
