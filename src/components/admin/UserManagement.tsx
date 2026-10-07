@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { UserAccount, PlanTier, AccountStatus, UserRole } from '../../types';
 import { getTenantUsers, getStoredToken } from '../../services/api';
+import { safeAvatarFallback } from '../../utils/avatar';
 
 interface UserManagementProps {
   users: UserAccount[];
@@ -99,7 +100,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     id: String(entry.id),
     name: entry.name,
     email: entry.email,
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name || 'User')}&background=1f2937&color=fff`,
+    avatar: safeAvatarFallback(entry.name || 'User', false),
     role: entry.role === 'admin' ? 'tenant_admin' : entry.role === 'superadmin' ? 'superadmin' : entry.role === 'support' ? 'support' : entry.role === 'sales' ? 'sales' : 'agent',
     company: entry.company_name || 'WppFlow Workspace',
     plan: String(entry.plan || 'growth').toLowerCase() as PlanTier,

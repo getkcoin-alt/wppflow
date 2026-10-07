@@ -12,20 +12,14 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Contact } from '../../types';
+import { safeAvatarFallback } from '../../utils/avatar';
 
 interface ContactsProps {
   contacts: Record<string, Contact>;
   onSelectChat: (contactId: string) => void;
 }
 
-function avatarFallback(name: string): string {
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map((n) => n[0]?.toUpperCase() || '')
-    .join('');
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials || name)}&background=1f4e3d&color=4ade80&size=128&bold=true&format=svg`;
-}
+const avatarFallback = (name: string) => safeAvatarFallback(name, false);
 
 export const Contacts: React.FC<ContactsProps> = ({ contacts, onSelectChat }) => {
   const [search, setSearch] = useState('');

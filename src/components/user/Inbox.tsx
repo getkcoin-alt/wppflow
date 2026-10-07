@@ -31,6 +31,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { ChatThread, ChatMessage, WhatsAppSession } from '../../types';
+import { safeAvatarFallback } from '../../utils/avatar';
 
 interface InboxProps {
   chats: ChatThread[];
@@ -47,14 +48,7 @@ interface InboxProps {
   onSyncInbox: (sessionKey: string) => Promise<void>;
 }
 
-function avatarFallback(name: string): string {
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map((n) => n[0]?.toUpperCase() || '')
-    .join('');
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials || name)}&background=1f4e3d&color=4ade80&size=128&bold=true&format=svg`;
-}
+const avatarFallback = safeAvatarFallback;
 
 export const Inbox: React.FC<InboxProps> = ({
   chats,
@@ -70,9 +64,9 @@ export const Inbox: React.FC<InboxProps> = ({
   onOpenChat,
   onSyncInbox,
 }) => {
-  const [activeChatId, setActiveChatId] = useState<string>(selectedChatId || chats[0]?.id || '');
-  const [filterTab, setFilterTab] = useState<'all' | 'mine' | 'unread' | 'groups'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'direct' | 'groups' | 'unread'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeChatId, setActiveChatId] = useState<string | null>(selectedChatId || null);
 
   // Automatically select and load messages for the active or first chat
   React.useEffect(() => {
@@ -106,12 +100,12 @@ export const Inbox: React.FC<InboxProps> = ({
   const currentMessages = activeChat ? (messages[activeChat.id] || []) : [];
 
   const filteredChats = chats.filter(c => {
-    const matchesSearch = c.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.phone.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (c.contactName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (c.phone || '').toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
+    if (filterTab === 'direct') return !c.isGroup;
+    if (filterTab === 'groups') return Boolean(c.isGroup);
     if (filterTab === 'unread') return c.unreadCount > 0;
-    if (filterTab === 'groups') return c.isGroup;
-    if (filterTab === 'mine') return c.assignedTo?.includes('Aarav');
     return true;
   });
 
@@ -265,12 +259,12 @@ export const Inbox: React.FC<InboxProps> = ({
               All
             </button>
             <button
-              onClick={() => setFilterTab('mine')}
+              onClick={() => setFilterTab('direct')}
               className={`flex-1 py-1 rounded-lg font-medium transition-all ${
-                filterTab === 'mine' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                filterTab === 'direct' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Mine
+              Direct
             </button>
             <button
               onClick={() => setFilterTab('unread')}
@@ -308,11 +302,11 @@ export const Inbox: React.FC<InboxProps> = ({
               >
                 <div className="relative shrink-0">
                   <img
-                    src={chat.avatar || avatarFallback(chat.contactName)}
+                    src={chat.avatar || avatarFallback(chat.contactName, chat.isGroup)}
                     alt={chat.contactName}
                     className="w-11 h-11 rounded-full object-cover ring-1 ring-slate-700"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = avatarFallback(chat.contactName);
+                      (e.target as HTMLImageElement).src = avatarFallback(chat.contactName, chat.isGroup);
                     }}
                   />
                   {chat.isGroup && (
@@ -374,11 +368,11 @@ export const Inbox: React.FC<InboxProps> = ({
           <div className="p-3 px-4 bg-[#202c33] border-b border-[#2a3942] flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <img
-                src={activeChat.avatar || avatarFallback(activeChat.contactName)}
+                src={activeChat.avatar || avatarFallback(activeChat.contactName, activeChat.isGroup)}
                 alt={activeChat.contactName}
                 className="w-10 h-10 rounded-full object-cover ring-1 ring-emerald-500/40"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = avatarFallback(activeChat.contactName);
+                  (e.target as HTMLImageElement).src = avatarFallback(activeChat.contactName, activeChat.isGroup);
                 }}
               />
               <div className="min-w-0">
