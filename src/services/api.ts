@@ -306,7 +306,7 @@ export const addChat = (data: any) => apiPost('/api/chats', data);
 export const patchChat = (id: string, data: any) => apiPatch(`/api/chats/${id}`, data);
 
 // Messages
-export const fetchMessages = (chatId: string) => apiGet(`/api/chats/${chatId}/messages`);
+export const fetchMessages = (chatId: string, sync = false) => apiGet(`/api/chats/${chatId}/messages${sync ? '?sync=true' : ''}`);
 export const addMessage = (chatId: string, data: any) => apiPost(`/api/chats/${chatId}/messages`, data);
 
 // Campaigns

@@ -95,7 +95,7 @@ export interface ChatMessage {
   sender: 'customer' | 'agent' | 'bot';
   agentName?: string;
   text: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'location' | 'contact' | 'buttons' | 'list' | 'internal_note';
+  type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'location' | 'contact' | 'buttons' | 'list' | 'internal_note' | 'call_log' | 'e2e_notification';
   mediaUrl?: string;
   fileName?: string;
   fileSize?: string;

@@ -16,7 +16,7 @@ import { Automations } from './components/user/Automations';
 import { DeveloperGuide } from './components/developer/DeveloperGuide';
 
 import {
-  UserAccount, WhatsAppSession, ChatThread, ChatMessage,
+  UserAccount, WhatsAppSession, ChatThread, ChatMessage, MessageStatus,
   BroadcastCampaign, AutomationRule, WebhookLog, AccountStatus, AuthUser
 } from './types';
 
@@ -154,9 +154,9 @@ export function App() {
   }, [currentUser]);
 
   // Load messages when a chat is opened (lazy background sync)
-  const loadMessages = async (chatId: string) => {
+  const loadMessages = async (chatId: string, sync = false) => {
     try {
-      const d = await fetchMessages(chatId);
+      const d = await fetchMessages(chatId, sync);
       if (d.messages && Array.isArray(d.messages)) {
         setMessages(prev => ({ ...prev, [chatId]: d.messages }));
       }
@@ -195,6 +195,13 @@ export function App() {
     const onSessionMessage = ({ chatId, message }: any) => {
       if (!chatId || !message) return;
       const isOut = Boolean(message.fromMe);
+      const msgText = message.body || message.text || '';
+      const mappedType = (
+        ['image', 'video', 'audio', 'document', 'call_log', 'e2e_notification', 'buttons', 'list'].includes(message.type)
+          ? message.type
+          : 'text'
+      ) as ChatMessage['type'];
+
       setMessages(prev => {
         const currentList = prev[chatId] || [];
         const msgId = message.savedMessageId || message.id || `m_${Date.now()}`;
@@ -204,20 +211,44 @@ export function App() {
           id: msgId,
           chatId,
           sender: isOut ? 'agent' : 'customer',
-          agentName: message.senderName || (isOut ? 'Chatbot' : ''),
-          text: message.body || '',
-          type: (message.type === 'image' || message.type === 'video' || message.type === 'audio' || message.type === 'document' ? message.type : 'text') as ChatMessage['type'],
+          agentName: message.senderName || (isOut ? 'You' : ''),
+          text: msgText,
+          type: mappedType,
           mediaUrl: message.mediaUrl,
+          fileName: message.fileName,
+          audioDuration: message.audioDuration,
           timestamp: message.timestamp || 'Just now',
           status: isOut ? 'sent' : 'delivered'
         };
         return { ...prev, [chatId]: [...currentList, newMsg] };
       });
-      setChats(prev => prev.map(c => c.id === chatId ? {
-        ...c,
-        unreadCount: isOut ? (c.unreadCount || 0) : ((c.unreadCount || 0) + 1),
-        lastMessage: { text: message.body || '', timestamp: message.timestamp || 'Just now', status: isOut ? 'sent' : 'delivered', fromMe: isOut }
-      } : c));
+
+      setChats(prev => {
+        const chatIdx = prev.findIndex(c => c.id === chatId);
+        if (chatIdx === -1) return prev;
+        const targetChat = {
+          ...prev[chatIdx],
+          unreadCount: isOut ? (prev[chatIdx].unreadCount || 0) : ((prev[chatIdx].unreadCount || 0) + 1),
+          lastMessage: { text: msgText, timestamp: message.timestamp || 'Just now', status: (isOut ? 'sent' : 'delivered') as MessageStatus, fromMe: isOut }
+        };
+        const remaining = prev.filter(c => c.id !== chatId);
+        return [targetChat, ...remaining];
+      });
+    };
+
+    const onChatUpdated = ({ chatId, lastMessage, unreadCount }: any) => {
+      if (!chatId) return;
+      setChats(prev => {
+        const chatIdx = prev.findIndex(c => c.id === chatId);
+        if (chatIdx === -1) return prev;
+        const targetChat = {
+          ...prev[chatIdx],
+          ...(unreadCount !== undefined ? { unreadCount } : {}),
+          ...(lastMessage ? { lastMessage } : {})
+        };
+        const remaining = prev.filter(c => c.id !== chatId);
+        return [targetChat, ...remaining];
+      });
     };
 
     const onInboxSynced = async () => {
@@ -231,12 +262,14 @@ export function App() {
     };
 
     sock.on('chat:created', onChatCreated);
+    sock.on('chat:updated', onChatUpdated);
     sock.on('session:message', onSessionMessage);
     sock.on('inbox:synced', onInboxSynced);
 
     return () => {
       sock.off('session:status');
       sock.off('chat:created', onChatCreated);
+      sock.off('chat:updated', onChatUpdated);
       sock.off('session:message', onSessionMessage);
       sock.off('inbox:synced', onInboxSynced);
     };

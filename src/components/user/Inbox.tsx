@@ -28,7 +28,14 @@ import {
   Filter,
   RefreshCw,
   MessageSquare,
-  Loader2
+  Loader2,
+  Video,
+  ArrowUpRight,
+  ArrowDownLeft,
+  PhoneMissed,
+  Image as ImageIcon,
+  Maximize2,
+  X
 } from 'lucide-react';
 import { ChatThread, ChatMessage, WhatsAppSession } from '../../types';
 import { safeAvatarFallback } from '../../utils/avatar';
@@ -44,7 +51,7 @@ interface InboxProps {
   onSendAttachment: (chatId: string, attachment: { data: string; filename: string; kind: string; mimeType: string }) => void;
   onAssignAgent: (chatId: string, agentName: string) => void;
   onToggleResolve: (chatId: string) => void;
-  onOpenChat: (chatId: string) => void;
+  onOpenChat: (chatId: string, sync?: boolean) => void;
   onSyncInbox: (sessionKey: string) => Promise<void>;
 }
 
@@ -87,9 +94,11 @@ export const Inbox: React.FC<InboxProps> = ({
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [showCannedMenu, setShowCannedMenu] = useState(false);
 
-  // Sync state
+  // Sync & Media state
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('');
+  const [isSyncingChat, setIsSyncingChat] = useState(false);
+  const [selectedImageModal, setSelectedImageModal] = useState<string | null>(null);
 
   // Audio playback simulator
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -413,6 +422,25 @@ export const Inbox: React.FC<InboxProps> = ({
                 </select>
               </div>
 
+              {/* Sync Chat Messages with WhatsApp Web */}
+              <button
+                onClick={async () => {
+                  if (!activeChat.id || isSyncingChat) return;
+                  setIsSyncingChat(true);
+                  try {
+                    await onOpenChat(activeChat.id, true);
+                  } finally {
+                    setIsSyncingChat(false);
+                  }
+                }}
+                disabled={isSyncingChat}
+                title="Sync recent messages from WhatsApp Web"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111b21] hover:bg-[#202c33] border border-[#2a3942] text-xs font-medium text-slate-300 hover:text-white transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingChat ? 'animate-spin text-emerald-400' : 'text-slate-400'}`} />
+                <span className="hidden sm:inline">{isSyncingChat ? 'Syncing...' : 'Sync'}</span>
+              </button>
+
               {/* Resolve Conversation */}
               <button
                 onClick={() => onToggleResolve(activeChat.id)}
@@ -467,6 +495,17 @@ export const Inbox: React.FC<InboxProps> = ({
               );
             }
 
+            if (msg.type === 'e2e_notification') {
+              return (
+                <div key={msg.id} className="flex justify-center my-2">
+                  <div className="bg-[#182229] border border-amber-500/20 text-amber-200/90 text-[11px] px-3.5 py-2 rounded-xl max-w-[85%] text-center shadow-sm flex items-center gap-2 font-medium">
+                    <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>{msg.text || 'Messages and calls are end-to-end encrypted. No one outside of this chat can read or listen to them.'}</span>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={msg.id}
@@ -499,8 +538,80 @@ export const Inbox: React.FC<InboxProps> = ({
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                   )}
 
-                  {msg.type === 'image' && msg.mediaUrl && <img src={msg.mediaUrl} alt={msg.fileName || 'Image'} className="max-w-full rounded-lg" />}
-                  {msg.type === 'video' && msg.mediaUrl && <video src={msg.mediaUrl} controls className="max-w-full rounded-lg" />}
+                  {/* Call Log (Video or Voice) */}
+                  {msg.type === 'call_log' && (
+                    <div className="flex items-center gap-3 py-1 px-0.5">
+                      <div className={`p-2.5 rounded-full ${
+                        msg.text.includes('Missed') || msg.text.includes('No answer')
+                          ? 'bg-rose-500/20 text-rose-400'
+                          : 'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                        {msg.text.includes('Video') ? (
+                          <Video className="w-4 h-4" />
+                        ) : (
+                          <Phone className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div className="space-y-0.5 min-w-[110px]">
+                        <div className="font-semibold text-white text-xs">
+                          {msg.text.includes('Video') ? 'Video call' : 'Voice call'}
+                        </div>
+                        <div className={`text-[11px] flex items-center gap-1 ${
+                          msg.text.includes('Missed') || msg.text.includes('No answer')
+                            ? 'text-rose-400 font-medium'
+                            : 'text-slate-300'
+                        }`}>
+                          {isOut ? (
+                            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          ) : (
+                            <ArrowDownLeft className={`w-3.5 h-3.5 shrink-0 ${msg.text.includes('Missed') ? 'text-rose-400' : 'text-emerald-400'}`} />
+                          )}
+                          <span>
+                            {msg.text.replace(/^[📹📞]\s*(Video|Voice)\s*call\s*/i, '').replace(/[()]/g, '') || (isOut ? 'Outgoing' : 'Incoming')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image with zoom preview */}
+                  {msg.type === 'image' && (
+                    <div className="space-y-1.5">
+                      {msg.mediaUrl ? (
+                        <div
+                          className="relative group cursor-pointer overflow-hidden rounded-xl max-w-sm"
+                          onClick={() => setSelectedImageModal(msg.mediaUrl!)}
+                        >
+                          <img
+                            src={msg.mediaUrl}
+                            alt={msg.fileName || 'Photo'}
+                            className="w-full max-h-80 object-cover rounded-xl transition-transform group-hover:scale-[1.02]"
+                          />
+                          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Maximize2 className="w-6 h-6 text-white drop-shadow-md" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2.5 p-3 bg-black/20 rounded-xl border border-white/10">
+                          <ImageIcon className="w-6 h-6 text-emerald-400 shrink-0" />
+                          <span className="text-xs text-slate-300 font-medium">{msg.text || 'Photo'}</span>
+                        </div>
+                      )}
+                      {msg.text && msg.text !== '📷 Photo' && (
+                        <p className="leading-relaxed whitespace-pre-wrap pt-0.5">{msg.text}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Video preview */}
+                  {msg.type === 'video' && (
+                    <div className="space-y-1.5">
+                      {msg.mediaUrl && <video src={msg.mediaUrl} controls className="max-w-full rounded-xl" />}
+                      {msg.text && msg.text !== '🎥 Video' && (
+                        <p className="leading-relaxed whitespace-pre-wrap pt-0.5">{msg.text}</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Voice Note Simulation */}
                   {msg.type === 'audio' && (
@@ -808,6 +919,28 @@ export const Inbox: React.FC<InboxProps> = ({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* Image Preview Lightbox Modal */}
+      {selectedImageModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setSelectedImageModal(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setSelectedImageModal(null)}
+              className="absolute -top-10 right-0 p-2 text-white/80 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedImageModal}
+              alt="Full Preview"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+            />
+          </div>
         </div>
       )}
 
