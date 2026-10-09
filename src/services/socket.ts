@@ -1,14 +1,18 @@
 import { io, Socket } from 'socket.io-client';
-import { getBaseBackendUrl, getStoredToken } from './api';
+import { getBaseBackendUrl, getStoredToken, getStoredTenantId } from './api';
 
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    const url = (import.meta as any).env?.VITE_BACKEND_URL || 'https://srv1628639.hstgr.cloud';
+    const rawUrl = getBaseBackendUrl();
+    const url = rawUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
     socket = io(url, {
       transports: ['websocket', 'polling'],
-      auth: { token: getStoredToken() },
+      auth: { 
+        token: getStoredToken(),
+        tenantId: getStoredTenantId()
+      },
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
     });

@@ -23,13 +23,15 @@ import {
 import {
   getStoredToken, getCurrentUser, clearStoredToken,
   getLiveSessions, closeLiveSession,
-  fetchContacts, addContact,
+  fetchContacts,
   fetchChats, addChat, patchChat,
+  fetchConversationMessages,
+  sendMessageToConversation, markConversationRead,
   fetchMessages, addMessage,
   sendLiveMessage,
   sendLiveMedia,
   fetchCampaigns, addCampaign,
-  fetchAutomations, addAutomation, toggleAutomationApi,
+  fetchAutomations, toggleAutomationApi,
   createTenantUser, updateTenantUser, deleteTenantUser,
   syncInboxForSession,
 } from './services/api';
@@ -153,13 +155,50 @@ export function App() {
 
   }, [currentUser]);
 
-  // Load messages when a chat is opened (lazy background sync)
+  // Load messages when a chat is opened (lazy background sync & mark as read)
   const loadMessages = async (chatId: string, sync = false) => {
     try {
-      const d = await fetchMessages(chatId, sync);
-      if (d.messages && Array.isArray(d.messages)) {
-        setMessages(prev => ({ ...prev, [chatId]: d.messages }));
+      let rawMsgs: any[] = [];
+      try {
+        const d = await fetchConversationMessages(chatId);
+        if (d?.messages && Array.isArray(d.messages)) {
+          rawMsgs = d.messages;
+        }
+      } catch {
+        const d = await fetchMessages(chatId, sync);
+        if (d?.messages && Array.isArray(d.messages)) {
+          rawMsgs = d.messages;
+        }
       }
+
+      if (rawMsgs && rawMsgs.length > 0) {
+        setMessages(prev => ({
+          ...prev,
+          [chatId]: rawMsgs.map((m: any) => ({
+            id: m.id,
+            chatId,
+            sender: m.sender || (m.fromMe ? 'agent' : 'customer'),
+            agentName: m.agent_name || m.agentName || (m.sender === 'agent' ? 'You' : ''),
+            text: m.text || m.body || '',
+            type: m.type || 'text',
+            mediaUrl: m.media_url || m.mediaUrl,
+            fileName: m.file_name || m.fileName,
+            fileSize: m.file_size || m.fileSize,
+            audioDuration: m.audio_duration || m.audioDuration,
+            timestamp: m.timestamp || 'Just now',
+            status: m.status || (m.ack >= 3 ? 'read' : m.ack >= 2 ? 'delivered' : 'sent'),
+            ack: m.ack,
+            idempotencyKey: m.idempotency_key || m.idempotencyKey,
+            providerMessageId: m.provider_message_id || m.providerMessageId
+          }))
+        }));
+      }
+
+      // Mark conversation as read on server & locally
+      try {
+        await markConversationRead(chatId);
+        setChats(prev => prev.map(c => c.id === chatId ? { ...c, unreadCount: 0 } : c));
+      } catch {}
     } catch (err) {
       console.warn(`Could not load messages for chat ${chatId}:`, err);
     }
@@ -192,48 +231,120 @@ export function App() {
       setChats(prev => prev.some(c => c.id === chat.id) ? prev : [chat, ...prev]);
     };
 
-    const onSessionMessage = ({ chatId, message }: any) => {
-      if (!chatId || !message) return;
-      const isOut = Boolean(message.fromMe);
-      const msgText = message.body || message.text || '';
+    const handleIncomingMessage = (convId: string, msg: any) => {
+      if (!convId || !msg) return;
+      const isOut = msg.sender === 'agent' || Boolean(msg.fromMe);
+      const msgText = msg.text || msg.body || '';
       const mappedType = (
-        ['image', 'video', 'audio', 'document', 'call_log', 'e2e_notification', 'buttons', 'list'].includes(message.type)
-          ? message.type
+        ['image', 'video', 'audio', 'document', 'call_log', 'e2e_notification', 'buttons', 'list'].includes(msg.type)
+          ? msg.type
           : 'text'
       ) as ChatMessage['type'];
 
+      const msgId = msg.id || msg.savedMessageId || `m_${Date.now()}`;
+      const provId = msg.provider_message_id || msg.providerMessageId;
+      const idemKey = msg.idempotency_key || msg.idempotencyKey;
+
       setMessages(prev => {
-        const currentList = prev[chatId] || [];
-        const msgId = message.savedMessageId || message.id || `m_${Date.now()}`;
-        if (currentList.some(m => m.id === msgId)) return prev;
+        const currentList = prev[convId] || [];
+
+        // Check if message already exists (optimistic or provider duplicate)
+        const existingIdx = currentList.findIndex(m =>
+          (msgId && m.id === msgId) ||
+          (provId && m.providerMessageId === provId) ||
+          (idemKey && m.idempotencyKey === idemKey)
+        );
+
+        if (existingIdx !== -1) {
+          const updated = [...currentList];
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            id: msgId,
+            status: msg.status || (isOut ? 'sent' : 'delivered'),
+            ack: msg.ack ?? updated[existingIdx].ack,
+            providerMessageId: provId || updated[existingIdx].providerMessageId
+          };
+          return { ...prev, [convId]: updated };
+        }
 
         const newMsg: ChatMessage = {
           id: msgId,
-          chatId,
+          chatId: convId,
           sender: isOut ? 'agent' : 'customer',
-          agentName: message.senderName || (isOut ? 'You' : ''),
+          agentName: msg.agent_name || msg.senderName || (isOut ? 'You' : ''),
           text: msgText,
           type: mappedType,
-          mediaUrl: message.mediaUrl,
-          fileName: message.fileName,
-          audioDuration: message.audioDuration,
-          timestamp: message.timestamp || 'Just now',
-          status: isOut ? 'sent' : 'delivered'
+          mediaUrl: msg.media_url || msg.mediaUrl,
+          fileName: msg.file_name || msg.fileName,
+          audioDuration: msg.audio_duration || msg.audioDuration,
+          timestamp: msg.timestamp || 'Just now',
+          status: msg.status || (isOut ? 'sent' : 'delivered'),
+          ack: msg.ack || (isOut ? 1 : 2),
+          providerMessageId: provId,
+          idempotencyKey: idemKey
         };
-        return { ...prev, [chatId]: [...currentList, newMsg] };
+        return { ...prev, [convId]: [...currentList, newMsg] };
       });
 
       setChats(prev => {
-        const chatIdx = prev.findIndex(c => c.id === chatId);
+        const chatIdx = prev.findIndex(c => c.id === convId);
         if (chatIdx === -1) return prev;
         const targetChat = {
           ...prev[chatIdx],
           unreadCount: isOut ? (prev[chatIdx].unreadCount || 0) : ((prev[chatIdx].unreadCount || 0) + 1),
-          lastMessage: { text: msgText, timestamp: message.timestamp || 'Just now', status: (isOut ? 'sent' : 'delivered') as MessageStatus, fromMe: isOut }
+          lastMessage: {
+            text: msgText,
+            timestamp: msg.timestamp || 'Just now',
+            status: (isOut ? 'sent' : 'delivered') as MessageStatus,
+            fromMe: isOut
+          }
         };
-        const remaining = prev.filter(c => c.id !== chatId);
+        const remaining = prev.filter(c => c.id !== convId);
         return [targetChat, ...remaining];
       });
+    };
+
+    const onMessageReceived = ({ conversationId, message }: any) => {
+      handleIncomingMessage(conversationId, message);
+    };
+
+    const onMessageCreated = ({ conversationId, message }: any) => {
+      handleIncomingMessage(conversationId, message);
+    };
+
+    const onSessionMessage = ({ chatId, message }: any) => {
+      handleIncomingMessage(chatId, message);
+    };
+
+    const onMessageAck = ({ conversationId, messageId, providerMessageId, ack, status }: any) => {
+      if (!conversationId) return;
+      const targetStatus = status || (ack >= 3 ? 'read' : ack >= 2 ? 'delivered' : 'sent');
+
+      setMessages(prev => {
+        const currentList = prev[conversationId] || [];
+        return {
+          ...prev,
+          [conversationId]: currentList.map(m => {
+            if ((messageId && m.id === messageId) || (providerMessageId && m.providerMessageId === providerMessageId)) {
+              return { ...m, ack, status: targetStatus };
+            }
+            return m;
+          })
+        };
+      });
+
+      setChats(prev => prev.map(c => {
+        if (c.id === conversationId && c.lastMessage?.fromMe) {
+          return {
+            ...c,
+            lastMessage: {
+              ...c.lastMessage,
+              status: targetStatus
+            }
+          };
+        }
+        return c;
+      }));
     };
 
     const onChatUpdated = ({ chatId, lastMessage, unreadCount, contactName, avatar }: any) => {
@@ -253,6 +364,11 @@ export function App() {
       });
     };
 
+    const onConversationRead = ({ conversationId }: any) => {
+      if (!conversationId) return;
+      setChats(prev => prev.map(c => c.id === conversationId ? { ...c, unreadCount: 0 } : c));
+    };
+
     const onInboxSynced = async () => {
       try {
         const [chatsData, contactsData] = await Promise.all([fetchChats(), fetchContacts()]);
@@ -265,6 +381,11 @@ export function App() {
 
     sock.on('chat:created', onChatCreated);
     sock.on('chat:updated', onChatUpdated);
+    sock.on('conversation:updated', onChatUpdated);
+    sock.on('conversation:read', onConversationRead);
+    sock.on('message:received', onMessageReceived);
+    sock.on('message:created', onMessageCreated);
+    sock.on('message:ack', onMessageAck);
     sock.on('session:message', onSessionMessage);
     sock.on('inbox:synced', onInboxSynced);
 
@@ -272,6 +393,11 @@ export function App() {
       sock.off('session:status');
       sock.off('chat:created', onChatCreated);
       sock.off('chat:updated', onChatUpdated);
+      sock.off('conversation:updated', onChatUpdated);
+      sock.off('conversation:read', onConversationRead);
+      sock.off('message:received', onMessageReceived);
+      sock.off('message:created', onMessageCreated);
+      sock.off('message:ack', onMessageAck);
       sock.off('session:message', onSessionMessage);
       sock.off('inbox:synced', onInboxSynced);
     };
@@ -286,39 +412,81 @@ export function App() {
   const handleSendMessage = async (chatId: string, text: string, isNote: boolean = false) => {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const agentName = currentUser?.name || 'Agent';
+    const idempotencyKey = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     const optimistic: ChatMessage = {
-      id: `m_${Date.now()}`, chatId,
-      sender: 'agent', agentName,
-      text, type: isNote ? 'internal_note' : 'text',
-      isNote, timestamp, status: 'sent'
+      id: `opt_${Date.now()}`,
+      chatId,
+      sender: 'agent',
+      agentName,
+      text,
+      type: isNote ? 'internal_note' : 'text',
+      isNote,
+      timestamp,
+      status: 'sending',
+      idempotencyKey
     };
 
     setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), optimistic] }));
 
     if (!isNote) {
       setChats(prev => prev.map(c => c.id === chatId
-        ? { ...c, lastMessage: { text, timestamp, status: 'sent', fromMe: true } }
+        ? { ...c, lastMessage: { text, timestamp, status: 'sending', fromMe: true } }
         : c
       ));
     }
 
     try {
-      if (!isNote) {
+      if (isNote) {
+        const d = await addMessage(chatId, {
+          sender: 'agent',
+          agentName,
+          text,
+          type: 'internal_note',
+          isNote: true,
+          timestamp,
+          status: 'sent',
+          idempotencyKey
+        });
+        setMessages(prev => ({
+          ...prev,
+          [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? (d.message || { ...m, status: 'sent' }) : m)
+        }));
+        return;
+      }
+
+      let confirmedMsg: any = null;
+      try {
+        const res = await sendMessageToConversation(chatId, { text, idempotencyKey });
+        confirmedMsg = res?.message;
+      } catch {
         const chat = chats.find(c => c.id === chatId);
         if (!chat?.phone) throw new Error('This conversation has no phone number.');
         const activeChannel = chat.channel || sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
-        await sendLiveMessage(activeChannel, chat.phone, text, chat.contactName, chatId);
+        const res = await sendLiveMessage(activeChannel, chat.phone, text, chat.contactName, chatId);
+        confirmedMsg = res?.message;
       }
-      const d = await addMessage(chatId, { sender: 'agent', agentName, text, type: isNote ? 'internal_note' : 'text', isNote, timestamp, status: 'sent' });
-      // Replace optimistic with real
+
+      // Reconcile optimistic message without duplication
       setMessages(prev => ({
         ...prev,
-        [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? d.message : m)
+        [chatId]: (prev[chatId] || []).map(m =>
+          (m.id === optimistic.id || m.idempotencyKey === idempotencyKey)
+            ? {
+                ...m,
+                id: confirmedMsg?.id || m.id,
+                providerMessageId: confirmedMsg?.provider_message_id || confirmedMsg?.providerMessageId || m.providerMessageId,
+                status: 'sent',
+                ack: 1
+              }
+            : m
+        )
       }));
-      if (!isNote) {
-        await patchChat(chatId, { lastMessage: { text, timestamp, status: 'sent', fromMe: true } });
-      }
+
+      setChats(prev => prev.map(c => c.id === chatId
+        ? { ...c, lastMessage: { text, timestamp, status: 'sent', fromMe: true } }
+        : c
+      ));
     } catch (error) {
       console.error('Inbox send failed:', error);
       setMessages(prev => ({

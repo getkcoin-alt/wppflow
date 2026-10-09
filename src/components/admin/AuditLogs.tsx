@@ -49,9 +49,12 @@ export const AuditLogs: React.FC = () => {
             <Activity className="w-5 h-5" />
           </span>
           <h1 className="text-xl font-bold text-white tracking-tight">System & Security Audit Logs</h1>
+          <span className="text-[10px] bg-indigo-950 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-800 font-semibold">
+            PostgreSQL audit_events
+          </span>
         </div>
         <p className="text-xs text-slate-400 mt-1">
-          Cryptographically recorded actions across all workspaces, session lifecycles, and API key regenerations.
+          Tenant-scoped audit trail recorded across authentication events, session lifecycles, and configuration updates.
         </p>
       </div>
 

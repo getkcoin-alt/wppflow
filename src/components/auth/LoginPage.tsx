@@ -300,14 +300,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
             </button>
           </form>
 
-          {/* Demo credentials hint */}
-          {mode === 'login' && (
-            <div className="bg-[#111b21] border border-[#2a3942] rounded-xl p-3 text-xs text-slate-400 space-y-1">
-              <div className="font-semibold text-slate-300 mb-1">Demo credentials:</div>
-              <div>Admin: <span className="font-mono text-emerald-400">admin@wppflow.io</span> / <span className="font-mono text-emerald-400">admin123</span></div>
-              <div>User: <span className="font-mono text-teal-400">demo@wppflow.io</span> / <span className="font-mono text-teal-400">demo123</span></div>
-            </div>
-          )}
+          <div className="text-center pt-2">
+            <span className="text-xs text-slate-500">
+              Enterprise Grade Multi-Tenant WhatsApp CRM
+            </span>
+          </div>
 
         </div>
       </div>

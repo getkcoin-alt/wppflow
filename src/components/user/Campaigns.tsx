@@ -92,6 +92,17 @@ export const Campaigns: React.FC<CampaignsProps> = ({
         </button>
       </div>
 
+      {/* Safety & Compliance Mode Alert */}
+      <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 text-xs text-amber-200 space-y-1">
+        <div className="flex items-center gap-2 font-bold text-amber-400">
+          <ShieldCheck className="w-4 h-4 text-amber-400" />
+          <span>Safety & Opt-In Compliance Enforcement</span>
+        </div>
+        <p className="text-amber-200/90 leading-relaxed text-[11px]">
+          Mass marketing campaigns are currently gated by tenant opt-in consent and suppression checks. High-volume unconsented broadcasts risk permanent WhatsApp ban. Transactional outbox messages run with rate-limiting.
+        </p>
+      </div>
+
       {/* Campaigns Table */}
       <div className="bg-[#111b21] rounded-2xl border border-[#2a3942] overflow-hidden">
         <div className="overflow-x-auto">
@@ -102,8 +113,8 @@ export const Campaigns: React.FC<CampaignsProps> = ({
                 <th className="py-3.5 px-4">Audience</th>
                 <th className="py-3.5 px-4">Delivered / Sent</th>
                 <th className="py-3.5 px-4">Engagement (Read & Replied)</th>
-                <th className="py-3.5 px-4">Meta Fee Saved</th>
-                <th className="py-3.5 px-4">Anti-Ban Pacing</th>
+                <th className="py-3.5 px-4">Estimated Volume</th>
+                <th className="py-3.5 px-4">Outbox Pacing</th>
                 <th className="py-3.5 px-4">Status</th>
               </tr>
             </thead>

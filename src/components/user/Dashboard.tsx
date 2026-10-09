@@ -228,8 +228,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-emerald-400 font-semibold">Full Native Support</span>
               </div>
               <div className="flex justify-between text-[10px] text-slate-300">
-                <span>Anti-Ban Safety Shield:</span>
-                <span className="text-emerald-400 font-semibold">Built-in Jitter & Warmup</span>
+                <span>Pacing & Concurrency Controls:</span>
+                <span className="text-emerald-400 font-semibold">Built-in Rate Limiting</span>
               </div>
             </div>
           </div>

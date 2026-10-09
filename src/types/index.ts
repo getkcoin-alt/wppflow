@@ -105,6 +105,10 @@ export interface ChatMessage {
   timestamp: string;
   status: MessageStatus;
   isNote?: boolean;
+  ack?: number;
+  idempotencyKey?: string;
+  providerMessageId?: string;
+  timestampEpoch?: number;
 }
 
 export interface ChatThread {

@@ -177,6 +177,8 @@ export interface AuthResponse {
 }
 
 export const TOKEN_STORAGE_KEY = 'wppflow_auth_token';
+export const TENANT_STORAGE_KEY = 'wppflow_tenant_id';
+export const REFRESH_TOKEN_STORAGE_KEY = 'wppflow_refresh_token';
 
 export function getStoredToken(): string | null {
   try {
@@ -195,6 +197,22 @@ export function setStoredToken(token: string) {
 export function clearStoredToken() {
   try {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(TENANT_STORAGE_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  } catch {}
+}
+
+export function getStoredTenantId(): string | null {
+  try {
+    return localStorage.getItem(TENANT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredTenantId(tenantId: string) {
+  try {
+    localStorage.setItem(TENANT_STORAGE_KEY, tenantId);
   } catch {}
 }
 
@@ -205,16 +223,12 @@ export async function loginUser(email: string, password: string, baseUrl = getBa
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    return await res.json();
+    const data = await res.json();
+    if (data.status === 'success' && data.tenant?.id) {
+      setStoredTenantId(data.tenant.id);
+    }
+    return data;
   } catch (err: any) {
-    try {
-      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      return await fallbackRes.json();
-    } catch {}
     return { status: 'error', message: err.message || 'Network error connecting to auth server' };
   }
 }
@@ -233,16 +247,12 @@ export async function signupUser(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, companyName, role })
     });
-    return await res.json();
+    const data = await res.json();
+    if (data.status === 'success' && data.tenant?.id) {
+      setStoredTenantId(data.tenant.id);
+    }
+    return data;
   } catch (err: any) {
-    try {
-      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, companyName, role })
-      });
-      return await fallbackRes.json();
-    } catch {}
     return { status: 'error', message: err.message || 'Network error connecting to auth server' };
   }
 }
@@ -250,21 +260,15 @@ export async function signupUser(
 export async function getCurrentUser(token: string, baseUrl = getBaseBackendUrl()): Promise<any | null> {
   try {
     const res = await fetch(resolveEndpoint('/api/auth/me', baseUrl), {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: authHeaders(token)
     });
     if (!res.ok) return null;
     const data = await res.json();
+    if (data.tenant?.id) {
+      setStoredTenantId(data.tenant.id);
+    }
     return data.user || null;
   } catch {
-    try {
-      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (fallbackRes.ok) {
-        const data = await fallbackRes.json();
-        return data.user || null;
-      }
-    } catch {}
     return null;
   }
 }
@@ -273,8 +277,10 @@ export async function getCurrentUser(token: string, baseUrl = getBaseBackendUrl(
 
 function authHeaders(token?: string | null): Record<string, string> {
   const t = token || getStoredToken();
+  const tenantId = getStoredTenantId();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (t) headers['Authorization'] = `Bearer ${t}`;
+  if (tenantId) headers['x-tenant-id'] = tenantId;
   return headers;
 }
 
@@ -307,10 +313,40 @@ export const fetchContacts = () => apiGet('/api/contacts');
 export const addContact = (data: any) => apiPost('/api/contacts', data);
 export const removeContact = (id: string) => apiDelete(`/api/contacts/${id}`);
 
-// Chats
+// Chats & Conversations
 export const fetchChats = () => apiGet('/api/chats');
 export const addChat = (data: any) => apiPost('/api/chats', data);
 export const patchChat = (id: string, data: any) => apiPatch(`/api/chats/${id}`, data);
+
+export async function fetchConversations(params?: { limit?: number; cursor?: string | null; filter?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.cursor) query.set('cursor', params.cursor);
+  if (params?.filter && params.filter !== 'all') query.set('filter', params.filter);
+  if (params?.search) query.set('search', params.search);
+  const qs = query.toString();
+  return apiGet(`/api/conversations${qs ? `?${qs}` : ''}`);
+}
+
+export async function fetchConversationMessages(conversationId: string, params?: { limit?: number; cursor?: string | null }) {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.cursor) query.set('cursor', params.cursor);
+  const qs = query.toString();
+  return apiGet(`/api/conversations/${conversationId}/messages${qs ? `?${qs}` : ''}`);
+}
+
+export async function sendMessageToConversation(conversationId: string, payload: { text: string; idempotencyKey?: string }) {
+  return apiPost(`/api/conversations/${conversationId}/messages`, payload);
+}
+
+export async function markConversationRead(conversationId: string) {
+  return apiPost(`/api/conversations/${conversationId}/read`, {});
+}
+
+export async function syncConversations(sessionName?: string) {
+  return apiPost('/api/conversations/sync', { sessionName });
+}
 
 // Messages
 export const fetchMessages = (chatId: string, sync = false) => apiGet(`/api/chats/${chatId}/messages${sync ? '?sync=true' : ''}`);

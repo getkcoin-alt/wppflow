@@ -30,9 +30,9 @@ export const ClusterHealth: React.FC<ClusterHealthProps> = ({
     setIsFlushingCache(true);
     setTimeout(() => {
       setIsFlushingCache(false);
-      setSuccessMessage('Puppeteer Chromium V8 garbage collection completed. Freed 1.4 GB memory.');
+      setSuccessMessage('Chromium process memory cache cleared.');
       setTimeout(() => setSuccessMessage(null), 4000);
-    }, 1200);
+    }, 800);
   };
 
   return (
@@ -45,10 +45,13 @@ export const ClusterHealth: React.FC<ClusterHealthProps> = ({
             <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <Server className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">WppFlow Cloud Cluster & Node Health</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">WppFlow Engine & Worker Health</h1>
+            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
+              Diagnostic Telemetry
+            </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time telemetry for Headless Chromium worker pools, WebSocket sessions, and Anti-Ban proxy routes.
+            Worker health monitoring for Headless Chromium instances, persistent WPPConnect sessions, and BullMQ job queues.
           </p>
         </div>
 
