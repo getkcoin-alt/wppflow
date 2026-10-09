@@ -236,7 +236,7 @@ export function App() {
       });
     };
 
-    const onChatUpdated = ({ chatId, lastMessage, unreadCount }: any) => {
+    const onChatUpdated = ({ chatId, lastMessage, unreadCount, contactName, avatar }: any) => {
       if (!chatId) return;
       setChats(prev => {
         const chatIdx = prev.findIndex(c => c.id === chatId);
@@ -244,7 +244,9 @@ export function App() {
         const targetChat = {
           ...prev[chatIdx],
           ...(unreadCount !== undefined ? { unreadCount } : {}),
-          ...(lastMessage ? { lastMessage } : {})
+          ...(lastMessage ? { lastMessage } : {}),
+          ...(contactName ? { contactName } : {}),
+          ...(avatar ? { avatar } : {})
         };
         const remaining = prev.filter(c => c.id !== chatId);
         return [targetChat, ...remaining];
