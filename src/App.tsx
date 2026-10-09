@@ -306,7 +306,7 @@ export function App() {
         const chat = chats.find(c => c.id === chatId);
         if (!chat?.phone) throw new Error('This conversation has no phone number.');
         const activeChannel = chat.channel || sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
-        await sendLiveMessage(activeChannel, chat.phone, text);
+        await sendLiveMessage(activeChannel, chat.phone, text, chat.contactName, chatId);
       }
       const d = await addMessage(chatId, { sender: 'agent', agentName, text, type: isNote ? 'internal_note' : 'text', isNote, timestamp, status: 'sent' });
       // Replace optimistic with real

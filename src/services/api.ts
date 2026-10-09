@@ -120,7 +120,14 @@ export async function closeLiveSession(sessionName: string, baseUrl = getBaseBac
   }
 }
 
-export async function sendLiveMessage(sessionName: string, phone: string, message: string, baseUrl = getBaseBackendUrl()) {
+export async function sendLiveMessage(
+  sessionName: string,
+  phone: string,
+  message: string,
+  contactName?: string,
+  chatId?: string,
+  baseUrl = getBaseBackendUrl()
+) {
   const token = getStoredToken();
   const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-message`, baseUrl), {
     method: 'POST',
@@ -128,7 +135,7 @@ export async function sendLiveMessage(sessionName: string, phone: string, messag
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     },
-    body: JSON.stringify({ phone, message })
+    body: JSON.stringify({ phone, message, contactName, chatId })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
