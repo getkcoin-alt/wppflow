@@ -1,6 +1,11 @@
-export type UserRole = 'superadmin' | 'tenant_admin' | 'agent' | 'sales' | 'support';
-export type PlanTier = 'starter' | 'growth' | 'enterprise';
-export type AccountStatus = 'active' | 'blocked' | 'suspended' | 'pending';
+export type UserRole =
+  | "superadmin"
+  | "tenant_admin"
+  | "agent"
+  | "sales"
+  | "support";
+export type PlanTier = "starter" | "growth" | "enterprise";
+export type AccountStatus = "active" | "blocked" | "suspended" | "pending";
 
 export interface UserAccount {
   id: string;
@@ -26,7 +31,7 @@ export interface AuthUser {
   email: string;
   name: string;
   company_name: string;
-  role: 'superadmin' | 'admin' | 'sales' | 'support' | 'user';
+  role: "superadmin" | "admin" | "sales" | "support" | "user";
   plan: string;
   sessions_limit: number;
   status?: AccountStatus;
@@ -35,7 +40,14 @@ export interface AuthUser {
   created_at: string;
 }
 
-export type SessionState = 'CONNECTED' | 'STARTING' | 'QRCODE' | 'DISCONNECTED';
+export type SessionState =
+  | "CONNECTED"
+  | "STARTING"
+  | "QRCODE"
+  | "DISCONNECTED"
+  | "AUTHENTICATING"
+  | "FAILED"
+  | "EXPIRED";
 
 export interface WhatsAppSession {
   id: string;
@@ -52,7 +64,7 @@ export interface WhatsAppSession {
   messagesLimitToday: number;
   lastActive: string;
   wppVersion: string;
-  channel: 'sales' | 'support' | 'vip' | 'general';
+  channel: "sales" | "support" | "vip" | "general";
 }
 
 export interface CustomerOrder {
@@ -61,7 +73,7 @@ export interface CustomerOrder {
   date: string;
   total: number;
   currency: string;
-  status: 'Delivered' | 'In Transit' | 'Processing' | 'Abandoned Cart';
+  status: "Delivered" | "In Transit" | "Processing" | "Abandoned Cart";
   itemsSummary: string;
 }
 
@@ -89,15 +101,35 @@ export interface Contact {
   lastSeen: string;
 }
 
-export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+export type MessageStatus =
+  | "sending"
+  | "dispatching"
+  | "uncertain"
+  | "sent"
+  | "delivered"
+  | "read"
+  | "failed";
 
 export interface ChatMessage {
   id: string;
   chatId: string;
-  sender: 'customer' | 'agent' | 'bot';
+  sender: "customer" | "agent" | "bot";
   agentName?: string;
   text: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sticker' | 'location' | 'contact' | 'buttons' | 'list' | 'internal_note' | 'call_log' | 'e2e_notification';
+  type:
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "document"
+    | "sticker"
+    | "location"
+    | "contact"
+    | "buttons"
+    | "list"
+    | "internal_note"
+    | "call_log"
+    | "e2e_notification";
   mediaUrl?: string;
   fileName?: string;
   fileSize?: string;
@@ -148,7 +180,13 @@ export interface BroadcastCampaign {
   repliedCount: number;
   failedCount: number;
   costSavedMeta: number; // e.g. $64.80 saved compared to Meta official API fees
-  status: 'completed' | 'running' | 'scheduled' | 'draft' | 'paused' | 'stopped';
+  status:
+    | "completed"
+    | "running"
+    | "scheduled"
+    | "draft"
+    | "paused"
+    | "stopped";
   templateText: string;
   antiBanDelaySeconds: number; // 3 - 10s humanized jitter
   createdAt: string;
@@ -158,9 +196,13 @@ export interface BroadcastCampaign {
 export interface AutomationRule {
   id: string;
   name: string;
-  triggerType: 'keyword' | 'new_lead' | 'interactive_button' | 'order_abandoned';
+  triggerType:
+    | "keyword"
+    | "new_lead"
+    | "interactive_button"
+    | "order_abandoned";
   triggerCondition: string;
-  actionType: 'reply_text' | 'reply_buttons' | 'assign_agent' | 'fire_webhook';
+  actionType: "reply_text" | "reply_buttons" | "assign_agent" | "fire_webhook";
   actionSummary: string;
   isEnabled: boolean;
   executionsCount: number;
@@ -168,13 +210,23 @@ export interface AutomationRule {
 
 export interface ApiEndpoint {
   id: string;
-  method: 'GET' | 'POST' | 'DELETE' | 'PUT';
+  method: "GET" | "POST" | "DELETE" | "PUT";
   path: string;
-  category: 'Sessions' | 'Messages' | 'Groups' | 'Contacts & Chats' | 'Webhooks';
+  category:
+    | "Sessions"
+    | "Messages"
+    | "Groups"
+    | "Contacts & Chats"
+    | "Webhooks";
   title: string;
   description: string;
   headers: Record<string, string>;
-  parameters?: { name: string; type: string; required: boolean; description: string }[];
+  parameters?: {
+    name: string;
+    type: string;
+    required: boolean;
+    description: string;
+  }[];
   sampleBody?: Record<string, any>;
   sampleResponse: Record<string, any>;
   curlSnippet: string;
@@ -186,10 +238,10 @@ export interface ApiEndpoint {
 
 export interface WebhookLog {
   id: string;
-  event: 'onmessage' | 'onack' | 'onstatechange' | 'onbattery' | 'pollresponse';
+  event: "onmessage" | "onack" | "onstatechange" | "onbattery" | "pollresponse";
   session: string;
   timestamp: string;
-  status: 'delivered' | 'processing' | 'failed';
+  status: "delivered" | "processing" | "failed";
   payload: Record<string, any>;
 }
 
@@ -203,5 +255,5 @@ export interface ClusterMetrics {
   queueDepth: number;
   avgResponseMs: number;
   uptimeHours: number;
-  systemStatus: 'healthy' | 'degraded' | 'maintenance';
+  systemStatus: "healthy" | "degraded" | "maintenance";
 }

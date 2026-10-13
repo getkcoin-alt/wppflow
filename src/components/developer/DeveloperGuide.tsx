@@ -1,167 +1,299 @@
-import React, { useState } from 'react';
-import { 
-  Code2, 
-  Webhook, 
-  Layers, 
-  Key, 
-  Copy, 
-  Check, 
-  Sparkles, 
-  ShieldCheck, 
-  Terminal,
-  RefreshCw
-} from 'lucide-react';
-import { ApiEndpoint, WebhookLog } from '../../types';
-import { ApiTester } from './ApiTester';
-import { WebhookSimulator } from './WebhookSimulator';
-import { SdkSnippets } from './SdkSnippets';
-
-interface DeveloperGuideProps {
-  endpoints: ApiEndpoint[];
-  webhookLogs: WebhookLog[];
-  onTriggerTestWebhook: () => void;
-  activeDevTab: 'docs' | 'webhooks' | 'sdks' | 'keys';
-  onSelectDevTab: (tab: 'docs' | 'webhooks' | 'sdks' | 'keys') => void;
-}
-
-export const DeveloperGuide: React.FC<DeveloperGuideProps> = ({
-  endpoints,
-  webhookLogs,
-  onTriggerTestWebhook,
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  apiGet,
+  apiPost,
+  apiDelete,
+  apiRequest,
+  getStoredTenantId,
+  resolveEndpoint,
+} from "../../services/api";
+import type { DevSubTab } from "../layout/Sidebar";
+export function DeveloperGuide({
   activeDevTab,
-  onSelectDevTab
-}) => {
-  const [apiKey, setApiKey] = useState('wpp_live_sec_9938201a4bc8821d');
-  const [copiedKey, setCopiedKey] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(apiKey);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
+  onSelectDevTab,
+}: {
+  activeDevTab: DevSubTab;
+  onSelectDevTab: (tab: DevSubTab) => void;
+}) {
+  const tenant = getStoredTenantId(),
+    qc = useQueryClient(),
+    [error, setError] = useState(""),
+    [secret, setSecret] = useState(""),
+    [output, setOutput] = useState(""),
+    [duration, setDuration] = useState<number | null>(null),
+    [busy, setBusy] = useState(false);
+  const keys = useQuery({
+    queryKey: ["keys", tenant],
+    queryFn: () => apiGet("/api/workspace/keys"),
+    enabled: activeDevTab === "keys",
+  });
+  const hooks = useQuery({
+    queryKey: ["webhooks", tenant],
+    queryFn: () => apiGet("/api/workspace/webhooks"),
+    enabled: activeDevTab === "webhooks",
+    refetchInterval: 10000,
+  });
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
-
-  const handleRegenerateKey = () => {
-    setIsRegenerating(true);
-    setTimeout(() => {
-      const newKey = `wpp_live_sec_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 8)}`;
-      setApiKey(newKey);
-      setIsRegenerating(false);
-    }, 800);
-  };
-
   return (
-    <div className="space-y-6">
-      
-      {/* Top Banner Navigation */}
-      <div className="flex bg-[#111b21] p-1.5 rounded-2xl border border-[#2a3942] gap-1 text-xs">
-        <button
-          onClick={() => onSelectDevTab('docs')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
-            activeDevTab === 'docs' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Code2 className="w-4 h-4" />
-          <span>Interactive REST Playground</span>
-        </button>
-
-        <button
-          onClick={() => onSelectDevTab('webhooks')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
-            activeDevTab === 'webhooks' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Webhook className="w-4 h-4" />
-          <span>Webhook Stream</span>
-        </button>
-
-        <button
-          onClick={() => onSelectDevTab('sdks')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
-            activeDevTab === 'sdks' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>SDK Quickstarts</span>
-        </button>
-
-        <button
-          onClick={() => onSelectDevTab('keys')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
-            activeDevTab === 'keys' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Key className="w-4 h-4" />
-          <span>API Credentials</span>
-        </button>
-      </div>
-
-      {/* Tab Contents */}
-      {activeDevTab === 'docs' && (
-        <ApiTester endpoints={endpoints} />
+    <section className="space-y-5">
+      <h1 className="text-xl font-bold">Developer Tools</h1>
+      <nav className="flex gap-4">
+        {(["docs", "keys", "webhooks", "sdks"] as DevSubTab[]).map((t) => (
+          <button
+            key={t}
+            className={activeDevTab === t ? "text-emerald-400" : ""}
+            onClick={() => {
+              setSecret("");
+              onSelectDevTab(t);
+            }}
+          >
+            {t === "docs" ? "API tester" : t}
+          </button>
+        ))}
+      </nav>
+      {error && (
+        <p role="alert" className="text-rose-300">
+          {error}
+        </p>
       )}
-
-      {activeDevTab === 'webhooks' && (
-        <WebhookSimulator logs={webhookLogs} onTriggerTestWebhook={onTriggerTestWebhook} />
-      )}
-
-      {activeDevTab === 'sdks' && (
-        <SdkSnippets endpoints={endpoints} />
-      )}
-
-      {activeDevTab === 'keys' && (
-        <div className="space-y-6">
-          <div className="bg-[#111b21] p-5 rounded-2xl border border-[#2a3942] space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Key className="w-5 h-5" />
-              </span>
-              <div>
-                <h1 className="text-base font-bold text-white">Live Production API Secret Key</h1>
-                <p className="text-xs text-slate-400">
-                  Authenticate your backend requests via Bearer token in the Authorization header.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#202c33] rounded-xl border border-[#2a3942] flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="font-mono text-xs text-emerald-400 font-bold break-all">
-                {apiKey}
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button
-                  onClick={handleCopyKey}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111b21] hover:bg-[#111b21]/80 text-slate-300 rounded-lg text-xs font-semibold transition-all"
-                >
-                  {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey ? 'Copied' : 'Copy Key'}</span>
-                </button>
-                <button
-                  onClick={handleRegenerateKey}
-                  disabled={isRegenerating}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 rounded-lg text-xs font-semibold transition-all"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
-                  <span>Regenerate Key</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
-              <div className="p-3 bg-[#202c33]/50 rounded-xl border border-[#2a3942] space-y-1">
-                <div className="font-semibold text-white">Rate Limits</div>
-                <div className="text-[11px] text-slate-400">Standard: 120 requests/minute per active session instance.</div>
-              </div>
-              <div className="p-3 bg-[#202c33]/50 rounded-xl border border-[#2a3942] space-y-1">
-                <div className="font-semibold text-white">Security & Scopes</div>
-                <div className="text-[11px] text-slate-400">All endpoints encrypted with TLS 1.3. Sessions isolated by tenant ID.</div>
-              </div>
-            </div>
-
-          </div>
+      {secret && (
+        <div className="bg-[#202c33] p-4 rounded break-all">
+          <p>
+            Copy this secret now. It is shown once and is not stored in your
+            browser.
+          </p>
+          <code>{secret}</code>
+          <button
+            className="block text-emerald-400 mt-2"
+            onClick={() => void navigator.clipboard.writeText(secret)}
+          >
+            Copy
+          </button>
         </div>
       )}
-
-    </div>
+      {activeDevTab === "docs" && (
+        <div className="bg-[#111b21] rounded-xl p-5 space-y-4">
+          <p className="text-sm text-slate-400">
+            Requests below execute against your workspace. POST requests can
+            change data. No sample response is substituted.
+          </p>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              void run(async () => {
+                const path = String(f.get("path"));
+                if (!path.startsWith("/api/") || path.includes("://"))
+                  throw new Error("Use a local /api/ endpoint");
+                const method = String(f.get("method")),
+                  body = String(f.get("body"));
+                const start = performance.now();
+                try {
+                  const result = await apiRequest(path, {
+                    method,
+                    ...(method !== "GET"
+                      ? { body: JSON.stringify(JSON.parse(body || "{}")) }
+                      : {}),
+                  });
+                  setOutput(JSON.stringify(result, null, 2));
+                } catch (e: any) {
+                  setOutput(e.message);
+                  throw e;
+                } finally {
+                  setDuration(Math.round(performance.now() - start));
+                }
+              });
+            }}
+          >
+            <select
+              aria-label="HTTP method"
+              name="method"
+              className="bg-[#202c33] p-2"
+            >
+              <option>GET</option>
+              <option>POST</option>
+              <option>PATCH</option>
+              <option>DELETE</option>
+            </select>
+            <input
+              aria-label="Endpoint"
+              name="path"
+              defaultValue="/api/workspace/summary"
+              className="bg-[#202c33] p-2 rounded w-full"
+            />
+            <textarea
+              aria-label="Request JSON"
+              name="body"
+              defaultValue="{}"
+              className="bg-[#202c33] p-2 rounded w-full h-28 font-mono"
+            />
+            <button disabled={busy} className="bg-emerald-600 p-2 rounded">
+              Execute request
+            </button>
+          </form>
+          {duration !== null && <p>Actual request duration: {duration} ms</p>}
+          <pre className="overflow-auto whitespace-pre-wrap text-xs">
+            {output || "Execute a request to see its response."}
+          </pre>
+        </div>
+      )}
+      {activeDevTab === "keys" && (
+        <div className="space-y-4">
+          <form
+            className="flex gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              void run(async () => {
+                const result = await apiPost("/api/workspace/keys", {
+                  name: f.get("name"),
+                  scopes: [f.get("scope")],
+                });
+                setSecret(result.key);
+                await qc.invalidateQueries({ queryKey: ["keys", tenant] });
+              });
+            }}
+          >
+            <input
+              required
+              name="name"
+              aria-label="Key name"
+              placeholder="Key name"
+              className="bg-[#202c33] p-2 rounded"
+            />
+            <select
+              name="scope"
+              aria-label="Scope"
+              className="bg-[#202c33] p-2"
+            >
+              <option value="inbox">Inbox</option>
+              <option value="contacts">Contacts</option>
+              <option value="sessions">Sessions (read)</option>
+            </select>
+            <button disabled={busy} className="bg-emerald-600 p-2 rounded">
+              Create key
+            </button>
+          </form>
+          {keys.error && <p role="alert">{keys.error.message}</p>}
+          {keys.data?.keys.map((k: any) => (
+            <article
+              key={k.id}
+              className="bg-[#111b21] p-4 rounded-xl flex justify-between"
+            >
+              <span>
+                {k.name} · {k.prefix}… · {k.scopes.join(", ")} ·{" "}
+                {k.revoked_at ? "Revoked" : "Active"}
+              </span>
+              <button
+                disabled={busy || Boolean(k.revoked_at)}
+                className="text-rose-300"
+                onClick={() =>
+                  void run(async () => {
+                    await apiDelete(`/api/workspace/keys/${k.id}`);
+                    await qc.invalidateQueries({ queryKey: ["keys", tenant] });
+                  })
+                }
+              >
+                Revoke
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+      {activeDevTab === "webhooks" && (
+        <div className="space-y-4">
+          <form
+            className="flex gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              void run(async () => {
+                const result = await apiPost("/api/workspace/webhooks", {
+                  url: f.get("url"),
+                });
+                setSecret(result.secret);
+                await qc.invalidateQueries({ queryKey: ["webhooks", tenant] });
+              });
+            }}
+          >
+            <input
+              required
+              type="url"
+              name="url"
+              aria-label="Webhook URL"
+              placeholder="https://your-service.example/webhook"
+              className="bg-[#202c33] p-2 w-full rounded"
+            />
+            <button disabled={busy} className="bg-emerald-600 p-2 rounded">
+              Save endpoint
+            </button>
+          </form>
+          <p className="text-sm text-slate-400">
+            Verify X-WppFlow-Signature as HMAC-SHA256 of timestamp + '.' + raw
+            body. Use the delivery ID to deduplicate retries.
+          </p>
+          <button
+            disabled={busy}
+            className="text-emerald-400"
+            onClick={() =>
+              void run(async () => {
+                await apiPost("/api/workspace/webhooks/test", {});
+                await qc.invalidateQueries({ queryKey: ["webhooks", tenant] });
+              })
+            }
+          >
+            Queue clearly labelled synthetic test
+          </button>
+          {hooks.error && <p role="alert">{hooks.error.message}</p>}
+          {hooks.data?.endpoints.map((h: any) => (
+            <div key={h.id} className="bg-[#111b21] p-3 rounded">
+              {h.url} · {h.enabled ? "Enabled" : "Disabled"}{" "}
+              <button
+                disabled={!h.enabled || busy}
+                onClick={() =>
+                  void run(async () => {
+                    await apiDelete(`/api/workspace/webhooks/${h.id}`);
+                    await qc.invalidateQueries({
+                      queryKey: ["webhooks", tenant],
+                    });
+                  })
+                }
+                className="text-rose-300 ml-3"
+              >
+                Disable
+              </button>
+            </div>
+          ))}
+          {hooks.data?.deliveries.map((d: any) => (
+            <div key={d.id} className="border-b border-[#2a3942] p-2 text-sm">
+              {d.event} · {d.status} · attempts: {d.attempts} ·{" "}
+              {d.response_status || d.error || "Awaiting delivery"}
+            </div>
+          ))}
+        </div>
+      )}
+      {activeDevTab === "sdks" && (
+        <div className="bg-[#111b21] p-5 rounded-xl space-y-4">
+          <h2 className="font-bold">Authenticated API examples</h2>
+          <p className="text-slate-400 text-sm">
+            Use a scoped key created in API Credentials. These are documentation
+            examples, not executed requests.
+          </p>
+          <pre className="overflow-auto text-xs">{`curl '${resolveEndpoint("/api/contacts")}' \\\n  -H 'Authorization: Bearer YOUR_CONTACTS_API_KEY'\n\nconst response = await fetch('${resolveEndpoint("/api/contacts")}', {\n  headers: {Authorization: 'Bearer YOUR_CONTACTS_API_KEY'}\n});\nconst contacts = await response.json();`}</pre>
+        </div>
+      )}
+    </section>
   );
-};
+}

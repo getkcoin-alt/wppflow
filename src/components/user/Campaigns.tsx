@@ -1,354 +1,207 @@
-import React, { useState } from 'react';
-import { 
-  Megaphone, 
-  Plus, 
-  CheckCircle2, 
-  Clock, 
-  Sparkles, 
-  ShieldCheck, 
-  DollarSign, 
-  TrendingDown, 
-  Send, 
-  Eye, 
-  Users,
-  Play,
-  Square
-} from 'lucide-react';
-import confetti from 'canvas-confetti';
-import { BroadcastCampaign } from '../../types';
-
-interface CampaignsProps {
-  campaigns: BroadcastCampaign[];
-  onAddCampaign: (campaign: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => void;
-  onStartCampaign?: (campaignId: string) => void;
-  onStopCampaign?: (campaignId: string) => void;
-  isCreateModalOpen: boolean;
-  setIsCreateModalOpen: (open: boolean) => void;
-}
-
-export const Campaigns: React.FC<CampaignsProps> = ({
+import { useState } from "react";
+import type { WhatsAppSession } from "../../types";
+export function Campaigns({
   campaigns,
+  sessions,
   onAddCampaign,
   onStartCampaign,
   onStopCampaign,
   isCreateModalOpen,
-  setIsCreateModalOpen
-}) => {
-  const [name, setName] = useState('');
-  const [targetSegment, setTargetSegment] = useState('VIP & High LTV Customers');
-  const [templateText, setTemplateText] = useState('✨ {Bonjour|Hello|Greetings} {{name}}! Our new collection has arrived. As our valued patron, enjoy priority access before public launch.');
-  const [antiBanDelay, setAntiBanDelay] = useState(4);
-  const [totalRecipients, setTotalRecipients] = useState(1250);
-
-  const handleLaunchCampaign = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !templateText) return;
-
-    // Calculate Meta bypass savings ($0.05 per conversation)
-    const costSavedMeta = (totalRecipients * 0.05);
-
-    onAddCampaign({
-      name,
-      targetSegment,
-      totalRecipients,
-      costSavedMeta,
-      status: 'draft',
-      templateText,
-      antiBanDelaySeconds: antiBanDelay
-    });
-
-    confetti({
-      particleCount: 70,
-      spread: 60,
-      origin: { y: 0.6 }
-    });
-
-    setName('');
-    setIsCreateModalOpen(false);
+  setIsCreateModalOpen,
+}: {
+  campaigns: any[];
+  sessions: WhatsAppSession[];
+  onAddCampaign: (data: any) => Promise<void>;
+  onStartCampaign: (id: string) => Promise<void>;
+  onStopCampaign: (id: string) => Promise<void>;
+  isCreateModalOpen: boolean;
+  setIsCreateModalOpen: (open: boolean) => void;
+}) {
+  const [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  const act = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
-
-  // Preview spin-tax interpolation
-  const previewMessage = templateText
-    .replace('{Bonjour|Hello|Greetings}', 'Hello')
-    .replace('{{name}}', 'Sophia Laurent');
-
   return (
-    <div className="space-y-6">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111b21] p-5 rounded-2xl border border-[#2a3942]">
+    <section className="space-y-5">
+      <header className="flex justify-between items-center">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Megaphone className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">Broadcast Campaigns Studio</h1>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Send bulk personalized WhatsApp campaigns without waiting for Meta template reviews, protected by anti-ban rate limiting.
+          <h1 className="text-xl font-bold">Broadcasts & Campaigns</h1>
+          <p className="text-slate-400 text-sm mt-2">
+            Send only to recorded opted-in contacts. Stopping prevents new
+            dispatch; messages already transmitted cannot be recalled.
           </p>
         </div>
-
         <button
+          className="bg-emerald-600 p-3 rounded-xl shrink-0"
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-900/30"
         >
-          <Plus className="w-4 h-4" />
-          <span>New Campaign</span>
+          New campaign
         </button>
-      </div>
-
-      {/* Safety & Compliance Mode Alert */}
-      <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 text-xs text-amber-200 space-y-1">
-        <div className="flex items-center gap-2 font-bold text-amber-400">
-          <ShieldCheck className="w-4 h-4 text-amber-400" />
-          <span>Safety & Opt-In Compliance Enforcement</span>
-        </div>
-        <p className="text-amber-200/90 leading-relaxed text-[11px]">
-          Mass marketing campaigns are currently gated by tenant opt-in consent and suppression checks. High-volume unconsented broadcasts risk permanent WhatsApp ban. Transactional outbox messages run with rate-limiting.
+      </header>
+      {error && (
+        <p role="alert" className="text-rose-300">
+          {error}
         </p>
-      </div>
-
-      {/* Campaigns Table */}
-      <div className="bg-[#111b21] rounded-2xl border border-[#2a3942] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#202c33]/50 border-b border-[#2a3942] text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
-                <th className="py-3.5 px-4">Campaign Details</th>
-                <th className="py-3.5 px-4">Audience</th>
-                <th className="py-3.5 px-4">Delivered / Sent</th>
-                <th className="py-3.5 px-4">Engagement (Read & Replied)</th>
-                <th className="py-3.5 px-4">Estimated Volume</th>
-                <th className="py-3.5 px-4">Outbox Pacing</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#2a3942]/60">
-              {campaigns.map((camp) => (
-                <tr key={camp.id} className="hover:bg-[#202c33]/30 transition-colors">
-                  
-                  <td className="py-3.5 px-4">
-                    <div className="font-semibold text-white text-xs">{camp.name}</div>
-                    <div className="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">{camp.templateText}</div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <div className="text-slate-300 font-medium">{camp.targetSegment}</div>
-                    <div className="text-[10px] text-slate-400">{camp.totalRecipients.toLocaleString()} recipients</div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <div className="text-white font-mono font-medium">
-                      {camp.deliveredCount.toLocaleString()} / {camp.sentCount.toLocaleString()}
-                    </div>
-                    <div className="text-[10px] text-emerald-400 font-semibold">
-                      {camp.sentCount > 0 ? `${((camp.deliveredCount / camp.sentCount) * 100).toFixed(1)}% Delivery` : 'Queued'}
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <div className="text-slate-300">
-                      👁️ {camp.readCount.toLocaleString()} read
-                    </div>
-                    <div className="text-[11px] text-emerald-400 font-semibold">
-                      💬 {camp.repliedCount.toLocaleString()} customer replies
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <span className="inline-flex items-center gap-1 font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-lg text-xs">
-                      +${camp.costSavedMeta.toFixed(2)}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-slate-400">
-                    <div className="flex items-center gap-1 text-[11px]">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{camp.antiBanDelaySeconds}s delay / msg</span>
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      camp.status === 'completed'
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                        : camp.status === 'running'
-                        ? 'bg-blue-950 text-blue-400 border border-blue-800 animate-pulse'
-                        : camp.status === 'stopped' || camp.status === 'paused'
-                        ? 'bg-rose-950/80 text-rose-400 border border-rose-800'
-                        : 'bg-amber-950 text-amber-400 border border-amber-800'
-                    }`}>
-                      <span>{camp.status}</span>
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                    {camp.status === 'running' ? (
-                      <button
-                        onClick={() => onStopCampaign?.(camp.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-semibold transition-all shadow-sm active:scale-95"
-                        title="Stop broadcast sending"
-                      >
-                        <Square className="w-3.5 h-3.5 fill-current" />
-                        <span>Stop</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onStartCampaign?.(camp.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition-all shadow-sm active:scale-95"
-                        title="Start or resume broadcast campaign"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>{camp.status === 'stopped' || camp.status === 'paused' ? 'Resume' : 'Start'}</span>
-                      </button>
-                    )}
-                  </td>
-
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Create Broadcast Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-fade-in">
-            
-            <div className="p-4 border-b border-[#2a3942] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Megaphone className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-base font-bold text-white">Create WhatsApp Broadcast Campaign</h2>
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-white text-xs"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleLaunchCampaign} className="p-5 space-y-4 text-xs">
-              
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Campaign Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Flash Sale 24h Exclusive"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Target Segment</label>
-                  <select
-                    value={targetSegment}
-                    onChange={(e) => setTargetSegment(e.target.value)}
-                    className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="VIP & High LTV Customers">VIP & High LTV Customers (1,250)</option>
-                    <option value="Abandoned Cart 24h">Shopify Cart Abandoners (420)</option>
-                    <option value="All Subscribers">All Opt-in Subscribers (12,400)</option>
-                    <option value="EU Region Buyers">EU Region Buyers (3,100)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Total Recipients</label>
-                  <input
-                    type="number"
-                    value={totalRecipients}
-                    onChange={(e) => setTotalRecipients(parseInt(e.target.value))}
-                    className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">
-                  Message Template (Supports spin-tax &#123;A|B&#125; and merge tags &#123;&#123;name&#125;&#125;)
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={templateText}
-                  onChange={(e) => setTemplateText(e.target.value)}
-                  className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 font-mono text-xs leading-relaxed"
-                />
-              </div>
-
-              {/* Live Preview Box */}
-              <div className="p-3 bg-[#0b141a] rounded-xl border border-[#2a3942] space-y-1">
-                <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  <span>Live Recipient Preview</span>
-                </div>
-                <div className="chat-bubble-out text-white p-3 rounded-xl rounded-tr-xs text-xs max-w-sm">
-                  <p>{previewMessage}</p>
-                  <div className="text-[10px] text-slate-300/80 text-right mt-1 font-mono">10:42 AM • ✓✓</div>
-                </div>
-              </div>
-
-              {/* Anti-Ban Jitter Slider */}
-              <div className="p-3 bg-[#202c33] rounded-xl space-y-2 border border-[#2a3942]">
-                <div className="flex justify-between items-center text-slate-300 font-semibold">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    <span>Humanized Anti-Ban Jitter Delay</span>
-                  </span>
-                  <span className="text-emerald-400 font-mono font-bold">{antiBanDelay}s per message</span>
-                </div>
-                <input
-                  type="range"
-                  min="2"
-                  max="12"
-                  value={antiBanDelay}
-                  onChange={(e) => setAntiBanDelay(parseInt(e.target.value))}
-                  className="w-full accent-emerald-500 cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>Fast (2s)</span>
-                  <span>Safe Standard (4-6s)</span>
-                  <span>Ultra Safe (12s)</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className="text-xs text-emerald-400 font-mono font-semibold">
-                  Meta markup avoided: +${(totalRecipients * 0.05).toFixed(2)}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="px-3.5 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 rounded-xl"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-md shadow-emerald-900/30"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Launch Broadcast Now</span>
-                  </button>
-                </div>
-              </div>
-
-            </form>
-
-          </div>
-        </div>
       )}
-
-    </div>
+      {isCreateModalOpen && (
+        <form
+          className="bg-[#111b21] p-5 border border-[#2a3942] rounded-xl space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            void act(async () => {
+              await onAddCampaign({
+                name: f.get("name"),
+                sessionName: f.get("session"),
+                targetSegment: f.get("segment") || "All Contacts",
+                templateText: f.get("message"),
+                scheduledFor: f.get("schedule")
+                  ? new Date(String(f.get("schedule"))).toISOString()
+                  : "",
+                antiBanDelaySeconds: Number(f.get("delay")),
+              });
+              setIsCreateModalOpen(false);
+            });
+          }}
+        >
+          <label className="block">
+            Name
+            <input
+              required
+              name="name"
+              className="block bg-[#202c33] rounded p-2 w-full"
+            />
+          </label>
+          <label className="block">
+            WhatsApp account
+            <select
+              name="session"
+              required
+              className="block bg-[#202c33] p-2 w-full"
+            >
+              <option value="">Select an account</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.sessionKey}>
+                  {s.displayName} — {s.status}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            Contact tag (leave empty for all opted-in contacts)
+            <input name="segment" className="block bg-[#202c33] p-2 w-full" />
+          </label>
+          <label className="block">
+            Message
+            <textarea
+              required
+              name="message"
+              maxLength={10000}
+              className="block bg-[#202c33] p-2 w-full"
+              placeholder="Use {{name}} to insert the contact name"
+            />
+          </label>
+          <label className="block">
+            Minimum seconds between recipients
+            <input
+              name="delay"
+              type="number"
+              min={4}
+              max={60}
+              defaultValue={4}
+              className="bg-[#202c33] p-2 ml-3"
+            />
+          </label>
+          <label className="block">
+            Optional start time
+            <input
+              name="schedule"
+              type="datetime-local"
+              className="bg-[#202c33] p-2 ml-3"
+            />
+          </label>
+          <button disabled={busy} className="bg-emerald-600 rounded p-2">
+            Save draft
+          </button>
+          <button
+            type="button"
+            className="ml-4"
+            onClick={() => setIsCreateModalOpen(false)}
+          >
+            Cancel
+          </button>
+        </form>
+      )}
+      <div className="overflow-x-auto bg-[#111b21] rounded-xl border border-[#2a3942]">
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              {[
+                "Campaign",
+                "Status",
+                "Recipients",
+                "Sent",
+                "Delivered",
+                "Read",
+                "Failed",
+                "Action",
+              ].map((h) => (
+                <th key={h} className="p-3 text-left text-slate-400">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {campaigns.map((c) => (
+              <tr key={c.id} className="border-t border-[#2a3942]">
+                <td className="p-3">{c.name}</td>
+                <td>{c.status}</td>
+                <td>{c.totalRecipients}</td>
+                <td>{c.sentCount}</td>
+                <td>{c.deliveredCount}</td>
+                <td>{c.readCount}</td>
+                <td>{c.failedCount}</td>
+                <td>
+                  <button
+                    disabled={busy || c.status === "completed"}
+                    onClick={() =>
+                      void act(() =>
+                        c.status === "running"
+                          ? onStopCampaign(c.id)
+                          : onStartCampaign(c.id),
+                      )
+                    }
+                    className="text-emerald-400 p-2"
+                  >
+                    {c.status === "running"
+                      ? "Stop"
+                      : c.status === "completed"
+                        ? "Completed"
+                        : c.status === "stopped" || c.status === "paused"
+                          ? "Resume"
+                          : "Start"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!campaigns.length && (
+          <p className="p-6 text-slate-400">
+            No campaigns yet. Create a draft to begin.
+          </p>
+        )}
+      </div>
+    </section>
   );
-};
+}

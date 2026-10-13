@@ -1,157 +1,99 @@
-import { describe, it, expect, vi } from 'vitest';
+// @vitest-environment jsdom
+import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import {
-  fetchConversations,
-  fetchConversationMessages,
+  apiGet,
   sendMessageToConversation,
-  getSocketBackendUrl
-} from '../services/api';
-import { AuthUser, ChatMessage, MessageStatus } from '../types';
-
-describe('Frontend / Backend Express API & Socket Contract Suite', () => {
-  it('correctly resolves dedicated backend socket URL without falling back to Vercel origin', () => {
-    const socketUrl = getSocketBackendUrl();
-    expect(socketUrl).toBeDefined();
-    expect(socketUrl).not.toContain('vercel.app');
-    expect(socketUrl).toMatch(/^https?:\/\//);
+  addMessage,
+  setStoredToken,
+  setStoredTenantId,
+  clearStoredToken,
+  refreshSession,
+} from "../services/api";
+const response = (body: any, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
   });
-
-  it('handles backend /api/conversations dual format (both conversations and chats keys)', async () => {
-    const mockApiResponse = {
-      status: 'success',
-      conversations: [
-        {
-          id: 'conv_12345',
-          tenantId: 'tenant_abc',
-          sessionName: 'primary-whatsapp',
-          sessionKey: 'primary-whatsapp',
-          contactName: 'Aarav Sharma',
-          phone: '+919876543210',
-          providerChatId: '919876543210@c.us',
-          unreadCount: 2,
-          lastMessage: { text: 'Hello from client', status: 'sent', fromMe: false },
-          tenant_id: 'tenant_abc',
-          session_name: 'primary-whatsapp',
-          unread_count: 2
-        }
-      ],
-      chats: [
-        {
-          id: 'conv_12345',
-          tenantId: 'tenant_abc',
-          sessionName: 'primary-whatsapp',
-          sessionKey: 'primary-whatsapp',
-          contactName: 'Aarav Sharma',
-          phone: '+919876543210',
-          providerChatId: '919876543210@c.us',
-          unreadCount: 2,
-          lastMessage: { text: 'Hello from client', status: 'sent', fromMe: false },
-          tenant_id: 'tenant_abc',
-          session_name: 'primary-whatsapp',
-          unread_count: 2
-        }
-      ],
-      nextCursor: '1728800000:conv_12345',
-      hasMore: false
-    };
-
-    // Verify dual key access
-    const convList = mockApiResponse.conversations || mockApiResponse.chats;
-    expect(convList).toHaveLength(1);
-    expect(convList[0].sessionKey).toBe('primary-whatsapp');
-    expect(convList[0].contactName).toBe('Aarav Sharma');
-    expect(convList[0].unreadCount).toBe(2);
-    expect(convList[0].session_name).toBe('primary-whatsapp');
+describe("Actual HTTP client contracts", () => {
+  beforeEach(() => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => storage.get(key) || null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    clearStoredToken();
+    setStoredToken("access-test");
+    setStoredTenantId("tenant-test");
   });
-
-  it('reconciles message:updated socket events smoothly across ack states', () => {
-    let message: ChatMessage = {
-      id: 'msg_initial_1',
-      chatId: 'conv_abc',
-      sender: 'agent',
-      text: 'Order shipped',
-      type: 'text',
-      timestamp: '11:00 AM',
-      status: 'sent',
-      ack: 1
-    };
-
-    // Socket receives message:updated event from worker with delivery ACK (2)
-    const updateEvent = {
-      messageId: 'msg_initial_1',
-      conversationId: 'conv_abc',
-      chatId: 'conv_abc',
-      status: 'delivered' as MessageStatus,
-      ack: 2,
-      providerMessageId: 'true_919876543210@c.us_3EB0123'
-    };
-
-    // Handler logic
-    if (updateEvent.messageId === message.id) {
-      if (updateEvent.ack > (message.ack || 0)) {
-        message = {
-          ...message,
-          status: updateEvent.status,
-          ack: updateEvent.ack,
-          providerMessageId: updateEvent.providerMessageId || message.providerMessageId
-        };
-      }
-    }
-
-    expect(message.status).toBe('delivered');
-    expect(message.ack).toBe(2);
-    expect(message.providerMessageId).toBe('true_919876543210@c.us_3EB0123');
-
-    // Socket receives read ACK (3)
-    const readEvent = {
-      messageId: 'msg_initial_1',
-      conversationId: 'conv_abc',
-      chatId: 'conv_abc',
-      status: 'read' as MessageStatus,
-      ack: 3
-    };
-
-    if (readEvent.messageId === message.id && readEvent.ack > (message.ack || 0)) {
-      message = {
-        ...message,
-        status: readEvent.status,
-        ack: readEvent.ack
-      };
-    }
-
-    expect(message.status).toBe('read');
-    expect(message.ack).toBe(3);
+  afterEach(() => vi.unstubAllGlobals());
+  it("sends authorization, tenant and credentials on real fetch calls", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(response({ conversations: [{ id: "thread" }] }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await apiGet("/api/conversations");
+    expect(result.conversations[0].id).toBe("thread");
+    expect(fetch.mock.calls[0][1]).toMatchObject({
+      credentials: "include",
+      headers: {
+        Authorization: "Bearer access-test",
+        "X-Tenant-Id": "tenant-test",
+      },
+    });
+    expect(localStorage.getItem("wppflow_auth_token")).toBeNull();
   });
-
-  it('determines superadmin access strictly from database role flags, not email heuristics', () => {
-    const regularUser: AuthUser = {
-      id: 1,
-      name: 'John Doe',
-      email: 'admin@wppflow.io', // Notice: legacy heuristic would wrongly treat this as superadmin!
-      company_name: 'Acme Corp',
-      role: 'user',
-      plan: 'pro',
-      sessions_limit: 5,
-      isSuperAdmin: false,
-      is_superadmin: false,
-      created_at: '2026-01-01'
-    };
-
-    const actualSuperAdmin: AuthUser = {
-      id: 2,
-      name: 'Super Engineer',
-      email: 'engineer@corp.internal',
-      company_name: 'WppFlow Platform',
-      role: 'admin',
-      plan: 'enterprise',
-      sessions_limit: 100,
-      isSuperAdmin: true,
-      created_at: '2026-01-01'
-    };
-
-    const isUserSuperAdmin = (u: AuthUser) =>
-      Boolean(u.isSuperAdmin || u.is_superadmin || u.role === 'superadmin');
-
-    expect(isUserSuperAdmin(regularUser)).toBe(false);
-    expect(isUserSuperAdmin(actualSuperAdmin)).toBe(true);
+  it("keeps notes on their private endpoint", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(response({ message: { id: "note" } }));
+    vi.stubGlobal("fetch", fetch);
+    await addMessage("thread", {
+      text: "Internal",
+      isNote: true,
+      idempotencyKey: "stable",
+    });
+    expect(fetch.mock.calls[0][0]).toContain("/api/conversations/thread/notes");
+  });
+  it("does not retry an ambiguous network send", async () => {
+    const fetch = vi.fn().mockRejectedValue(new TypeError("Network lost"));
+    vi.stubGlobal("fetch", fetch);
+    await expect(
+      sendMessageToConversation("thread", {
+        text: "Hello",
+        idempotencyKey: "stable",
+      }),
+    ).rejects.toThrow("Network lost");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it("refreshes once after a rejected access token and preserves the send identity", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response({ message: "expired" }, 401))
+      .mockResolvedValueOnce(
+        response({ token: "renewed", tenant: { id: "tenant-test" } }),
+      )
+      .mockResolvedValueOnce(response({ message: { id: "saved" } }));
+    vi.stubGlobal("fetch", fetch);
+    await sendMessageToConversation("thread", {
+      text: "Hello",
+      idempotencyKey: "stable",
+    });
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(fetch.mock.calls[0][1].body).idempotencyKey).toBe(
+      "stable",
+    );
+    expect(fetch.mock.calls[2][1].body).toBe(fetch.mock.calls[0][1].body);
+    expect(fetch.mock.calls[2][1].headers.Authorization).toBe("Bearer renewed");
+  });
+  it("coalesces simultaneous refresh requests", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        response({ token: "renewed", tenant: { id: "tenant-test" } }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    await Promise.all([refreshSession(), refreshSession(), refreshSession()]);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

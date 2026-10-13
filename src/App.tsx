@@ -1,960 +1,615 @@
-import React, { useState, useEffect } from 'react';
-import { Navbar } from './components/layout/Navbar';
-import { Sidebar, UserSubTab, AdminSubTab, DevSubTab } from './components/layout/Sidebar';
-import { LoginPage } from './components/auth/LoginPage';
-import { AuthModal } from './components/auth/AuthModal';
-import { getSocket, disconnectSocket } from './services/socket';
-import { UserManagement } from './components/admin/UserManagement';
-import { ClusterHealth } from './components/admin/ClusterHealth';
-import { AuditLogs } from './components/admin/AuditLogs';
-import { Dashboard } from './components/user/Dashboard';
-import { SessionManager } from './components/user/SessionManager';
-import { Inbox } from './components/user/Inbox';
-import { Campaigns } from './components/user/Campaigns';
-import { Contacts } from './components/user/Contacts';
-import { Automations } from './components/user/Automations';
-import { DeveloperGuide } from './components/developer/DeveloperGuide';
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  UserAccount, WhatsAppSession, ChatThread, ChatMessage, MessageStatus,
-  BroadcastCampaign, AutomationRule, WebhookLog, AccountStatus, AuthUser,
-  ClusterMetrics
-} from './types';
-
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { Navbar } from "./components/layout/Navbar";
 import {
-  getStoredToken, getCurrentUser, clearStoredToken,
-  getLiveSessions, closeLiveSession,
-  fetchContacts,
-  fetchChats, addChat, patchChat,
-  fetchConversationMessages,
-  sendMessageToConversation, markConversationRead,
-  fetchMessages, addMessage,
-  sendLiveMedia,
-  fetchCampaigns, addCampaign, startCampaign, stopCampaign,
-  fetchAutomations, toggleAutomationApi,
-  createTenantUser, updateTenantUser, deleteTenantUser,
-  syncInboxForSession,
-  checkBackendHealth,
-} from './services/api';
-
-import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
-
-const CLUSTER_METRICS_BASE: ClusterMetrics = {
-  activeContainers: 1, totalSessions: 0, cpuUsagePercent: 24,
-  ramUsagePercent: 42, ramUsageGb: 2.4, totalRamGb: 8.0,
-  queueDepth: 0, avgResponseMs: 142, uptimeHours: 0, systemStatus: 'healthy'
-};
+  Sidebar,
+  type UserSubTab,
+  type AdminSubTab,
+  type DevSubTab,
+} from "./components/layout/Sidebar";
+import { LoginPage } from "./components/auth/LoginPage";
+import { Inbox } from "./components/user/Inbox";
+import { SessionManager } from "./components/user/SessionManager";
+import { Contacts } from "./components/user/Contacts";
+import { Campaigns } from "./components/user/Campaigns";
+import { Automations } from "./components/user/Automations";
+import { Dashboard } from "./components/user/Dashboard";
+import { UserManagement } from "./components/admin/UserManagement";
+import { AuditLogs } from "./components/admin/AuditLogs";
+import { ClusterHealth } from "./components/admin/ClusterHealth";
+import { DeveloperGuide } from "./components/developer/DeveloperGuide";
+import type {
+  AuthUser,
+  ChatMessage,
+  ChatThread,
+  WhatsAppSession,
+} from "./types";
+import * as api from "./services/api";
+import { getSocket, disconnectSocket } from "./services/socket";
+import { reconcileMessages } from "./utils/messages";
 
 export function App() {
-  const [currentView, setCurrentView] = useState<'user' | 'admin' | 'developer'>('user');
-  const [activeUserTab, setActiveUserTab] = useState<UserSubTab>('dashboard');
-  const [activeAdminTab, setActiveAdminTab] = useState<AdminSubTab>('users');
-  const [activeDevTab, setActiveDevTab] = useState<DevSubTab>('docs');
-
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const isPlatformSuperAdmin = Boolean(currentUser?.isSuperAdmin || currentUser?.is_superadmin || currentUser?.role === 'superadmin');
-  const canManageWorkspace = currentUser?.role === 'admin' || isPlatformSuperAdmin;
-
+  const qc = useQueryClient();
+  const [user, setUser] = useState<AuthUser | null>(null),
+    [ready, setReady] = useState(false),
+    [error, setError] = useState("");
+  const [view, setView] = useState<"user" | "admin" | "developer">("user");
+  const [tab, setTab] = useState<UserSubTab>("inbox"),
+    [adminTab, setAdminTab] = useState<AdminSubTab>("users"),
+    [devTab, setDevTab] = useState<DevSubTab>("docs");
+  const [pairOpen, setPairOpen] = useState(false),
+    [campaignOpen, setCampaignOpen] = useState(false),
+    [selected, setSelected] = useState<string | null>(null);
+  const [openedThread, setOpenedThread] = useState<ChatThread | null>(null);
+  const [filter, setFilter] = useState({ search: "", filter: "all" }),
+    [optimistic, setOptimistic] = useState<Record<string, ChatMessage[]>>({});
+  const tenant = api.getStoredTenantId(),
+    enabled = Boolean(user),
+    manager = user?.role === "admin" || user?.role === "superadmin";
   useEffect(() => {
-    if (currentUser && !canManageWorkspace && currentView !== 'user') setCurrentView('user');
-  }, [currentUser, canManageWorkspace, currentView]);
-
-  // Restore session on load
-  useEffect(() => {
-    const token = getStoredToken();
-    if (token) {
-      getCurrentUser(token).then(user => {
-        if (user) setCurrentUser(user);
-        setAuthChecked(true);
-      });
-    } else {
-      setAuthChecked(true);
-    }
-  }, []);
-
-  const handleAuthSuccess = (user: AuthUser, _token: string) => {
-    setCurrentUser(user);
-    if (user.role === 'admin') setCurrentView('admin');
-  };
-
-  const handleLogout = () => {
-    clearStoredToken();
-    disconnectSocket();
-    setCurrentUser(null);
-    setSessions([]);
-    setContacts({});
-    setChats([]);
-    setMessages({});
-    setCampaigns([]);
-    setAutomations([]);
-  };
-
-  // ─── App Data State ───────────────────────────────────────────────────────
-  const [users, setUsers] = useState<UserAccount[]>([]);
-  const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
-  const [contacts, setContacts] = useState<Record<string, any>>({});
-  const [chats, setChats] = useState<ChatThread[]>([]);
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
-  const [campaigns, setCampaigns] = useState<BroadcastCampaign[]>([]);
-  const [automations, setAutomations] = useState<AutomationRule[]>([]);
-  const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>(initialWebhookLogs);
-  const [metrics, setMetrics] = useState<ClusterMetrics>(CLUSTER_METRICS_BASE);
-  const [isPairModalOpen, setIsPairModalOpen] = useState(false);
-  const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-
-  // ─── Load all data when user logs in ─────────────────────────────────────
-  useEffect(() => {
-    if (!currentUser) return;
-
-    // Sessions
-    getLiveSessions().then(liveList => {
-      if (liveList?.length > 0) {
-        setSessions(liveList.map(ls => ({
-          id: `sess_${ls.sessionKey}`,
-          sessionKey: ls.sessionKey,
-          displayName: ls.sessionKey.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-          phone: ls.phone || 'WhatsApp Connected',
-          status: (ls.status === 'CONNECTED' ? 'CONNECTED' : ls.status === 'QRCODE' ? 'QRCODE' : 'STARTING') as any,
-          battery: ls.battery || 100,
-          isCharging: true,
-          antiBanHealth: ls.antiBanHealth || 98,
-          warmupDay: ls.warmupDay || 14,
-          proxyIp: 'Dedicated Cloud VPS',
-          messagesSentToday: 0,
-          messagesLimitToday: 3000,
-          lastActive: ls.lastActive || 'Just now',
-          wppVersion: '2.3000.101',
-          channel: 'sales' as const
-        })));
+    let active = true;
+    api.getCurrentUser().then((u) => {
+      if (active) {
+        setUser(u);
+        setReady(true);
       }
     });
-
-    // Contacts
-    fetchContacts().then(d => {
-      const map: Record<string, any> = {};
-      (d.contacts || []).forEach((c: any) => { map[c.id] = c; });
-      setContacts(map);
-    }).catch(() => {});
-
-    // Chats
-    fetchChats().then(d => {
-      setChats(d.chats || []);
-    }).catch(() => {});
-
-    // Campaigns
-    fetchCampaigns().then(d => {
-      setCampaigns(d.campaigns || []);
-    }).catch(() => {});
-
-    // Automations
-    fetchAutomations().then(d => {
-      setAutomations(d.automations || []);
-    }).catch(() => {});
-
-  }, [currentUser]);
-
-  // Load messages when a chat is opened (lazy background sync & mark as read)
-  const loadMessages = async (chatId: string, sync = false) => {
-    try {
-      let rawMsgs: any[] = [];
-      try {
-        const d = await fetchConversationMessages(chatId);
-        if (d?.messages && Array.isArray(d.messages)) {
-          rawMsgs = d.messages;
-        }
-      } catch {
-        const d = await fetchMessages(chatId, sync);
-        if (d?.messages && Array.isArray(d.messages)) {
-          rawMsgs = d.messages;
-        }
-      }
-
-      if (rawMsgs && rawMsgs.length > 0) {
-        setMessages(prev => ({
-          ...prev,
-          [chatId]: rawMsgs.map((m: any) => ({
-            id: m.id,
-            chatId,
-            sender: m.sender || (m.fromMe ? 'agent' : 'customer'),
-            agentName: m.agent_name || m.agentName || (m.sender === 'agent' ? 'You' : ''),
-            text: m.text || m.body || '',
-            type: m.type || 'text',
-            mediaUrl: m.media_url || m.mediaUrl,
-            fileName: m.file_name || m.fileName,
-            fileSize: m.file_size || m.fileSize,
-            audioDuration: m.audio_duration || m.audioDuration,
-            timestamp: m.timestamp || 'Just now',
-            status: m.status || (m.ack >= 3 ? 'read' : m.ack >= 2 ? 'delivered' : 'sent'),
-            ack: m.ack,
-            idempotencyKey: m.idempotency_key || m.idempotencyKey,
-            providerMessageId: m.provider_message_id || m.providerMessageId
-          }))
-        }));
-      }
-
-      // Mark conversation as read on server & locally
-      try {
-        await markConversationRead(chatId);
-        setChats(prev => prev.map(c => c.id === chatId ? { ...c, unreadCount: 0 } : c));
-      } catch {}
-    } catch (err) {
-      console.warn(`Could not load messages for chat ${chatId}:`, err);
-    }
-  };
-
-  // ─── Real-time socket ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!currentUser) return;
-    const sock = getSocket();
-
-    sock.on('session:status', ({ session, sessionName, sessionKey, status, phone, battery, filesRemoved }: any) => {
-      const sKey = sessionKey || sessionName || session;
-      if (status === 'DISCONNECTED' && filesRemoved) {
-        setSessions(prev => prev.filter(s => s.sessionKey !== sKey));
-        setChats(prev => {
-          const removedChatIds = new Set(prev.filter(chat => chat.channel === sKey).map(chat => chat.id));
-          setMessages(previousMessages => Object.fromEntries(Object.entries(previousMessages).filter(([chatId]) => !removedChatIds.has(chatId))));
-          return prev.filter(chat => chat.channel !== sKey);
-        });
-        return;
-      }
-      setSessions(prev => prev.map(s =>
-        s.sessionKey === sKey
-          ? { ...s, status, ...(phone ? { phone } : {}), ...(battery ? { battery } : {}) }
-          : s
-      ));
-    });
-
-    const onChatCreated = ({ chat }: any) => {
-      if (!chat?.id) return;
-      setChats(prev => prev.some(c => c.id === chat.id) ? prev : [chat, ...prev]);
-    };
-
-    const handleIncomingMessage = (convId: string, msg: any) => {
-      if (!convId || !msg) return;
-      const isOut = msg.sender === 'agent' || Boolean(msg.fromMe);
-      const msgText = msg.text || msg.body || '';
-      const mappedType = (
-        ['image', 'video', 'audio', 'document', 'call_log', 'e2e_notification', 'buttons', 'list'].includes(msg.type)
-          ? msg.type
-          : 'text'
-      ) as ChatMessage['type'];
-
-      const msgId = msg.id || msg.savedMessageId || `m_${Date.now()}`;
-      const provId = msg.provider_message_id || msg.providerMessageId;
-      const idemKey = msg.idempotency_key || msg.idempotencyKey;
-
-      setMessages(prev => {
-        const currentList = prev[convId] || [];
-
-        // Check if message already exists (optimistic or provider duplicate)
-        const existingIdx = currentList.findIndex(m =>
-          (msgId && m.id === msgId) ||
-          (provId && m.providerMessageId === provId) ||
-          (idemKey && m.idempotencyKey === idemKey)
-        );
-
-        if (existingIdx !== -1) {
-          const updated = [...currentList];
-          updated[existingIdx] = {
-            ...updated[existingIdx],
-            id: msgId,
-            status: msg.status || (isOut ? 'sent' : 'delivered'),
-            ack: msg.ack ?? updated[existingIdx].ack,
-            providerMessageId: provId || updated[existingIdx].providerMessageId
-          };
-          return { ...prev, [convId]: updated };
-        }
-
-        const newMsg: ChatMessage = {
-          id: msgId,
-          chatId: convId,
-          sender: isOut ? 'agent' : 'customer',
-          agentName: msg.agent_name || msg.senderName || (isOut ? 'You' : ''),
-          text: msgText,
-          type: mappedType,
-          mediaUrl: msg.media_url || msg.mediaUrl,
-          fileName: msg.file_name || msg.fileName,
-          audioDuration: msg.audio_duration || msg.audioDuration,
-          timestamp: msg.timestamp || 'Just now',
-          status: msg.status || (isOut ? 'sent' : 'delivered'),
-          ack: msg.ack || (isOut ? 1 : 2),
-          providerMessageId: provId,
-          idempotencyKey: idemKey
-        };
-        return { ...prev, [convId]: [...currentList, newMsg] };
-      });
-
-      setChats(prev => {
-        const chatIdx = prev.findIndex(c => c.id === convId);
-        if (chatIdx === -1) return prev;
-        const targetChat = {
-          ...prev[chatIdx],
-          unreadCount: isOut ? (prev[chatIdx].unreadCount || 0) : ((prev[chatIdx].unreadCount || 0) + 1),
-          lastMessage: {
-            text: msgText,
-            timestamp: msg.timestamp || 'Just now',
-            status: (isOut ? 'sent' : 'delivered') as MessageStatus,
-            fromMe: isOut
-          }
-        };
-        const remaining = prev.filter(c => c.id !== convId);
-        return [targetChat, ...remaining];
-      });
-    };
-
-    const onMessageReceived = ({ conversationId, chatId, message }: any) => {
-      handleIncomingMessage(conversationId || chatId, message);
-    };
-
-    const onMessageCreated = ({ conversationId, chatId, message }: any) => {
-      handleIncomingMessage(conversationId || chatId, message);
-    };
-
-    const onSessionMessage = ({ chatId, conversationId, message }: any) => {
-      handleIncomingMessage(chatId || conversationId, message);
-    };
-
-    const onMessageUpdated = ({ conversationId, chatId, messageId, providerMessageId, status, ack }: any) => {
-      const convId = conversationId || chatId;
-      if (!convId) return;
-      const targetStatus = status || (ack >= 3 ? 'read' : ack >= 2 ? 'delivered' : 'sent');
-
-      setMessages(prev => {
-        const currentList = prev[convId] || [];
-        return {
-          ...prev,
-          [convId]: currentList.map(m => {
-            if ((messageId && m.id === messageId) || (providerMessageId && m.providerMessageId === providerMessageId)) {
-              return {
-                ...m,
-                status: targetStatus,
-                ack: ack !== undefined ? ack : m.ack,
-                providerMessageId: providerMessageId || m.providerMessageId
-              };
-            }
-            return m;
-          })
-        };
-      });
-
-      setChats(prev => prev.map(c => {
-        if (c.id === convId && c.lastMessage?.fromMe) {
-          return {
-            ...c,
-            lastMessage: {
-              ...c.lastMessage,
-              status: targetStatus
-            }
-          };
-        }
-        return c;
-      }));
-    };
-
-    const onMessageAck = ({ conversationId, chatId, messageId, providerMessageId, ack, status }: any) => {
-      const convId = conversationId || chatId;
-      if (!convId) return;
-      const targetStatus = status || (ack >= 3 ? 'read' : ack >= 2 ? 'delivered' : 'sent');
-
-      setMessages(prev => {
-        const currentList = prev[convId] || [];
-        return {
-          ...prev,
-          [convId]: currentList.map(m => {
-            if ((messageId && m.id === messageId) || (providerMessageId && m.providerMessageId === providerMessageId)) {
-              return { ...m, ack, status: targetStatus };
-            }
-            return m;
-          })
-        };
-      });
-
-      setChats(prev => prev.map(c => {
-        if (c.id === convId && c.lastMessage?.fromMe) {
-          return {
-            ...c,
-            lastMessage: {
-              ...c.lastMessage,
-              status: targetStatus
-            }
-          };
-        }
-        return c;
-      }));
-    };
-
-    const onChatUpdated = ({ chatId, conversationId, lastMessage, unreadCount, contactName, avatar }: any) => {
-      const targetId = chatId || conversationId;
-      if (!targetId) return;
-      setChats(prev => {
-        const chatIdx = prev.findIndex(c => c.id === targetId);
-        if (chatIdx === -1) return prev;
-        const targetChat = {
-          ...prev[chatIdx],
-          ...(unreadCount !== undefined ? { unreadCount } : {}),
-          ...(lastMessage ? { lastMessage } : {}),
-          ...(contactName ? { contactName } : {}),
-          ...(avatar ? { avatar } : {})
-        };
-        const remaining = prev.filter(c => c.id !== targetId);
-        return [targetChat, ...remaining];
-      });
-    };
-
-    const onConversationRead = ({ conversationId, chatId }: any) => {
-      const targetId = conversationId || chatId;
-      if (!targetId) return;
-      setChats(prev => prev.map(c => c.id === targetId ? { ...c, unreadCount: 0 } : c));
-    };
-
-    const onInboxSynced = async () => {
-      try {
-        const [chatsData, contactsData] = await Promise.all([fetchChats(), fetchContacts()]);
-        setChats(chatsData.chats || chatsData.conversations || []);
-        const map: Record<string, any> = {};
-        (contactsData.contacts || []).forEach((c: any) => { map[c.id] = c; });
-        setContacts(map);
-      } catch {}
-    };
-
-    const onCampaignStatus = ({ campaignId, status }: any) => {
-      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status } : c));
-    };
-
-    const onCampaignProgress = ({ campaignId, sent, failed, delivered, read, replied }: any) => {
-      setCampaigns(prev => prev.map(c => c.id === campaignId ? {
-        ...c,
-        sentCount: sent,
-        failedCount: failed,
-        ...(delivered !== undefined ? { deliveredCount: delivered } : {}),
-        ...(read !== undefined ? { readCount: read } : {}),
-        ...(replied !== undefined ? { repliedCount: replied } : {})
-      } : c));
-    };
-
-    const onCampaignCompleted = ({ campaignId, sent, failed }: any) => {
-      setCampaigns(prev => prev.map(c => c.id === campaignId ? {
-        ...c,
-        status: 'completed',
-        ...(sent !== undefined ? { sentCount: sent } : {}),
-        ...(failed !== undefined ? { failedCount: failed } : {})
-      } : c));
-    };
-
-    sock.on('chat:created', onChatCreated);
-    sock.on('chat:updated', onChatUpdated);
-    sock.on('conversation:updated', onChatUpdated);
-    sock.on('conversation:read', onConversationRead);
-    sock.on('message:received', onMessageReceived);
-    sock.on('message:created', onMessageCreated);
-    sock.on('message:updated', onMessageUpdated);
-    sock.on('message:ack', onMessageAck);
-    sock.on('session:message', onSessionMessage);
-    sock.on('inbox:synced', onInboxSynced);
-    sock.on('campaign:status', onCampaignStatus);
-    sock.on('campaign:stopped', onCampaignStatus);
-    sock.on('campaign:progress', onCampaignProgress);
-    sock.on('campaign:completed', onCampaignCompleted);
-
     return () => {
-      sock.off('session:status');
-      sock.off('chat:created', onChatCreated);
-      sock.off('chat:updated', onChatUpdated);
-      sock.off('conversation:updated', onChatUpdated);
-      sock.off('conversation:read', onConversationRead);
-      sock.off('message:received', onMessageReceived);
-      sock.off('message:created', onMessageCreated);
-      sock.off('message:updated', onMessageUpdated);
-      sock.off('message:ack', onMessageAck);
-      sock.off('session:message', onSessionMessage);
-      sock.off('inbox:synced', onInboxSynced);
-      sock.off('campaign:status', onCampaignStatus);
-      sock.off('campaign:stopped', onCampaignStatus);
-      sock.off('campaign:progress', onCampaignProgress);
-      sock.off('campaign:completed', onCampaignCompleted);
+      active = false;
     };
-  }, [currentUser]);
-
-  // ─── Derived state ────────────────────────────────────────────────────────
-  const unreadChatCount = chats.reduce((acc, c) => acc + (c.unreadCount > 0 ? 1 : 0), 0);
-  const totalSavedDollars = campaigns.reduce((acc, c) => acc + c.costSavedMeta, 0);
-
-  // ─── Handlers ─────────────────────────────────────────────────────────────
-
-  const handleSendMessage = async (chatId: string, text: string, isNote: boolean = false) => {
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const agentName = currentUser?.name || 'Agent';
-    const idempotencyKey = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    const optimistic: ChatMessage = {
-      id: `opt_${Date.now()}`,
-      chatId,
-      sender: 'agent',
-      agentName,
+  }, []);
+  const sessionsQuery = useQuery({
+    queryKey: ["sessions", tenant],
+    queryFn: api.getLiveSessions,
+    enabled,
+    refetchInterval: 10000,
+  });
+  const workspaces = useQuery({
+    queryKey: ["workspaces", user?.id],
+    queryFn: () => api.apiGet("/api/auth/workspaces"),
+    enabled,
+  });
+  const capabilities = useQuery({
+    queryKey: ["capabilities", tenant],
+    queryFn: () => api.apiGet("/api/workspace/capabilities"),
+    enabled,
+  });
+  const team = useQuery({
+    queryKey: ["team", tenant],
+    queryFn: () => api.apiGet("/api/workspace/team"),
+    enabled,
+  });
+  const replies = useQuery({
+    queryKey: ["replies", tenant],
+    queryFn: () => api.apiGet("/api/workspace/canned-replies"),
+    enabled,
+  });
+  const conversations = useInfiniteQuery({
+    queryKey: ["conversations", tenant, filter],
+    queryFn: ({ pageParam }) =>
+      api.fetchConversations({ ...filter, cursor: pageParam, limit: 50 }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (p) => p.nextCursor || undefined,
+    enabled,
+  });
+  const contactQuery = useInfiniteQuery({
+    queryKey: ["contacts", tenant],
+    queryFn: ({ pageParam }) =>
+      api.fetchContacts(pageParam ? { cursor: pageParam } : {}),
+    initialPageParam: null as string | null,
+    getNextPageParam: (p) => p.nextCursor || undefined,
+    enabled,
+  });
+  const history = useInfiniteQuery({
+    queryKey: ["messages", tenant, selected],
+    queryFn: ({ pageParam }) =>
+      api.fetchConversationMessages(selected!, { cursor: pageParam }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (p) => p.nextCursor || undefined,
+    enabled: enabled && Boolean(selected),
+    refetchInterval: 240000,
+  });
+  const campaigns = useQuery({
+    queryKey: ["campaigns", tenant],
+    queryFn: api.fetchCampaigns,
+    enabled: enabled && manager,
+  });
+  const automations = useQuery({
+    queryKey: ["automations", tenant],
+    queryFn: api.fetchAutomations,
+    enabled: enabled && manager,
+  });
+  const sessions = (sessionsQuery.data || []) as WhatsAppSession[];
+  const chats = useMemo(() => {
+    const rows =
+      conversations.data?.pages.flatMap((p) => p.conversations) || [];
+    return openedThread?.id === selected && !rows.some((c) => c.id === selected)
+      ? [openedThread, ...rows]
+      : rows;
+  }, [conversations.data, openedThread, selected]);
+  const selectedContactId = chats.find((c) => c.id === selected)?.contactId;
+  const selectedContact = useQuery({
+    queryKey: ["contact", tenant, selectedContactId],
+    queryFn: () => api.apiGet("/api/contacts/" + selectedContactId),
+    enabled: enabled && Boolean(selectedContactId),
+  });
+  const visibleMessages = useMemo(
+    () =>
+      reconcileMessages(
+        optimistic[selected || ""] || [],
+        history.data?.pages.flatMap((p) => p.messages) || [],
+      ),
+    [optimistic, selected, history.data],
+  );
+  const contacts = useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const c of contactQuery.data?.pages.flatMap((p) => p.contacts) || [])
+      map[c.id] = c;
+    if (selectedContact.data?.contact)
+      map[selectedContact.data.contact.id] = selectedContact.data.contact;
+    const active = chats.find((c) => c.id === selected);
+    if (active && map[active.contactId])
+      map[active.contactId] = {
+        ...map[active.contactId],
+        notes: visibleMessages
+          .filter((m) => m.isNote || m.type === "internal_note")
+          .map((m) => ({
+            id: m.id,
+            author: m.agentName,
+            content: m.text,
+            createdAt: m.timestamp,
+          })),
+      };
+    return map;
+  }, [
+    contactQuery.data,
+    selectedContact.data,
+    chats,
+    selected,
+    visibleMessages,
+  ]);
+  const refresh = useCallback(
+    async (...keys: string[]) => {
+      await Promise.all(
+        [
+          ...new Set([
+            ...keys,
+            ...(keys.includes("contacts") ? ["contact"] : []),
+          ]),
+        ].map((key) => qc.invalidateQueries({ queryKey: [key, tenant] })),
+      );
+    },
+    [qc, tenant],
+  );
+  const changeFilter = useCallback(
+    (search: string, filter: string) =>
+      setFilter((old) =>
+        old.search === search && old.filter === filter
+          ? old
+          : { search, filter },
+      ),
+    [],
+  );
+  useEffect(() => {
+    if (!user) return;
+    const socket = getSocket();
+    const changed = () => {
+      void refresh(
+        "sessions",
+        "conversations",
+        "messages",
+        "contacts",
+        "campaigns",
+        "summary",
+      );
+    };
+    const events = [
+      "connect",
+      "session:status",
+      "session:qr",
+      "conversation:updated",
+      "conversation:read",
+      "message:created",
+      "message:received",
+      "message:updated",
+      "message:ack",
+      "inbox:synced",
+      "contact:changed",
+      "campaign:status",
+      "campaign:progress",
+    ];
+    for (const event of events) socket.on(event, changed);
+    return () => {
+      for (const event of events) socket.off(event, changed);
+      disconnectSocket();
+    };
+  }, [user, refresh]);
+  const run = async (action: () => Promise<any>) => {
+    setError("");
+    try {
+      return await action();
+    } catch (e: any) {
+      setError(e.message);
+      throw e;
+    }
+  };
+  const openChat = useCallback(
+    (id: string, sync = false) => {
+      setSelected(id);
+      if (sync)
+        void api
+          .fetchConversationMessages(id, { sync: true })
+          .then(() => refresh("messages"))
+          .catch((e) => setError(e.message));
+      void api
+        .markConversationRead(id)
+        .then(() => refresh("conversations"))
+        .catch((e) => setError(e.message));
+    },
+    [refresh],
+  );
+  const send = async (id: string, text: string, note = false) => {
+    const key = crypto.randomUUID();
+    const pending: ChatMessage = {
+      id: `optimistic_${key}`,
+      idempotencyKey: key,
+      chatId: id,
+      sender: "agent",
+      agentName: user?.name,
       text,
-      type: isNote ? 'internal_note' : 'text',
-      isNote,
-      timestamp,
-      status: 'sending',
-      idempotencyKey
+      type: note ? "internal_note" : "text",
+      isNote: note,
+      status: "sending",
+      ack: 0,
+      timestamp: new Date().toISOString(),
+      timestampEpoch: Math.floor(Date.now() / 1000),
     };
-
-    setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), optimistic] }));
-
-    if (!isNote) {
-      setChats(prev => prev.map(c => c.id === chatId
-        ? { ...c, lastMessage: { text, timestamp, status: 'sending', fromMe: true } }
-        : c
-      ));
-    }
-
+    setOptimistic((prev) => ({
+      ...prev,
+      [id]: [...(prev[id] || []), pending],
+    }));
     try {
-      if (isNote) {
-        const d = await addMessage(chatId, {
-          sender: 'agent',
-          agentName,
-          text,
-          type: 'internal_note',
-          isNote: true,
-          timestamp,
-          status: 'sent',
-          idempotencyKey
-        });
-        setMessages(prev => ({
-          ...prev,
-          [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? (d.message || { ...m, status: 'sent' }) : m)
-        }));
-        return;
-      }
-
-      let confirmedMsg: any = null;
-      try {
-        const res = await sendMessageToConversation(chatId, { text, idempotencyKey });
-        confirmedMsg = res?.message;
-      } catch (sendErr: any) {
-        console.error('Inbox send failed:', sendErr);
-        setMessages(prev => ({
-          ...prev,
-          [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? { ...m, status: 'failed' } : m)
-        }));
-        return;
-      }
-
-      // Reconcile optimistic message without duplication
-      setMessages(prev => ({
+      const result = await api.addMessage(id, {
+        text,
+        idempotencyKey: key,
+        type: pending.type,
+        isNote: note,
+      });
+      setOptimistic((prev) => ({
         ...prev,
-        [chatId]: (prev[chatId] || []).map(m =>
-          (m.id === optimistic.id || m.idempotencyKey === idempotencyKey)
-            ? {
-                ...m,
-                id: confirmedMsg?.id || m.id,
-                providerMessageId: confirmedMsg?.provider_message_id || confirmedMsg?.providerMessageId || m.providerMessageId,
-                status: 'sent',
-                ack: 1
-              }
-            : m
-        )
+        [id]: reconcileMessages(prev[id] || [], [result.message]),
       }));
-
-      setChats(prev => prev.map(c => c.id === chatId
-        ? { ...c, lastMessage: { text, timestamp, status: 'sent', fromMe: true } }
-        : c
-      ));
-    } catch (error) {
-      console.error('Inbox send failed:', error);
-      setMessages(prev => ({
+      await refresh("messages", "conversations");
+    } catch (e: any) {
+      setError(e.message);
+      setOptimistic((prev) => ({
         ...prev,
-        [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? { ...m, status: 'failed' } : m)
+        [id]: (prev[id] || []).map((m) =>
+          m.id === pending.id
+            ? { ...m, status: e.status ? "failed" : "uncertain" }
+            : m,
+        ),
       }));
     }
   };
-
-  const handleSendAttachment = async (chatId: string, attachment: { data: string; filename: string; kind: string; mimeType: string }) => {
-    const chat = chats.find(c => c.id === chatId);
-    if (!chat?.phone) return;
-    const activeChannel = chat.channel || sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const optimistic: ChatMessage = {
-      id: `m_${Date.now()}`, chatId, sender: 'agent', agentName: currentUser?.name || 'Agent',
-      text: attachment.filename, type: attachment.kind as ChatMessage['type'], mediaUrl: attachment.data,
-      fileName: attachment.filename, timestamp, status: 'sending'
-    };
-    setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), optimistic] }));
+  const attachment = async (
+    id: string,
+    data: { data: string; filename: string; kind: string; mimeType: string },
+  ) => {
     try {
-      await sendLiveMedia(activeChannel, chat.phone, attachment.data, attachment.filename, attachment.kind);
-      const d = await addMessage(chatId, { sender: 'agent', agentName: currentUser?.name || 'Agent', text: attachment.filename, type: attachment.kind, mediaUrl: attachment.data, fileName: attachment.filename, status: 'sent', timestamp });
-      setMessages(prev => ({ ...prev, [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? d.message : m) }));
-      await patchChat(chatId, { lastMessage: { text: `Attachment: ${attachment.filename}`, timestamp, status: 'sent', fromMe: true } });
-    } catch (error) {
-      console.error('Inbox attachment send failed:', error);
-      setMessages(prev => ({ ...prev, [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? { ...m, status: 'failed' } : m) }));
-    }
-  };
-
-  const handleAddSession = (name: string, phone: string, channel: 'sales' | 'support' | 'vip' | 'general') => {
-    const key = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newSession: WhatsAppSession = {
-      id: `sess_${key}_${Date.now()}`, sessionKey: key, displayName: name, phone,
-      status: 'CONNECTED', battery: 95, isCharging: true, antiBanHealth: 99, warmupDay: 1,
-      proxyIp: 'Dedicated Cloud VPS', messagesSentToday: 0, messagesLimitToday: 3000,
-      lastActive: 'Just now', wppVersion: '2.3000.101', channel
-    };
-    setSessions(prev => [newSession, ...prev.filter(s => s.sessionKey !== key)]);
-  };
-
-  const handleRestartSession = (sessionId: string) => {
-    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'CONNECTED', lastActive: 'Just now' } : s));
-  };
-
-  const handleDeleteSession = async (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId);
-    if (!session) return;
-    if (!window.confirm(`Remove ${session.displayName || session.sessionKey}? This deletes its WhatsApp profile and inbox history.`)) return;
-    try {
-      const result = await closeLiveSession(session.sessionKey);
-      if (result?.status !== 'success') throw new Error(result?.message || 'Session cleanup failed');
-      const removedChatIds = new Set(chats.filter(chat => chat.channel === session.sessionKey).map(chat => chat.id));
-      setChats(prev => prev.filter(chat => chat.channel !== session.sessionKey));
-      setMessages(prev => Object.fromEntries(Object.entries(prev).filter(([chatId]) => !removedChatIds.has(chatId))));
-    } catch (error) {
-      console.error('Session cleanup failed:', error);
-      return;
-    }
-    setSessions(prev => prev.filter(s => s.id !== sessionId));
-  };
-
-  const handleAddUser = async (newUserData: Omit<UserAccount, 'id' | 'createdAt' | 'lastLogin' | 'broadcastsUsed' | 'apiCallsThisMonth'>) => {
-    const backendRole = newUserData.role === 'tenant_admin' ? 'admin' : newUserData.role === 'superadmin' ? 'superadmin' : newUserData.role === 'sales' ? 'sales' : 'support';
-    const result = await createTenantUser({
-      name: newUserData.name,
-      email: newUserData.email,
-      companyName: newUserData.company,
-      role: backendRole,
-    });
-    setUsers(prev => [{ ...newUserData, id: `usr_${Date.now()}`, broadcastsUsed: 0, apiCallsThisMonth: 0, createdAt: new Date().toISOString().slice(0, 10), lastLogin: 'Never' }, ...prev]);
-    return result;
-  };
-
-  const handleUpdateStatus = async (userId: string, status: AccountStatus) => {
-    const result = await updateTenantUser(userId, { status });
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
-    return result;
-  };
-
-  const handleUpdateUser = async (userId: string, updates: Record<string, unknown>) => {
-    const result = await updateTenantUser(userId, updates);
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...(updates.name ? { name: String(updates.name) } : {}), ...(updates.email ? { email: String(updates.email) } : {}), ...(updates.status ? { status: updates.status as AccountStatus } : {}) } : u));
-    return result;
-  };
-
-  const handleUpdateQuotas = (userId: string, sessionQuota: number, broadcastLimit: number) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, whatsappSessionsQuota: sessionQuota, monthlyBroadcastLimit: broadcastLimit } : u));
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    await deleteTenantUser(userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
-  };
-
-  const handleSyncInbox = async (sessionKey: string) => {
-    try {
-      await syncInboxForSession(sessionKey);
-    } catch (err) {
-      console.warn('Sync trigger error:', err);
-    }
-
-    // Wait a brief moment and reload workspace chats and contacts from database
-    await new Promise(r => setTimeout(r, 2000));
-    try {
-      const [chatsData, contactsData] = await Promise.all([fetchChats(), fetchContacts()]);
-      setChats(chatsData.chats || []);
-      const map: Record<string, any> = {};
-      (contactsData.contacts || []).forEach((c: any) => { map[c.id] = c; });
-      setContacts(map);
+      await run(async () => {
+        const file = await (await fetch(data.data)).blob();
+        await api.uploadAttachment(id, file, data.filename, data.mimeType);
+        await refresh("messages", "conversations");
+      });
     } catch {}
   };
-
-  const handleOpenContactChat = async (contactId: string) => {
-    const contact = contacts[contactId];
-    if (!contact) {
-      setActiveUserTab('inbox');
-      return;
-    }
-    const cleanPhone = String(contact.phone).replace(/@c\.us$/, '');
-    let existingChat = chats.find(c => c.phone === cleanPhone || c.contactId === contactId || c.phone === contact.phone);
-    if (!existingChat) {
-      try {
-        const activeSessionKey = sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
-        const res = await addChat({
-          contactId: contact.id,
-          contactName: contact.name,
-          phone: cleanPhone,
-          avatar: contact.avatar || '',
-          channel: activeSessionKey,
-          assignedTo: currentUser?.name || 'Agent',
-          isGroup: false,
-          lastMessage: { text: 'Conversation started', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), status: 'sent', fromMe: true },
-          tags: contact.tags || []
-        });
-        if (res?.chat) {
-          existingChat = res.chat;
-          setChats(prev => [res.chat, ...prev]);
-        }
-      } catch (err) {
-        console.error('Failed to create chat for contact:', err);
-      }
-    }
-    if (existingChat) {
-      setSelectedChatId(existingChat.id);
-    }
-    setActiveUserTab('inbox');
-  };
-
-  const handleAddCampaign = async (campaignData: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => {
-    const payload = {
-      ...campaignData,
-      status: campaignData.status || 'draft',
-      sentCount: 0,
-      deliveredCount: 0,
-      readCount: 0,
-      repliedCount: 0,
-      failedCount: 0,
-    };
+  const logout = async () => {
     try {
-      const d = await addCampaign(payload);
-      setCampaigns(prev => [d.campaign, ...prev]);
+      await api.logoutUser();
     } catch {
-      // optimistic fallback
-      setCampaigns(prev => [{ ...payload, id: `camp_${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+    } finally {
+      disconnectSocket();
+      qc.clear();
+      setOptimistic({});
+      setSelected(null);
+      setOpenedThread(null);
+      setUser(null);
     }
   };
-
-  const handleStartCampaign = async (campaignId: string) => {
-    setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'running' } : c));
-    try {
-      await startCampaign(campaignId);
-    } catch (err: any) {
-      console.error('Failed to start campaign:', err);
-      fetchCampaigns().then(d => setCampaigns(d.campaigns || []));
-      alert(err?.message || 'Could not start broadcast. Ensure a WhatsApp session is connected.');
-    }
-  };
-
-  const handleStopCampaign = async (campaignId: string) => {
-    setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'stopped' } : c));
-    try {
-      await stopCampaign(campaignId);
-    } catch (err: any) {
-      console.error('Failed to stop campaign:', err);
-      fetchCampaigns().then(d => setCampaigns(d.campaigns || []));
-    }
-  };
-
-  const handleToggleRule = async (ruleId: string) => {
-    setAutomations(prev => prev.map(r => r.id === ruleId ? { ...r, isEnabled: !r.isEnabled } : r));
-    try {
-      const d = await toggleAutomationApi(ruleId);
-      if (d.automation) {
-        setAutomations(prev => prev.map(r => r.id === ruleId ? d.automation : r));
-      }
-    } catch {}
-  };
-
-  const handleAssignAgent = async (chatId: string, agentName: string) => {
-    setChats(prev => prev.map(c => c.id === chatId ? { ...c, assignedTo: agentName } : c));
-    try { await patchChat(chatId, { assignedTo: agentName }); } catch {}
-  };
-
-  const handleToggleResolve = async (chatId: string) => {
-    setChats(prev => prev.map(c => c.id === chatId ? { ...c, unreadCount: 0, isClosed: !c.isClosed } : c));
-    const chat = chats.find(c => c.id === chatId);
-    try { await patchChat(chatId, { isClosed: !chat?.isClosed, unreadCount: 0 }); } catch {}
-  };
-
-  const handleTriggerTestWebhook = () => {
-    const newLog: WebhookLog = {
-      id: `wh_${Date.now()}`, event: 'onmessage', session: 'sales-primary',
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      status: 'delivered',
-      payload: { id: `true_14158902134@c.us_${Date.now()}`, from: '14158902134@c.us', body: 'Hello, could you share your wholesale catalog prices for Q4?', type: 'chat', notifyName: 'David K. Miller', isGroupMsg: false }
-    };
-    setWebhookLogs(prev => [newLog, ...prev]);
-  };
-
-  // ─── Render ───────────────────────────────────────────────────────────────
-
-  if (!authChecked) {
+  if (!ready)
+    return <div className="p-8 text-slate-300">Restoring your workspace…</div>;
+  if (!user)
     return (
-      <div className="min-h-screen bg-[#0c1317] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!currentUser) {
-    return <LoginPage onAuthSuccess={handleAuthSuccess} />;
-  }
-
-  return (
-    <div className="min-h-screen bg-[#0c1317] flex flex-col">
-
-      <Navbar
-        currentView={currentView}
-        onSelectView={setCurrentView}
-        sessions={sessions}
-        currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onLogout={handleLogout}
-        onOpenNewSession={() => { setCurrentView('user'); setActiveUserTab('sessions'); setIsPairModalOpen(true); }}
-        onOpenNewBroadcast={() => { setCurrentView('user'); setActiveUserTab('campaigns'); setIsCreateCampaignModalOpen(true); }}
+      <LoginPage
+        onAuthSuccess={(u) => {
+          qc.clear();
+          setUser(u);
+        }}
       />
-
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          currentView={currentView}
-          activeUserTab={activeUserTab}
-          onSelectUserTab={setActiveUserTab}
-          activeAdminTab={activeAdminTab}
-          onSelectAdminTab={setActiveAdminTab}
-          activeDevTab={activeDevTab}
-          onSelectDevTab={setActiveDevTab}
-          unreadChatCount={unreadChatCount}
-          totalSavedDollars={totalSavedDollars}
-        />
-
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#0c1317]">
-          <div className="max-w-7xl mx-auto">
-
-            {currentView === 'user' && (
-              <>
-                {activeUserTab === 'dashboard' && (
-                  <Dashboard
-                    sessions={sessions}
-                    campaigns={campaigns}
-                    onOpenSessionModal={() => { setActiveUserTab('sessions'); setIsPairModalOpen(true); }}
-                    onOpenNewBroadcast={() => { setActiveUserTab('campaigns'); setIsCreateCampaignModalOpen(true); }}
-                    onNavigateToInbox={() => setActiveUserTab('inbox')}
-                    onStartCampaign={handleStartCampaign}
-                    onStopCampaign={handleStopCampaign}
-                  />
-                )}
-
-                {activeUserTab === 'inbox' && (
-                  <Inbox
-                    chats={chats}
-                    messages={messages}
-                    contacts={contacts}
-                    cannedReplies={cannedReplies}
-                    sessions={sessions}
-                    selectedChatId={selectedChatId}
-                    onSendMessage={handleSendMessage}
-                    onSendAttachment={handleSendAttachment}
-                    onAssignAgent={handleAssignAgent}
-                    onToggleResolve={handleToggleResolve}
-                    onOpenChat={loadMessages}
-                    onSyncInbox={handleSyncInbox}
-                  />
-                )}
-
-                {activeUserTab === 'sessions' && (
-                  <SessionManager
-                    sessions={sessions}
-                    onAddSession={handleAddSession}
-                    onRestartSession={handleRestartSession}
-                    onDeleteSession={handleDeleteSession}
-                    isPairModalOpen={isPairModalOpen}
-                    setIsPairModalOpen={setIsPairModalOpen}
-                  />
-                )}
-
-                {activeUserTab === 'campaigns' && (
-                  <Campaigns
-                    campaigns={campaigns}
-                    onAddCampaign={handleAddCampaign}
-                    onStartCampaign={handleStartCampaign}
-                    onStopCampaign={handleStopCampaign}
-                    isCreateModalOpen={isCreateCampaignModalOpen}
-                    setIsCreateModalOpen={setIsCreateCampaignModalOpen}
-                  />
-                )}
-
-                {activeUserTab === 'contacts' && (
-                  <Contacts
-                    contacts={contacts}
-                    onSelectChat={handleOpenContactChat}
-                  />
-                )}
-
-                {activeUserTab === 'automations' && (
-                  <Automations
-                    automations={automations}
-                    onToggleRule={handleToggleRule}
-                  />
-                )}
-              </>
-            )}
-
-            {canManageWorkspace && currentView === 'admin' && (
-              <>
-                {activeAdminTab === 'users' && (
-                  <UserManagement
-                    users={users}
-                    onAddUser={handleAddUser}
-                    onUpdateStatus={handleUpdateStatus}
-                    onUpdateUser={handleUpdateUser}
-                    onUpdateQuotas={handleUpdateQuotas}
-                    onDeleteUser={handleDeleteUser}
-                    isPlatformSuperAdmin={isPlatformSuperAdmin}
-                    workspaceName={currentUser?.company_name || ''}
-                  />
-                )}
-
-                {activeAdminTab === 'cluster' && (
-                  <ClusterHealth
-                    metrics={metrics}
-                    onRefreshMetrics={() => {
-                      checkBackendHealth().then(h => {
-                        if (h) {
-                          setMetrics(prev => ({
-                            ...prev,
-                            totalSessions: h.activeSessions ?? sessions.length,
-                            systemStatus: (h.status === 'healthy' || h.status === 'ok') ? 'healthy' : 'degraded',
-                            uptimeHours: h.uptime ? Math.floor(h.uptime / 3600) : 0
-                          }));
-                        }
-                      }).catch(() => {});
-                    }}
-                  />
-                )}
-
-                {activeAdminTab === 'audit' && <AuditLogs />}
-              </>
-            )}
-
-            {canManageWorkspace && currentView === 'developer' && (
-              <DeveloperGuide
-                endpoints={apiEndpoints}
-                webhookLogs={webhookLogs}
-                onTriggerTestWebhook={handleTriggerTestWebhook}
-                activeDevTab={activeDevTab}
-                onSelectDevTab={setActiveDevTab}
+    );
+  const queryError =
+    sessionsQuery.error ||
+    conversations.error ||
+    contactQuery.error ||
+    history.error;
+  return (
+    <div className="min-h-screen bg-[#0c1317] text-[#e9edef]">
+      <Navbar
+        currentView={view}
+        onSelectView={setView}
+        sessions={sessions}
+        currentUser={user}
+        onOpenNewSession={() => {
+          setView("user");
+          setTab("sessions");
+          setPairOpen(true);
+        }}
+        onOpenNewBroadcast={() => {
+          setView("user");
+          setTab("campaigns");
+          setCampaignOpen(true);
+        }}
+        onOpenAuthModal={() => {}}
+        onLogout={() => void logout()}
+      />
+      <div className="flex">
+        <div className="hidden lg:block">
+          <Sidebar
+            currentView={view}
+            activeUserTab={tab}
+            onSelectUserTab={setTab}
+            activeAdminTab={adminTab}
+            onSelectAdminTab={setAdminTab}
+            activeDevTab={devTab}
+            onSelectDevTab={setDevTab}
+            unreadChatCount={chats.filter((c) => c.unreadCount > 0).length}
+          />
+        </div>
+        <main
+          className={`flex-1 min-w-0 ${view === "user" && tab === "inbox" ? "" : "p-4 sm:p-6"}`}
+        >
+          {workspaces.data?.workspaces?.length > 1 && (
+            <label className="block p-3 text-sm">
+              Workspace{" "}
+              <select
+                className="ml-2 p-2 bg-[#202c33] rounded"
+                value={tenant || ""}
+                onChange={async (e) => {
+                  const result = await api.switchWorkspace(e.target.value);
+                  if (result.status === "error") {
+                    setError(result.message || "Workspace switch failed");
+                    return;
+                  }
+                  disconnectSocket();
+                  qc.clear();
+                  setOptimistic({});
+                  setSelected(null);
+                  setOpenedThread(null);
+                  setUser(result.user);
+                }}
+              >
+                {workspaces.data.workspaces.map((w: any) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <nav className="lg:hidden flex flex-wrap gap-3 p-3 text-sm">
+            {(
+              [
+                "inbox",
+                "sessions",
+                "contacts",
+                "dashboard",
+                "campaigns",
+                "automations",
+              ] as UserSubTab[]
+            ).map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  setView("user");
+                  setTab(t);
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </nav>
+          {(error || queryError) && (
+            <div
+              role="alert"
+              className="m-3 p-3 rounded-lg bg-rose-950 text-rose-200"
+            >
+              {error || (queryError as Error).message}
+              <button
+                className="ml-3 underline"
+                onClick={() => {
+                  setError("");
+                  void refresh(
+                    "sessions",
+                    "conversations",
+                    "contacts",
+                    "messages",
+                  );
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {view === "user" && tab === "inbox" && (
+            <Inbox
+              chats={chats}
+              messages={selected ? { [selected]: visibleMessages } : {}}
+              contacts={contacts}
+              cannedReplies={replies.data?.replies || []}
+              sessions={sessions}
+              selectedChatId={selected}
+              onOpenChat={openChat}
+              onSendMessage={send}
+              onSendAttachment={attachment}
+              onAssignAgent={(id, name) => {
+                void run(async () => {
+                  await api.patchChat(id, {
+                    assignedTo: name === "Unassigned" ? "" : name,
+                  });
+                  await refresh("conversations");
+                }).catch(() => {});
+              }}
+              onToggleResolve={(id) => {
+                void run(async () => {
+                  await api.patchChat(id, {
+                    isClosed: !chats.find((c) => c.id === id)?.isClosed,
+                  });
+                  await refresh("conversations");
+                }).catch(() => {});
+              }}
+              onSyncInbox={async (name) => {
+                await run(() => api.syncInboxForSession(name));
+                await refresh("contacts", "conversations", "messages");
+              }}
+              teammates={team.data?.members || []}
+              mediaEnabled={Boolean(capabilities.data?.media)}
+              isLoading={conversations.isPending || history.isFetching}
+              hasMoreChats={Boolean(conversations.hasNextPage)}
+              onLoadMoreChats={() => void conversations.fetchNextPage()}
+              hasOlderMessages={Boolean(history.hasNextPage)}
+              onLoadOlder={() => void history.fetchNextPage()}
+              onFilterChange={changeFilter}
+              onSaveReply={async (data) => {
+                await api.apiPost("/api/workspace/canned-replies", data);
+                await refresh("replies");
+              }}
+              canManage={manager}
+            />
+          )}
+          {view === "user" && tab === "sessions" && (
+            <SessionManager
+              canManage={manager}
+              sessions={sessions}
+              isPairModalOpen={pairOpen}
+              setIsPairModalOpen={setPairOpen}
+              onAddSession={() => void refresh("sessions")}
+              onRestartSession={(id) => {
+                const s = sessions.find((x) => x.id === id);
+                if (s)
+                  void run(async () => {
+                    await api.startLiveSession(s.sessionKey);
+                    await refresh("sessions");
+                  }).catch(() => {});
+              }}
+              onDeleteSession={(id) => {
+                const s = sessions.find((x) => x.id === id);
+                if (
+                  s &&
+                  window.confirm(
+                    "Disconnect and remove this session? Saved credentials and inbox history will be retained.",
+                  )
+                )
+                  void run(async () => {
+                    await api.deleteSession(s.sessionKey);
+                    await refresh("sessions");
+                  }).catch(() => {});
+              }}
+            />
+          )}
+          {view === "user" && tab === "contacts" && (
+            <Contacts
+              onSelectChat={(id) => {
+                void run(async () => {
+                  const session = sessions.find(
+                    (s) => s.status === "CONNECTED",
+                  );
+                  if (!session)
+                    throw new Error("Connect a WhatsApp session first");
+                  const result = await api.addChat({
+                    contactId: id,
+                    sessionName: session.sessionKey,
+                  });
+                  await refresh("conversations");
+                  setOpenedThread(result.conversation);
+                  setSelected(result.conversation.id);
+                  setTab("inbox");
+                }).catch(() => {});
+              }}
+            />
+          )}
+          {view === "user" && tab === "dashboard" && (
+            <Dashboard
+              workspaceName={user.company_name}
+              onNavigateToInbox={() => setTab("inbox")}
+              onOpenSessionModal={() => {
+                setTab("sessions");
+                setPairOpen(true);
+              }}
+              onOpenNewBroadcast={() => {
+                setTab("campaigns");
+                setCampaignOpen(true);
+              }}
+            />
+          )}
+          {view === "user" &&
+            tab === "campaigns" &&
+            (manager ? (
+              <Campaigns
+                campaigns={campaigns.data?.campaigns || []}
+                sessions={sessions}
+                onAddCampaign={async (data) => {
+                  await run(() => api.addCampaign(data));
+                  await refresh("campaigns");
+                }}
+                onStartCampaign={async (id) => {
+                  await run(() => api.startCampaign(id));
+                  await refresh("campaigns");
+                }}
+                onStopCampaign={async (id) => {
+                  await run(() => api.stopCampaign(id));
+                  await refresh("campaigns");
+                }}
+                isCreateModalOpen={campaignOpen}
+                setIsCreateModalOpen={setCampaignOpen}
               />
-            )}
-
-          </div>
+            ) : (
+              <p className="p-5">
+                Campaigns require workspace administrator access.
+              </p>
+            ))}
+          {view === "user" &&
+            tab === "automations" &&
+            (manager ? (
+              <Automations
+                automations={automations.data?.automations || []}
+                onChanged={() => void refresh("automations")}
+              />
+            ) : (
+              <p className="p-5">
+                Automations require workspace administrator access.
+              </p>
+            ))}
+          {view === "admin" && manager && adminTab === "users" && (
+            <UserManagement
+              canChangeRoles={Boolean(
+                (user as any).membershipRole === "owner" || user.isSuperAdmin,
+              )}
+            />
+          )}
+          {view === "admin" && manager && adminTab === "audit" && <AuditLogs />}
+          {view === "admin" && manager && adminTab === "cluster" && (
+            <ClusterHealth />
+          )}
+          {view === "developer" && manager && (
+            <DeveloperGuide activeDevTab={devTab} onSelectDevTab={setDevTab} />
+          )}
         </main>
       </div>
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
-      />
-
     </div>
   );
 }

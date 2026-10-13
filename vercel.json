@@ -1,6 +1,7 @@
 {
   "framework": "vite",
   "buildCommand": "npm run build",
+  "ignoreCommand": "node scripts/release-check.mjs",
   "outputDirectory": "dist",
   "rewrites": [
     {

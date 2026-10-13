@@ -1,34 +1,145 @@
-/**
- * WppFlow Cloud Engine Client
- * Connects frontend to the production Cloud backend running Chromium & OmniEngine
- */
-
-export const getBaseBackendUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    return '';
-  }
-  return (import.meta as any).env?.VITE_BACKEND_URL || 'https://srv1628639.hstgr.cloud';
-};
-
-export const getSocketBackendUrl = (): string => {
-  const customSocket = (import.meta as any).env?.VITE_SOCKET_URL;
-  if (customSocket) return customSocket;
-  const backend = (import.meta as any).env?.VITE_BACKEND_URL;
-  if (backend) return backend;
-  return 'https://srv1628639.hstgr.cloud';
-};
-
-export const DEFAULT_BACKEND_URL = getBaseBackendUrl();
-export const DEFAULT_SERVER_BACKEND_URL = DEFAULT_BACKEND_URL;
-export const DEFAULT_RAILWAY_BACKEND_URL = DEFAULT_SERVER_BACKEND_URL; // legacy alias
-
-export function resolveEndpoint(path: string, baseUrl = getBaseBackendUrl()): string {
-  if (!baseUrl) return path.startsWith('/') ? path : `/${path}`;
-  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${cleanBase}${cleanPath}`;
+export const getBaseBackendUrl = () =>
+  import.meta.env.VITE_BACKEND_URL ||
+  (typeof window !== "undefined" &&
+  window.location.hostname.endsWith("vercel.app")
+    ? ""
+    : "http://localhost:8080");
+export const getSocketBackendUrl = () =>
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  getBaseBackendUrl() ||
+  "https://srv1628639.hstgr.cloud";
+export const resolveEndpoint = (path: string, base = getBaseBackendUrl()) =>
+  `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+export const TOKEN_STORAGE_KEY = "wppflow_auth_token",
+  TENANT_STORAGE_KEY = "wppflow_tenant_id";
+let accessToken: string | null = null;
+let refreshPromise: Promise<any> | null = null;
+export const getStoredToken = () => accessToken;
+export function setStoredToken(token: string) {
+  accessToken = token;
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
-
+export const getStoredTenantId = () => localStorage.getItem(TENANT_STORAGE_KEY);
+export const setStoredTenantId = (id: string) =>
+  localStorage.setItem(TENANT_STORAGE_KEY, id);
+export function clearStoredToken() {
+  accessToken = null;
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(TENANT_STORAGE_KEY);
+  localStorage.removeItem("wppflow_refresh_token");
+}
+export async function refreshSession() {
+  if (!refreshPromise)
+    refreshPromise = (async () => {
+      const res = await fetch(resolveEndpoint("/api/auth/refresh"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!res.ok) {
+        clearStoredToken();
+        return null;
+      }
+      const data = await res.json();
+      setStoredToken(data.token);
+      if (data.tenant?.id) setStoredTenantId(data.tenant.id);
+      return data;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
+}
+export async function apiRequest(
+  path: string,
+  init: RequestInit = {},
+  retry = true,
+): Promise<any> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((init.headers as Record<string, string>) || {}),
+  };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const tenant = getStoredTenantId();
+  if (tenant) headers["X-Tenant-Id"] = tenant;
+  const res = await fetch(resolveEndpoint(path), {
+    ...init,
+    headers,
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (res.status === 401 && retry && !path.startsWith("/api/auth/")) {
+    const refreshed = await refreshSession();
+    if (refreshed) return apiRequest(path, init, false);
+  }
+  const data = await res
+    .json()
+    .catch(() => ({ message: "The server returned an invalid response" }));
+  if (!res.ok) {
+    const error = new Error(data.message || `HTTP ${res.status}`) as Error & {
+      status: number;
+    };
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+export const apiGet = (path: string) => apiRequest(path);
+export const apiPost = (path: string, body: any) =>
+  apiRequest(path, { method: "POST", body: JSON.stringify(body) });
+export const apiPatch = (path: string, body: any) =>
+  apiRequest(path, { method: "PATCH", body: JSON.stringify(body) });
+export const apiDelete = (path: string) =>
+  apiRequest(path, { method: "DELETE" });
+export interface AuthResponse {
+  status: "success" | "error";
+  message?: string;
+  token?: string;
+  user?: any;
+  tenant?: any;
+}
+async function auth(path: string, body: any): Promise<AuthResponse> {
+  try {
+    const data = await apiPost(path, body);
+    if (data.token) setStoredToken(data.token);
+    if (data.tenant?.id) setStoredTenantId(data.tenant.id);
+    return data;
+  } catch (e: any) {
+    return { status: "error", message: e.message };
+  }
+}
+export const loginUser = (email: string, password: string) =>
+  auth("/api/auth/login", { email, password });
+export const signupUser = (
+  name: string,
+  email: string,
+  password: string,
+  companyName?: string,
+  _role?: string,
+) => auth("/api/auth/signup", { name, email, password, companyName });
+export const acceptInvitation = (token: string, password: string) =>
+  apiPost("/api/auth/accept-invite", { token, password });
+export const switchWorkspace = (tenantId: string) =>
+  auth("/api/auth/switch-tenant", { tenantId });
+export async function getCurrentUser(_token?: string) {
+  try {
+    if (!accessToken) {
+      const session = await refreshSession();
+      if (!session) return null;
+    }
+    return (await apiGet("/api/auth/me")).user;
+  } catch {
+    return null;
+  }
+}
+export async function logoutUser() {
+  try {
+    await apiPost("/api/auth/logout", {});
+  } finally {
+    clearStoredToken();
+  }
+}
 export interface BackendHealth {
   status: string;
   engine: string;
@@ -38,432 +149,111 @@ export interface BackendHealth {
   timestamp: string;
   database?: any;
 }
-
-export interface LiveSessionInfo {
-  sessionKey: string;
-  status: string;
-  phone: string | null;
-  battery: number;
-  antiBanHealth: number;
-  warmupDay: number;
-  hasQr: boolean;
-  lastActive: string;
-}
-
-export async function checkBackendHealth(baseUrl = getBaseBackendUrl()): Promise<BackendHealth | null> {
+export async function checkBackendHealth(): Promise<BackendHealth | null> {
   try {
-    const res = await fetch(resolveEndpoint('/health', baseUrl), { 
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (error) {
-    try {
-      const fallbackUrl = baseUrl === '' 
-        ? 'https://srv1628639.hstgr.cloud/health' 
-        : '/health';
-      const fallbackRes = await fetch(fallbackUrl, { method: 'GET' });
-      if (fallbackRes.ok) return await fallbackRes.json();
-    } catch {}
-    return null;
-  }
-}
-
-export async function startLiveSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  const token = getStoredToken();
-  const res = await fetch(resolveEndpoint('/api/sessions/start', baseUrl), {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-    },
-    body: JSON.stringify({ sessionName })
-  });
-  return await res.json();
-}
-
-/** Delete/clear a session from the backend's memory (cleans up FAILED sessions) */
-export async function deleteSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  try {
-    const token = getStoredToken();
-    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}`, baseUrl), {
-      method: 'DELETE',
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    return await res.json();
-  } catch {
-    return { status: 'error' };
-  }
-}
-
-export async function getLiveSessionQr(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  const token = getStoredToken();
-  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/qr`, baseUrl), {
-    cache: 'no-store',
-    headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-  });
-  return await res.json();
-}
-
-export async function getLiveSessionStatus(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  const token = getStoredToken();
-  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/status`, baseUrl), {
-    cache: 'no-store',
-    headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-  });
-  return await res.json();
-}
-
-export async function closeLiveSession(sessionName: string, baseUrl = getBaseBackendUrl()) {
-  try {
-    const token = getStoredToken();
-    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/close`, baseUrl), {
-      method: 'POST',
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    return await res.json();
-  } catch (err: any) {
-    return { status: 'error', message: err.message };
-  }
-}
-
-export async function sendLiveMessage(
-  sessionName: string,
-  phone: string,
-  message: string,
-  contactName?: string,
-  chatId?: string,
-  baseUrl = getBaseBackendUrl()
-) {
-  const token = getStoredToken();
-  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-message`, baseUrl), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-    },
-    body: JSON.stringify({ phone, message, contactName, chatId })
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
-}
-
-export async function sendLiveMedia(sessionName: string, phone: string, data: string, filename: string, kind: string, caption = '', baseUrl = getBaseBackendUrl()) {
-  const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/send-media`, baseUrl), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ phone, data, filename, kind, caption }),
-  });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`);
-  return result;
-}
-
-export async function getLiveSessions(baseUrl = getBaseBackendUrl()): Promise<LiveSessionInfo[]> {
-  try {
-    const token = getStoredToken();
-    const res = await fetch(resolveEndpoint('/api/sessions', baseUrl), {
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.sessions || [];
-  } catch {
-    return [];
-  }
-}
-
-// --- Authentication & User Management ---
-
-export interface AuthResponse {
-  status: 'success' | 'error';
-  message?: string;
-  token?: string;
-  user?: any;
-}
-
-export const TOKEN_STORAGE_KEY = 'wppflow_auth_token';
-export const TENANT_STORAGE_KEY = 'wppflow_tenant_id';
-export const REFRESH_TOKEN_STORAGE_KEY = 'wppflow_refresh_token';
-
-export function getStoredToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setStoredToken(token: string) {
-  try {
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  } catch {}
-}
-
-export function clearStoredToken() {
-  try {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(TENANT_STORAGE_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-  } catch {}
-}
-
-export function getStoredTenantId(): string | null {
-  try {
-    return localStorage.getItem(TENANT_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setStoredTenantId(tenantId: string) {
-  try {
-    localStorage.setItem(TENANT_STORAGE_KEY, tenantId);
-  } catch {}
-}
-
-export async function loginUser(email: string, password: string, baseUrl = getBaseBackendUrl()): Promise<AuthResponse> {
-  try {
-    const res = await fetch(resolveEndpoint('/api/auth/login', baseUrl), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.status === 'success' && data.tenant?.id) {
-      setStoredTenantId(data.tenant.id);
-    }
-    return data;
-  } catch (err: any) {
-    return { status: 'error', message: err.message || 'Network error connecting to auth server' };
-  }
-}
-
-export async function signupUser(
-  name: string, 
-  email: string, 
-  password: string, 
-  companyName?: string, 
-  role?: 'admin' | 'user',
-  baseUrl = getBaseBackendUrl()
-): Promise<AuthResponse> {
-  try {
-    const res = await fetch(resolveEndpoint('/api/auth/signup', baseUrl), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, companyName, role })
-    });
-    const data = await res.json();
-    if (data.status === 'success' && data.tenant?.id) {
-      setStoredTenantId(data.tenant.id);
-    }
-    return data;
-  } catch (err: any) {
-    return { status: 'error', message: err.message || 'Network error connecting to auth server' };
-  }
-}
-
-export async function getCurrentUser(token: string, baseUrl = getBaseBackendUrl()): Promise<any | null> {
-  try {
-    const res = await fetch(resolveEndpoint('/api/auth/me', baseUrl), {
-      headers: authHeaders(token)
-    });
+    const res = await fetch(resolveEndpoint("/health"));
     if (!res.ok) return null;
-    const data = await res.json();
-    if (data.tenant?.id) {
-      setStoredTenantId(data.tenant.id);
-    }
-    return data.user || null;
+    return res.json();
   } catch {
     return null;
   }
 }
-
-// ─── DATA API ────────────────────────────────────────────────────────────────────────────
-
-function authHeaders(token?: string | null): Record<string, string> {
-  const t = token || getStoredToken();
-  const tenantId = getStoredTenantId();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (t) headers['Authorization'] = `Bearer ${t}`;
-  if (tenantId) headers['x-tenant-id'] = tenantId;
-  return headers;
-}
-
-export async function apiGet(path: string) {
-  const res = await fetch(resolveEndpoint(path), { cache: 'no-store', headers: authHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-export async function apiPost(path: string, body: any) {
-  const res = await fetch(resolveEndpoint(path), { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-export async function apiPatch(path: string, body: any) {
-  const res = await fetch(resolveEndpoint(path), { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-export async function apiDelete(path: string) {
-  const res = await fetch(resolveEndpoint(path), { method: 'DELETE', headers: authHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-// Contacts
-export const fetchContacts = () => apiGet('/api/contacts');
-export const addContact = (data: any) => apiPost('/api/contacts', data);
+export const getLiveSessions = async () =>
+  (await apiGet("/api/sessions")).sessions;
+export const startLiveSession = (sessionName: string) =>
+  apiPost("/api/sessions/start", { sessionName });
+export const getLiveSessionQr = (name: string) =>
+  apiGet(`/api/sessions/${encodeURIComponent(name)}/qr`);
+export const getLiveSessionStatus = (name: string) =>
+  apiGet(`/api/sessions/${encodeURIComponent(name)}/status`);
+export const closeLiveSession = (name: string) =>
+  apiPost(`/api/sessions/${encodeURIComponent(name)}/close`, {});
+export const deleteSession = (name: string) =>
+  apiDelete(`/api/sessions/${encodeURIComponent(name)}`);
+export const syncInboxForSession = (name: string) =>
+  apiPost(`/api/sessions/${encodeURIComponent(name)}/sync-inbox`, {});
+export const fetchContacts = (params: Record<string, string> = {}) =>
+  apiGet(`/api/contacts?${new URLSearchParams(params)}`);
+export const addContact = (data: any) => apiPost("/api/contacts", data);
+export const patchContact = (id: string, data: any) =>
+  apiPatch(`/api/contacts/${id}`, data);
 export const removeContact = (id: string) => apiDelete(`/api/contacts/${id}`);
-
-// Chats & Conversations
-export const fetchChats = () => apiGet('/api/chats');
-export const addChat = (data: any) => apiPost('/api/chats', data);
-export const patchChat = (id: string, data: any) => apiPatch(`/api/chats/${id}`, data);
-
-export async function fetchConversations(params?: { limit?: number; cursor?: string | null; filter?: string; search?: string }) {
-  const query = new URLSearchParams();
-  if (params?.limit) query.set('limit', String(params.limit));
-  if (params?.cursor) query.set('cursor', params.cursor);
-  if (params?.filter && params.filter !== 'all') query.set('filter', params.filter);
-  if (params?.search) query.set('search', params.search);
-  const qs = query.toString();
-  return apiGet(`/api/conversations${qs ? `?${qs}` : ''}`);
+export function fetchConversations(
+  params: {
+    limit?: number;
+    cursor?: string | null;
+    filter?: string;
+    search?: string;
+  } = {},
+) {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params))
+    if (v !== null && v !== undefined) q.set(k, String(v));
+  return apiGet(`/api/conversations?${q}`);
 }
-
-export async function fetchConversationMessages(conversationId: string, params?: { limit?: number; cursor?: string | null }) {
-  const query = new URLSearchParams();
-  if (params?.limit) query.set('limit', String(params.limit));
-  if (params?.cursor) query.set('cursor', params.cursor);
-  const qs = query.toString();
-  return apiGet(`/api/conversations/${conversationId}/messages${qs ? `?${qs}` : ''}`);
+export const fetchChats = () => fetchConversations();
+export const addChat = (data: any) => apiPost("/api/conversations", data);
+export const patchChat = (id: string, data: any) =>
+  apiPatch(`/api/conversations/${id}`, data);
+export function fetchConversationMessages(
+  id: string,
+  params: { limit?: number; cursor?: string | null; sync?: boolean } = {},
+) {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params))
+    if (v !== undefined && v !== null) q.set(k, String(v));
+  return apiGet(`/api/conversations/${id}/messages?${q}`);
 }
-
-export async function sendMessageToConversation(conversationId: string, payload: { text: string; idempotencyKey?: string }) {
-  return apiPost(`/api/conversations/${conversationId}/messages`, payload);
-}
-
-export async function markConversationRead(conversationId: string) {
-  return apiPost(`/api/conversations/${conversationId}/read`, {});
-}
-
-export async function syncConversations(sessionName?: string) {
-  return apiPost('/api/conversations/sync', { sessionName });
-}
-
-// Messages
-export const fetchMessages = (chatId: string, sync = false) => apiGet(`/api/chats/${chatId}/messages${sync ? '?sync=true' : ''}`);
-export const addMessage = (chatId: string, data: any) => apiPost(`/api/chats/${chatId}/messages`, data);
-
-// Campaigns
-export const fetchCampaigns = () => apiGet('/api/campaigns');
-export const addCampaign = (data: any) => apiPost('/api/campaigns', data);
-export const startCampaign = (id: string) => apiPost(`/api/campaigns/${id}/start`, {});
-export const stopCampaign = (id: string) => apiPost(`/api/campaigns/${id}/stop`, {});
-
-// Automations
-export const fetchAutomations = () => apiGet('/api/automations');
-export const addAutomation = (data: any) => apiPost('/api/automations', data);
-export const toggleAutomationApi = (id: string) => apiPatch(`/api/automations/${id}/toggle`, {});
-export const removeAutomation = (id: string) => apiDelete(`/api/automations/${id}`);
-
-// Inbox sync — triggers WhatsApp chat import for a connected session
-export async function syncInboxForSession(sessionName: string, baseUrl = getBaseBackendUrl()): Promise<{ status: string; message?: string }> {
-  try {
-    const token = getStoredToken();
-    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/sync-inbox`, baseUrl), {
-      method: 'POST',
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    return await res.json();
-  } catch (err: any) {
-    return { status: 'error', message: err.message };
-  }
-}
-
-export async function getLiveSessionGroups(sessionName: string, baseUrl = getBaseBackendUrl()): Promise<any[]> {
-  try {
-    const token = getStoredToken();
-    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/groups`, baseUrl), {
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.groups || [];
-  } catch {
-    return [];
-  }
-}
-
-export async function getLiveSessionContacts(sessionName: string, baseUrl = getBaseBackendUrl()): Promise<any[]> {
-  try {
-    const token = getStoredToken();
-    const res = await fetch(resolveEndpoint(`/api/sessions/${sessionName}/contacts`, baseUrl), {
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.contacts || [];
-  } catch {
-    return [];
-  }
-}
-
-export async function getTenantUsers(token: string, baseUrl = getBaseBackendUrl()): Promise<{ users: any[], database?: any }> {
-  try {
-    const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) return { users: [] };
-    const data = await res.json();
-    return { users: data.users || [], database: data.database };
-  } catch {
-    try {
-      const fallbackRes = await fetch('https://srv1628639.hstgr.cloud/api/auth/users', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (fallbackRes.ok) {
-        const data = await fallbackRes.json();
-        return { users: data.users || [], database: data.database };
-      }
-    } catch {}
-    return { users: [] };
-  }
-}
-
-export async function createTenantUser(payload: { name: string; email: string; companyName?: string; role?: string; password?: string }, baseUrl = getBaseBackendUrl()) {
-  const res = await fetch(resolveEndpoint('/api/auth/users', baseUrl), {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+export const fetchMessages = (id: string, sync = false) =>
+  fetchConversationMessages(id, { sync });
+export const sendMessageToConversation = (
+  id: string,
+  payload: { text: string; idempotencyKey?: string },
+) => apiPost(`/api/conversations/${id}/messages`, payload);
+export const addMessage = (id: string, data: any) =>
+  apiPost(
+    `/api/conversations/${id}/${data.isNote || data.type === "internal_note" ? "notes" : "messages"}`,
+    { ...data, idempotencyKey: data.idempotencyKey || crypto.randomUUID() },
+  );
+export const markConversationRead = (id: string) =>
+  apiPost(`/api/conversations/${id}/read`, {});
+export const fetchCampaigns = () => apiGet("/api/campaigns");
+export const addCampaign = (data: any) => apiPost("/api/campaigns", data);
+export const startCampaign = (id: string) =>
+  apiPost(`/api/campaigns/${id}/start`, {});
+export const stopCampaign = (id: string) =>
+  apiPost(`/api/campaigns/${id}/stop`, {});
+export const fetchAutomations = () => apiGet("/api/automations");
+export const addAutomation = (data: any) => apiPost("/api/automations", data);
+export const toggleAutomationApi = (id: string) =>
+  apiPatch(`/api/automations/${id}/toggle`, {});
+export const removeAutomation = (id: string) =>
+  apiDelete(`/api/automations/${id}`);
+export const getTenantUsers = (_token?: string) => apiGet("/api/auth/users");
+export const createTenantUser = (data: any) => apiPost("/api/auth/users", data);
+export const updateTenantUser = (id: string, data: any) =>
+  apiPatch(`/api/auth/users/${id}`, data);
+export const deleteTenantUser = (id: string) =>
+  apiDelete(`/api/auth/users/${id}`);
+export async function uploadAttachment(
+  conversationId: string,
+  file: Blob,
+  filename: string,
+  mimeType: string,
+) {
+  const prepared = await apiPost("/api/attachments/prepare", {
+    conversationId,
+    filename,
+    mimeType,
+    byteSize: file.size,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
-}
-
-export async function updateTenantUser(userId: string, payload: Record<string, unknown>, baseUrl = getBaseBackendUrl()) {
-  const res = await fetch(resolveEndpoint(`/api/auth/users/${userId}`, baseUrl), {
-    method: 'PATCH',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+  const uploaded = await fetch(prepared.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": mimeType },
+    body: file,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
-}
-
-export async function deleteTenantUser(userId: string, baseUrl = getBaseBackendUrl()) {
-  const res = await fetch(resolveEndpoint(`/api/auth/users/${userId}`, baseUrl), {
-    method: 'DELETE',
-    headers: authHeaders(),
+  if (!uploaded.ok) throw new Error("File upload failed");
+  return apiPost(`/api/attachments/${prepared.attachmentId}/send`, {
+    idempotencyKey: crypto.randomUUID(),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
 }

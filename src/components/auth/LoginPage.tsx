@@ -1,23 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  Smartphone, ShieldCheck, LogIn, UserPlus, Mail, Lock, User,
-  Building2, Sparkles, CheckCircle2, AlertCircle, Eye, EyeOff,
-  Zap, MessageSquare, BarChart3, Bot
-} from 'lucide-react';
-import { loginUser, signupUser, setStoredToken } from '../../services/api';
-import { AuthUser } from '../../types';
+  Smartphone,
+  ShieldCheck,
+  LogIn,
+  UserPlus,
+  Mail,
+  Lock,
+  User,
+  Building2,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Zap,
+  MessageSquare,
+  BarChart3,
+  Bot,
+} from "lucide-react";
+import {
+  loginUser,
+  signupUser,
+  setStoredToken,
+  acceptInvitation,
+} from "../../services/api";
+import { AuthUser } from "../../types";
 
 interface LoginPageProps {
   onAuthSuccess: (user: AuthUser, token: string) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [role, setRole] = useState<'admin' | 'user'>('user');
+  const [invite, setInvite] = useState(
+    () => new URLSearchParams(window.location.search).get("invite") || "",
+  );
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const role = "user";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,42 +52,100 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     setLoading(true);
 
     try {
-      if (mode === 'login') {
+      if (invite) {
+        await acceptInvitation(invite, password);
+        setInvite("");
+        window.history.replaceState(null, "", window.location.pathname);
+        setSuccessMsg("Account activated. Log in with your invited email.");
+        setPassword("");
+        return;
+      }
+      if (mode === "login") {
         const res = await loginUser(email, password);
-        if (res.status === 'success' && res.token && res.user) {
+        if (res.status === "success" && res.token && res.user) {
           setStoredToken(res.token);
-          setSuccessMsg('Authenticated! Loading your workspace...');
+          setSuccessMsg("Authenticated! Loading your workspace...");
           setTimeout(() => onAuthSuccess(res.user, res.token!), 700);
         } else {
-          setError(res.message || 'Invalid email or password.');
+          setError(res.message || "Invalid email or password.");
         }
       } else {
         const res = await signupUser(name, email, password, companyName, role);
-        if (res.status === 'success' && res.token && res.user) {
+        if (res.status === "success" && res.token && res.user) {
           setStoredToken(res.token);
-          setSuccessMsg('Account created! Welcome to WppFlow.');
+          setSuccessMsg("Account created! Welcome to WppFlow.");
           setTimeout(() => onAuthSuccess(res.user, res.token!), 700);
         } else {
-          setError(res.message || 'Signup failed. Please try again.');
+          setError(res.message || "Signup failed. Please try again.");
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Unable to connect to authentication server.');
+      setError(err.message || "Unable to connect to authentication server.");
     } finally {
       setLoading(false);
     }
   };
 
   const features = [
-    { icon: MessageSquare, label: 'Multi-Session WhatsApp Inbox', color: 'text-emerald-400' },
-    { icon: BarChart3, label: 'Broadcast Campaigns at $0 Meta Fees', color: 'text-teal-400' },
-    { icon: Bot, label: 'Keyword & Flow Automations', color: 'text-cyan-400' },
-    { icon: Zap, label: 'Real-Time WebSocket Delivery', color: 'text-indigo-400' },
+    {
+      icon: MessageSquare,
+      label: "Multi-Session WhatsApp Inbox",
+      color: "text-emerald-400",
+    },
+    {
+      icon: BarChart3,
+      label: "Opt-in Campaigns & Delivery Tracking",
+      color: "text-teal-400",
+    },
+    { icon: Bot, label: "Keyword & Flow Automations", color: "text-cyan-400" },
+    {
+      icon: Zap,
+      label: "Real-Time WebSocket Delivery",
+      color: "text-indigo-400",
+    },
   ];
 
+  if (invite)
+    return (
+      <main className="min-h-screen bg-[#0c1317] text-white flex items-center justify-center p-6">
+        <form
+          className="bg-[#111b21] border border-[#2a3942] p-8 rounded-2xl space-y-4 w-full max-w-md"
+          onSubmit={handleSubmit}
+        >
+          <h1 className="text-xl font-bold">Set up your WppFlow account</h1>
+          <p className="text-slate-400">
+            New accounts need a password of at least 10 characters. If you
+            already have an account, use its current password.
+          </p>
+          <label className="block">
+            Password
+            <input
+              required
+              minLength={1}
+              maxLength={128}
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="block w-full mt-2 p-3 bg-[#202c33] rounded"
+            />
+          </label>
+          {error && (
+            <p role="alert" className="text-rose-300">
+              {error}
+            </p>
+          )}
+          <button
+            disabled={loading}
+            className="bg-emerald-600 p-3 rounded w-full"
+          >
+            Activate account
+          </button>
+        </form>
+      </main>
+    );
   return (
     <div className="min-h-screen bg-[#0c1317] flex">
-
       {/* Left Panel — Branding */}
       <div className="hidden lg:flex flex-col justify-between w-[52%] bg-gradient-to-br from-[#0d1f17] via-[#0c1317] to-[#0a1a22] p-12 border-r border-[#1a2a32] relative overflow-hidden">
         {/* Background glow */}
@@ -81,7 +161,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
             <div className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white to-emerald-400 bg-clip-text text-transparent">
               WppFlow
             </div>
-            <div className="text-[11px] text-slate-400 font-medium">Next-Gen WhatsApp CRM</div>
+            <div className="text-[11px] text-slate-400 font-medium">
+              Next-Gen WhatsApp CRM
+            </div>
           </div>
         </div>
 
@@ -89,13 +171,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
         <div className="relative z-10 space-y-6">
           <div>
             <h1 className="text-4xl font-black text-white leading-tight tracking-tight">
-              10× Faster Than<br />
+              WhatsApp Conversations
+              <br />
               <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                Interakt & WATI
+                Built for Your Team
               </span>
             </h1>
             <p className="text-slate-400 text-sm mt-3 leading-relaxed max-w-sm">
-              Run unlimited WhatsApp sessions, broadcast to thousands, and automate customer journeys — all without paying Meta conversation fees.
+              Connect your business accounts, manage conversations together, and
+              build opt-in campaigns with recorded delivery status.
             </p>
           </div>
 
@@ -106,7 +190,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                 <div className="w-8 h-8 rounded-xl bg-[#111b21] border border-[#2a3942] flex items-center justify-center shrink-0">
                   <Icon className={`w-4 h-4 ${color}`} />
                 </div>
-                <span className="text-sm text-slate-300 font-medium">{label}</span>
+                <span className="text-sm text-slate-300 font-medium">
+                  {label}
+                </span>
               </div>
             ))}
           </div>
@@ -114,14 +200,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           {/* Social Proof */}
           <div className="flex items-center gap-3 bg-[#111b21]/80 border border-[#2a3942] rounded-2xl px-4 py-3">
             <div className="flex -space-x-2">
-              {['bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-indigo-500'].map((c, i) => (
-                <div key={i} className={`w-7 h-7 rounded-full ${c} border-2 border-[#111b21] flex items-center justify-center text-[10px] font-bold text-white`}>
-                  {['A', 'E', 'C', 'M'][i]}
+              {[
+                "bg-emerald-500",
+                "bg-teal-500",
+                "bg-cyan-500",
+                "bg-indigo-500",
+              ].map((c, i) => (
+                <div
+                  key={i}
+                  className={`w-7 h-7 rounded-full ${c} border-2 border-[#111b21] flex items-center justify-center text-[10px] font-bold text-white`}
+                >
+                  {["A", "E", "C", "M"][i]}
                 </div>
               ))}
             </div>
             <div className="text-xs text-slate-300">
-              <span className="font-bold text-white">2,400+</span> businesses trust WppFlow
+              Shared conversations, private notes and workspace permissions
             </div>
           </div>
         </div>
@@ -129,14 +223,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
         {/* Bottom badge */}
         <div className="relative z-10 flex items-center gap-2 text-xs text-slate-500">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>End-to-end encrypted · PostgreSQL-backed · High-Performance Cloud</span>
+          <span>
+            WPPConnect sessions · Workspace permissions · Saved team history
+          </span>
         </div>
       </div>
 
       {/* Right Panel — Auth Form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-6">
-
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center">
@@ -148,12 +243,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           {/* Heading */}
           <div>
             <h2 className="text-2xl font-black text-white tracking-tight">
-              {mode === 'login' ? 'Welcome back' : 'Create your workspace'}
+              {mode === "login" ? "Welcome back" : "Create your workspace"}
             </h2>
             <p className="text-sm text-slate-400 mt-1">
-              {mode === 'login'
-                ? 'Sign in to access your WhatsApp CRM dashboard'
-                : 'Register a new organization and start for free'}
+              {mode === "login"
+                ? "Sign in to access your WhatsApp CRM dashboard"
+                : "Register a new organization and start for free"}
             </p>
           </div>
 
@@ -161,9 +256,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           <div className="flex bg-[#111b21] p-1 rounded-xl border border-[#2a3942]">
             <button
               type="button"
-              onClick={() => { setMode('login'); setError(null); }}
+              onClick={() => {
+                setMode("login");
+                setError(null);
+              }}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                mode === 'login' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                mode === "login"
+                  ? "bg-emerald-600 text-white shadow"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -171,9 +271,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
             </button>
             <button
               type="button"
-              onClick={() => { setMode('signup'); setError(null); }}
+              onClick={() => {
+                setMode("signup");
+                setError(null);
+              }}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                mode === 'signup' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                mode === "signup"
+                  ? "bg-emerald-600 text-white shadow"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <UserPlus className="w-3.5 h-3.5" />
@@ -183,7 +288,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-
             {error && (
               <div className="flex items-start gap-2 p-3 bg-rose-950/80 border border-rose-800 text-rose-300 rounded-xl text-xs">
                 <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
@@ -198,10 +302,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
               </div>
             )}
 
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <>
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">Full Name</label>
+                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                    Full Name
+                  </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -216,7 +322,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">Organization Name</label>
+                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                    Organization Name
+                  </label>
                   <div className="relative">
                     <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -230,16 +338,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">Account Type</label>
+                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                    Account Type
+                  </label>
                   <div className="rounded-xl border border-[#2a3942] bg-[#111b21] px-3 py-2.5 text-xs text-slate-400">
-                    New accounts start as employees. Company administrators are invited by the platform administrator.
+                    Creating a workspace makes you its owner. Invite teammates
+                    as agents or administrators from Workspace Team.
                   </div>
                 </div>
               </>
             )}
 
             <div>
-              <label className="block text-xs text-slate-300 mb-1.5 font-medium">Email Address</label>
+              <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                Email Address
+              </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -254,13 +367,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-xs text-slate-300 mb-1.5 font-medium">Password</label>
+              <label className="block text-xs text-slate-300 mb-1.5 font-medium">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
+                  minLength={mode === "signup" ? 10 : 1}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -271,7 +386,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -286,7 +405,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Authenticating...
                 </span>
-              ) : mode === 'login' ? (
+              ) : mode === "login" ? (
                 <>
                   <LogIn className="w-4 h-4" />
                   Sign In to Dashboard
@@ -305,7 +424,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
               Enterprise Grade Multi-Tenant WhatsApp CRM
             </span>
           </div>
-
         </div>
       </div>
     </div>
