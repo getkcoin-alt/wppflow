@@ -11,7 +11,9 @@ import {
   ShieldCheck, 
   ArrowRight,
   ExternalLink,
-  DollarSign
+  DollarSign,
+  Play,
+  Square
 } from 'lucide-react';
 import { WhatsAppSession, BroadcastCampaign } from '../../types';
 
@@ -21,6 +23,8 @@ interface DashboardProps {
   onOpenSessionModal: () => void;
   onOpenNewBroadcast: () => void;
   onNavigateToInbox: () => void;
+  onStartCampaign?: (campaignId: string) => void;
+  onStopCampaign?: (campaignId: string) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -28,7 +32,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   campaigns,
   onOpenSessionModal,
   onOpenNewBroadcast,
-  onNavigateToInbox
+  onNavigateToInbox,
+  onStartCampaign,
+  onStopCampaign
 }) => {
   const [calcVolume, setCalcVolume] = useState(35000);
 
@@ -307,6 +313,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <th className="py-2.5 px-3">Replies</th>
                 <th className="py-2.5 px-3">Cost Saved vs Meta</th>
                 <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2a3942]/50">
@@ -324,11 +331,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       camp.status === 'completed'
                         ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                         : camp.status === 'running'
-                        ? 'bg-blue-950 text-blue-400 border border-blue-800'
+                        ? 'bg-blue-950 text-blue-400 border border-blue-800 animate-pulse'
+                        : camp.status === 'stopped' || camp.status === 'paused'
+                        ? 'bg-rose-950/80 text-rose-400 border border-rose-800'
                         : 'bg-slate-800 text-slate-300'
                     }`}>
                       {camp.status}
                     </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                    {camp.status === 'running' ? (
+                      <button
+                        onClick={() => onStopCampaign?.(camp.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-[11px] font-semibold transition-all active:scale-95"
+                        title="Stop broadcast sending"
+                      >
+                        <Square className="w-3 h-3 fill-current" />
+                        <span>Stop</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onStartCampaign?.(camp.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold transition-all active:scale-95"
+                        title="Start broadcast campaign"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        <span>{camp.status === 'stopped' || camp.status === 'paused' ? 'Resume' : 'Start'}</span>
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

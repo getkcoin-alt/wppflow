@@ -10,7 +10,9 @@ import {
   TrendingDown, 
   Send, 
   Eye, 
-  Users
+  Users,
+  Play,
+  Square
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BroadcastCampaign } from '../../types';
@@ -18,6 +20,8 @@ import { BroadcastCampaign } from '../../types';
 interface CampaignsProps {
   campaigns: BroadcastCampaign[];
   onAddCampaign: (campaign: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => void;
+  onStartCampaign?: (campaignId: string) => void;
+  onStopCampaign?: (campaignId: string) => void;
   isCreateModalOpen: boolean;
   setIsCreateModalOpen: (open: boolean) => void;
 }
@@ -25,6 +29,8 @@ interface CampaignsProps {
 export const Campaigns: React.FC<CampaignsProps> = ({
   campaigns,
   onAddCampaign,
+  onStartCampaign,
+  onStopCampaign,
   isCreateModalOpen,
   setIsCreateModalOpen
 }) => {
@@ -46,7 +52,7 @@ export const Campaigns: React.FC<CampaignsProps> = ({
       targetSegment,
       totalRecipients,
       costSavedMeta,
-      status: 'running',
+      status: 'draft',
       templateText,
       antiBanDelaySeconds: antiBanDelay
     });
@@ -116,6 +122,7 @@ export const Campaigns: React.FC<CampaignsProps> = ({
                 <th className="py-3.5 px-4">Estimated Volume</th>
                 <th className="py-3.5 px-4">Outbox Pacing</th>
                 <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2a3942]/60">
@@ -169,10 +176,34 @@ export const Campaigns: React.FC<CampaignsProps> = ({
                         ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                         : camp.status === 'running'
                         ? 'bg-blue-950 text-blue-400 border border-blue-800 animate-pulse'
+                        : camp.status === 'stopped' || camp.status === 'paused'
+                        ? 'bg-rose-950/80 text-rose-400 border border-rose-800'
                         : 'bg-amber-950 text-amber-400 border border-amber-800'
                     }`}>
                       <span>{camp.status}</span>
                     </span>
+                  </td>
+
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    {camp.status === 'running' ? (
+                      <button
+                        onClick={() => onStopCampaign?.(camp.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-semibold transition-all shadow-sm active:scale-95"
+                        title="Stop broadcast sending"
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>Stop</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onStartCampaign?.(camp.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition-all shadow-sm active:scale-95"
+                        title="Start or resume broadcast campaign"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>{camp.status === 'stopped' || camp.status === 'paused' ? 'Resume' : 'Start'}</span>
+                      </button>
+                    )}
                   </td>
 
                 </tr>

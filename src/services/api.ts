@@ -355,6 +355,8 @@ export const addMessage = (chatId: string, data: any) => apiPost(`/api/chats/${c
 // Campaigns
 export const fetchCampaigns = () => apiGet('/api/campaigns');
 export const addCampaign = (data: any) => apiPost('/api/campaigns', data);
+export const startCampaign = (id: string) => apiPost(`/api/campaigns/${id}/start`, {});
+export const stopCampaign = (id: string) => apiPost(`/api/campaigns/${id}/stop`, {});
 
 // Automations
 export const fetchAutomations = () => apiGet('/api/automations');

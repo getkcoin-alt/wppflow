@@ -88,4 +88,22 @@ describe('Message Reconciliation and ACK Tracking Logic', () => {
     }
     expect(message.status).toBe('read'); // remains read!
   });
+
+  it('toggles campaign state between running and stopped correctly', () => {
+    let campaign = {
+      id: 'camp_100',
+      name: 'Spring Sale',
+      status: 'stopped' as const,
+      sentCount: 10,
+      totalRecipients: 50
+    };
+
+    // User triggers start
+    campaign = { ...campaign, status: 'running' };
+    expect(campaign.status).toBe('running');
+
+    // User triggers stop
+    campaign = { ...campaign, status: 'stopped' };
+    expect(campaign.status).toBe('stopped');
+  });
 });

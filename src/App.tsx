@@ -30,7 +30,7 @@ import {
   fetchMessages, addMessage,
   sendLiveMessage,
   sendLiveMedia,
-  fetchCampaigns, addCampaign,
+  fetchCampaigns, addCampaign, startCampaign, stopCampaign,
   fetchAutomations, toggleAutomationApi,
   createTenantUser, updateTenantUser, deleteTenantUser,
   syncInboxForSession,
@@ -379,6 +379,30 @@ export function App() {
       } catch {}
     };
 
+    const onCampaignStatus = ({ campaignId, status }: any) => {
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status } : c));
+    };
+
+    const onCampaignProgress = ({ campaignId, sent, failed, delivered, read, replied }: any) => {
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? {
+        ...c,
+        sentCount: sent,
+        failedCount: failed,
+        ...(delivered !== undefined ? { deliveredCount: delivered } : {}),
+        ...(read !== undefined ? { readCount: read } : {}),
+        ...(replied !== undefined ? { repliedCount: replied } : {})
+      } : c));
+    };
+
+    const onCampaignCompleted = ({ campaignId, sent, failed }: any) => {
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? {
+        ...c,
+        status: 'completed',
+        ...(sent !== undefined ? { sentCount: sent } : {}),
+        ...(failed !== undefined ? { failedCount: failed } : {})
+      } : c));
+    };
+
     sock.on('chat:created', onChatCreated);
     sock.on('chat:updated', onChatUpdated);
     sock.on('conversation:updated', onChatUpdated);
@@ -388,6 +412,10 @@ export function App() {
     sock.on('message:ack', onMessageAck);
     sock.on('session:message', onSessionMessage);
     sock.on('inbox:synced', onInboxSynced);
+    sock.on('campaign:status', onCampaignStatus);
+    sock.on('campaign:stopped', onCampaignStatus);
+    sock.on('campaign:progress', onCampaignProgress);
+    sock.on('campaign:completed', onCampaignCompleted);
 
     return () => {
       sock.off('session:status');
@@ -400,6 +428,10 @@ export function App() {
       sock.off('message:ack', onMessageAck);
       sock.off('session:message', onSessionMessage);
       sock.off('inbox:synced', onInboxSynced);
+      sock.off('campaign:status', onCampaignStatus);
+      sock.off('campaign:stopped', onCampaignStatus);
+      sock.off('campaign:progress', onCampaignProgress);
+      sock.off('campaign:completed', onCampaignCompleted);
     };
   }, [currentUser]);
 
@@ -640,11 +672,12 @@ export function App() {
   const handleAddCampaign = async (campaignData: Omit<BroadcastCampaign, 'id' | 'createdAt' | 'sentCount' | 'deliveredCount' | 'readCount' | 'repliedCount' | 'failedCount'>) => {
     const payload = {
       ...campaignData,
-      sentCount: campaignData.totalRecipients,
-      deliveredCount: Math.floor(campaignData.totalRecipients * 0.98),
-      readCount: Math.floor(campaignData.totalRecipients * 0.88),
-      repliedCount: Math.floor(campaignData.totalRecipients * 0.18),
-      failedCount: Math.floor(campaignData.totalRecipients * 0.02),
+      status: campaignData.status || 'draft',
+      sentCount: 0,
+      deliveredCount: 0,
+      readCount: 0,
+      repliedCount: 0,
+      failedCount: 0,
     };
     try {
       const d = await addCampaign(payload);
@@ -652,6 +685,27 @@ export function App() {
     } catch {
       // optimistic fallback
       setCampaigns(prev => [{ ...payload, id: `camp_${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+    }
+  };
+
+  const handleStartCampaign = async (campaignId: string) => {
+    setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'running' } : c));
+    try {
+      await startCampaign(campaignId);
+    } catch (err: any) {
+      console.error('Failed to start campaign:', err);
+      fetchCampaigns().then(d => setCampaigns(d.campaigns || []));
+      alert(err?.message || 'Could not start broadcast. Ensure a WhatsApp session is connected.');
+    }
+  };
+
+  const handleStopCampaign = async (campaignId: string) => {
+    setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'stopped' } : c));
+    try {
+      await stopCampaign(campaignId);
+    } catch (err: any) {
+      console.error('Failed to stop campaign:', err);
+      fetchCampaigns().then(d => setCampaigns(d.campaigns || []));
     }
   };
 
@@ -739,6 +793,8 @@ export function App() {
                     onOpenSessionModal={() => { setActiveUserTab('sessions'); setIsPairModalOpen(true); }}
                     onOpenNewBroadcast={() => { setActiveUserTab('campaigns'); setIsCreateCampaignModalOpen(true); }}
                     onNavigateToInbox={() => setActiveUserTab('inbox')}
+                    onStartCampaign={handleStartCampaign}
+                    onStopCampaign={handleStopCampaign}
                   />
                 )}
 
@@ -774,6 +830,8 @@ export function App() {
                   <Campaigns
                     campaigns={campaigns}
                     onAddCampaign={handleAddCampaign}
+                    onStartCampaign={handleStartCampaign}
+                    onStopCampaign={handleStopCampaign}
                     isCreateModalOpen={isCreateCampaignModalOpen}
                     setIsCreateModalOpen={setIsCreateCampaignModalOpen}
                   />

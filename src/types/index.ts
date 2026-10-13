@@ -146,7 +146,7 @@ export interface BroadcastCampaign {
   repliedCount: number;
   failedCount: number;
   costSavedMeta: number; // e.g. $64.80 saved compared to Meta official API fees
-  status: 'completed' | 'running' | 'scheduled' | 'draft';
+  status: 'completed' | 'running' | 'scheduled' | 'draft' | 'paused' | 'stopped';
   templateText: string;
   antiBanDelaySeconds: number; // 3 - 10s humanized jitter
   createdAt: string;
