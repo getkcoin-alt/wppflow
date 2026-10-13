@@ -90,10 +90,16 @@ describe('Message Reconciliation and ACK Tracking Logic', () => {
   });
 
   it('toggles campaign state between running and stopped correctly', () => {
-    let campaign = {
+    let campaign: {
+      id: string;
+      name: string;
+      status: 'running' | 'stopped';
+      sentCount: number;
+      totalRecipients: number;
+    } = {
       id: 'camp_100',
       name: 'Spring Sale',
-      status: 'stopped' as const,
+      status: 'stopped',
       sentCount: 10,
       totalRecipients: 50
     };

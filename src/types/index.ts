@@ -30,6 +30,8 @@ export interface AuthUser {
   plan: string;
   sessions_limit: number;
   status?: AccountStatus;
+  isSuperAdmin?: boolean;
+  is_superadmin?: boolean;
   created_at: string;
 }
 

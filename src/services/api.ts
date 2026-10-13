@@ -10,6 +10,14 @@ export const getBaseBackendUrl = (): string => {
   return (import.meta as any).env?.VITE_BACKEND_URL || 'https://srv1628639.hstgr.cloud';
 };
 
+export const getSocketBackendUrl = (): string => {
+  const customSocket = (import.meta as any).env?.VITE_SOCKET_URL;
+  if (customSocket) return customSocket;
+  const backend = (import.meta as any).env?.VITE_BACKEND_URL;
+  if (backend) return backend;
+  return 'https://srv1628639.hstgr.cloud';
+};
+
 export const DEFAULT_BACKEND_URL = getBaseBackendUrl();
 export const DEFAULT_SERVER_BACKEND_URL = DEFAULT_BACKEND_URL;
 export const DEFAULT_RAILWAY_BACKEND_URL = DEFAULT_SERVER_BACKEND_URL; // legacy alias

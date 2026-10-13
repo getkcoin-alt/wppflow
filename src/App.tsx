@@ -17,7 +17,8 @@ import { DeveloperGuide } from './components/developer/DeveloperGuide';
 
 import {
   UserAccount, WhatsAppSession, ChatThread, ChatMessage, MessageStatus,
-  BroadcastCampaign, AutomationRule, WebhookLog, AccountStatus, AuthUser
+  BroadcastCampaign, AutomationRule, WebhookLog, AccountStatus, AuthUser,
+  ClusterMetrics
 } from './types';
 
 import {
@@ -28,20 +29,20 @@ import {
   fetchConversationMessages,
   sendMessageToConversation, markConversationRead,
   fetchMessages, addMessage,
-  sendLiveMessage,
   sendLiveMedia,
   fetchCampaigns, addCampaign, startCampaign, stopCampaign,
   fetchAutomations, toggleAutomationApi,
   createTenantUser, updateTenantUser, deleteTenantUser,
   syncInboxForSession,
+  checkBackendHealth,
 } from './services/api';
 
 import { apiEndpoints, initialWebhookLogs, cannedReplies } from './data/staticData';
 
-const CLUSTER_METRICS_BASE = {
+const CLUSTER_METRICS_BASE: ClusterMetrics = {
   activeContainers: 1, totalSessions: 0, cpuUsagePercent: 24,
   ramUsagePercent: 42, ramUsageGb: 2.4, totalRamGb: 8.0,
-  queueDepth: 0, avgResponseMs: 142, uptimeHours: 0, systemStatus: 'healthy' as const
+  queueDepth: 0, avgResponseMs: 142, uptimeHours: 0, systemStatus: 'healthy'
 };
 
 export function App() {
@@ -53,8 +54,8 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const canManageWorkspace = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-  const isPlatformSuperAdmin = currentUser?.email?.toLowerCase() === 'admin@wppflow.io';
+  const isPlatformSuperAdmin = Boolean(currentUser?.isSuperAdmin || currentUser?.is_superadmin || currentUser?.role === 'superadmin');
+  const canManageWorkspace = currentUser?.role === 'admin' || isPlatformSuperAdmin;
 
   useEffect(() => {
     if (currentUser && !canManageWorkspace && currentView !== 'user') setCurrentView('user');
@@ -99,7 +100,7 @@ export function App() {
   const [campaigns, setCampaigns] = useState<BroadcastCampaign[]>([]);
   const [automations, setAutomations] = useState<AutomationRule[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>(initialWebhookLogs);
-  const [metrics, setMetrics] = useState(CLUSTER_METRICS_BASE);
+  const [metrics, setMetrics] = useState<ClusterMetrics>(CLUSTER_METRICS_BASE);
   const [isPairModalOpen, setIsPairModalOpen] = useState(false);
   const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -209,18 +210,19 @@ export function App() {
     if (!currentUser) return;
     const sock = getSocket();
 
-    sock.on('session:status', ({ session, status, phone, battery, filesRemoved }: any) => {
+    sock.on('session:status', ({ session, sessionName, sessionKey, status, phone, battery, filesRemoved }: any) => {
+      const sKey = sessionKey || sessionName || session;
       if (status === 'DISCONNECTED' && filesRemoved) {
-        setSessions(prev => prev.filter(s => s.sessionKey !== session));
+        setSessions(prev => prev.filter(s => s.sessionKey !== sKey));
         setChats(prev => {
-          const removedChatIds = new Set(prev.filter(chat => chat.channel === session).map(chat => chat.id));
+          const removedChatIds = new Set(prev.filter(chat => chat.channel === sKey).map(chat => chat.id));
           setMessages(previousMessages => Object.fromEntries(Object.entries(previousMessages).filter(([chatId]) => !removedChatIds.has(chatId))));
-          return prev.filter(chat => chat.channel !== session);
+          return prev.filter(chat => chat.channel !== sKey);
         });
         return;
       }
       setSessions(prev => prev.map(s =>
-        s.sessionKey === session
+        s.sessionKey === sKey
           ? { ...s, status, ...(phone ? { phone } : {}), ...(battery ? { battery } : {}) }
           : s
       ));
@@ -304,29 +306,35 @@ export function App() {
       });
     };
 
-    const onMessageReceived = ({ conversationId, message }: any) => {
-      handleIncomingMessage(conversationId, message);
+    const onMessageReceived = ({ conversationId, chatId, message }: any) => {
+      handleIncomingMessage(conversationId || chatId, message);
     };
 
-    const onMessageCreated = ({ conversationId, message }: any) => {
-      handleIncomingMessage(conversationId, message);
+    const onMessageCreated = ({ conversationId, chatId, message }: any) => {
+      handleIncomingMessage(conversationId || chatId, message);
     };
 
-    const onSessionMessage = ({ chatId, message }: any) => {
-      handleIncomingMessage(chatId, message);
+    const onSessionMessage = ({ chatId, conversationId, message }: any) => {
+      handleIncomingMessage(chatId || conversationId, message);
     };
 
-    const onMessageAck = ({ conversationId, messageId, providerMessageId, ack, status }: any) => {
-      if (!conversationId) return;
+    const onMessageUpdated = ({ conversationId, chatId, messageId, providerMessageId, status, ack }: any) => {
+      const convId = conversationId || chatId;
+      if (!convId) return;
       const targetStatus = status || (ack >= 3 ? 'read' : ack >= 2 ? 'delivered' : 'sent');
 
       setMessages(prev => {
-        const currentList = prev[conversationId] || [];
+        const currentList = prev[convId] || [];
         return {
           ...prev,
-          [conversationId]: currentList.map(m => {
+          [convId]: currentList.map(m => {
             if ((messageId && m.id === messageId) || (providerMessageId && m.providerMessageId === providerMessageId)) {
-              return { ...m, ack, status: targetStatus };
+              return {
+                ...m,
+                status: targetStatus,
+                ack: ack !== undefined ? ack : m.ack,
+                providerMessageId: providerMessageId || m.providerMessageId
+              };
             }
             return m;
           })
@@ -334,7 +342,7 @@ export function App() {
       });
 
       setChats(prev => prev.map(c => {
-        if (c.id === conversationId && c.lastMessage?.fromMe) {
+        if (c.id === convId && c.lastMessage?.fromMe) {
           return {
             ...c,
             lastMessage: {
@@ -347,10 +355,43 @@ export function App() {
       }));
     };
 
-    const onChatUpdated = ({ chatId, lastMessage, unreadCount, contactName, avatar }: any) => {
-      if (!chatId) return;
+    const onMessageAck = ({ conversationId, chatId, messageId, providerMessageId, ack, status }: any) => {
+      const convId = conversationId || chatId;
+      if (!convId) return;
+      const targetStatus = status || (ack >= 3 ? 'read' : ack >= 2 ? 'delivered' : 'sent');
+
+      setMessages(prev => {
+        const currentList = prev[convId] || [];
+        return {
+          ...prev,
+          [convId]: currentList.map(m => {
+            if ((messageId && m.id === messageId) || (providerMessageId && m.providerMessageId === providerMessageId)) {
+              return { ...m, ack, status: targetStatus };
+            }
+            return m;
+          })
+        };
+      });
+
+      setChats(prev => prev.map(c => {
+        if (c.id === convId && c.lastMessage?.fromMe) {
+          return {
+            ...c,
+            lastMessage: {
+              ...c.lastMessage,
+              status: targetStatus
+            }
+          };
+        }
+        return c;
+      }));
+    };
+
+    const onChatUpdated = ({ chatId, conversationId, lastMessage, unreadCount, contactName, avatar }: any) => {
+      const targetId = chatId || conversationId;
+      if (!targetId) return;
       setChats(prev => {
-        const chatIdx = prev.findIndex(c => c.id === chatId);
+        const chatIdx = prev.findIndex(c => c.id === targetId);
         if (chatIdx === -1) return prev;
         const targetChat = {
           ...prev[chatIdx],
@@ -359,20 +400,21 @@ export function App() {
           ...(contactName ? { contactName } : {}),
           ...(avatar ? { avatar } : {})
         };
-        const remaining = prev.filter(c => c.id !== chatId);
+        const remaining = prev.filter(c => c.id !== targetId);
         return [targetChat, ...remaining];
       });
     };
 
-    const onConversationRead = ({ conversationId }: any) => {
-      if (!conversationId) return;
-      setChats(prev => prev.map(c => c.id === conversationId ? { ...c, unreadCount: 0 } : c));
+    const onConversationRead = ({ conversationId, chatId }: any) => {
+      const targetId = conversationId || chatId;
+      if (!targetId) return;
+      setChats(prev => prev.map(c => c.id === targetId ? { ...c, unreadCount: 0 } : c));
     };
 
     const onInboxSynced = async () => {
       try {
         const [chatsData, contactsData] = await Promise.all([fetchChats(), fetchContacts()]);
-        setChats(chatsData.chats || []);
+        setChats(chatsData.chats || chatsData.conversations || []);
         const map: Record<string, any> = {};
         (contactsData.contacts || []).forEach((c: any) => { map[c.id] = c; });
         setContacts(map);
@@ -409,6 +451,7 @@ export function App() {
     sock.on('conversation:read', onConversationRead);
     sock.on('message:received', onMessageReceived);
     sock.on('message:created', onMessageCreated);
+    sock.on('message:updated', onMessageUpdated);
     sock.on('message:ack', onMessageAck);
     sock.on('session:message', onSessionMessage);
     sock.on('inbox:synced', onInboxSynced);
@@ -425,6 +468,7 @@ export function App() {
       sock.off('conversation:read', onConversationRead);
       sock.off('message:received', onMessageReceived);
       sock.off('message:created', onMessageCreated);
+      sock.off('message:updated', onMessageUpdated);
       sock.off('message:ack', onMessageAck);
       sock.off('session:message', onSessionMessage);
       sock.off('inbox:synced', onInboxSynced);
@@ -491,12 +535,13 @@ export function App() {
       try {
         const res = await sendMessageToConversation(chatId, { text, idempotencyKey });
         confirmedMsg = res?.message;
-      } catch {
-        const chat = chats.find(c => c.id === chatId);
-        if (!chat?.phone) throw new Error('This conversation has no phone number.');
-        const activeChannel = chat.channel || sessions.find(s => s.status === 'CONNECTED')?.sessionKey || 'primary-whatsapp';
-        const res = await sendLiveMessage(activeChannel, chat.phone, text, chat.contactName, chatId);
-        confirmedMsg = res?.message;
+      } catch (sendErr: any) {
+        console.error('Inbox send failed:', sendErr);
+        setMessages(prev => ({
+          ...prev,
+          [chatId]: (prev[chatId] || []).map(m => m.id === optimistic.id ? { ...m, status: 'failed' } : m)
+        }));
+        return;
       }
 
       // Reconcile optimistic message without duplication
@@ -872,13 +917,16 @@ export function App() {
                   <ClusterHealth
                     metrics={metrics}
                     onRefreshMetrics={() => {
-                      setMetrics(prev => ({
-                        ...prev,
-                        ramUsageGb: Math.max(1.2, +(prev.ramUsageGb + (Math.random() * 0.4 - 0.2)).toFixed(1)),
-                        cpuUsagePercent: Math.floor(Math.random() * 15) + 18,
-                        avgResponseMs: Math.floor(Math.random() * 25) + 120,
-                        totalSessions: sessions.length
-                      }));
+                      checkBackendHealth().then(h => {
+                        if (h) {
+                          setMetrics(prev => ({
+                            ...prev,
+                            totalSessions: h.activeSessions ?? sessions.length,
+                            systemStatus: (h.status === 'healthy' || h.status === 'ok') ? 'healthy' : 'degraded',
+                            uptimeHours: h.uptime ? Math.floor(h.uptime / 3600) : 0
+                          }));
+                        }
+                      }).catch(() => {});
                     }}
                   />
                 )}
