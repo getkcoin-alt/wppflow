@@ -35,6 +35,8 @@ export interface AuthUser {
   plan: string;
   sessions_limit: number;
   status?: AccountStatus;
+  membershipRole?: string;
+  mustChangePassword?: boolean;
   isSuperAdmin?: boolean;
   is_superadmin?: boolean;
   created_at: string;
@@ -65,6 +67,9 @@ export interface WhatsAppSession {
   lastActive: string;
   wppVersion: string;
   channel: "sales" | "support" | "vip" | "general";
+  ownerUserId?: number | null;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
 }
 
 export interface CustomerOrder {

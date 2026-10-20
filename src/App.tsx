@@ -12,6 +12,8 @@ import {
   type DevSubTab,
 } from "./components/layout/Sidebar";
 import { LoginPage } from "./components/auth/LoginPage";
+import { ChangePassword } from "./components/auth/ChangePassword";
+import { PlatformAdmin } from "./components/platform/PlatformAdmin";
 import { Inbox } from "./components/user/Inbox";
 import { SessionManager } from "./components/user/SessionManager";
 import { Contacts } from "./components/user/Contacts";
@@ -48,8 +50,9 @@ export function App() {
   const [filter, setFilter] = useState({ search: "", filter: "all" }),
     [optimistic, setOptimistic] = useState<Record<string, ChatMessage[]>>({});
   const tenant = api.getStoredTenantId(),
-    enabled = Boolean(user),
-    manager = user?.role === "admin" || user?.role === "superadmin";
+    platformAdmin = user?.role === "superadmin",
+    enabled = Boolean(user) && !platformAdmin && !user?.mustChangePassword,
+    manager = user?.role === "admin";
   useEffect(() => {
     let active = true;
     api.getCurrentUser().then((u) => {
@@ -195,7 +198,7 @@ export function App() {
     [],
   );
   useEffect(() => {
-    if (!user) return;
+    if (!user || platformAdmin || user.mustChangePassword) return;
     const socket = getSocket();
     const changed = () => {
       void refresh(
@@ -227,7 +230,7 @@ export function App() {
       for (const event of events) socket.off(event, changed);
       disconnectSocket();
     };
-  }, [user, refresh]);
+  }, [user, platformAdmin, refresh]);
   const run = async (action: () => Promise<any>) => {
     setError("");
     try {
@@ -332,6 +335,19 @@ export function App() {
         }}
       />
     );
+  if (user.mustChangePassword)
+    return (
+      <ChangePassword
+        user={user}
+        onChanged={(u) => {
+          qc.clear();
+          setUser(u);
+        }}
+        onLogout={logout}
+      />
+    );
+  if (platformAdmin)
+    return <PlatformAdmin adminName={user.name} onLogout={logout} />;
   const queryError =
     sessionsQuery.error ||
     conversations.error ||

@@ -25,6 +25,12 @@ Login/workspace membership, sessions, contacts, CSV import/export, conversation 
 
 The old production mock dataset and simulated API/webhook screens were removed. Store orders/LTV and unsupported telemetry remain explicitly unavailable. This is not a complete pixel-exact WhatsApp clone, and unsupported provider actions are not claimed to work.
 
+## Company, owner and staff flow
+
+- **Platform admin** signs in and gets a Companies screen: add a company (owner name/email, WhatsApp session limit), suspend/reactivate, change the limit, resend credentials. The owner receives a temporary password by email.
+- **Owner** is forced to choose a new password on first login, then invites staff under Workspace Team (invitations are emailed; the one-time link is only shown when email is unavailable). The Sessions screen lists every staff member's WhatsApp session with its owner.
+- **Staff** use Sessions to connect their own number and see only that session and its conversations.
+
 ## Production release hold
 
 Main pushes normally publish through Vercel. scripts/release-check.mjs now skips production publication while the canonical backend is unavailable, old, or not reporting a healthy apiContract: 3. It intentionally returns exit code 0 to hold publication and 1 to continue, following Vercel's ignored-build convention. The unit tests cover both directions. Missing environment context fails closed. Previews are allowed.

@@ -44,12 +44,19 @@ export function UserManagement({
       )}
       {notice && (
         <div className="p-4 bg-[#202c33] rounded-xl break-all">
-          <p>
-            Share this single-use setup link securely. It expires in 24 hours.
-          </p>
-          <a className="text-emerald-400" href={notice}>
-            {notice}
-          </a>
+          {notice.startsWith("http") ? (
+            <>
+              <p>
+                Email is unavailable. Share this single-use setup link securely.
+                It expires in 24 hours.
+              </p>
+              <a className="text-emerald-400" href={notice}>
+                {notice}
+              </a>
+            </>
+          ) : (
+            <p>{notice} The link expires in 24 hours.</p>
+          )}
         </div>
       )}
       <form
@@ -64,7 +71,12 @@ export function UserManagement({
               role: f.get("role"),
             }),
           ).then((r) => {
-            if (r) setNotice(r.activationLink);
+            if (r)
+              setNotice(
+                r.emailSent
+                  ? "Invitation emailed to " + f.get("email") + "."
+                  : r.activationLink,
+              );
           });
         }}
       >

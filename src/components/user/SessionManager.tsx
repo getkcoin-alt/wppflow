@@ -45,6 +45,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   setIsPairModalOpen,
   canManage = false,
 }) => {
+  const ownsSession = !canManage && sessions.length > 0;
   const [sessionName, setSessionName] = useState("Primary WhatsApp");
   const [channel, setChannel] = useState<
     "sales" | "support" | "vip" | "general"
@@ -175,7 +176,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
   const handleStartPairing = async () => {
     const rawKey = sessionName.trim() || "whatsapp-line";
-    const cleanKey = rawKey.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    let cleanKey = rawKey.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
     activeSessionKey.current = cleanKey;
     startingAttemptsRef.current = 0;
@@ -187,7 +188,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     setStatusMessage("Booting isolated browser kernel...");
 
     try {
-      await startLiveSession(cleanKey);
+      // Staff always pair their own session; the server decides its name.
+      const started = await startLiveSession(cleanKey);
+      cleanKey = started?.sessionName || cleanKey;
+      activeSessionKey.current = cleanKey;
       setStatusMessage("Browser launched. Initializing WhatsApp Web...");
 
       pollTimerRef.current = setInterval(async () => {
@@ -294,17 +298,23 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Connect workspace-owned WhatsApp accounts and restore saved sessions
-            after restart.
+            {canManage
+              ? "Every staff member's WhatsApp session in your company is listed here."
+              : "Your WhatsApp number is linked to your login and is private to you and your company administrators."}
           </p>
         </div>
         <button
-          disabled={!canManage}
           onClick={() => setIsPairModalOpen(true)}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all disabled:opacity-40"
         >
           <Plus className="w-4 h-4" />
-          <span>Pair WhatsApp Account</span>
+          <span>
+            {canManage
+              ? "Pair WhatsApp Account"
+              : ownsSession
+                ? "Reconnect my WhatsApp"
+                : "Connect my WhatsApp"}
+          </span>
         </button>
       </div>
 
@@ -321,7 +331,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             and broadcast campaigns.
           </p>
           <button
-            disabled={!canManage}
             onClick={() => setIsPairModalOpen(true)}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all disabled:opacity-40"
           >
@@ -350,6 +359,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     <div className="font-mono text-xs text-slate-400 mt-0.5">
                       {sess.phone}
                     </div>
+                    {canManage && (
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        Staff owner: {sess.ownerName || "Unassigned"}
+                      </div>
+                    )}
                   </div>
                   <span
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${sess.status === "CONNECTED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : sess.status === "QRCODE" ? "bg-amber-950 text-amber-400 border border-amber-800" : "bg-rose-950 text-rose-400 border border-rose-800"}`}
@@ -403,7 +417,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    disabled={!canManage}
                     aria-label="Reconnect session"
                     onClick={() => onRestartSession(sess.id)}
                     className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all disabled:opacity-40"
@@ -411,7 +424,6 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    disabled={!canManage}
                     aria-label="Remove session"
                     onClick={() => onDeleteSession(sess.id)}
                     className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all disabled:opacity-40"
@@ -453,33 +465,37 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             <div className="p-6 space-y-5 text-xs">
               {pairingPhase === "idle" && (
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-slate-300 mb-1.5 font-medium">
-                      Session Label
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Sales Dispatch, Support Desk"
-                      value={sessionName}
-                      onChange={(e) => setSessionName(e.target.value)}
-                      className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 mb-1.5 font-medium">
-                      Channel
-                    </label>
-                    <select
-                      value={channel}
-                      onChange={(e) => setChannel(e.target.value as any)}
-                      className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs"
-                    >
-                      <option value="sales">Sales Line</option>
-                      <option value="support">Customer Support</option>
-                      <option value="vip">VIP Concierge</option>
-                      <option value="general">General</option>
-                    </select>
-                  </div>
+                  {canManage && (
+                    <>
+                      <div>
+                        <label className="block text-slate-300 mb-1.5 font-medium">
+                          Session Label
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Sales Dispatch, Support Desk"
+                          value={sessionName}
+                          onChange={(e) => setSessionName(e.target.value)}
+                          className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 mb-1.5 font-medium">
+                          Channel
+                        </label>
+                        <select
+                          value={channel}
+                          onChange={(e) => setChannel(e.target.value as any)}
+                          className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs"
+                        >
+                          <option value="sales">Sales Line</option>
+                          <option value="support">Customer Support</option>
+                          <option value="vip">VIP Concierge</option>
+                          <option value="general">General</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div className="bg-[#202c33]/70 border border-[#2a3942] p-3.5 rounded-2xl space-y-2">
                     <div className="font-semibold text-white flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-emerald-400" />

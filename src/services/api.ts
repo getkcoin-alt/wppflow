@@ -257,3 +257,31 @@ export async function uploadAttachment(
     idempotencyKey: crypto.randomUUID(),
   });
 }
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+) => {
+  const data = await apiPost("/api/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+  if (data.token) setStoredToken(data.token);
+  return data;
+};
+export const listCompanies = async () =>
+  (await apiGet("/api/admin/companies")).companies;
+export const createCompany = (data: {
+  companyName: string;
+  ownerName: string;
+  ownerEmail: string;
+  sessionsLimit: number;
+}) => apiPost("/api/admin/companies", data);
+export const updateCompany = (id: string, data: Record<string, unknown>) =>
+  apiPatch(`/api/admin/companies/${encodeURIComponent(id)}`, data);
+export const resendOwnerCredentials = (id: string) =>
+  apiPost(
+    `/api/admin/companies/${encodeURIComponent(id)}/resend-credentials`,
+    {},
+  );
+export const assignSessionOwner = (name: string, userId: number) =>
+  apiPatch(`/api/sessions/${encodeURIComponent(name)}/owner`, { userId });
