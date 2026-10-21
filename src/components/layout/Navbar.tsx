@@ -42,8 +42,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     Boolean(currentUser?.isSuperAdmin || currentUser?.is_superadmin);
   const isSuperAdmin = Boolean(
     currentUser?.isSuperAdmin ||
-      currentUser?.is_superadmin ||
-      currentUser?.role === "superadmin",
+    currentUser?.is_superadmin ||
+    currentUser?.role === "superadmin",
   );
   const [engineHealth, setEngineHealth] = React.useState<BackendHealth | null>(
     null,
@@ -120,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {canManage && (
+          {currentUser && (
             <button
               onClick={() => onSelectView("developer")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${

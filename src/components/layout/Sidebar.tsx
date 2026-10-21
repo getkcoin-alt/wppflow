@@ -35,6 +35,7 @@ interface SidebarProps {
   activeDevTab: DevSubTab;
   onSelectDevTab: (tab: DevSubTab) => void;
   unreadChatCount: number;
+  canManage?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -46,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeDevTab,
   onSelectDevTab,
   unreadChatCount,
+  canManage = false,
 }) => {
   return (
     <aside className="w-64 bg-[#111b21] border-r border-[#2a3942] flex flex-col justify-between shrink-0 h-[calc(100vh-57px)]">
@@ -199,17 +201,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Interactive REST Tester</span>
             </button>
 
-            <button
-              onClick={() => onSelectDevTab("webhooks")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeDevTab === "webhooks"
-                  ? "bg-amber-600/20 text-amber-300 border border-amber-500/30"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-[#202c33]"
-              }`}
-            >
-              <Webhook className="w-4 h-4 text-amber-400" />
-              <span>Webhook Live Stream</span>
-            </button>
+            {canManage && (
+              <button
+                onClick={() => onSelectDevTab("webhooks")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeDevTab === "webhooks"
+                    ? "bg-amber-600/20 text-amber-300 border border-amber-500/30"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-[#202c33]"
+                }`}
+              >
+                <Webhook className="w-4 h-4 text-amber-400" />
+                <span>Webhook Live Stream</span>
+              </button>
+            )}
 
             <button
               onClick={() => onSelectDevTab("sdks")}
@@ -223,17 +227,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Multi-Language SDKs</span>
             </button>
 
-            <button
-              onClick={() => onSelectDevTab("keys")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeDevTab === "keys"
-                  ? "bg-amber-600/20 text-amber-300 border border-amber-500/30"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-[#202c33]"
-              }`}
-            >
-              <Key className="w-4 h-4 text-amber-400" />
-              <span>API Credentials</span>
-            </button>
+            {canManage && (
+              <button
+                onClick={() => onSelectDevTab("keys")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeDevTab === "keys"
+                    ? "bg-amber-600/20 text-amber-300 border border-amber-500/30"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-[#202c33]"
+                }`}
+              >
+                <Key className="w-4 h-4 text-amber-400" />
+                <span>API Credentials</span>
+              </button>
+            )}
           </nav>
         )}
       </div>

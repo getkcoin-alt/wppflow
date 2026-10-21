@@ -12,7 +12,9 @@ import type { DevSubTab } from "../layout/Sidebar";
 export function DeveloperGuide({
   activeDevTab,
   onSelectDevTab,
+  canManage = false,
 }: {
+  canManage?: boolean;
   activeDevTab: DevSubTab;
   onSelectDevTab: (tab: DevSubTab) => void;
 }) {
@@ -26,12 +28,12 @@ export function DeveloperGuide({
   const keys = useQuery({
     queryKey: ["keys", tenant],
     queryFn: () => apiGet("/api/workspace/keys"),
-    enabled: activeDevTab === "keys",
+    enabled: canManage && activeDevTab === "keys",
   });
   const hooks = useQuery({
     queryKey: ["webhooks", tenant],
     queryFn: () => apiGet("/api/workspace/webhooks"),
-    enabled: activeDevTab === "webhooks",
+    enabled: canManage && activeDevTab === "webhooks",
     refetchInterval: 10000,
   });
   const run = async (fn: () => Promise<void>) => {
@@ -49,7 +51,11 @@ export function DeveloperGuide({
     <section className="space-y-5">
       <h1 className="text-xl font-bold">Developer Tools</h1>
       <nav className="flex gap-4">
-        {(["docs", "keys", "webhooks", "sdks"] as DevSubTab[]).map((t) => (
+        {(
+          (canManage
+            ? ["docs", "keys", "webhooks", "sdks"]
+            : ["docs", "sdks"]) as DevSubTab[]
+        ).map((t) => (
           <button
             key={t}
             className={activeDevTab === t ? "text-emerald-400" : ""}

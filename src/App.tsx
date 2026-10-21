@@ -384,6 +384,7 @@ export function App() {
             activeDevTab={devTab}
             onSelectDevTab={setDevTab}
             unreadChatCount={chats.filter((c) => c.unreadCount > 0).length}
+            canManage={manager}
           />
         </div>
         <main
@@ -621,8 +622,16 @@ export function App() {
           {view === "admin" && manager && adminTab === "cluster" && (
             <ClusterHealth />
           )}
-          {view === "developer" && manager && (
-            <DeveloperGuide activeDevTab={devTab} onSelectDevTab={setDevTab} />
+          {view === "developer" && (
+            <DeveloperGuide
+              canManage={manager}
+              activeDevTab={
+                !manager && (devTab === "keys" || devTab === "webhooks")
+                  ? "docs"
+                  : devTab
+              }
+              onSelectDevTab={setDevTab}
+            />
           )}
         </main>
       </div>
