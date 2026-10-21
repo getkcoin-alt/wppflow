@@ -1,27 +1,33 @@
-# Frontend CI/CD Automated Deployment Pipeline
-
-WppFlow Frontend uses an automated CI/CD pipeline that automatically builds and deploys to the live server on Vercel whenever code is pushed to `main`.
-
-## Pipeline Architecture
+# CI/CD pipeline
 
 ```
-Git Push to main ──▶ Vercel Git Hook ──▶ scripts/release-check.mjs ──▶ TypeScript & Vite Build ──▶ Live Edge CDN
-                                                    │
-                                         Verifies Live Backend
-                                          (apiContract: 3)
+ pull request ──▶ GitHub Actions "CI" (lint, types, tests, build) ──▶ review ──▶ merge to main
+                                                                                    │
+ Vercel preview deployment for every branch/PR                                      ▼
+                                                    Vercel production deploy ──▶ scripts/release-check.mjs
+                                                                                    │
+                                                                       backend healthy & apiContract matches?
+                                                                          yes ▼                 no ▶ build held
+                                                            https://wppflow-beige.vercel.app
 ```
 
-## How It Works
+## Continuous integration (`.github/workflows/ci.yml`)
 
-1. **Trigger**: Every push or merge to branch `main` on `github.com/getkcoin-alt/wppflow`.
-2. **Release Guard Check (`scripts/release-check.mjs`)**:
-   - Queries `https://srv1628639.hstgr.cloud/health`.
-   - Confirms the backend is online, database is connected, and `apiContract` is 3.
-   - Prevents shipping mismatched client bundles if the backend is undergoing major maintenance.
-3. **Automated Production Build**:
-   - Executes `npm run build` (`tsc -b && vite build`).
-   - Produces optimized client assets in `dist/`.
-4. **Instant Live Deployment**:
-   - Deployed globally on Vercel Edge CDN at `https://wppflow-beige.vercel.app`.
-   - Reverse proxies `/api/*` and `/health` to `https://srv1628639.hstgr.cloud`.
+Runs on every pull request and every push to `main`: `npm run lint`, TypeScript type-check, `npm test` (Vitest) and
+`npm run build`.
 
+**Make it a gate (one-time, GitHub settings):** Settings → Branches → add a rule for `main` that requires a pull request
+and the status check **Frontend checks**. Vercel deploys production when `main` moves, so this keeps broken code out.
+
+## Continuous deployment (Vercel Git integration)
+
+- Every branch and pull request gets a preview URL; `main` is published to production automatically.
+- `vercel.json` runs `scripts/release-check.mjs` as the ignore step: production is held while the backend at
+  `https://srv1628639.hstgr.cloud/health` is unreachable or reports a different `apiContract`.
+- `/api/*` and `/health` are proxied to the backend; no secrets belong in `VITE_*` variables.
+- Roll back from the Vercel dashboard (Deployments → Promote a previous deployment).
+
+## Changes that touch both repositories
+
+Merge the backend first and wait until its deploy log shows `Deployed` (see the backend `docs/ci/README.md`), then merge
+this repository.
