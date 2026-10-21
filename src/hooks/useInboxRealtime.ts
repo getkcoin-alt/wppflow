@@ -7,7 +7,9 @@ import {
   patchMessageStatus,
   upsertConversation,
   upsertMessage,
+  upsertNotification,
 } from "../services/realtimeCache";
+import type { AppNotification } from "../types";
 
 export type SyncState = { phase: string; done: number; total: number } | null;
 
@@ -20,17 +22,29 @@ export function useInboxRealtime({
   qc,
   tenant,
   selected,
+  onNotification,
+  onIncoming,
 }: {
   enabled: boolean;
   qc: QueryClient;
   tenant: string | null;
   selected: string | null;
+  onNotification?: (n: AppNotification) => void;
+  onIncoming?: (p: { conversation?: any; message: any }) => void;
 }) {
   const [sync, setSync] = useState<SyncState>(null);
   const selectedRef = useRef(selected);
   useEffect(() => {
     selectedRef.current = selected;
   }, [selected]);
+  // Callbacks change on every render; keep the latest in refs so the socket
+  // subscription below is not torn down and rebuilt each time.
+  const onNotificationRef = useRef(onNotification);
+  const onIncomingRef = useRef(onIncoming);
+  useEffect(() => {
+    onNotificationRef.current = onNotification;
+    onIncomingRef.current = onIncoming;
+  });
 
   useEffect(() => {
     if (!enabled) return;
@@ -57,6 +71,7 @@ export function useInboxRealtime({
             });
         }
         cursor = res.serverTime;
+        invalidate("notifications"); // anything pushed while we were away
       } catch {
         // offline or expired session: the next trigger tries again
       } finally {
@@ -69,6 +84,18 @@ export function useInboxRealtime({
         upsertMessage(qc, tenant, p.conversationId, p.message);
       if (p?.conversation) upsertConversation(qc, tenant, p.conversation);
       else invalidate("conversations");
+      if (
+        p?.message &&
+        p.message.sender === "customer" &&
+        !p.message.isNote &&
+        p.message.type !== "internal_note"
+      )
+        onIncomingRef.current?.(p);
+    };
+    const onNotify = (p: any) => {
+      if (!p?.notification) return;
+      upsertNotification(qc, tenant, p.notification);
+      onNotificationRef.current?.(p.notification);
     };
     const onConversation = (p: any) => {
       if (p?.conversation) upsertConversation(qc, tenant, p.conversation);
@@ -107,6 +134,7 @@ export function useInboxRealtime({
       connect: () => void catchUp(),
       "message:received": onMessage,
       "message:created": onMessage,
+      "notification:new": onNotify,
       "message:updated": onReceipt,
       "message:ack": onReceipt,
       "conversation:updated": onConversation,

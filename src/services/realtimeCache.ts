@@ -1,5 +1,5 @@
 import type { InfiniteData, QueryClient } from "@tanstack/react-query";
-import type { ChatMessage, ChatThread } from "../types";
+import type { AppNotification, ChatMessage, ChatThread } from "../types";
 import { reconcileMessages } from "../utils/messages";
 
 // The inbox keeps its server state in TanStack Query caches. Instead of refetching whole
@@ -142,4 +142,52 @@ export function applyConversationChanges(
 ) {
   for (const c of conversations) upsertConversation(qc, tenant, c);
   return new Set(conversations.map((c) => c.id));
+}
+
+type NotificationData = {
+  notifications: AppNotification[];
+  unreadCount: number;
+  nextCursor?: string | null;
+};
+
+// A pushed notification goes to the top of the bell and bumps the badge — once, even if the
+// same event is delivered twice.
+export function upsertNotification(
+  qc: QueryClient,
+  tenant: string | null,
+  n: AppNotification,
+) {
+  const key = ["notifications", tenant];
+  const data = qc.getQueryData<NotificationData>(key);
+  if (!data) return void qc.invalidateQueries({ queryKey: key });
+  if (data.notifications.some((x) => x.id === n.id)) return;
+  qc.setQueryData<NotificationData>(key, {
+    ...data,
+    notifications: [n, ...data.notifications],
+    unreadCount: data.unreadCount + (n.read ? 0 : 1),
+  });
+}
+
+export function markNotificationsRead(
+  qc: QueryClient,
+  tenant: string | null,
+  which: string | "all",
+) {
+  const key = ["notifications", tenant];
+  const data = qc.getQueryData<NotificationData>(key);
+  if (!data) return;
+  let cleared = 0;
+  const notifications = data.notifications.map((n) => {
+    if ((which === "all" || n.id === which) && !n.read) {
+      cleared++;
+      return { ...n, read: true };
+    }
+    return n;
+  });
+  qc.setQueryData<NotificationData>(key, {
+    ...data,
+    notifications,
+    // Older, not-yet-loaded notifications also clear when marking everything read.
+    unreadCount: which === "all" ? 0 : Math.max(0, data.unreadCount - cleared),
+  });
 }

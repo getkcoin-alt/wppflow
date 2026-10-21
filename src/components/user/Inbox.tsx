@@ -1169,7 +1169,7 @@ export const Inbox: React.FC<InboxProps> = ({
                   }}
                   placeholder={
                     isNoteMode
-                      ? "Write an internal team note (hidden from customer)..."
+                      ? "Internal team note (hidden from customer). Type @Name to notify a teammate..."
                       : "Type a message"
                   }
                   className={`w-full rounded-lg px-4 py-2.5 text-xs text-[#e9edef] placeholder-[#8696a0] focus:outline-none transition-all ${

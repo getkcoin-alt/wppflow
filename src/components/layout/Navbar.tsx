@@ -21,6 +21,7 @@ interface NavbarProps {
   currentUser: AuthUser | null;
   onOpenAuthModal: () => void;
   onLogout: () => void;
+  bell?: React.ReactNode;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -32,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuthModal,
   onLogout,
+  bell,
 }) => {
   const connectedCount = sessions.filter(
     (s) => s.status === "CONNECTED",
@@ -184,6 +186,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Sparkles className="w-3.5 h-3.5" />
             <span>New Broadcast</span>
           </button>
+
+          {currentUser && bell}
 
           {/* Dynamic Profile or Sign In */}
           {currentUser ? (

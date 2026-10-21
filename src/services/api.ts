@@ -211,6 +211,13 @@ export function fetchConversations(
 }
 export const fetchConversationChanges = (since: string) =>
   apiGet(`/api/conversations/changes?since=${encodeURIComponent(since)}`);
+export const fetchNotifications = () => apiGet("/api/notifications?limit=30");
+export const markNotificationRead = (id: string) =>
+  apiPost(`/api/notifications/${encodeURIComponent(id)}/read`, {});
+export const markAllNotificationsRead = () =>
+  apiPost("/api/notifications/read-all", {});
+export const fetchConversation = async (id: string) =>
+  (await apiGet(`/api/conversations/${encodeURIComponent(id)}`)).conversation;
 export const fetchChats = () => fetchConversations();
 export const addChat = (data: any) => apiPost("/api/conversations", data);
 export const patchChat = (id: string, data: any) =>

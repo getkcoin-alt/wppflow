@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useInfiniteQuery,
   useQuery,
@@ -33,6 +33,19 @@ import type {
 import * as api from "./services/api";
 import { getSocket, disconnectSocket } from "./services/socket";
 import { useInboxRealtime } from "./hooks/useInboxRealtime";
+import {
+  NotificationBell,
+  NotificationToasts,
+} from "./components/layout/NotificationBell";
+import {
+  desktopPermission,
+  playPing,
+  requestDesktopPermission,
+  setTitleBadge,
+  showDesktopNotification,
+} from "./utils/alerts";
+import { markNotificationsRead } from "./services/realtimeCache";
+import type { AppNotification } from "./types";
 import { reconcileMessages } from "./utils/messages";
 
 export function App() {
@@ -203,7 +216,52 @@ export function App() {
     getSocket();
     return () => disconnectSocket();
   }, [enabled]);
-  const sync = useInboxRealtime({ enabled, qc, tenant, selected });
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications", tenant],
+    queryFn: api.fetchNotifications,
+    enabled,
+    refetchInterval: 120000,
+  });
+  const [toasts, setToasts] = useState<AppNotification[]>([]),
+    [desktop, setDesktop] = useState(desktopPermission());
+  const unreadNotifications = notificationsQuery.data?.unreadCount || 0;
+  useEffect(() => setTitleBadge(unreadNotifications), [unreadNotifications]);
+  const openConversationRef = useRef<(id: string) => void>(() => {});
+  const goTo = useCallback(
+    (n: AppNotification) => {
+      setToasts((t) => t.filter((x) => x.id !== n.id));
+      markNotificationsRead(qc, tenant, n.id);
+      void api.markNotificationRead(n.id).catch(() => {});
+      if (n.conversationId) openConversationRef.current(n.conversationId);
+      else {
+        setView("user");
+        setTab("sessions");
+      }
+    },
+    [qc, tenant],
+  );
+  const sync = useInboxRealtime({
+    enabled,
+    qc,
+    tenant,
+    selected,
+    onNotification: (n) => {
+      playPing();
+      setToasts((t) => [n, ...t].slice(0, 3));
+      setTimeout(() => setToasts((t) => t.filter((x) => x.id !== n.id)), 7000);
+      if (document.visibilityState !== "visible")
+        showDesktopNotification(n.title, n.body, () => goTo(n));
+    },
+    onIncoming: ({ conversation, message }) => {
+      // Only when nobody is looking at this chat; the list badge covers the rest.
+      if (document.visibilityState === "visible") return;
+      showDesktopNotification(
+        conversation?.contactName || "New WhatsApp message",
+        String(message.text || "").slice(0, 120),
+        () => conversation?.id && openConversationRef.current(conversation.id),
+      );
+    },
+  });
   const run = async (action: () => Promise<any>) => {
     setError("");
     try {
@@ -230,6 +288,21 @@ export function App() {
     },
     [refresh],
   );
+  // Open a chat from anywhere (a notification, a toast): fetch it if the list has not
+  // loaded it yet, then show it in the inbox.
+  useEffect(() => {
+    openConversationRef.current = (id: string) => {
+      setView("user");
+      setTab("inbox");
+      void api
+        .fetchConversation(id)
+        .then((thread) => {
+          setOpenedThread(thread);
+          openChat(id);
+        })
+        .catch((e) => setError(e.message));
+    };
+  }, [openChat]);
   const send = async (id: string, text: string, note = false) => {
     const key = crypto.randomUUID();
     const pending: ChatMessage = {
@@ -347,6 +420,28 @@ export function App() {
         }}
         onOpenAuthModal={() => {}}
         onLogout={() => void logout()}
+        bell={
+          <NotificationBell
+            items={notificationsQuery.data?.notifications || []}
+            unreadCount={unreadNotifications}
+            desktop={desktop}
+            onOpen={goTo}
+            onMarkAllRead={() => {
+              markNotificationsRead(qc, tenant, "all");
+              void api.markAllNotificationsRead().catch(() => {});
+            }}
+            onEnableDesktop={() =>
+              void requestDesktopPermission().then(() =>
+                setDesktop(desktopPermission()),
+              )
+            }
+          />
+        }
+      />
+      <NotificationToasts
+        toasts={toasts}
+        onOpen={goTo}
+        onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))}
       />
       <div className="flex">
         <div className="hidden lg:block">
@@ -462,8 +557,14 @@ export function App() {
               onSendAttachment={attachment}
               onAssignAgent={(id, name) => {
                 void run(async () => {
+                  const unassign = name === "Unassigned";
+                  // Send the teammate's id so access and notifications reach the right person.
+                  const member = (team.data?.members || []).find(
+                    (m: { id: number; name: string }) => m.name === name,
+                  );
                   await api.patchChat(id, {
-                    assignedTo: name === "Unassigned" ? "" : name,
+                    assignedTo: unassign ? "" : name,
+                    ...(member ? { assignedUserId: member.id } : {}),
                   });
                   await refresh("conversations");
                 }).catch(() => {});
