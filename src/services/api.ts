@@ -209,6 +209,8 @@ export function fetchConversations(
     if (v !== null && v !== undefined) q.set(k, String(v));
   return apiGet(`/api/conversations?${q}`);
 }
+export const fetchConversationChanges = (since: string) =>
+  apiGet(`/api/conversations/changes?since=${encodeURIComponent(since)}`);
 export const fetchChats = () => fetchConversations();
 export const addChat = (data: any) => apiPost("/api/conversations", data);
 export const patchChat = (id: string, data: any) =>

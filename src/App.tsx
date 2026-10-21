@@ -32,6 +32,7 @@ import type {
 } from "./types";
 import * as api from "./services/api";
 import { getSocket, disconnectSocket } from "./services/socket";
+import { useInboxRealtime } from "./hooks/useInboxRealtime";
 import { reconcileMessages } from "./utils/messages";
 
 export function App() {
@@ -69,7 +70,7 @@ export function App() {
     queryKey: ["sessions", tenant],
     queryFn: api.getLiveSessions,
     enabled,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
   const workspaces = useQuery({
     queryKey: ["workspaces", user?.id],
@@ -198,39 +199,11 @@ export function App() {
     [],
   );
   useEffect(() => {
-    if (!user || platformAdmin || user.mustChangePassword) return;
-    const socket = getSocket();
-    const changed = () => {
-      void refresh(
-        "sessions",
-        "conversations",
-        "messages",
-        "contacts",
-        "campaigns",
-        "summary",
-      );
-    };
-    const events = [
-      "connect",
-      "session:status",
-      "session:qr",
-      "conversation:updated",
-      "conversation:read",
-      "message:created",
-      "message:received",
-      "message:updated",
-      "message:ack",
-      "inbox:synced",
-      "contact:changed",
-      "campaign:status",
-      "campaign:progress",
-    ];
-    for (const event of events) socket.on(event, changed);
-    return () => {
-      for (const event of events) socket.off(event, changed);
-      disconnectSocket();
-    };
-  }, [user, platformAdmin, refresh]);
+    if (!enabled) return;
+    getSocket();
+    return () => disconnectSocket();
+  }, [enabled]);
+  const sync = useInboxRealtime({ enabled, qc, tenant, selected });
   const run = async (action: () => Promise<any>) => {
     setError("");
     try {
@@ -460,6 +433,18 @@ export function App() {
               >
                 Retry
               </button>
+            </div>
+          )}
+          {sync && (
+            <div
+              role="status"
+              className="m-3 px-3 py-2 rounded-lg bg-[#202c33] text-sm text-slate-300"
+            >
+              {sync.phase === "failed"
+                ? "Couldn't finish syncing WhatsApp. It will retry automatically."
+                : sync.total
+                  ? `Syncing your WhatsApp… ${sync.done} of ${sync.total} chats`
+                  : "Syncing your WhatsApp…"}
             </div>
           )}
           {view === "user" && tab === "inbox" && (
