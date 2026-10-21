@@ -35,6 +35,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
   const [invite, setInvite] = useState(
     () => new URLSearchParams(window.location.search).get("invite") || "",
   );
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const role = "user";
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [inviteInfo, setInviteInfo] = useState<{
     email: string;
     name: string;
@@ -52,16 +62,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
       active = false;
     };
   }, [invite]);
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const role = "user";
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
