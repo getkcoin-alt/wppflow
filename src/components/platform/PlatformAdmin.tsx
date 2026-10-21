@@ -132,7 +132,7 @@ export function PlatformAdmin({
             disabled={busy}
             className="bg-emerald-600 hover:bg-emerald-500 p-2 rounded font-semibold disabled:opacity-50"
           >
-            Add company &amp; email credentials
+            Add company &amp; email setup link
           </button>
         </form>
         <div className="bg-[#111b21] rounded-xl overflow-x-auto">
@@ -175,7 +175,7 @@ export function PlatformAdmin({
                     {c.owner ? `${c.owner.name} (${c.owner.email})` : "—"}
                     {c.owner && !c.owner.activated ? (
                       <span className="ml-2 text-amber-300">
-                        awaiting first login
+                        awaiting password setup
                       </span>
                     ) : null}
                   </td>
@@ -221,7 +221,7 @@ export function PlatformAdmin({
                     >
                       Set limit
                     </button>
-                    {c.owner && !c.owner.activated && (
+                    {c.owner && (
                       <button
                         disabled={busy}
                         className="text-emerald-400 p-2"
@@ -229,7 +229,7 @@ export function PlatformAdmin({
                           void run(() => resendOwnerCredentials(c.id))
                         }
                       >
-                        Resend credentials
+                        Resend setup link
                       </button>
                     )}
                   </td>

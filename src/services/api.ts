@@ -134,6 +134,8 @@ export const signupUser = (
   companyName?: string,
   _role?: string,
 ) => auth("/api/auth/signup", { name, email, password, companyName });
+export const getInviteInfo = (token: string) =>
+  apiGet(`/api/auth/invite-info?token=${encodeURIComponent(token)}`);
 export const acceptInvitation = (token: string, password: string) =>
   apiPost("/api/auth/accept-invite", { token, password });
 export const switchWorkspace = (tenantId: string) =>

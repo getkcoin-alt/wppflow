@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Smartphone,
   ShieldCheck,
@@ -23,6 +23,7 @@ import {
   signupUser,
   setStoredToken,
   acceptInvitation,
+  getInviteInfo,
 } from "../../services/api";
 import { AuthUser } from "../../types";
 
@@ -34,6 +35,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
   const [invite, setInvite] = useState(
     () => new URLSearchParams(window.location.search).get("invite") || "",
   );
+  const [inviteInfo, setInviteInfo] = useState<{
+    email: string;
+    name: string;
+    company: string;
+    setPassword: boolean;
+  } | null>(null);
+  const [confirm, setConfirm] = useState("");
+  useEffect(() => {
+    if (!invite) return;
+    let active = true;
+    getInviteInfo(invite)
+      .then((info) => active && setInviteInfo(info))
+      .catch((e: Error) => active && setError(e.message));
+    return () => {
+      active = false;
+    };
+  }, [invite]);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,11 +71,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
 
     try {
       if (invite) {
+        if (inviteInfo?.setPassword && password !== confirm) {
+          setError("The two passwords do not match.");
+          return;
+        }
         await acceptInvitation(invite, password);
         setInvite("");
         window.history.replaceState(null, "", window.location.pathname);
-        setSuccessMsg("Account activated. Log in with your invited email.");
+        if (inviteInfo?.email) setEmail(inviteInfo.email);
+        setSuccessMsg(
+          inviteInfo?.setPassword
+            ? "Password saved. Log in with your email and new password."
+            : "Account activated. Log in with your invited email.",
+        );
         setPassword("");
+        setConfirm("");
         return;
       }
       if (mode === "login") {
@@ -112,16 +140,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           className="bg-[#111b21] border border-[#2a3942] p-8 rounded-2xl space-y-4 w-full max-w-md"
           onSubmit={handleSubmit}
         >
-          <h1 className="text-xl font-bold">Set up your WppFlow account</h1>
+          <h1 className="text-xl font-bold">
+            {inviteInfo?.setPassword
+              ? "Set your password"
+              : "Join your team on WppFlow"}
+          </h1>
           <p className="text-slate-400">
-            New accounts need a password of at least 10 characters. If you
-            already have an account, use its current password.
+            {!inviteInfo
+              ? error || "Checking your invitation…"
+              : inviteInfo.setPassword
+                ? `Choose a password of at least 10 characters for ${inviteInfo.email}${inviteInfo.company ? " (" + inviteInfo.company + ")" : ""}.`
+                : `Enter the current password of your existing account ${inviteInfo.email} to join ${inviteInfo.company}.`}
           </p>
           <label className="block">
-            Password
+            {inviteInfo?.setPassword ? "New password" : "Password"}
             <input
               required
-              minLength={1}
+              minLength={inviteInfo?.setPassword ? 10 : 1}
               maxLength={128}
               type="password"
               autoComplete="new-password"
@@ -130,16 +165,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
               className="block w-full mt-2 p-3 bg-[#202c33] rounded"
             />
           </label>
-          {error && (
+          {inviteInfo?.setPassword && (
+            <label className="block">
+              Confirm new password
+              <input
+                required
+                minLength={10}
+                maxLength={128}
+                type="password"
+                autoComplete="new-password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                className="block w-full mt-2 p-3 bg-[#202c33] rounded"
+              />
+            </label>
+          )}
+          {error && inviteInfo && (
             <p role="alert" className="text-rose-300">
               {error}
             </p>
           )}
           <button
-            disabled={loading}
-            className="bg-emerald-600 p-3 rounded w-full"
+            disabled={loading || !inviteInfo}
+            className="bg-emerald-600 p-3 rounded w-full disabled:opacity-50"
           >
-            Activate account
+            {inviteInfo?.setPassword ? "Save password" : "Join team"}
           </button>
         </form>
       </main>
