@@ -220,11 +220,13 @@ export function App() {
         void api
           .fetchConversationMessages(id, { sync: true })
           .then(() => refresh("messages"))
-          .catch((e) => setError(e.message));
+          .catch(() => {}); // older history is a bonus, never an error banner
+      // Clearing the unread badge also happens locally via the realtime update, so a
+      // failure here is not worth interrupting the person who is just reading a chat.
       void api
         .markConversationRead(id)
         .then(() => refresh("conversations"))
-        .catch((e) => setError(e.message));
+        .catch((e) => console.warn("Could not mark chat as read:", e.message));
     },
     [refresh],
   );
