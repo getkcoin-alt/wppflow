@@ -143,7 +143,14 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         }
         stopPolling();
         setPairingPhase("error");
-        setErrorMessage("Session failed to start. Please try again.");
+        // Keep a more specific message (e.g. "QR not scanned in time") if one
+        // is already showing; otherwise ask the server for the real cause.
+        setErrorMessage(
+          (prev) => prev || "Session failed to start. Please try again.",
+        );
+        getLiveSessionStatus(session)
+          .then((res) => res?.error && setErrorMessage(res.error))
+          .catch(() => {});
         return;
       }
 
@@ -232,7 +239,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             stopPolling();
             qrVisibleRef.current = false;
             setPairingPhase("error");
-            setErrorMessage("QR code expired — click Try Again for a new one.");
+            setErrorMessage(
+              statusRes.error ||
+                "QR code expired — click Try Again for a new one.",
+            );
             return;
           }
 
