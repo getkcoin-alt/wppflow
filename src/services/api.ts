@@ -15,19 +15,35 @@ export const TOKEN_STORAGE_KEY = "wppflow_auth_token",
   TENANT_STORAGE_KEY = "wppflow_tenant_id";
 let accessToken: string | null = null;
 let refreshPromise: Promise<any> | null = null;
+const getStorage = (): Storage | null => {
+  try {
+    if (
+      typeof window !== "undefined" &&
+      window.localStorage &&
+      typeof window.localStorage.getItem === "function"
+    ) {
+      return window.localStorage;
+    }
+  } catch {}
+  return null;
+};
+
 export const getStoredToken = () => accessToken;
 export function setStoredToken(token: string) {
   accessToken = token;
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  getStorage()?.removeItem(TOKEN_STORAGE_KEY);
 }
-export const getStoredTenantId = () => localStorage.getItem(TENANT_STORAGE_KEY);
-export const setStoredTenantId = (id: string) =>
-  localStorage.setItem(TENANT_STORAGE_KEY, id);
+export const getStoredTenantId = () =>
+  getStorage()?.getItem(TENANT_STORAGE_KEY) ?? null;
+export const setStoredTenantId = (id: string) => {
+  getStorage()?.setItem(TENANT_STORAGE_KEY, id);
+};
 export function clearStoredToken() {
   accessToken = null;
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(TENANT_STORAGE_KEY);
-  localStorage.removeItem("wppflow_refresh_token");
+  const storage = getStorage();
+  storage?.removeItem(TOKEN_STORAGE_KEY);
+  storage?.removeItem(TENANT_STORAGE_KEY);
+  storage?.removeItem("wppflow_refresh_token");
 }
 export async function refreshSession() {
   if (!refreshPromise)
