@@ -5,7 +5,9 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { track, type EventName } from "@/lib/analytics";
 
-const CLARITY_ID = (process.env.NEXT_PUBLIC_CLARITY_ID || "").replace(/[^a-z0-9]/gi, "");
+// Microsoft Clarity project for www.scriwo.com. NEXT_PUBLIC_CLARITY_ID overrides it; set it to "off" to disable.
+const CLARITY_SETTING = process.env.NEXT_PUBLIC_CLARITY_ID || "z1r8fr6pdq";
+const CLARITY_ID = CLARITY_SETTING === "off" ? "" : CLARITY_SETTING.replace(/[^a-z0-9]/gi, "");
 
 // One listener for every link marked with data-track="…", so server-rendered pages need no
 // client code of their own to report a conversion click.
@@ -31,7 +33,7 @@ export function SiteAnalytics() {
       <VercelAnalytics />
       <SpeedInsights />
       <ClickTracker />
-      {/* Microsoft Clarity heatmaps and recordings, only when a project ID is configured.
+      {/* Microsoft Clarity heatmaps and recordings.
           Turn cookies off in the Clarity project settings so no consent banner is needed. */}
       {CLARITY_ID && (
         <Script id="clarity" strategy="afterInteractive">
