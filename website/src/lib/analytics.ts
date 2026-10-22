@@ -12,8 +12,32 @@ export function track(name: EventName, data: EventData = {}) {
     // Analytics must never break the page.
   }
   try {
-    const w = window as unknown as { clarity?: (...args: unknown[]) => void };
+    const w = window as unknown as { clarity?: (...args: unknown[]) => void; gtag?: (...args: unknown[]) => void };
     w.clarity?.("event", name);
+    w.gtag?.("event", name, data);
+  } catch {}
+}
+
+// Visitor's choice about analytics cookies (Google Analytics). Stored only in their browser.
+export const CONSENT_KEY = "scriwo_cookie_consent";
+export type Consent = "granted" | "denied";
+
+export function readConsent(): Consent | null {
+  try {
+    const v = localStorage.getItem(CONSENT_KEY);
+    return v === "granted" || v === "denied" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveConsent(choice: Consent) {
+  try {
+    localStorage.setItem(CONSENT_KEY, choice);
+  } catch {}
+  try {
+    const w = window as unknown as { gtag?: (...args: unknown[]) => void };
+    w.gtag?.("consent", "update", { analytics_storage: choice });
   } catch {}
 }
 
