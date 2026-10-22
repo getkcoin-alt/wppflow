@@ -262,6 +262,10 @@ export const updateTenantUser = (id: string, data: any) =>
   apiPatch(`/api/auth/users/${id}`, data);
 export const deleteTenantUser = (id: string) =>
   apiDelete(`/api/auth/users/${id}`);
+export const resendInvitation = (id: string) =>
+  apiPost(`/api/auth/users/invitations/${id}/resend`, {});
+export const cancelInvitation = (id: string) =>
+  apiDelete(`/api/auth/users/invitations/${id}`);
 export async function uploadAttachment(
   conversationId: string,
   file: Blob,
