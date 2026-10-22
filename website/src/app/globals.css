@@ -1,0 +1,109 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Same tokens as the Scriwo app: "Pearl" (light) and "Obsidian" (dark). */
+:root {
+  color-scheme: light;
+  --c-app: 245 245 247;
+  --c-surface: 255 255 255;
+  --c-surface-2: 240 240 243;
+  --c-surface-3: 230 230 235;
+  --c-fg: 29 29 31;
+  --c-fg-2: 81 81 84;
+  --c-fg-3: 110 110 115;
+  --c-line: 0 0 0;
+  --line-alpha: 0.09;
+  --c-brand: 11 107 85;
+  --c-brand-solid: 15 107 85;
+  --c-brand-hover: 18 128 102;
+  --c-gold: 140 108 40;
+  --c-ok: 18 140 90;
+  --c-info: 24 100 220;
+  --c-danger: 200 45 38;
+  --c-bubble-in: 255 255 255;
+  --c-bubble-out: 217 244 230;
+  --c-note: 255 244 214;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+  --shadow-pop: 0 2px 6px rgb(0 0 0 / 0.06), 0 24px 56px -16px rgb(0 0 0 / 0.22);
+  --glass: rgb(255 255 255 / 0.72);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+  color-scheme: dark;
+  --c-app: 8 9 10;
+  --c-surface: 15 17 18;
+  --c-surface-2: 22 25 27;
+  --c-surface-3: 31 35 38;
+  --c-fg: 245 245 247;
+  --c-fg-2: 161 161 166;
+  --c-fg-3: 130 130 136;
+  --c-line: 255 255 255;
+  --line-alpha: 0.09;
+  --c-brand: 110 209 172;
+  --c-brand-solid: 15 107 85;
+  --c-brand-hover: 20 133 105;
+  --c-gold: 214 185 123;
+  --c-ok: 74 214 152;
+  --c-info: 110 168 255;
+  --c-danger: 255 105 97;
+  --c-bubble-in: 28 32 35;
+  --c-bubble-out: 15 77 62;
+  --c-note: 52 40 12;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -16px rgb(0 0 0 / 0.7);
+  --shadow-pop: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 28px 64px -16px rgb(0 0 0 / 0.8);
+  --glass: rgb(18 20 22 / 0.7);
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
+  body {
+    @apply bg-app text-fg antialiased font-sans;
+    font-feature-settings: "cv11", "ss03";
+    letter-spacing: -0.005em;
+  }
+  h1, h2, h3 { letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; }
+  p { text-wrap: pretty; }
+  ::selection { background: rgb(var(--c-gold) / 0.28); }
+  :focus-visible { outline: 2px solid rgb(var(--c-gold) / 0.8); outline-offset: 2px; border-radius: 8px; }
+}
+
+@layer components {
+  .glass { background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+  .hairline { border: 1px solid rgb(var(--c-line) / var(--line-alpha)); }
+  .card { @apply rounded-3xl bg-surface shadow-card hairline; }
+  .eyebrow { @apply text-xs font-medium uppercase tracking-[0.22em] text-gold; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold transition-colors duration-200; }
+  .btn-primary { @apply btn bg-brand-solid text-white hover:bg-brand-hover; }
+  .btn-ghost { @apply btn hairline text-fg hover:bg-surface-2; }
+  .prose-scriwo p { @apply mb-4 leading-relaxed text-fg-2; }
+  .prose-scriwo li { @apply leading-relaxed text-fg-2; }
+  /* Deeper gold on light backgrounds so the headline keeps readable contrast. */
+  .gold-text {
+    background: linear-gradient(100deg, #9a7432, #7d5c22 55%, #6b4e1c);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .dark .gold-text {
+    background: linear-gradient(100deg, #f3e3bc, #d2b06a 55%, #a8843f);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-glow {
+    background:
+      radial-gradient(60% 50% at 50% 0%, rgb(var(--c-brand) / 0.18), transparent 70%),
+      radial-gradient(40% 40% at 85% 20%, rgb(var(--c-gold) / 0.14), transparent 70%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise 0.7s var(--ease-out) both; }
+  .rise-2 { animation: rise 0.7s 0.08s var(--ease-out) both; }
+  .rise-3 { animation: rise 0.7s 0.16s var(--ease-out) both; }
+  .float { animation: float 7s ease-in-out infinite; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
