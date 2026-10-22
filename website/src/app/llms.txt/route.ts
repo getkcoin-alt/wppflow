@@ -3,6 +3,7 @@ import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
+import { COMPARISONS } from "@/content/compare";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { PLANS } from "@/content/plans";
 
@@ -34,10 +35,14 @@ export function GET() {
     "## Locations",
     ...CITIES.map((c) => `- [WhatsApp CRM ${c.name}](${absolute(`/whatsapp-crm/${c.slug}`)})`),
     "",
+    "## Comparisons",
+    ...COMPARISONS.map((c) => `- [${c.title}](${absolute(`/compare/${c.slug}`)}): ${c.verdict}`),
+    "",
     "## Guides",
     ...POSTS.map((p) => `- [${p.title}](${absolute(`/blog/${p.slug}`)}): ${p.answer}`),
     "",
     "## Contact",
+    `- [Free WhatsApp CRM](${absolute("/free-whatsapp-crm")})`,
     `- [Contact and pricing](${absolute("/contact")})`,
   ];
   return new Response(lines.join("\n"), { headers: { "Content-Type": "text/plain; charset=utf-8" } });

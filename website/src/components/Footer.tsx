@@ -35,7 +35,8 @@ export function Footer() {
           items={[
             { href: "/about", label: "About" },
             { href: "/blog", label: "Guides" },
-            ...COMPARISONS.map((c) => ({ href: `/compare/${c.slug}`, label: c.title })),
+            { href: "/free-whatsapp-crm", label: "Free WhatsApp CRM" },
+            ...COMPARISONS.map((c) => ({ href: `/compare/${c.slug}`, label: `Scriwo vs ${c.them}` })),
             { href: "/contact", label: "Contact" },
             { href: "/privacy", label: "Privacy" },
             { href: "/terms", label: "Terms" },

@@ -54,9 +54,20 @@ DNS for scriwo.com is on Cloudflare; the Vercel team is `gitkcoin`. Today the `w
 | Monitoring | monitor employee WhatsApp chats (ethical framing: business numbers, owner visibility) | same | `/features/multiple-whatsapp-numbers`, `/security` |
 | Developers | WhatsApp API for developers, WhatsApp webhook | same | `/developers`, `/features/whatsapp-api-and-webhooks` |
 | Alternatives | WhatsApp API alternative, WhatsApp Business app for teams | same | `/compare/*` |
+| Competitor alternatives | Wati alternative, AiSensy alternative | Interakt alternative, Wati alternative | `/compare/{wati,interakt,aisensy}-alternative` |
+| Free | free WhatsApp CRM UAE | free WhatsApp CRM India | `/free-whatsapp-crm` |
+| Multi-user (question) | WhatsApp Business multiple users, multiple devices | same | `/blog/whatsapp-business-multiple-users` |
+| Best-of (question) | best WhatsApp CRM UAE / Dubai | best WhatsApp CRM India | `/blog/best-whatsapp-crm-uae-india`, `/whatsapp-crm` FAQ |
 | Vertical | WhatsApp CRM real estate Dubai, WhatsApp for clinics UAE | WhatsApp for coaching institutes, WhatsApp for jewellery shop | `/industries/*` |
 | Local | WhatsApp CRM Abu Dhabi, Sharjah, Ajman, RAK | Mumbai, Delhi NCR, Bengaluru, Hyderabad, Chennai, Pune, Ahmedabad, Surat, Jaipur, Udaipur, Kolkata | `/whatsapp-crm/[city]` |
 | Seasonal (next) | Ramadan, Eid, Dubai Shopping Festival, GITEX | Diwali, Navratri, wedding season, sale days | planned landing pages |
+
+Research notes (October 2026, from public competitor pages and search results; Ahrefs volumes unavailable on the current plan, so priorities are judged from competitor targeting and SERP intent):
+
+- Competitors (TimelinesAI, Wati, AiSensy, SleekFlow, Interakt) all chase "WhatsApp Business multiple users / devices", "best WhatsApp CRM India/UAE" and "<competitor> alternative". These are the highest-intent terms.
+- Our honest angle: no per-message fees and each staff member on their own number. API platforms bill Meta's message charges on top of the plan.
+- Alternative pages state only each platform's connection and billing model. No competitor prices; re-check before any change.
+- Never claim to be the official API, a Meta partner or ban-proof.
 
 ## 5. AEO and GEO (AI answer engines)
 
