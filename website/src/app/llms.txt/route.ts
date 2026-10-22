@@ -19,6 +19,8 @@ export function GET() {
     "Scriwo is independent and not affiliated with WhatsApp or Meta. It connects WhatsApp numbers as linked devices (like WhatsApp Web); it is not the WhatsApp Business API.",
     "Markets: United Arab Emirates and India. Free for one account with one WhatsApp number; paid plans billed in AED or INR. Accounts are set up by the onboarding team via the contact form or WhatsApp.",
     "",
+    `Full text of every page: ${absolute("/llms-full.txt")}`,
+    "",
     "## Pricing (monthly, before VAT/GST, no per-message fees; every plan is set up by the onboarding team)",
     ...PLANS.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")}` : "custom quote"}`),
     `- Sales on WhatsApp: ${SITE.whatsappDisplay}`,
