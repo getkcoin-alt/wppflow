@@ -42,6 +42,22 @@ const ids = (qc: QueryClient, filter: any) =>
   );
 
 describe("conversation list updates in place", () => {
+  it("a list for one WhatsApp number only takes in that number's chats", () => {
+    const qc = new QueryClient();
+    const all = { search: "", filter: "all", sessionName: "" };
+    const sam = { search: "", filter: "all", sessionName: "staff-1" };
+    listWith(qc, all, [conv("a", 300, { channel: "staff-1" }), conv("b", 200, { channel: "staff-2" })]);
+    listWith(qc, sam, [conv("a", 300, { channel: "staff-1" })]);
+    // A new message on the other number's chat: every number's list gets it, Sam's list does not.
+    upsertConversation(qc, T, conv("b", 400, { channel: "staff-2", unreadCount: 1 }));
+    expect(ids(qc, all)).toEqual(["b", "a"]);
+    expect(ids(qc, sam)).toEqual(["a"]);
+    // A brand-new chat on Sam's number reaches both lists.
+    upsertConversation(qc, T, conv("n", 500, { channel: "staff-1" }));
+    expect(ids(qc, all)).toEqual(["n", "b", "a"]);
+    expect(ids(qc, sam)).toEqual(["n", "a"]);
+  });
+
   it("moves a conversation with new activity to the top without refetching", () => {
     const qc = new QueryClient();
     const f = { search: "", filter: "all" };

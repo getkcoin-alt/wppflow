@@ -13,7 +13,7 @@ type ConversationPage = {
   [key: string]: unknown;
 };
 type MessagePage = { messages: ChatMessage[]; [key: string]: unknown };
-type ListFilter = { search?: string; filter?: string };
+type ListFilter = { search?: string; filter?: string; sessionName?: string };
 
 const epochOf = (c: Partial<ChatThread> & { lastActiveEpoch?: number }) =>
   Number(c.lastActiveEpoch || 0);
@@ -21,6 +21,8 @@ const epochOf = (c: Partial<ChatThread> & { lastActiveEpoch?: number }) =>
 // Would this conversation appear in a list loaded with these filters?
 function belongsIn(conv: ChatThread, f: ListFilter) {
   if (f.search?.trim()) return false; // searches are only updated for rows they already show
+  // A list for one WhatsApp number never takes in another number's chats.
+  if (f.sessionName && conv.channel !== f.sessionName) return false;
   if (f.filter === "unread") return conv.unreadCount > 0;
   if (f.filter === "groups") return conv.isGroup;
   return true;

@@ -80,7 +80,7 @@ export function App() {
     [campaignOpen, setCampaignOpen] = useState(false),
     [selected, setSelected] = useState<string | null>(null);
   const [openedThread, setOpenedThread] = useState<ChatThread | null>(null);
-  const [filter, setFilter] = useState({ search: "", filter: "all" }),
+  const [filter, setFilter] = useState({ search: "", filter: "all", sessionName: "" }),
     [optimistic, setOptimistic] = useState<Record<string, ChatMessage[]>>({});
   const tenant = api.getStoredTenantId(),
     platformAdmin = user?.role === "superadmin",
@@ -244,11 +244,13 @@ export function App() {
     [qc, tenant],
   );
   const changeFilter = useCallback(
-    (search: string, filter: string) =>
+    (search: string, filter: string, sessionName = "") =>
       setFilter((old) =>
-        old.search === search && old.filter === filter
+        old.search === search &&
+        old.filter === filter &&
+        old.sessionName === sessionName
           ? old
-          : { search, filter },
+          : { search, filter, sessionName },
       ),
     [],
   );
@@ -785,6 +787,7 @@ export function App() {
               hasOlderMessages={Boolean(history.hasNextPage)}
               onLoadOlder={() => void history.fetchNextPage()}
               onFilterChange={changeFilter}
+              currentUserId={user?.id}
               onSaveReply={async (data) => {
                 await api.apiPost("/api/workspace/canned-replies", data);
                 await refresh("replies");

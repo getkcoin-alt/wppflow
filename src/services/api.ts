@@ -214,11 +214,13 @@ export function fetchConversations(
     cursor?: string | null;
     filter?: string;
     search?: string;
+    /** Only this WhatsApp number's chats */
+    sessionName?: string;
   } = {},
 ) {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params))
-    if (v !== null && v !== undefined) q.set(k, String(v));
+    if (v !== null && v !== undefined && v !== "") q.set(k, String(v));
   return apiGet(`/api/conversations?${q}`);
 }
 export const fetchConversationChanges = (since: string) =>

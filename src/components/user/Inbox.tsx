@@ -26,6 +26,8 @@ import {
 import { ScriwoMark } from "../brand/Logo";
 import { MediaBlock } from "./MediaBlock";
 import { MediaViewer } from "./MediaViewer";
+import { NumberSwitch } from "./NumberSwitch";
+import { numberName, phoneText, sessionOfChat } from "../../utils/numbers";
 import { galleryItems } from "../../utils/viewer";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
 import { safeAvatarFallback } from "../../utils/avatar";
@@ -59,7 +61,9 @@ interface InboxProps {
   onLoadMoreChats?: () => void;
   hasOlderMessages?: boolean;
   onLoadOlder?: () => void;
-  onFilterChange?: (search: string, filter: string) => void;
+  onFilterChange?: (search: string, filter: string, sessionName: string) => void;
+  /** The signed-in person, so their own number reads "(you)" */
+  currentUserId?: number | string | null;
   onSaveReply?: (data: {
     shortcut: string;
     title: string;
@@ -165,6 +169,7 @@ export const Inbox: React.FC<InboxProps> = ({
   hasOlderMessages = false,
   onLoadOlder,
   onFilterChange,
+  currentUserId,
   onSaveReply,
   canManage = false,
   onOpenSessions,
@@ -173,6 +178,7 @@ export const Inbox: React.FC<InboxProps> = ({
     "all",
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [numberFilter, setNumberFilter] = useState("");
   const [activeChatId, setActiveChatId] = useState<string | null>(
     selectedChatId || null,
   );
@@ -255,6 +261,10 @@ export const Inbox: React.FC<InboxProps> = ({
     previousChat.current = activeChatId;
   }, [currentMessages.length, activeChatId]);
 
+  // A number that was removed while chosen falls back to every number.
+  const activeNumber = sessions.some((s) => s.sessionKey === numberFilter)
+    ? numberFilter
+    : "";
   const filteredChats = useMemo(() => {
     return chats.filter((c) => {
       const matchesSearch =
@@ -270,11 +280,11 @@ export const Inbox: React.FC<InboxProps> = ({
   }, [chats, searchQuery, filterTab]);
   useEffect(() => {
     const timer = setTimeout(
-      () => onFilterChange?.(searchQuery, filterTab),
+      () => onFilterChange?.(searchQuery, filterTab, activeNumber),
       250,
     );
     return () => clearTimeout(timer);
-  }, [searchQuery, filterTab, onFilterChange]);
+  }, [searchQuery, filterTab, activeNumber, onFilterChange]);
   const virtualChats = useVirtualizer({
     count: filteredChats.length,
     getScrollElement: () => chatListRef.current,
@@ -489,6 +499,12 @@ export const Inbox: React.FC<InboxProps> = ({
               </button>
             ))}
           </div>
+          <NumberSwitch
+            sessions={sessions}
+            value={activeNumber}
+            onChange={setNumberFilter}
+            currentUserId={currentUserId}
+          />
         </div>
 
         {/* Conversation list */}
@@ -527,7 +543,9 @@ export const Inbox: React.FC<InboxProps> = ({
                 <p>
                   {searchQuery
                     ? `No chats match "${searchQuery}"`
-                    : "No conversations found"}
+                    : activeNumber
+                      ? "No conversations on this number yet"
+                      : "No conversations found"}
                 </p>
                 {!searchQuery && (
                   <button
@@ -654,6 +672,15 @@ export const Inbox: React.FC<InboxProps> = ({
                           )}
                         </div>
                       </div>
+                      {/* With several numbers in one list, say which one each chat is on */}
+                      {sessions.length > 1 && !activeNumber && (() => {
+                        const line = sessionOfChat(sessions, chat);
+                        return line ? (
+                          <div className="mt-0.5 text-[11.5px] text-fg-3 truncate">
+                            via {numberName(line, currentUserId)}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 );
@@ -707,6 +734,18 @@ export const Inbox: React.FC<InboxProps> = ({
                   {activeChat.isGroup
                     ? `${activeChat.groupMembersCount || ""} ${activeChat.groupMembersCount ? "members" : "Group"}`
                     : activeChat.phone}
+                  {sessions.length > 1 &&
+                    (() => {
+                      const line = sessionOfChat(sessions, activeChat);
+                      return line ? (
+                        <span
+                          className="ml-2 text-fg-2"
+                          title={phoneText(line.phone) || undefined}
+                        >
+                          · via {numberName(line, currentUserId)}
+                        </span>
+                      ) : null;
+                    })()}
                   {activeChat.isClosed && (
                     <span className="ml-2 text-ok">Resolved</span>
                   )}

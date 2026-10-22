@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import React from "react";
 import { Inbox } from "../components/user/Inbox";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../types";
@@ -304,5 +304,80 @@ describe("Inbox component", () => {
       base({ mediaPending: 0, onLoadAllMedia: vi.fn() });
       expect(screen.queryByText(/saved yet/)).toBeNull();
     });
+  });
+});
+
+describe("an inbox with more than one WhatsApp number", () => {
+  const second: WhatsAppSession = {
+    ...mockSessions[0],
+    id: "sess_2",
+    sessionKey: "staff-9",
+    displayName: "staff-9",
+    phone: "+1 555-0200",
+    ownerUserId: 9,
+    ownerName: "Sam Staff",
+  };
+  const first: WhatsAppSession = { ...mockSessions[0], sessionKey: "staff-1", ownerUserId: 1, ownerName: "Olivia Owner" };
+  const chats = [
+    { ...mockChats[0], channel: "staff-1" },
+    { ...mockChats[1], channel: "staff-9" },
+  ];
+  const numbers = () => within(screen.getByRole("group", { name: "WhatsApp number" }));
+  const show = (extra: Partial<React.ComponentProps<typeof Inbox>> = {}) =>
+    render(
+      <Inbox
+        chats={chats}
+        messages={mockMessages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={[first, second]}
+        selectedChatId="conv_1"
+        currentUserId={1}
+        onSendMessage={vi.fn()}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+        {...extra}
+      />,
+    );
+
+  it("lets a manager switch between the numbers and asks for that number's chats", async () => {
+    const onFilterChange = vi.fn();
+    show({ onFilterChange });
+    expect(numbers().getByRole("button", { name: "All numbers" })).toBeDefined();
+    fireEvent.click(numbers().getByRole("button", { name: /Sam/ }));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "staff-9"));
+    fireEvent.click(numbers().getByRole("button", { name: /Olivia \(you\)/ }));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "staff-1"));
+    fireEvent.click(numbers().getByRole("button", { name: "All numbers" }));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", ""));
+  });
+
+  it("says which number each chat came in on while every number is shown together", () => {
+    show();
+    expect(screen.getByText("via Olivia (you)")).toBeDefined();
+    expect(screen.getByText("via Sam")).toBeDefined();
+  });
+
+  it("drops those labels once a single number is chosen, and says so when it has no chats", () => {
+    show({ chats: [] });
+    fireEvent.click(numbers().getByRole("button", { name: /Sam/ }));
+    expect(screen.queryByText(/^via /)).toBeNull();
+    expect(screen.getByText("No conversations on this number yet")).toBeDefined();
+  });
+
+  it("names the number in the open conversation", () => {
+    show();
+    const label = screen.getByText(/· via Olivia \(you\)/);
+    expect(label).toBeDefined();
+    expect(label.getAttribute("title")).toBe("+15550100");
+  });
+
+  it("shows no switcher and no labels for a single number", () => {
+    show({ sessions: [first] });
+    expect(screen.queryByRole("group", { name: "WhatsApp number" })).toBeNull();
+    expect(screen.queryByText(/^via /)).toBeNull();
   });
 });
