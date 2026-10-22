@@ -12,7 +12,7 @@ export const SITE = {
     "Scriwo is a shared WhatsApp inbox and CRM for companies with staff in the UAE and India. Every teammate links their own number, owners see every chat, and the team assigns, notes and resolves conversations together.",
   markets: ["United Arab Emirates", "India"],
   // Product facts quoted on the site. Keep them true: update when the numbers change.
-  facts: { backendSuites: 25, frontendTests: 61 },
+  facts: { backendSuites: 30, frontendTests: 146 },
 } as const;
 
 export const absolute = (path = "/") => `${SITE.url}${path === "/" ? "" : path}`;
