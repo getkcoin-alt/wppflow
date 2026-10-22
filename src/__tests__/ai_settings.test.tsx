@@ -37,6 +37,29 @@ describe("the AI assistant settings", () => {
     expect(screen.getByRole("switch", { name: "Use Riwo in this company" }).getAttribute("aria-checked")).toBe("true");
   });
 
+  it("says where the text goes: free models through OpenRouter may keep it", async () => {
+    api.getAiStatus.mockResolvedValue({ ...on, provider: "openrouter", free: true });
+    wrap();
+    await screen.findByText("On");
+    fireEvent.click(screen.getByText("What Riwo sees"));
+    expect(screen.getByText(/passes it to a free AI model/)).toBeDefined();
+    expect(screen.getByText(/may use it to improve their models/)).toBeDefined();
+    expect(screen.getByText(/Keep Riwo off for conversations that must stay private/)).toBeDefined();
+    expect(screen.queryByText(/Anthropic/)).toBeNull();
+  });
+
+  it("says so when Claude writes the answers, and stays general when the service isn't named", async () => {
+    api.getAiStatus.mockResolvedValue({ ...on, provider: "anthropic", free: false });
+    const first = wrap();
+    await screen.findByText("On");
+    expect(screen.getByText(/processed by Anthropic's Claude/)).toBeDefined();
+    first.unmount();
+    api.getAiStatus.mockResolvedValue(on);
+    wrap();
+    await screen.findByText("On");
+    expect(screen.getByText(/processed by an AI service/)).toBeDefined();
+  });
+
   it("an owner can switch it off, and the screen follows", async () => {
     api.getAiStatus.mockResolvedValueOnce(on).mockResolvedValue({ ...on, available: false, reason: "disabled", enabled: false });
     api.setAiEnabled.mockResolvedValue({});

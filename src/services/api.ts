@@ -354,7 +354,10 @@ export interface AiStatus {
   used: number;
   limit: number;
   remaining: number;
-  model?: string;
+  /** Which AI service writes the answers */
+  provider?: "openrouter" | "anthropic" | null;
+  /** Running on free models, whose providers may keep what they receive */
+  free?: boolean;
 }
 export interface AiSummary {
   text: string;

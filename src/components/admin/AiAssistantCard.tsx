@@ -4,6 +4,16 @@ import { Loader2 } from "lucide-react";
 import { getAiStatus, getStoredTenantId, setAiEnabled } from "../../services/api";
 import { Notice, Pill } from "../ui/Page";
 
+// Where the text goes, said plainly, because it is the customers' own messages.
+const WHERE: Record<string, string> = {
+  openrouter:
+    "The text goes to OpenRouter, which passes it to a free AI model to write the result. Free models can be run by providers that keep what they receive and may use it to improve their models, and they are slower and less steady than paid ones. Keep Riwo off for conversations that must stay private.",
+  anthropic:
+    "The text is processed by Anthropic's Claude to write the result and is not used by Scriwo for anything else.",
+};
+const WHERE_DEFAULT =
+  "The text is processed by an AI service to write the result and is not used by Scriwo for anything else.";
+
 const REASONS: Record<string, string> = {
   not_configured:
     "The AI isn't switched on for this server yet. The person who runs the server adds the AI key, and Riwo appears.",
@@ -114,7 +124,7 @@ export function AiAssistantCard() {
       <details className="mt-5 text-[13.5px] text-fg-2">
         <summary className="cursor-pointer font-medium text-fg">What Riwo sees</summary>
         <p className="mt-2 max-w-2xl leading-relaxed">
-          When someone asks Riwo for help, it receives the latest messages of that chat as text, your saved replies, the private notes on that chat and your company's name. Phone numbers, photos and files are not sent. The text is processed by Anthropic's Claude to write the result and is not used by Scriwo for anything else.
+          When someone asks Riwo for help, it receives the latest messages of that chat as text, your saved replies, the private notes on that chat and your company's name. Phone numbers, photos and files are not sent. {(data?.provider && WHERE[data.provider]) || WHERE_DEFAULT}
         </p>
       </details>
     </section>
