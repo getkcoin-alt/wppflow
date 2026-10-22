@@ -8,6 +8,7 @@ import { INDUSTRIES, industryBySlug } from "@/content/industries";
 import { featureBySlug } from "@/content/features";
 import { CITIES } from "@/content/cities";
 import { speakable } from "@/lib/jsonld";
+import { trackAttrs } from "@/lib/analytics";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -30,7 +31,7 @@ export default async function IndustryPage({ params }: Props) {
       <JsonLd data={speakable(path, ["[data-speakable]"])} />
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Industries", path: "/industries" }, { name: i.name, path }]} />
       <PageHero eyebrow={i.keyword} title={i.title} intro={i.intro}>
-        <Link href={`/contact?interest=demo`} className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+        <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "industries" })} className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
       </PageHero>
       <Container className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <div className="card p-8">

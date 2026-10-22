@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { FEATURES, featureBySlug } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
 import { faqPage, howTo, speakable } from "@/lib/jsonld";
+import { trackAttrs } from "@/lib/analytics";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -32,7 +33,7 @@ export default async function FeaturePage({ params }: Props) {
       <JsonLd data={[faqPage(f.faqs), howTo(`How to use ${f.name.toLowerCase()} in Scriwo`, f.howTo), speakable(path, ["[data-speakable]"])]} />
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Features", path: "/features" }, { name: f.name, path }]} />
       <PageHero eyebrow={f.keyword} title={f.title} intro={f.summary}>
-        <Link href="/contact?interest=demo" className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+        <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "features" })} className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         <Link href="/pricing" className="btn-ghost">See plans</Link>
       </PageHero>
       <Container>
