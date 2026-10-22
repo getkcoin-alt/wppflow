@@ -1,60 +1,42 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Info } from "lucide-react";
-import { Container, PageHero, CheckList, FaqList, CtaBand, Crumbs, SectionTitle } from "@/components/ui";
+import { Container, PageHero, FaqList, CtaBand, Crumbs, SectionTitle } from "@/components/ui";
+import { PricingGrid } from "@/components/PricingGrid";
 import { JsonLd } from "@/components/JsonLd";
-import { PLANS, PAYMENTS_LIVE } from "@/content/plans";
+import { PAYMENTS_LIVE } from "@/content/plans";
 import { faqPage } from "@/lib/jsonld";
 
 export const metadata: Metadata = {
-  title: "Pricing — WhatsApp Team Inbox Plans in AED and INR",
-  description: "Scriwo plans for teams of every size in the UAE and India, billed in AED or INR. Choose a plan and our team will set up your company the same day.",
+  title: "Pricing — WhatsApp Team Inbox from AED 299 / ₹2,499 a month",
+  description: "Scriwo plans for teams in the UAE and India: Starter from AED 299 or ₹2,499 a month for 3 WhatsApp numbers, with no per-message fees. Growth, Business and Enterprise plans for larger teams.",
   alternates: { canonical: "/pricing" },
 };
 
 const FAQS = [
-  { q: "How do I buy a plan?", a: "Online checkout is coming soon. Until then, choose a plan and send the form. We will confirm the price for your team size and send an invoice in AED or INR." },
+  { q: "How do I buy a plan?", a: "Online checkout is coming soon. Until then, choose a plan and send the form, or message sales on WhatsApp at +91 91191 12999. We set up your company and send an invoice in AED or INR." },
+  { q: "Are there per-message fees?", a: "No. Scriwo works with the WhatsApp numbers your team already uses, so there are no per-conversation charges on top of your plan. API-based platforms usually bill WhatsApp's message fees separately." },
+  { q: "Do prices include tax?", a: "No. UAE prices exclude 5% VAT and Indian prices exclude 18% GST, which are added to the invoice." },
   { q: "What counts as a number?", a: "Each WhatsApp number linked to your company. Every teammate usually links their own." },
   { q: "Can I change plans later?", a: "Yes. Tell us and we will change your company's number limit." },
-  { q: "Is there a setup fee?", a: "Tell us about your team and we will include any onboarding in your quote up front, with no surprises." },
+  { q: "Is there a setup fee?", a: "No. Setup and a walkthrough for your team are included in every plan." },
 ];
 
-const money = (n: number, cur: "AED" | "INR") => new Intl.NumberFormat(cur === "AED" ? "en-AE" : "en-IN", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
 
 export default function PricingPage() {
   return (
     <>
       <JsonLd data={faqPage(FAQS)} />
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Pricing", path: "/pricing" }]} />
-      <PageHero eyebrow="Pricing" title="Plans that grow with your team" intro="Pick the plan that matches how many WhatsApp numbers your team uses. Billed in AED or INR." />
+      <PageHero eyebrow="Pricing" title="Plans that grow with your team" intro="One price per company, set by how many WhatsApp numbers your team links. No per-seat surprises and no per-message fees." />
       <Container>
         {!PAYMENTS_LIVE && (
           <p className="mb-8 flex items-start gap-3 rounded-2xl bg-surface p-4 text-sm text-fg-2 hairline">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
-            Online payment is being set up. Choose a plan and send the short form: we reply within one business day with your price and an invoice.
+            Online payment is being set up. Choose a plan and send the short form, or message us on WhatsApp: we reply within one business day with an invoice.
           </p>
         )}
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((p) => (
-            <section key={p.id} aria-labelledby={`plan-${p.id}`} className={`card flex flex-col p-6 ${p.highlight ? "ring-2 ring-gold/60" : ""}`}>
-              {p.highlight && <span className="mb-3 self-start rounded-full bg-gold/15 px-3 py-1 text-xs font-medium text-gold">Most popular</span>}
-              <h2 id={`plan-${p.id}`} className="text-xl">{p.name}</h2>
-              <p className="mt-1 text-sm text-fg-2">{p.for}</p>
-              <p className="mt-6 text-2xl font-semibold">
-                {p.price.AED && p.price.INR ? (
-                  <>{money(p.price.AED, "AED")}<span className="text-sm font-normal text-fg-3"> / month · {money(p.price.INR, "INR")}</span></>
-                ) : (
-                  "Price on request"
-                )}
-              </p>
-              <p className="mt-1 text-sm font-medium text-brand">{p.numbers}</p>
-              <div className="mt-6 flex-1 text-sm"><CheckList items={p.includes} /></div>
-              <Link href={`/contact?interest=${p.id}&plan=${encodeURIComponent(p.name)}`} className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}>
-                {p.id === "enterprise" ? "Talk to sales" : `Choose ${p.name}`}
-              </Link>
-            </section>
-          ))}
-        </div>
+        <PricingGrid />
       </Container>
       <Container className="mt-24">
         <SectionTitle eyebrow="Questions" title="Pricing FAQ" />

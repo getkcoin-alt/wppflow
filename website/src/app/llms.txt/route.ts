@@ -4,6 +4,7 @@ import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
 import { GENERAL_FAQS } from "@/content/faqs";
+import { PLANS } from "@/content/plans";
 
 export const dynamic = "force-static";
 
@@ -16,6 +17,10 @@ export function GET() {
     "",
     "Scriwo is independent and not affiliated with WhatsApp or Meta. It connects WhatsApp numbers as linked devices (like WhatsApp Web); it is not the WhatsApp Business API.",
     "Markets: United Arab Emirates and India. Billing in AED or INR. Sign-up is through the contact form while online payments are being set up.",
+    "",
+    "## Pricing (monthly, before VAT/GST, no per-message fees)",
+    ...PLANS.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")}` : "custom quote"}`),
+    `- Sales on WhatsApp: ${SITE.whatsappDisplay}`,
     "",
     "## Key facts",
     ...GENERAL_FAQS.map((f) => `- ${f.q} ${f.a}`),

@@ -1,5 +1,6 @@
 import { SITE, absolute } from "./site";
 import type { Faq } from "@/content/faqs";
+import { PLANS } from "@/content/plans";
 
 export const organization = () => ({
   "@context": "https://schema.org",
@@ -17,6 +18,7 @@ export const organization = () => ({
     "@type": "ContactPoint",
     contactType: "sales",
     url: absolute("/contact"),
+    telephone: "+91-9119112999",
     availableLanguage: ["English"],
     areaServed: ["AE", "IN"],
   },
@@ -42,7 +44,17 @@ export const softwareApplication = () => ({
   url: SITE.url,
   description: SITE.description,
   publisher: { "@id": absolute("/#organization") },
-  // Add "offers" with a price once public pricing is published (Google needs a price for this rich result).
+  offers: (["AED", "INR"] as const).map((cur) => {
+    const prices = PLANS.map((p) => p.price[cur]).filter((n): n is number => n !== null);
+    return {
+      "@type": "AggregateOffer",
+      priceCurrency: cur,
+      lowPrice: Math.min(...prices),
+      highPrice: Math.max(...prices),
+      offerCount: prices.length,
+      url: absolute("/pricing"),
+    };
+  }),
   featureList: [
     "Shared WhatsApp inbox", "Chat assignment", "Private notes", "@mentions", "Broadcasts to opted-in contacts",
     "Keyword automations", "Audit log", "Scoped API keys", "Signed webhooks", "CSV import and export",

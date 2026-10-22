@@ -43,7 +43,7 @@ export default function Home() {
             <ul className="rise-3 mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-fg-3">
               <li>Works with the numbers you already use</li>
               <li>No training needed</li>
-              <li>AED and INR billing</li>
+              <li>From AED 299 / ₹2,499 a month</li>
             </ul>
           </div>
           <InboxMock />

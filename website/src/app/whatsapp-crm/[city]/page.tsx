@@ -9,6 +9,8 @@ import { industryBySlug } from "@/content/industries";
 import { FEATURES } from "@/content/features";
 import { absolute } from "@/lib/site";
 import { faqPage, speakable } from "@/lib/jsonld";
+import { PLANS, TAX_NOTE } from "@/content/plans";
+import { formatMoney } from "@/lib/money";
 
 type Props = { params: Promise<{ city: string }> };
 
@@ -31,9 +33,10 @@ export default async function CityPage({ params }: Props) {
   if (!c) notFound();
   const path = `/whatsapp-crm/${c.slug}`;
   const currency = c.country === "UAE" ? "AED" : "INR";
+  const from = formatMoney(PLANS[0].price[currency] ?? 0, currency);
   const faqs = [
     { q: `Is there a WhatsApp CRM for teams in ${c.name}?`, a: `Yes. Scriwo is a shared WhatsApp inbox and CRM used by teams in ${c.name}. Each staff member links their own number, owners see every chat, and chats can be assigned, noted and resolved.` },
-    { q: `Can I pay for Scriwo in ${currency}?`, a: `Yes. Tell us your plan through the contact form and we will invoice you in ${currency}.` },
+    { q: `How much does Scriwo cost in ${c.name}?`, a: `Plans start at ${from} a month for up to 3 WhatsApp numbers, billed in ${currency} with no per-message fees. ${TAX_NOTE[currency]}` },
     { q: `Do I need an office in ${c.name} to use Scriwo?`, a: "No. Scriwo runs in the browser. Your team signs in from anywhere and links their WhatsApp by scanning a QR code." },
   ];
   const nearby = CITIES.filter((o) => o.country === c.country && o.slug !== c.slug).slice(0, 6);
@@ -57,7 +60,7 @@ export default async function CityPage({ params }: Props) {
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Locations", path: "/whatsapp-crm" }, { name: c.name, path }]} />
       <PageHero eyebrow={c.region === c.name ? `${c.name} · ${c.country === "UAE" ? "United Arab Emirates" : "India"}` : `${c.name} · ${c.region}`} title={<>WhatsApp CRM for teams in {c.name}</>} intro={c.local}>
         <Link href="/contact?interest=demo" className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
-        <Link href="/pricing" className="btn-ghost">Plans in {currency}</Link>
+        <Link href="/pricing" className="btn-ghost">From {from} / month</Link>
       </PageHero>
       <Container className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="card p-8">

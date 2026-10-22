@@ -47,3 +47,23 @@ describe("contact form checks", () => {
   });
   it("requires a name", () => expect(validateContact({ ...ok, name: " " }).name).toBeTruthy());
 });
+
+describe("pricing", () => {
+  it("paid plans have prices in both currencies, rising with the number limit", async () => {
+    const paid = PLANS.filter((p) => p.id !== "enterprise");
+    for (const cur of ["AED", "INR"] as const) {
+      const prices = paid.map((p) => p.price[cur]);
+      expect(prices.every((n) => typeof n === "number" && n > 0)).toBe(true);
+      expect([...prices].sort((a, b) => a! - b!)).toEqual(prices);
+    }
+  });
+
+  it("prices written in the FAQ match the plans", async () => {
+    const { GENERAL_FAQS } = await import("@/content/faqs");
+    const text = GENERAL_FAQS.map((f) => f.a).join(" ");
+    for (const p of PLANS.filter((p) => p.price.AED)) {
+      expect(text).toContain(`AED ${p.price.AED!.toLocaleString("en-US")}`);
+      expect(text).toContain(`₹${p.price.INR!.toLocaleString("en-IN")}`);
+    }
+  });
+});

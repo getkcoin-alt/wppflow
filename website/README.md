@@ -29,7 +29,7 @@ Pages are generated from typed data in `src/content/`:
 
 Add an entry and the page, sitemap, footer links and `llms.txt` update themselves. `npm test` checks that every cross-link points to a page that exists and that city pages are not copies of each other.
 
-Only publish facts that are true for the product. Prices stay `null` (shown as "Price on request") until they are decided.
+Only publish facts that are true for the product. Prices live in `plans.ts` (monthly, before tax); a `null` price shows as "Custom". The tests check that the FAQ quotes the same prices.
 
 ## Contact form and payments
 
@@ -39,4 +39,4 @@ Until online payments are approved (`PAYMENTS_LIVE` in `src/content/plans.ts`), 
 
 1. Create a new Vercel project from this repository with **Root Directory** set to `website`.
 2. Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` and `BACKEND_URL` (see `.env.example`). `NEXT_PUBLIC_WHATSAPP_NUMBER` is optional.
-3. Before pointing `www.scriwo.com` at this project, move the app to `app.scriwo.com` and set the backend's `APP_URL` to `https://app.scriwo.com`. Emailed set-password links use `APP_URL`. See `../docs/website-plan.md`.
+3. Move the app to `app.scriwo.com` before pointing `www.scriwo.com` at this project. The step-by-step is in section 2 of `../docs/website-plan.md`.

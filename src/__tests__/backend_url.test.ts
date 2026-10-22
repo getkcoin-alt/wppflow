@@ -4,6 +4,7 @@ import { backendBaseFor, socketUrlFor } from "../services/api";
 describe("which address the app uses to reach the backend", () => {
   it("uses its own address on every hosted domain, so custom domains work like vercel.app", () => {
     for (const host of [
+      "app.scriwo.com",
       "scriwo.com",
       "www.scriwo.com",
       "wppflow-beige.vercel.app",

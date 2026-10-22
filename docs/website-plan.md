@@ -6,24 +6,20 @@ Marketing website for www.scriwo.com, aimed at the UAE and India. Code lives in 
 
 - **Goal:** be the site Google, AI Overviews, ChatGPT, Gemini and Perplexity find and cite for "WhatsApp CRM / shared WhatsApp inbox / team WhatsApp" searches in the UAE and India. Turn visitors into demo requests and plan sign-ups.
 - **Payments:** not live yet. Every plan button opens `/contact` with the plan filled in. The enquiry is saved in the backend (`website_leads`) and emailed to `LEADS_EMAIL`. When the payment gateway is approved, set `PAYMENTS_LIVE = true` in `website/src/content/plans.ts`, then swap the plan buttons for checkout.
+- **Prices (set October 2026):** Starter AED 299 / ₹2,499 (3 numbers), Growth AED 799 / ₹6,999 (10), Business AED 1,699 / ₹14,999 (25), Enterprise custom. Monthly, before VAT/GST, with no per-message fees. Sales WhatsApp: +91 91191 12999.
 - **Built now (62 static pages):** home, features (10), industries (8), UAE and India city pages (16), comparisons (3), pricing, contact, security, developers, about, guides (4), privacy, terms, sitemap, robots, `llms.txt`, Open Graph image.
 
-## 2. Domains (needs a decision before launch)
+## 2. Domains
 
-The app is served at `scriwo.com` today, and emailed set-password links point there. Recommended setup:
+Decided: the dashboard moves to `app.scriwo.com`, and the website takes `www.scriwo.com` (`scriwo.com` redirects to `www`).
 
-| Address | Serves |
-| --- | --- |
-| `www.scriwo.com` | Website (canonical) |
-| `scriwo.com` | Redirects to `www.scriwo.com` |
-| `app.scriwo.com` | The Scriwo app |
+DNS for scriwo.com is on Cloudflare; the Vercel team is `gitkcoin`. Today the `wppflow` project (the dashboard) holds `scriwo.com` (redirecting to `www`) and `www.scriwo.com`. Do these steps in order so nobody is locked out:
 
-Steps, in order:
-
-1. Add `app.scriwo.com` to the app's Vercel project and check sign-in works there. The backend already allows that origin.
-2. Set the backend `APP_URL=https://app.scriwo.com` and restart, so new emails link to the app.
-3. Deploy the website as its own Vercel project (root directory `website`) and attach `www.scriwo.com`, with `scriwo.com` redirecting to it.
-4. In the app's `vercel.json`, or with a website redirect, send old app paths on `scriwo.com` (for example `/?invite=`) to `app.scriwo.com`, so links already emailed keep working.
+1. **Vercel → project `wppflow` → Settings → Domains → Add** `app.scriwo.com`.
+2. **Cloudflare → scriwo.com → DNS → Add record:** type `CNAME`, name `app`, target `cname.vercel-dns.com`, proxy status **DNS only** (grey cloud). Wait until Vercel shows the domain as valid, then sign in at https://app.scriwo.com to check.
+3. **Backend:** deploy this branch's backend, or set `APP_URL=https://app.scriwo.com` on the server and restart. New invite and set-password emails then link to the app. The backend already accepts requests from `app.scriwo.com`.
+4. **Website:** in Vercel, create a project from `getkcoin-alt/wppflow` with **Root Directory** `website`, after this branch is merged to `main`. Set `NEXT_PUBLIC_SITE_URL=https://www.scriwo.com`, `NEXT_PUBLIC_APP_URL=https://app.scriwo.com` and `BACKEND_URL=https://srv1628639.hstgr.cloud`. Check the preview URL.
+5. **Switch:** remove `www.scriwo.com` and `scriwo.com` from `wppflow`, then add them to the website project (`scriwo.com` redirecting to `www.scriwo.com`). Old emailed links (`/?invite=...`) are forwarded to `app.scriwo.com` by the website.
 
 ## 3. Information architecture
 
@@ -87,12 +83,10 @@ Accessibility: skip link, labelled navigation, breadcrumbs with `aria-current`, 
 
 ## 8. Launch checklist
 
-- [ ] Domain move done (section 2); old emailed links still work
+- [ ] Domain move done (section 2); `app.scriwo.com` live; old emailed links still work
 - [ ] Vercel project for `website/` with env vars from `.env.example`
 - [ ] Backend deployed with migration `012_website_leads`; `LEADS_EMAIL` set; one live test enquiry received
-- [ ] Prices decided (or deliberately left "on request")
 - [ ] Privacy and terms reviewed
-- [ ] Optional `NEXT_PUBLIC_WHATSAPP_NUMBER` set for the floating chat button
 - [ ] Google Search Console and Bing Webmaster Tools: verify, submit `sitemap.xml`
 - [ ] Google Business Profile (if there is a registered office), with the same name and description
 - [ ] Rich Results Test on home, a feature, a city and a guide
@@ -107,7 +101,7 @@ Accessibility: skip link, labelled navigation, breadcrumbs with `aria-current`, 
 
 ## 10. Roadmap
 
-1. **Next:** Arabic (right-to-left) and Hindi versions with `hreflang` (`en-AE`, `ar-AE`, `en-IN`, `hi-IN`); published AED and INR prices; real screenshots and a 60-second product video.
+1. **Next:** Arabic (right-to-left) and Hindi versions with `hreflang` (`en-AE`, `ar-AE`, `en-IN`, `hi-IN`); yearly billing option; real screenshots and a 60-second product video.
 2. Seasonal landing pages: Ramadan and Eid, Diwali, Dubai Shopping Festival, GITEX, wedding season.
 3. Interactive tools: pricing calculator, ROI calculator, "which plan fits" quiz.
 4. Verified named-competitor comparison pages, and alternative pages.

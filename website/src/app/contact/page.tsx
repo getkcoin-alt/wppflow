@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Clock, Globe2, ShieldCheck } from "lucide-react";
+import { Clock, Globe2, MessageCircle, ShieldCheck } from "lucide-react";
 import { Container, Crumbs } from "@/components/ui";
 import { ContactForm } from "@/components/ContactForm";
 import { JsonLd } from "@/components/JsonLd";
-import { absolute } from "@/lib/site";
+import { absolute, SITE, whatsappHref } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact Scriwo — Book a Demo or Start a Plan",
@@ -22,6 +22,9 @@ export default function ContactPage() {
             <p className="eyebrow">Contact</p>
             <h1 className="mt-4 text-4xl leading-tight sm:text-5xl">Let&apos;s get your team on Scriwo</h1>
             <p className="mt-6 text-lg text-fg-2">Book a demo, ask for a quote or start a plan. Online checkout is coming soon; until then, this form is the fastest way to get started.</p>
+            <a href={whatsappHref("Hi Scriwo, I would like a demo for my team.")} target="_blank" rel="noopener" className="btn-ghost mt-8">
+              <MessageCircle className="h-4 w-4 text-brand" aria-hidden="true" /> WhatsApp sales: {SITE.whatsappDisplay}
+            </a>
             <ul className="mt-10 space-y-5">
               <li className="flex gap-3"><Clock className="h-5 w-5 shrink-0 text-gold" aria-hidden="true" /><span className="text-fg-2">A real person replies within one business day.</span></li>
               <li className="flex gap-3"><Globe2 className="h-5 w-5 shrink-0 text-gold" aria-hidden="true" /><span className="text-fg-2">We work UAE and India business hours.</span></li>
