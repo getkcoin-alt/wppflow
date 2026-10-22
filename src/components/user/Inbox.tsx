@@ -1193,6 +1193,7 @@ export const Inbox: React.FC<InboxProps> = ({
         {activeChat && assistant?.available && (
           <RiwoTray
             riwo={riwo}
+            canManage={canManage}
             onUse={(text) => {
               setInputText(text);
               setIsNoteMode(false);

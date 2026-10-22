@@ -182,10 +182,13 @@ export function RiwoTray({
   riwo,
   onUse,
   onSaveNote,
+  canManage = false,
 }: {
   riwo: Riwo;
   onUse: (text: string) => void;
   onSaveNote?: (text: string) => void;
+  /** Owners and administrators are shown where to find out why Riwo failed */
+  canManage?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const { busy, outcome, error } = riwo;
@@ -207,7 +210,14 @@ export function RiwoTray({
       <div className={shell} role="alert">
         <div className="flex items-start gap-3">
           <RiwoAvatar size={28} />
-          <p className="flex-1 text-[14px] text-fg">{error}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] text-fg">{error}</p>
+            {canManage && (
+              <p className="mt-1 text-[12.5px] text-fg-3">
+                To see exactly why, open Team, then System, and press “Run a test” under Riwo.
+              </p>
+            )}
+          </div>
           <button type="button" aria-label="Dismiss" onClick={riwo.dismiss} className="h-7 w-7 grid place-items-center rounded-full text-fg-3 hover:text-fg hover:bg-surface-2">
             <X className="w-4 h-4" />
           </button>

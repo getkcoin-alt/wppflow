@@ -363,7 +363,22 @@ export interface AiSummary {
   text: string;
   sections: { label: string; text: string }[];
 }
+/** What the connection test found: the AI account, the models available and every attempt. */
+export interface AiTestResult {
+  provider: "openrouter" | "anthropic" | null;
+  ok: boolean;
+  /** The sentence to show when it isn't working */
+  error?: string;
+  /** Free models only: what OpenRouter says about the key */
+  account?: { freeTier: boolean | null; used: number | null; limit: number | null } | { error: string } | null;
+  freeModels?: number;
+  topModels?: string[];
+  attempts?: { model: string; ok?: boolean; status?: number; message?: string; ms?: number; skipped?: string }[];
+  model?: string;
+  sample?: string;
+}
 export const getAiStatus = (): Promise<AiStatus> => apiGet("/api/ai/status");
+export const testAi = (): Promise<AiTestResult> => apiPost("/api/ai/test", {});
 export const setAiEnabled = (enabled: boolean): Promise<AiStatus> =>
   apiRequest("/api/ai/settings", {
     method: "PUT",

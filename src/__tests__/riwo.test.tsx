@@ -23,14 +23,14 @@ const fakeClient = (over: Partial<AiClient> = {}) => {
 };
 
 // The composer's pieces wired together the way the inbox does it.
-function Harness({ client, chatId = "chat-1", startDraft = "", onSaveNote = vi.fn(), locked = false }: any) {
+function Harness({ client, chatId = "chat-1", startDraft = "", onSaveNote = vi.fn(), locked = false, canManage = false }: any) {
   const [draft, setDraft] = useState(startDraft);
   const riwo = useRiwo({ chatId, draft, client });
   return (
     <div>
       <input aria-label="draft" value={draft} onChange={(e) => setDraft(e.target.value)} />
       <RiwoButton riwo={riwo} locked={locked} />
-      <RiwoTray riwo={riwo} onUse={setDraft} onSaveNote={onSaveNote} />
+      <RiwoTray riwo={riwo} onUse={setDraft} onSaveNote={onSaveNote} canManage={canManage} />
     </div>
   );
 }
@@ -117,6 +117,20 @@ describe("Riwo in the composer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Second time lucky.")).toBeDefined();
     expect(suggestReply).toHaveBeenCalledTimes(2);
+  });
+
+  it("owners and admins are told where to see why it failed; agents aren't", async () => {
+    const fails = () => fakeClient({ suggestReply: vi.fn().mockRejectedValue(new Error("Riwo couldn't finish that. Please try again in a moment.")) });
+    const agent = render(<Harness client={fails()} />);
+    open();
+    fireEvent.click(menu().getByRole("button", { name: "Friendly" }));
+    await screen.findByRole("alert");
+    expect(screen.queryByText(/Run a test/)).toBeNull();
+    agent.unmount();
+    render(<Harness client={fails()} canManage />);
+    open();
+    fireEvent.click(menu().getByRole("button", { name: "Friendly" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/open Team, then System, and press .Run a test. under Riwo/);
   });
 
   it("an answer for one chat never shows in another, and a dismissed answer never comes back", async () => {

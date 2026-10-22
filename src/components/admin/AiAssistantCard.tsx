@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
-import { getAiStatus, getStoredTenantId, setAiEnabled } from "../../services/api";
+import { Check, Loader2, X } from "lucide-react";
+import { getAiStatus, getStoredTenantId, setAiEnabled, testAi, type AiTestResult } from "../../services/api";
 import { Notice, Pill } from "../ui/Page";
+import { btn } from "../ui/styles";
 
 // Where the text goes, said plainly, because it is the customers' own messages.
 const WHERE: Record<string, string> = {
@@ -21,6 +22,65 @@ const REASONS: Record<string, string> = {
   disabled: "Riwo is switched off for your company.",
 };
 
+// The plain-language reading of a test, so nobody has to interpret the raw attempts.
+function accountNote(result: AiTestResult): string | null {
+  const a = result.account;
+  if (!a) return null;
+  if ("error" in a) return `OpenRouter rejected the key: ${a.error}`;
+  if (a.freeTier)
+    return "This is a free OpenRouter account: about 50 free-model requests a day across the whole account. Buying $10 of credit once raises that to 1,000 a day.";
+  return null;
+}
+const short = (id: string) => id.replace(/:free$/, "");
+
+// What the test found, one line per model that was tried.
+function TestReport({ result }: { result: AiTestResult }) {
+  const note = accountNote(result);
+  return (
+    <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-4 text-[13.5px]" role="status">
+      <div className="flex items-center gap-2 font-medium text-fg">
+        <Pill tone={result.ok ? "ok" : "warn"} dot>
+          {result.ok ? "Working" : "Not working"}
+        </Pill>
+        {result.ok ? (
+          <span>
+            Riwo answered through <span className="font-mono text-[12.5px]">{short(result.model || "")}</span>
+          </span>
+        ) : (
+          <span>{result.error}</span>
+        )}
+      </div>
+      {note && <p className="mt-2 text-fg-2">{note}</p>}
+      {result.freeModels !== undefined && (
+        <p className="mt-2 text-fg-2">
+          {result.freeModels === 0
+            ? "No free models were found on the AI account, so OpenRouter's own free pick is used."
+            : `${result.freeModels} free models found. Best first: ${(result.topModels || []).map(short).join(", ")}.`}
+        </p>
+      )}
+      {!!result.attempts?.length && (
+        <ul className="mt-3 space-y-1.5">
+          {result.attempts.map((a, i) => (
+            <li key={i} className="flex items-start gap-2">
+              {a.ok ? (
+                <Check className="w-4 h-4 mt-0.5 shrink-0 text-ok" aria-label="Worked" />
+              ) : (
+                <X className="w-4 h-4 mt-0.5 shrink-0 text-danger" aria-label={a.skipped ? "Skipped" : "Failed"} />
+              )}
+              <span className="min-w-0">
+                <span className="font-mono text-[12.5px] text-fg break-all">{short(a.model)}</span>
+                <span className="text-fg-2">
+                  {a.ok ? ` answered${a.ms ? ` in ${(a.ms / 1000).toFixed(1)}s` : ""}` : a.skipped ? ` skipped: ${a.skipped}` : ` failed${a.status ? ` (${a.status})` : ""}${a.message ? `: ${a.message}` : ""}`}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // Owners and administrators decide whether their team uses Riwo, and can see how much of today's allowance is used.
 export function AiAssistantCard() {
   const tenant = getStoredTenantId();
@@ -30,7 +90,9 @@ export function AiAssistantCard() {
     queryFn: getAiStatus,
   });
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [testing, setTesting] = useState(false),
+    [result, setResult] = useState<AiTestResult | null>(null);
   const data = status.data;
   const toggle = async () => {
     if (!data) return;
@@ -46,6 +108,18 @@ export function AiAssistantCard() {
       setError(e.message || "Couldn't change the setting.");
     } finally {
       setBusy(false);
+    }
+  };
+  const runTest = async () => {
+    setTesting(true);
+    setError("");
+    try {
+      setResult(await testAi());
+    } catch (e: any) {
+      setResult(null);
+      setError(e.message || "Couldn't run the test.");
+    } finally {
+      setTesting(false);
     }
   };
   const canSwitch = data && data.reason !== "not_configured" && data.reason !== "plan";
@@ -119,6 +193,16 @@ export function AiAssistantCard() {
             />
           </div>
           <p className="mt-2 text-[12.5px] text-fg-3">The allowance is shared by everyone in your company and resets at midnight UTC.</p>
+        </div>
+      )}
+      {data && data.reason !== "plan" && (
+        <div className="mt-5">
+          <button type="button" className={btn("secondary", "sm")} disabled={testing} onClick={() => void runTest()}>
+            {testing && <Loader2 className="w-4 h-4 animate-spin" aria-hidden />}
+            {testing ? "Testing…" : "Run a test"}
+          </button>
+          <span className="ml-3 text-[12.5px] text-fg-3">Asks the AI one quick question and shows exactly what happened. It isn't counted against your company's daily allowance.</span>
+          {result && <TestReport result={result} />}
         </div>
       )}
       <details className="mt-5 text-[13.5px] text-fg-2">
