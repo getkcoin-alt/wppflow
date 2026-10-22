@@ -13,12 +13,16 @@ import { Copy } from "lucide-react";
 import { DEV_TABS } from "../layout/navigation";
 import { Field, Notice, Page, PageHeader, Pill, Segmented } from "../ui/Page";
 import { btn, inputCls, textareaCls } from "../ui/styles";
+import { FeatureLocked } from "../ui/FeatureLocked";
 export function DeveloperGuide({
   activeDevTab,
   onSelectDevTab,
   canManage = false,
+  apiPlan,
 }: {
   canManage?: boolean;
+  /** Set when the company's plan doesn't include API keys and webhooks: the plan's name */
+  apiPlan?: string;
   activeDevTab: DevSubTab;
   onSelectDevTab: (tab: DevSubTab) => void;
 }) {
@@ -32,12 +36,12 @@ export function DeveloperGuide({
   const keys = useQuery({
     queryKey: ["keys", tenant],
     queryFn: () => apiGet("/api/workspace/keys"),
-    enabled: canManage && activeDevTab === "keys",
+    enabled: canManage && activeDevTab === "keys" && !apiPlan,
   });
   const hooks = useQuery({
     queryKey: ["webhooks", tenant],
     queryFn: () => apiGet("/api/workspace/webhooks"),
-    enabled: canManage && activeDevTab === "webhooks",
+    enabled: canManage && activeDevTab === "webhooks" && !apiPlan,
     refetchInterval: 10000,
   });
   const run = async (fn: () => Promise<void>) => {
@@ -91,6 +95,9 @@ export function DeveloperGuide({
           </div>
         )}
 
+        {apiPlan && (activeDevTab === "keys" || activeDevTab === "webhooks") && (
+          <FeatureLocked feature="API keys and webhooks" plan={apiPlan} needs="Business" />
+        )}
         {activeDevTab === "docs" && (
           <div className={`${card} space-y-5`}>
             <p className="text-[14.5px] text-fg-2">
@@ -170,7 +177,7 @@ export function DeveloperGuide({
           </div>
         )}
 
-        {activeDevTab === "keys" && (
+        {activeDevTab === "keys" && !apiPlan && (
           <div className="space-y-4">
             <form
               className={`${card} grid gap-3 md:grid-cols-[1fr_200px_auto]`}
@@ -243,7 +250,7 @@ export function DeveloperGuide({
           </div>
         )}
 
-        {activeDevTab === "webhooks" && (
+        {activeDevTab === "webhooks" && !apiPlan && (
           <div className="space-y-4">
             <form
               className={`${card} space-y-3`}

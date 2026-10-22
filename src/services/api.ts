@@ -342,3 +342,49 @@ export const resendOwnerCredentials = (id: string) =>
   );
 export const assignSessionOwner = (name: string, userId: number) =>
   apiPatch(`/api/sessions/${encodeURIComponent(name)}/owner`, { userId });
+
+// ── AI assistant (Riwo) ──────────────────────────────────────────────────────────────────────────
+export type AiTone = "friendly" | "professional" | "brief";
+export type AiStyle = "polish" | "shorter" | "friendlier" | "formal";
+export interface AiStatus {
+  available: boolean;
+  /** Why it can't be used: no key on the server, the plan doesn't include it, or an admin switched it off */
+  reason: null | "not_configured" | "plan" | "disabled";
+  enabled: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
+  model?: string;
+}
+export interface AiSummary {
+  text: string;
+  sections: { label: string; text: string }[];
+}
+export const getAiStatus = (): Promise<AiStatus> => apiGet("/api/ai/status");
+export const setAiEnabled = (enabled: boolean): Promise<AiStatus> =>
+  apiRequest("/api/ai/settings", {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
+  });
+export const aiSuggestReply = (
+  conversationId: string,
+  tone: AiTone,
+): Promise<{ text: string; tone: AiTone }> =>
+  apiPost(
+    `/api/ai/conversations/${encodeURIComponent(conversationId)}/suggest-reply`,
+    { tone },
+  );
+export const aiSummary = (conversationId: string): Promise<AiSummary> =>
+  apiPost(
+    `/api/ai/conversations/${encodeURIComponent(conversationId)}/summary`,
+    {},
+  );
+export const aiImprove = (
+  text: string,
+  style: AiStyle,
+): Promise<{ text: string }> => apiPost("/api/ai/improve", { text, style });
+export const aiTranslate = (
+  text: string,
+  target: string,
+): Promise<{ text: string; target: string }> =>
+  apiPost("/api/ai/translate", { text, target });

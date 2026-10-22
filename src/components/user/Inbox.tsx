@@ -27,6 +27,9 @@ import { ScriwoMark } from "../brand/Logo";
 import { MediaBlock } from "./MediaBlock";
 import { MediaViewer } from "./MediaViewer";
 import { NumberSwitch } from "./NumberSwitch";
+import { RiwoButton, RiwoTray, TranslateMessage } from "./Riwo";
+import { useRiwo } from "../../hooks/useRiwo";
+import type { AiClient } from "../../services/ai";
 import { numberName, phoneText, sessionOfChat } from "../../utils/numbers";
 import { galleryItems } from "../../utils/viewer";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
@@ -64,6 +67,9 @@ interface InboxProps {
   onFilterChange?: (search: string, filter: string, sessionName: string) => void;
   /** The signed-in person, so their own number reads "(you)" */
   currentUserId?: number | string | null;
+  /** The AI assistant: usable, or shown as locked when the plan doesn't include it */
+  assistant?: { available: boolean; locked?: boolean };
+  aiClient?: AiClient;
   onSaveReply?: (data: {
     shortcut: string;
     title: string;
@@ -170,6 +176,8 @@ export const Inbox: React.FC<InboxProps> = ({
   onLoadOlder,
   onFilterChange,
   currentUserId,
+  assistant,
+  aiClient,
   onSaveReply,
   canManage = false,
   onOpenSessions,
@@ -211,6 +219,7 @@ export const Inbox: React.FC<InboxProps> = ({
   // Composer state
   const [inputText, setInputText] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
+  const composerInput = useRef<HTMLInputElement>(null);
   const [showCannedMenu, setShowCannedMenu] = useState(false);
 
   // Sync & Media state
@@ -240,6 +249,11 @@ export const Inbox: React.FC<InboxProps> = ({
   );
   // Switching chats closes the viewer: its photos belong to the chat it was opened from.
   useEffect(() => setViewerId(null), [activeChatId]);
+  const riwo = useRiwo({
+    chatId: activeChat?.id ?? null,
+    draft: inputText,
+    client: aiClient,
+  });
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -1011,9 +1025,22 @@ export const Inbox: React.FC<InboxProps> = ({
 
                       {/* Text Message */}
                       {(!msg.type || msg.type === "text") && (
-                        <p className="leading-[1.4] whitespace-pre-wrap break-words">
-                          {msg.text}
-                        </p>
+                        <>
+                          <p
+                            dir="auto"
+                            className="leading-[1.4] whitespace-pre-wrap break-words"
+                          >
+                            {msg.text}
+                          </p>
+                          {assistant?.available &&
+                            !isOut &&
+                            msg.text.trim().length > 1 && (
+                              <TranslateMessage
+                                text={msg.text}
+                                client={aiClient}
+                              />
+                            )}
+                        </>
                       )}
 
                       {/* Call Log */}
@@ -1162,9 +1189,26 @@ export const Inbox: React.FC<InboxProps> = ({
           </div>
         )}
 
+        {/* Riwo's draft, summary or translation, shown until it is used or dismissed */}
+        {activeChat && assistant?.available && (
+          <RiwoTray
+            riwo={riwo}
+            onUse={(text) => {
+              setInputText(text);
+              setIsNoteMode(false);
+              riwo.dismiss();
+              composerInput.current?.focus();
+            }}
+            onSaveNote={(text) => {
+              onSendMessage(activeChat.id, text, true);
+              riwo.dismiss();
+            }}
+          />
+        )}
+
         {/* ── Composer ── */}
         {activeChat && (
-          <div className="px-3 sm:px-6 pt-2 pb-3 sm:pb-4 shrink-0 z-10 bg-app">
+          <div className="px-3 sm:px-6 pt-2 pb-3 sm:pb-4 shrink-0 relative z-30 bg-app">
             <div
               className={`rounded-[26px] border bg-surface shadow-card transition-colors ${
                 isNoteMode ? "border-warn/50" : "border-line"
@@ -1199,17 +1243,25 @@ export const Inbox: React.FC<InboxProps> = ({
                     }`}
                   >
                     <Lock className="w-3 h-3" />
-                    <span>Team note</span>
+                    <span className="whitespace-nowrap">Team note</span>
                   </button>
                 </div>
 
-                <button
-                  onClick={() => setShowCannedMenu(!showCannedMenu)}
-                  className="text-[12.5px] font-medium text-fg-2 hover:text-fg flex items-center gap-1.5 px-2 h-7 rounded-full hover:bg-surface-2 transition"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-gold" />
-                  <span>Quick replies</span>
-                </button>
+                <div className="flex items-center gap-0.5">
+                  {assistant?.available && <RiwoButton riwo={riwo} />}
+                  {!assistant?.available && assistant?.locked && (
+                    <RiwoButton riwo={riwo} locked />
+                  )}
+                  <button
+                    onClick={() => setShowCannedMenu(!showCannedMenu)}
+                    aria-label="Quick replies"
+                    title="Quick replies"
+                    className="text-[12.5px] font-medium text-fg-2 hover:text-fg flex items-center gap-1.5 px-2 h-7 rounded-full hover:bg-surface-2 transition whitespace-nowrap"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-gold" />
+                    <span className="hidden sm:inline">Quick replies</span>
+                  </button>
+                </div>
               </div>
 
               <form
@@ -1266,6 +1318,7 @@ export const Inbox: React.FC<InboxProps> = ({
 
                 <div className="flex-1 relative">
                   <input
+                    ref={composerInput}
                     type="text"
                     value={inputText}
                     onChange={(e) => {

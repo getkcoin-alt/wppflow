@@ -35,6 +35,7 @@ import { Contacts } from "./components/user/Contacts";
 import { Campaigns } from "./components/user/Campaigns";
 import { Automations } from "./components/user/Automations";
 import { Dashboard } from "./components/user/Dashboard";
+import { FeatureLocked } from "./components/ui/FeatureLocked";
 import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
@@ -529,6 +530,10 @@ export function App() {
     conversations.error ||
     contactQuery.error ||
     history.error;
+  // Features the company's plan doesn't include are shown as locked rather than as screens that fail.
+  const planName: string = capabilities.data?.plan?.name || "current";
+  const locked = (feature: string) =>
+    capabilities.data?.plan?.features?.[feature] === false;
   const connected = sessions.filter((x) => x.status === "CONNECTED").length;
   const unreadChats = chats.filter((c) => c.unreadCount > 0).length;
   const go = (item: NavItem) => {
@@ -750,6 +755,10 @@ export function App() {
               mediaProgress={mediaProgress}
               onLoadMedia={loadMedia}
               onRefreshMedia={refreshMedia}
+              assistant={{
+                available: Boolean(capabilities.data?.ai?.available),
+                locked: capabilities.data?.ai?.reason === "plan",
+              }}
               onLoadAllMedia={(id) => void loadAllMedia(id)}
               onSendMessage={send}
               onSendAttachment={attachment}
@@ -865,7 +874,13 @@ export function App() {
           )}
           {view === "user" &&
             tab === "campaigns" &&
-            (manager ? (
+            (!manager ? (
+              <p className="p-5">
+                Campaigns require workspace administrator access.
+              </p>
+            ) : locked("broadcasts") ? (
+              <FeatureLocked feature="Broadcasts" plan={planName} needs="Growth" />
+            ) : (
               <Campaigns
                 campaigns={campaigns.data?.campaigns || []}
                 sessions={sessions}
@@ -884,22 +899,20 @@ export function App() {
                 isCreateModalOpen={campaignOpen}
                 setIsCreateModalOpen={setCampaignOpen}
               />
-            ) : (
-              <p className="p-5">
-                Campaigns require workspace administrator access.
-              </p>
             ))}
           {view === "user" &&
             tab === "automations" &&
-            (manager ? (
+            (!manager ? (
+              <p className="p-5">
+                Automations require workspace administrator access.
+              </p>
+            ) : locked("automations") ? (
+              <FeatureLocked feature="Automations" plan={planName} needs="Growth" />
+            ) : (
               <Automations
                 automations={automations.data?.automations || []}
                 onChanged={() => void refresh("automations")}
               />
-            ) : (
-              <p className="p-5">
-                Automations require workspace administrator access.
-              </p>
             ))}
           {view === "admin" && manager && (
             <Page>
@@ -924,13 +937,19 @@ export function App() {
                   )}
                 />
               )}
-              {adminTab === "audit" && <AuditLogs />}
+              {adminTab === "audit" &&
+                (locked("audit") ? (
+                  <FeatureLocked feature="The audit log" plan={planName} needs="Growth" />
+                ) : (
+                  <AuditLogs />
+                ))}
               {adminTab === "cluster" && <ClusterHealth />}
             </Page>
           )}
           {view === "developer" && (
             <DeveloperGuide
               canManage={manager}
+              apiPlan={locked("api") ? planName : undefined}
               activeDevTab={
                 !manager && (devTab === "keys" || devTab === "webhooks")
                   ? "docs"

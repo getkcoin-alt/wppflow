@@ -381,3 +381,77 @@ describe("an inbox with more than one WhatsApp number", () => {
     expect(screen.queryByText(/^via /)).toBeNull();
   });
 });
+
+describe("the AI assistant in the inbox", () => {
+  const messages = {
+    conv_1: [
+      { id: "m1", chatId: "conv_1", sender: "customer", text: "مرحبا، هل الشقة متاحة؟", type: "text", timestamp: "10:30 AM", status: "delivered" },
+      { id: "m2", chatId: "conv_1", sender: "agent", agentName: "Sam", text: "Yes it is.", type: "text", timestamp: "10:31 AM", status: "read" },
+    ] as ChatMessage[],
+  };
+  const aiClient = {
+    suggestReply: vi.fn().mockResolvedValue({ text: "Yes, shall we arrange a viewing?" }),
+    summarize: vi.fn(),
+    improve: vi.fn(),
+    translate: vi.fn().mockResolvedValue({ text: "Hello, is the flat available?" }),
+  };
+  const show = (assistant?: { available: boolean; locked?: boolean }) =>
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={messages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId="conv_1"
+        assistant={assistant}
+        aiClient={aiClient}
+        onSendMessage={vi.fn()}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+      />,
+    );
+
+  it("adds Ask Riwo to the composer and puts a suggestion in the message box when it is used", async () => {
+    show({ available: true });
+    fireEvent.click(screen.getByRole("button", { name: "Ask Riwo" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Ask Riwo" })).getByRole("button", { name: "Friendly" }));
+    expect(await screen.findByText("Yes, shall we arrange a viewing?")).toBeDefined();
+    expect(aiClient.suggestReply).toHaveBeenCalledWith("conv_1", "friendly");
+    const box = screen.getByLabelText("Write a message") as HTMLInputElement;
+    expect(box.value).toBe("");
+    fireEvent.click(screen.getByRole("button", { name: "Use this" }));
+    expect(box.value).toBe("Yes, shall we arrange a viewing?");
+    expect(screen.queryByText(/Written by AI/)).toBeNull();
+  });
+
+  it("offers to translate what a customer wrote, but not what the team wrote", async () => {
+    show({ available: true });
+    const links = screen.getAllByRole("button", { name: /Translate to/ });
+    expect(links).toHaveLength(1);
+    fireEvent.click(links[0]);
+    expect(await screen.findByText("Hello, is the flat available?")).toBeDefined();
+    expect(aiClient.translate).toHaveBeenCalledWith("مرحبا، هل الشقة متاحة؟", "English");
+  });
+
+  it("shows Arabic and other right-to-left text the right way round", () => {
+    show({ available: true });
+    expect(screen.getByText("مرحبا، هل الشقة متاحة؟").getAttribute("dir")).toBe("auto");
+  });
+
+  it("shows nothing at all when the assistant isn't available to this company", () => {
+    show({ available: false });
+    expect(screen.queryByRole("button", { name: "Ask Riwo" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Translate to/ })).toBeNull();
+    expect(screen.queryByText(/Riwo/)).toBeNull();
+  });
+
+  it("tells a plan that doesn't include it, instead of hiding it", () => {
+    show({ available: false, locked: true });
+    expect(screen.getByText("Riwo · Growth plan")).toBeDefined();
+    expect(screen.queryByRole("button", { name: /Translate to/ })).toBeNull();
+  });
+});

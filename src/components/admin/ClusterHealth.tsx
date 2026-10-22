@@ -4,6 +4,7 @@ import { apiGet, getStoredTenantId } from "../../services/api";
 import { Notice, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
 import { MediaStorageCard } from "./MediaStorageCard";
+import { AiAssistantCard } from "./AiAssistantCard";
 
 function Tile({
   label,
@@ -94,6 +95,7 @@ export function ClusterHealth() {
         </>
       )}
       <MediaStorageCard />
+      <AiAssistantCard />
     </section>
   );
 }
