@@ -1,14 +1,26 @@
-export const getBaseBackendUrl = () =>
-  import.meta.env.VITE_BACKEND_URL ||
-  (typeof window !== "undefined" &&
-  window.location.hostname.endsWith("vercel.app")
-    ? ""
-    : "http://localhost:8080");
-export const getSocketBackendUrl = () =>
-  import.meta.env.VITE_SOCKET_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  getBaseBackendUrl() ||
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", ""]);
+// On any hosted address (scriwo.com, www.scriwo.com, a Vercel preview) the app talks to the backend
+// through its own address, where Vercel forwards /api and /health. Only a developer machine uses
+// localhost. Matching on "vercel.app" alone sent every custom domain to the visitor's own computer.
+export const backendBaseFor = (hostname: string, configured?: string) =>
+  configured || (LOCAL_HOSTS.has(hostname) ? "http://localhost:8080" : "");
+export const socketUrlFor = (
+  hostname: string,
+  configured: { socket?: string; backend?: string } = {},
+) =>
+  configured.socket ||
+  configured.backend ||
+  backendBaseFor(hostname) ||
   "https://srv1628639.hstgr.cloud";
+const currentHost = () =>
+  typeof window !== "undefined" ? window.location.hostname : "";
+export const getBaseBackendUrl = () =>
+  backendBaseFor(currentHost(), import.meta.env.VITE_BACKEND_URL);
+export const getSocketBackendUrl = () =>
+  socketUrlFor(currentHost(), {
+    socket: import.meta.env.VITE_SOCKET_URL,
+    backend: import.meta.env.VITE_BACKEND_URL,
+  });
 export const resolveEndpoint = (path: string, base = getBaseBackendUrl()) =>
   `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 export const TOKEN_STORAGE_KEY = "wppflow_auth_token",
