@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { apiGet, getStoredTenantId } from "../../services/api";
 import { Notice, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
+import { MediaStorageCard } from "./MediaStorageCard";
 
 function Tile({
   label,
@@ -16,7 +17,7 @@ function Tile({
   return (
     <div className="card p-6">
       <p className="text-[13.5px] text-fg-2">{label}</p>
-      <p className="mt-2 text-[30px] leading-none font-semibold num tracking-tight">
+      <p className="mt-2 text-[26px] xl:text-[28px] leading-none font-semibold num tracking-tight whitespace-nowrap">
         {value}
       </p>
       {sub && <p className="mt-2 text-[13px] text-fg-3">{sub}</p>}
@@ -92,6 +93,7 @@ export function ClusterHealth() {
           <p className="text-[13px] text-fg-3">{data.note}</p>
         </>
       )}
+      <MediaStorageCard />
     </section>
   );
 }
