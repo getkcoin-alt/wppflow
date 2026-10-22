@@ -18,6 +18,7 @@ import {
   getLiveSessionStatus,
 } from "../../services/api";
 import { getSocket } from "../../services/socket";
+import { friendlyPairingError } from "../../utils/pairingError";
 import { EmptyState, Field, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import { Sheet } from "../ui/Sheet";
@@ -561,7 +562,9 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
               <h3 className="mt-5 text-[18px] font-semibold">
                 That didn’t work
               </h3>
-              <p className="mt-1.5 text-danger max-w-xs">{errorMessage}</p>
+              <p className="mt-1.5 text-danger max-w-xs break-words">
+                {friendlyPairingError(errorMessage)}
+              </p>
               <button
                 type="button"
                 onClick={handleStartPairing}
