@@ -29,6 +29,25 @@ no dedicated test yet.
 | Deploys check health and roll back on their own; the database is backed up before a change | Code | `scripts/deploy.sh`. The backup is best-effort: it is skipped, with a log line, if `pg_dump` is missing on the server |
 | "N backend test suites and N frontend tests run on every change" | Fixed | The site said 25 and 61; the real numbers are 30 and 146. Corrected in `website/src/lib/site.ts` |
 
+## Broadcasts and automations
+
+Reworked on 22 October 2026. Every line below is covered by an automated test.
+
+| Behaviour | Evidence |
+|---|---|
+| A broadcast is written in three steps (message, audience, review), from ten ready-made messages, with a live preview and the audience counted before anything is sent | `broadcast_wizard.test.tsx`, `broadcast-easy.test.js` |
+| A message with an unfilled [blank] or an unknown {{field}} is refused; {{first_name}}, {{name}} and {{company}} are filled in per person, and a contact known only by phone number is greeted as "there" | `broadcast-easy.test.js`, `broadcast_utils.test.ts` |
+| Send now, schedule, or save a draft; sending checks the number is connected and that someone would receive it; an earlier broadcast can be copied | `broadcast-easy.test.js` |
+| The owner can record permission, with a confirmation, for contacts nobody has decided on; a customer's STOP is never overridden | `broadcast-easy.test.js` |
+| A CSV `optin` column records permission and never undoes a STOP; a file without tags no longer wipes a contact's tags | `broadcast-easy.test.js`, `csv.test.ts` |
+| Customers manage their own permission: STOP takes them off broadcasts (the chat stays open for staff) and SUBSCRIBE puts them on | `automation-rules.test.js` |
+| 14 ready-made rules in four groups, in English, Arabic and Hindi keywords; every one passes the same checks as a hand-made rule; they start paused | `automation-rules.test.js`, `automations_screen.test.tsx` |
+| Rules start on keywords (contains, whole word or exact), a first message, or a message outside opening hours, and can reply, assign, tag, or record permission | `automation-rules.test.js` |
+| Safety: one automatic reply per message, a wait between repeats, six an hour at most per chat, and group chats are never answered | `automation-rules.test.js` |
+| A saved rule can be edited; rules saved before this behave as they always did | `automation-rules.test.js`, `automations_screen.test.tsx` |
+
+**Not yet proven live.** STOP and SUBSCRIBE work on messages that arrive. Nothing here sends to WhatsApp in tests: delivery is the existing, separately tested path.
+
 ## Plans
 
 Checked again on 22 October 2026, after the platform admin was given the choice of plan.

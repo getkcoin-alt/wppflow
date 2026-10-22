@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Megaphone, Pause, Play, Plus } from "lucide-react";
+import { Copy, Megaphone, Pause, Play, Plus } from "lucide-react";
 import type { WhatsAppSession } from "../../types";
-import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
-import { btn, inputCls, textareaCls } from "../ui/styles";
-import { Sheet } from "../ui/Sheet";
+import { EmptyState, Notice, Page, PageHeader, Pill } from "../ui/Page";
+import { btn } from "../ui/styles";
+import { BroadcastWizard, type BroadcastRequest } from "./BroadcastWizard";
 
 const STATUS_TONE: Record<
   string,
@@ -16,20 +16,38 @@ const STATUS_TONE: Record<
   paused: "warn",
 };
 
+// A running broadcast whose start time hasn't come yet is waiting, not sending.
+const waitingUntil = (c: any): Date | null => {
+  const at = c.scheduledFor ? new Date(c.scheduledFor) : null;
+  return c.status === "running" && at && at.getTime() > Date.now() ? at : null;
+};
+const statusLabel = (c: any) => {
+  const at = waitingUntil(c);
+  return at
+    ? `Starts ${at.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+    : c.status === "draft"
+      ? "Draft"
+      : c.status;
+};
+
 export function Campaigns({
   campaigns,
   sessions,
+  companyName,
   onAddCampaign,
   onStartCampaign,
   onStopCampaign,
+  onDuplicateCampaign,
   isCreateModalOpen,
   setIsCreateModalOpen,
 }: {
   campaigns: any[];
   sessions: WhatsAppSession[];
-  onAddCampaign: (data: any) => Promise<void>;
+  companyName: string;
+  onAddCampaign: (data: BroadcastRequest) => Promise<void>;
   onStartCampaign: (id: string) => Promise<void>;
   onStopCampaign: (id: string) => Promise<void>;
+  onDuplicateCampaign: (id: string) => Promise<void>;
   isCreateModalOpen: boolean;
   setIsCreateModalOpen: (open: boolean) => void;
 }) {
@@ -51,13 +69,13 @@ export function Campaigns({
       <PageHeader
         eyebrow="Reach"
         title="Broadcasts"
-        subtitle="Send only to contacts with recorded permission. Stopping prevents new sends; messages already sent cannot be recalled."
+        subtitle="Send one message to many customers, only to people who agreed to hear from you. Stopping prevents new sends; messages already sent cannot be recalled."
         actions={
           <button
             className={btn("primary")}
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <Plus className="w-4 h-4" /> New campaign
+            <Plus className="w-4 h-4" /> New broadcast
           </button>
         }
       />
@@ -67,117 +85,25 @@ export function Campaigns({
         </div>
       )}
 
-      <Sheet
+      <BroadcastWizard
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="New campaign"
-        subtitle="Saved as a draft. You choose when it starts."
-        footer={
-          <>
-            <button
-              type="button"
-              className={btn("ghost")}
-              onClick={() => setIsCreateModalOpen(false)}
-            >
-              Cancel
-            </button>
-            <button
-              form="campaign-form"
-              disabled={busy}
-              className={btn("primary")}
-            >
-              Save draft
-            </button>
-          </>
-        }
-      >
-        <form
-          id="campaign-form"
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const f = new FormData(e.currentTarget);
-            void act(async () => {
-              await onAddCampaign({
-                name: f.get("name"),
-                sessionName: f.get("session"),
-                targetSegment: f.get("segment") || "All Contacts",
-                templateText: f.get("message"),
-                scheduledFor: f.get("schedule")
-                  ? new Date(String(f.get("schedule"))).toISOString()
-                  : "",
-                antiBanDelaySeconds: Number(f.get("delay")),
-              });
-              setIsCreateModalOpen(false);
-            });
-          }}
-        >
-          <Field label="Name">
-            <input required name="name" className={inputCls} />
-          </Field>
-          <Field label="WhatsApp number">
-            <select name="session" required className={inputCls}>
-              <option value="">Select a number</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.sessionKey}>
-                  {s.displayName} — {s.status}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field
-            label="Contact tag"
-            hint="Leave empty to send to all opted-in contacts."
-          >
-            <input name="segment" className={inputCls} />
-          </Field>
-          <Field
-            label="Message"
-            hint="Use {{name}} to insert the contact’s name."
-          >
-            <textarea
-              required
-              name="message"
-              maxLength={10000}
-              className={textareaCls}
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Seconds between sends"
-              hint="At least 4, to protect your number."
-            >
-              <input
-                name="delay"
-                type="number"
-                min={4}
-                max={60}
-                defaultValue={4}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Start time" hint="Optional.">
-              <input
-                name="schedule"
-                type="datetime-local"
-                className={inputCls}
-              />
-            </Field>
-          </div>
-        </form>
-      </Sheet>
+        sessions={sessions}
+        companyName={companyName}
+        onCreate={onAddCampaign}
+      />
 
       {!campaigns.length ? (
         <EmptyState
           icon={<Megaphone className="w-6 h-6" />}
-          title="No campaigns yet"
-          body="Create a draft to reach your opted-in contacts."
+          title="No broadcasts yet"
+          body="Pick a ready-made message, choose who gets it, and send. You see exactly how many people will receive it before anything goes out."
           action={
             <button
               className={btn("primary")}
               onClick={() => setIsCreateModalOpen(true)}
             >
-              <Plus className="w-4 h-4" /> New campaign
+              <Plus className="w-4 h-4" /> New broadcast
             </button>
           }
         />
@@ -190,6 +116,7 @@ export function Campaigns({
               ? Math.min(100, Math.round((sent / total) * 100))
               : 0;
             const running = c.status === "running";
+            const waiting = waitingUntil(c);
             return (
               <li key={c.id} className="card p-5 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -197,35 +124,51 @@ export function Campaigns({
                     <h2 className="text-[18px] font-semibold truncate">
                       {c.name}
                     </h2>
-                    <div className="mt-1.5">
-                      <Pill tone={STATUS_TONE[c.status] || "neutral"} dot>
-                        {c.status}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <Pill tone={waiting ? "info" : STATUS_TONE[c.status] || "neutral"} dot>
+                        {statusLabel(c)}
                       </Pill>
+                      <span className="text-[12.5px] text-fg-3">
+                        To {c.targetSegment && c.targetSegment !== "All Contacts" ? `“${c.targetSegment}”` : "everyone who agreed"}
+                      </span>
                     </div>
                   </div>
-                  <button
-                    disabled={busy || c.status === "completed"}
-                    onClick={() =>
-                      void act(() =>
-                        running ? onStopCampaign(c.id) : onStartCampaign(c.id),
-                      )
-                    }
-                    className={btn(running ? "secondary" : "primary", "sm")}
-                  >
-                    {running ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                    {running
-                      ? "Stop"
-                      : c.status === "completed"
-                        ? "Completed"
-                        : c.status === "stopped" || c.status === "paused"
-                          ? "Resume"
-                          : "Start"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={busy}
+                      onClick={() => void act(() => onDuplicateCampaign(c.id))}
+                      className={btn("ghost", "sm")}
+                      aria-label={`Copy ${c.name}`}
+                    >
+                      <Copy className="w-4 h-4" /> Copy
+                    </button>
+                    <button
+                      disabled={busy || c.status === "completed"}
+                      onClick={() =>
+                        void act(() =>
+                          running ? onStopCampaign(c.id) : onStartCampaign(c.id),
+                        )
+                      }
+                      className={btn(running ? "secondary" : "primary", "sm")}
+                    >
+                      {running ? (
+                        <Pause className="w-4 h-4" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                      {running
+                        ? "Stop"
+                        : c.status === "completed"
+                          ? "Completed"
+                          : c.status === "stopped" || c.status === "paused"
+                            ? "Resume"
+                            : "Start"}
+                    </button>
+                  </div>
                 </div>
+                {c.templateText && (
+                  <p className="mt-3 text-[14px] text-fg-2 line-clamp-2 whitespace-pre-wrap">{c.templateText}</p>
+                )}
                 <div className="mt-5 h-1.5 rounded-full bg-surface-2 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gold-gradient transition-[width] duration-700"

@@ -39,14 +39,22 @@ export function parseContactsCsv(input: string) {
     );
 }
 export function contactsCsv(
-  rows: { name: string; phone: string; email?: string; tags?: string[] }[],
+  rows: {
+    name: string;
+    phone: string;
+    email?: string;
+    tags?: string[];
+    optIn?: boolean;
+  }[],
 ) {
   const quote = (s: string) =>
     `"${(/^[=+@-]/.test(s) ? "'" : "") + s.replaceAll('"', '""')}"`;
+  // "optin" is "yes" for people who agreed to broadcasts and empty for everyone else, so importing the file
+  // again never changes anyone's permission to "no" by accident.
   return [
-    "name,phone,email,tags",
+    "name,phone,email,tags,optin",
     ...rows.map((r) =>
-      [r.name, r.phone, r.email || "", (r.tags || []).join(";")]
+      [r.name, r.phone, r.email || "", (r.tags || []).join(";"), r.optIn ? "yes" : ""]
         .map(quote)
         .join(","),
     ),

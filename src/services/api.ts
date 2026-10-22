@@ -272,12 +272,99 @@ export const markConversationRead = (id: string) =>
   apiPost(`/api/conversations/${id}/read`, {});
 export const fetchCampaigns = () => apiGet("/api/campaigns");
 export const addCampaign = (data: any) => apiPost("/api/campaigns", data);
+/** A ready-made broadcast. Parts the sender must write are [in square brackets]. */
+export interface CampaignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  text: string;
+  blanks: string[];
+}
+/** Who a broadcast to one tag would reach, and who it would leave out */
+export interface Audience {
+  tag: string;
+  total: number;
+  willReceive: number;
+  /** Nobody has recorded whether they agree to receive broadcasts */
+  notAsked: number;
+  /** Said STOP, were marked as not wanting messages, or are blocked */
+  optedOut: number;
+  tags: { tag: string; count: number; willReceive: number }[];
+  unsubscribeRule: { exists: boolean; enabled: boolean };
+}
+export const fetchCampaignTemplates = (): Promise<{
+  templates: CampaignTemplate[];
+  variables: string[];
+}> => apiGet("/api/campaigns/templates");
+export const fetchAudience = (tag?: string): Promise<Audience> =>
+  apiGet(
+    `/api/campaigns/audience${tag && tag !== "All Contacts" ? `?tag=${encodeURIComponent(tag)}` : ""}`,
+  );
+export const duplicateCampaign = (id: string) =>
+  apiPost(`/api/campaigns/${encodeURIComponent(id)}/duplicate`, {});
+/** The owner confirms the people in this audience agreed to hear from the business */
+export const recordPermission = (
+  tag?: string,
+): Promise<{ recorded: number; audience: Audience }> =>
+  apiPost("/api/contacts/permission", {
+    confirm: true,
+    ...(tag && tag !== "All Contacts" ? { tag } : {}),
+  });
 export const startCampaign = (id: string) =>
   apiPost(`/api/campaigns/${id}/start`, {});
 export const stopCampaign = (id: string) =>
   apiPost(`/api/campaigns/${id}/stop`, {});
 export const fetchAutomations = () => apiGet("/api/automations");
 export const addAutomation = (data: any) => apiPost("/api/automations", data);
+export const updateAutomation = (id: string, data: any) =>
+  apiRequest(`/api/automations/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export type RuleTrigger = "keyword" | "first_message" | "after_hours";
+export type RuleAction =
+  | "reply_text"
+  | "assign_agent"
+  | "add_tag"
+  | "opt_in"
+  | "opt_out";
+export interface OpeningHours {
+  timezone: string;
+  /** 1 is Monday, 7 is Sunday */
+  days: number[];
+  start: string;
+  end: string;
+}
+/** What a rule is made of, as it is sent to and from the server */
+export interface RuleDraft {
+  name: string;
+  triggerType: RuleTrigger;
+  triggerCondition: string;
+  actionType: RuleAction;
+  actionSummary: string;
+  templateId?: string | null;
+  config: {
+    match?: "contains" | "word" | "exact";
+    hours?: OpeningHours;
+    reply?: string;
+    cooldownHours?: number;
+  };
+}
+export interface AutomationTemplate {
+  id: string;
+  group: string;
+  name: string;
+  description: string;
+  /** Shown when the person has to write the answer themselves */
+  hint?: string;
+  recommended?: boolean;
+  rule: Omit<RuleDraft, "name">;
+  /** What must be filled in before it can be saved */
+  needs: ("reply" | "teammate" | "hours")[];
+}
+export const fetchAutomationTemplates = (): Promise<{
+  templates: AutomationTemplate[];
+}> => apiGet("/api/automations/templates");
 export const toggleAutomationApi = (id: string) =>
   apiPatch(`/api/automations/${id}/toggle`, {});
 export const removeAutomation = (id: string) =>

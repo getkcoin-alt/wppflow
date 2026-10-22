@@ -885,8 +885,13 @@ export function App() {
               <Campaigns
                 campaigns={campaigns.data?.campaigns || []}
                 sessions={sessions}
+                companyName={user.company_name}
                 onAddCampaign={async (data) => {
                   await run(() => api.addCampaign(data));
+                  await refresh("campaigns");
+                }}
+                onDuplicateCampaign={async (id) => {
+                  await run(() => api.duplicateCampaign(id));
                   await refresh("campaigns");
                 }}
                 onStartCampaign={async (id) => {
@@ -912,6 +917,7 @@ export function App() {
             ) : (
               <Automations
                 automations={automations.data?.automations || []}
+                teammates={team.data?.members || []}
                 onChanged={() => void refresh("automations")}
               />
             ))}

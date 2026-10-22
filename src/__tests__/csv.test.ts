@@ -15,3 +15,14 @@ it("escapes formulas and embedded quotes on export", () => {
   const csv = contactsCsv([{ name: '=HYPERLINK("x")', phone: "15551234567" }]);
   expect(csv).toContain('"\'=HYPERLINK(""x"")"');
 });
+it("exports who agreed to broadcasts, and leaves everyone else empty", () => {
+  const csv = contactsCsv([
+    { name: "Aisha", phone: "1", tags: ["vip"], optIn: true },
+    { name: "Bilal", phone: "2", optIn: false },
+  ]);
+  const [header, aisha, bilal] = csv.split("\r\n");
+  expect(header).toBe("name,phone,email,tags,optin");
+  expect(aisha).toBe('"Aisha","1","","vip","yes"');
+  expect(bilal).toBe('"Bilal","2","","",""');
+  expect(parseContactsCsv(csv)[0]).toMatchObject({ name: "Aisha", optin: "yes" });
+});
