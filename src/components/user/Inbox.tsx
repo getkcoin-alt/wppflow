@@ -15,18 +15,16 @@ import {
   MessageSquare,
   Loader2,
   Video,
-  Image as ImageIcon,
-  Maximize2,
   X,
   PanelRightClose,
   PanelRightOpen,
   Clock,
-  FileText,
   ShoppingBag,
   ChevronLeft,
   Plus,
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
+import { MediaBlock } from "./MediaBlock";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
 import { safeAvatarFallback } from "../../utils/avatar";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -69,6 +67,17 @@ interface InboxProps {
   onOpenSessions?: () => void;
   /** Whether WhatsApp history for the open chat is loading, or why it could not be loaded */
   historyStatus?: { loading: boolean; note?: string } | null;
+  /** Files in the open chat that were never saved */
+  mediaPending?: number;
+  mediaProgress?: {
+    chatId: string;
+    loading: boolean;
+    saved: number;
+    failed: number;
+    note?: string;
+  } | null;
+  onLoadMedia?: (chatId: string, messageId: string) => Promise<void>;
+  onLoadAllMedia?: (chatId: string) => void;
 }
 
 const avatarFallback = safeAvatarFallback;
@@ -138,6 +147,10 @@ export const Inbox: React.FC<InboxProps> = ({
   onToggleResolve,
   onOpenChat,
   historyStatus,
+  mediaPending = 0,
+  mediaProgress,
+  onLoadMedia,
+  onLoadAllMedia,
   onSyncInbox,
   teammates = [],
   mediaEnabled = false,
@@ -800,6 +813,54 @@ export const Inbox: React.FC<InboxProps> = ({
                 </div>
               </div>
 
+              {activeChat &&
+                (mediaPending > 0 || mediaProgress?.chatId === activeChat.id) &&
+                onLoadAllMedia && (
+                  <div
+                    role="status"
+                    className="mx-auto mb-3 max-w-md glass ring-1 ring-line rounded-2xl px-4 py-3 text-[13.5px] text-fg flex items-center gap-3"
+                  >
+                    {mediaProgress?.chatId === activeChat.id &&
+                    mediaProgress.loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-gold shrink-0" />
+                        <span>
+                          Loading files from WhatsApp… {mediaProgress.saved}{" "}
+                          saved
+                          {mediaProgress.failed
+                            ? `, ${mediaProgress.failed} unavailable`
+                            : ""}
+                        </span>
+                      </>
+                    ) : mediaProgress?.chatId === activeChat.id &&
+                      !mediaPending ? (
+                      <span>
+                        {mediaProgress.note
+                          ? mediaProgress.note
+                          : `${mediaProgress.saved} file${mediaProgress.saved === 1 ? "" : "s"} saved.`}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="flex-1">
+                          {mediaPending} file{mediaPending === 1 ? "" : "s"} in
+                          this chat
+                          {mediaPending === 1 ? " isn't" : " aren't"} saved yet.
+                          {mediaProgress?.chatId === activeChat.id &&
+                          mediaProgress.failed
+                            ? ` ${mediaProgress.failed} could not be loaded.`
+                            : ""}
+                        </span>
+                        <button
+                          className="shrink-0 font-medium text-gold hover:underline"
+                          onClick={() => onLoadAllMedia(activeChat.id)}
+                        >
+                          Load them all
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
               {currentMessages.length === 0 &&
                 (historyStatus?.loading ? (
                   <div
@@ -935,95 +996,25 @@ export const Inbox: React.FC<InboxProps> = ({
                         </div>
                       )}
 
-                      {/* Image Message */}
-                      {msg.type === "image" && (
-                        <div className="space-y-1">
-                          {msg.mediaUrl ? (
-                            <div
-                              className="relative group cursor-pointer overflow-hidden rounded-lg max-w-sm"
-                              onClick={() =>
-                                setSelectedImageModal(msg.mediaUrl!)
-                              }
-                            >
-                              <img
-                                src={msg.mediaUrl}
-                                alt={msg.fileName || "Photo"}
-                                className="w-full max-h-72 object-cover rounded-lg"
-                              />
-                              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Maximize2 className="w-5 h-5 text-fg drop-shadow-md" />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 p-2.5 bg-black/20 rounded-lg">
-                              <ImageIcon className="w-5 h-5 text-brand" />
-                              <span className="text-xs text-fg-2">
-                                {msg.text || "Photo"}
-                              </span>
-                            </div>
-                          )}
-                          {msg.text && msg.text !== "📷 Photo" && (
-                            <p className="leading-relaxed whitespace-pre-wrap pt-0.5">
-                              {msg.text}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Video Message */}
-                      {msg.type === "video" && (
-                        <div className="space-y-1">
-                          {msg.mediaUrl && (
-                            <video
-                              src={msg.mediaUrl}
-                              controls
-                              className="max-w-full rounded-lg"
-                            />
-                          )}
-                          {msg.text && msg.text !== "🎥 Video" && (
-                            <p className="leading-relaxed whitespace-pre-wrap pt-0.5">
-                              {msg.text}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Audio / Voice Note */}
-                      {msg.type === "audio" &&
-                        (msg.mediaUrl ? (
-                          <audio
-                            controls
-                            preload="none"
-                            src={msg.mediaUrl}
-                            aria-label="Voice message"
-                          />
-                        ) : (
-                          <p>Audio attachment unavailable</p>
-                        ))}
-
-                      {/* Document Message */}
-                      {msg.type === "document" && (
-                        <div className="flex items-center gap-2.5 p-2 bg-black/20 rounded-lg border border-line">
-                          <FileText className="w-6 h-6 text-danger shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <div className="font-medium text-fg text-xs truncate">
-                              {msg.fileName || "Document"}
-                            </div>
-                            {msg.mediaUrl && (
-                              <a
-                                href={msg.mediaUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-brand"
-                              >
-                                Download document
-                              </a>
-                            )}
-                            <div className="text-[10px] text-fg-2 font-mono">
-                              {msg.fileSize || "PDF"}
-                            </div>
-                          </div>
-                        </div>
+                      {/* Photos, videos, voice notes, stickers and files */}
+                      {[
+                        "image",
+                        "video",
+                        "audio",
+                        "document",
+                        "sticker",
+                        "gif",
+                      ].includes(String(msg.type)) && (
+                        <MediaBlock
+                          msg={msg}
+                          onZoom={setSelectedImageModal}
+                          onLoad={
+                            onLoadMedia
+                              ? (messageId) =>
+                                  onLoadMedia(activeChat.id, messageId)
+                              : undefined
+                          }
+                        />
                       )}
 
                       {/* Timestamp & Status Tick (Bottom Right aligned) */}

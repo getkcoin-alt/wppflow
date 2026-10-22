@@ -246,4 +246,63 @@ describe("Inbox component", () => {
       ).toBeDefined();
     });
   });
+
+  describe("files that were never saved", () => {
+    const base = (extra: Record<string, unknown>) =>
+      render(
+        <Inbox
+          chats={mockChats}
+          messages={mockMessages}
+          contacts={mockContacts}
+          cannedReplies={[]}
+          sessions={mockSessions}
+          selectedChatId="conv_1"
+          onSendMessage={vi.fn()}
+          onSendAttachment={vi.fn()}
+          onAssignAgent={vi.fn()}
+          onToggleResolve={vi.fn()}
+          onOpenChat={vi.fn()}
+          onSyncInbox={vi.fn()}
+          {...extra}
+        />,
+      );
+
+    it("offers to load a whole chat's files at once", () => {
+      const loadAll = vi.fn();
+      base({ mediaPending: 3, onLoadAllMedia: loadAll });
+      expect(
+        screen.getByText(/3 files in this chat aren't saved yet/),
+      ).toBeDefined();
+      fireEvent.click(screen.getByText("Load them all"));
+      expect(loadAll).toHaveBeenCalledWith("conv_1");
+    });
+
+    it("shows progress while loading and the outcome afterwards", () => {
+      const { unmount } = base({
+        mediaPending: 2,
+        onLoadAllMedia: vi.fn(),
+        mediaProgress: { chatId: "conv_1", loading: true, saved: 4, failed: 1 },
+      });
+      expect(
+        screen.getByText(/Loading files from WhatsApp… 4 saved, 1 unavailable/),
+      ).toBeDefined();
+      unmount();
+      base({
+        mediaPending: 0,
+        onLoadAllMedia: vi.fn(),
+        mediaProgress: {
+          chatId: "conv_1",
+          loading: false,
+          saved: 5,
+          failed: 0,
+        },
+      });
+      expect(screen.getByText("5 files saved.")).toBeDefined();
+    });
+
+    it("shows no banner when everything is saved", () => {
+      base({ mediaPending: 0, onLoadAllMedia: vi.fn() });
+      expect(screen.queryByText(/saved yet/)).toBeNull();
+    });
+  });
 });

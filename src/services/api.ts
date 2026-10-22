@@ -243,6 +243,18 @@ export function fetchConversationMessages(
     if (v !== undefined && v !== null) q.set(k, String(v));
   return apiGet(`/api/conversations/${id}/messages?${q}`);
 }
+// Loads one file that was never saved from WhatsApp, then keeps it.
+export const fetchMessageMedia = (conversationId: string, messageId: string) =>
+  apiPost(
+    `/api/conversations/${conversationId}/messages/${messageId}/media`,
+    {},
+  );
+// Loads a small batch of the chat's unsaved files; call again with nextBefore until it is null.
+export const fetchPendingMedia = (
+  conversationId: string,
+  params: { before?: string | null; limit?: number } = {},
+) =>
+  apiPost(`/api/conversations/${conversationId}/media/fetch-pending`, params);
 export const fetchMessages = (id: string, sync = false) =>
   fetchConversationMessages(id, { sync });
 export const sendMessageToConversation = (

@@ -136,6 +136,11 @@ export interface ChatMessage {
     | "call_log"
     | "e2e_notification";
   mediaUrl?: string;
+  /** Opens in the browser (PDF, photo, video, audio) instead of downloading */
+  openUrl?: string;
+  mimeType?: string;
+  /** ready: saved. not_saved: can be loaded from WhatsApp. storage_off / unavailable: cannot. */
+  mediaState?: "ready" | "not_saved" | "storage_off" | "unavailable";
   fileName?: string;
   fileSize?: string;
   audioDuration?: string;

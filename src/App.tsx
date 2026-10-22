@@ -305,6 +305,13 @@ export function App() {
   // Opening a chat also asks WhatsApp for its recent history, once per chat per visit. The inbox only
   // backfills the most recent chats up front, so without this an older chat can open empty.
   const syncedChats = useRef(new Set<string>());
+  const [mediaProgress, setMediaProgress] = useState<{
+    chatId: string;
+    loading: boolean;
+    saved: number;
+    failed: number;
+    note?: string;
+  } | null>(null);
   const [historyState, setHistoryState] = useState<{
     id: string;
     loading: boolean;
@@ -349,6 +356,33 @@ export function App() {
     },
     [refresh],
   );
+  // Files that were never saved are fetched from WhatsApp when someone asks for them.
+  const loadMedia = async (chatId: string, messageId: string) => {
+    await api.fetchMessageMedia(chatId, messageId);
+    await refresh("messages");
+  };
+  const loadAllMedia = async (chatId: string) => {
+    setMediaProgress({ chatId, loading: true, saved: 0, failed: 0 });
+    let before: string | null = null,
+      saved = 0,
+      failed = 0,
+      note: string | undefined;
+    try {
+      for (let batch = 0; batch < 100; batch++) {
+        const r = await api.fetchPendingMedia(chatId, { before });
+        saved += r.saved;
+        failed += r.failed.length;
+        if (r.stopped) note = r.stopped;
+        before = r.nextBefore;
+        setMediaProgress({ chatId, loading: true, saved, failed, note });
+        await refresh("messages");
+        if (!before) break;
+      }
+    } catch (e: any) {
+      note = e.message;
+    }
+    setMediaProgress({ chatId, loading: false, saved, failed, note });
+  };
   // Open a chat from anywhere (a notification, a toast): fetch it if the list has not
   // loaded it yet, then show it in the inbox.
   useEffect(() => {
@@ -688,6 +722,10 @@ export function App() {
               historyStatus={
                 historyState?.id === selected ? historyState : null
               }
+              mediaPending={history.data?.pages[0]?.mediaPending || 0}
+              mediaProgress={mediaProgress}
+              onLoadMedia={loadMedia}
+              onLoadAllMedia={(id) => void loadAllMedia(id)}
               onSendMessage={send}
               onSendAttachment={attachment}
               onAssignAgent={(id, name) => {
