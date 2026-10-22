@@ -20,6 +20,16 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
   robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   category: "business software",
+  // Search engine ownership codes, set in Vercel when each console asks for one (Bing and Google are verified already).
+  verification: {
+    ...(process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION } : {}),
+    ...(process.env.NEXT_PUBLIC_YANDEX_VERIFICATION ? { yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION } : {}),
+    other: {
+      ...(process.env.NEXT_PUBLIC_BING_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION } : {}),
+      ...(process.env.NEXT_PUBLIC_NAVER_VERIFICATION ? { "naver-site-verification": process.env.NEXT_PUBLIC_NAVER_VERIFICATION } : {}),
+      ...(process.env.NEXT_PUBLIC_BAIDU_VERIFICATION ? { "baidu-site-verification": process.env.NEXT_PUBLIC_BAIDU_VERIFICATION } : {}),
+    },
+  },
 };
 
 export const viewport: Viewport = {
