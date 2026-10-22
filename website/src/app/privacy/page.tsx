@@ -20,9 +20,9 @@ export default function PrivacyPage() {
         <h2 className="mb-3 mt-10 text-xl">What this covers</h2>
         <p>This notice covers the public Scriwo website. Data inside the Scriwo app is handled under the agreement with your company.</p>
         <h2 className="mb-3 mt-10 text-xl">What we collect</h2>
-        <p>When you send the contact form, we receive the details you type: your name, email, and optionally phone, company, country, team size, what you are interested in and your message, plus the page you came from. We do not set advertising cookies. Your light or dark theme choice is stored only in your own browser.</p>
+        <p>When you send the contact form, we receive the details you type: your name, email, and optionally phone, company, country, team size, what you are interested in and your message, plus the page you came from. Advertising cookies are only set if you accept them (see Analytics below). Your light or dark theme choice is stored only in your own browser.</p>
         <h2 className="mb-3 mt-10 text-xl">Analytics</h2>
-        <p>We measure visits and clicks with Vercel Web Analytics, which uses no cookies, and Microsoft Clarity with its cookies turned off. Google Analytics sets cookies only if you click Accept on the cookie notice; if you decline, it receives cookieless signals only. You can change your choice by clearing this site&apos;s data in your browser.</p>
+        <p>We measure visits and clicks with Vercel Web Analytics, which uses no cookies, and Microsoft Clarity with its cookies turned off. Google cookies (for analytics and for measuring our Google Ads) are set only if you click Accept on the cookie notice; if you decline, Google receives cookieless signals only and nothing is used for ad personalisation. You can change your choice by clearing this site&apos;s data in your browser.</p>
         <h2 className="mb-3 mt-10 text-xl">Why we use it</h2>
         <p>Only to reply to you, prepare a quote and set up your company if you decide to use Scriwo. We do not sell your details or add you to a mailing list.</p>
         <h2 className="mb-3 mt-10 text-xl">Where it goes</h2>

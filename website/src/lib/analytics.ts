@@ -18,7 +18,7 @@ export function track(name: EventName, data: EventData = {}) {
   } catch {}
 }
 
-// Visitor's choice about analytics cookies (Google Analytics). Stored only in their browser.
+// Visitor's choice about Google cookies (Analytics and Ads measurement). Stored only in their browser.
 export const CONSENT_KEY = "scriwo_cookie_consent";
 export type Consent = "granted" | "denied";
 
@@ -37,7 +37,12 @@ export function saveConsent(choice: Consent) {
   } catch {}
   try {
     const w = window as unknown as { gtag?: (...args: unknown[]) => void };
-    w.gtag?.("consent", "update", { analytics_storage: choice });
+    w.gtag?.("consent", "update", {
+      analytics_storage: choice,
+      ad_storage: choice,
+      ad_user_data: choice,
+      ad_personalization: choice,
+    });
   } catch {}
 }
 
