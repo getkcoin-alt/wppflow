@@ -27,7 +27,7 @@ export const COMPARISONS: Comparison[] = [
       { label: "@mention teammates", scriwo: "Yes", them: "No" },
       { label: "Audit log", scriwo: "Yes", them: "No" },
       { label: "API keys and webhooks", scriwo: "Yes", them: "No" },
-      { label: "Price", scriwo: "From AED 299 / ₹2,499 a month per company", them: "Free" },
+      { label: "Price", scriwo: "Free for 1 number; teams from AED 299 / ₹2,499 a month", them: "Free" },
     ],
     verdict: "Use the WhatsApp Business app on its own if one person answers every message. Add Scriwo when a team does.",
   },

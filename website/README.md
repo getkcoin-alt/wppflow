@@ -37,6 +37,6 @@ Until online payments are approved (`PAYMENTS_LIVE` in `src/content/plans.ts`), 
 
 ## Deploying on Vercel
 
-1. Create a new Vercel project from this repository with **Root Directory** set to `website`.
+1. Create a new Vercel project from this repository with **Root Directory** set to `website`. `website/vercel.json` pins the Next.js settings so the dashboard's root `vercel.json` (Vite, `dist`, release check) never applies here.
 2. Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` and `BACKEND_URL` (see `.env.example`). `NEXT_PUBLIC_WHATSAPP_NUMBER` is optional.
 3. Move the app to `app.scriwo.com` before pointing `www.scriwo.com` at this project. The step-by-step is in section 2 of `../docs/website-plan.md`.

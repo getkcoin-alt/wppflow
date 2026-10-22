@@ -1,5 +1,6 @@
 export const INTERESTS = [
   { value: "demo", label: "A demo for my team" },
+  { value: "free", label: "Start free (1 number)" },
   { value: "pricing", label: "Pricing and a quote" },
   { value: "starter", label: "Start the Starter plan" },
   { value: "growth", label: "Start the Growth plan" },
