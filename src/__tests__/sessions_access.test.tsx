@@ -40,20 +40,20 @@ const props = {
 describe("per-staff WhatsApp sessions", () => {
   it("shows the staff owner of every session to managers", () => {
     render(<SessionManager {...props} canManage sessions={[session()]} />);
-    expect(screen.getByText(/Staff owner: Sam Staff/)).toBeTruthy();
-    expect(screen.getByText("Pair WhatsApp Account")).toBeTruthy();
+    expect(screen.getByText("Sam Staff")).toBeTruthy();
+    expect(screen.getByText("Connect a number")).toBeTruthy();
   });
 
   it("lets staff connect their own number without manager controls", () => {
     render(<SessionManager {...props} sessions={[]} />);
     expect(screen.getByText("Connect my WhatsApp")).toBeTruthy();
-    expect(screen.queryByText(/Staff owner/)).toBeNull();
+    expect(screen.queryByText("Sam Staff")).toBeNull();
   });
 
   it("offers reconnect once the staff member already has a session", () => {
     render(<SessionManager {...props} sessions={[session()]} />);
     expect(screen.getByText("Reconnect my WhatsApp")).toBeTruthy();
-    expect(screen.queryByText(/Staff owner/)).toBeNull();
+    expect(screen.queryByText("Sam Staff")).toBeNull();
   });
 
   it("forces a temporary password to be replaced", () => {

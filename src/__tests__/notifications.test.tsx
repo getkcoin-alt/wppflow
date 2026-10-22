@@ -89,7 +89,7 @@ describe("notification bell", () => {
       />,
     );
     fireEvent.click(screen.getByLabelText("Notifications"));
-    fireEvent.click(screen.getByText(/Turn on desktop alerts/));
+    fireEvent.click(screen.getByText(/desktop alerts/));
     expect(enable).toHaveBeenCalled();
     rerender(
       <NotificationBell
@@ -100,7 +100,7 @@ describe("notification bell", () => {
         onOpen={() => {}}
       />,
     );
-    expect(screen.queryByText(/Turn on desktop alerts/)).toBeNull();
+    expect(screen.queryByText(/desktop alerts/)).toBeNull();
   });
 
   it("marks all read from the panel", () => {

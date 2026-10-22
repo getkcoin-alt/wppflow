@@ -62,7 +62,7 @@ describe("owner set-password link", () => {
       setPassword: false,
     });
     render(<LoginPage onAuthSuccess={() => {}} />);
-    expect(await screen.findByText("Join your team on WppFlow")).toBeTruthy();
+    expect(await screen.findByText("Join your team on Scriwo")).toBeTruthy();
     expect(
       screen.getByText(/current password of your existing account/),
     ).toBeTruthy();

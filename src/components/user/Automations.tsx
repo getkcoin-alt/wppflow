@@ -1,9 +1,14 @@
 import { useState } from "react";
+import { Bot, Plus, Trash2 } from "lucide-react";
 import {
   addAutomation,
   toggleAutomationApi,
   removeAutomation,
 } from "../../services/api";
+import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
+import { btn, inputCls } from "../ui/styles";
+import { Sheet } from "../ui/Sheet";
+
 export function Automations({
   automations,
   onChanged,
@@ -27,30 +32,45 @@ export function Automations({
     }
   };
   return (
-    <section className="space-y-5">
-      <header className="flex justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Bot Flows & Triggers</h1>
-          <p className="text-sm text-slate-400 mt-2">
-            Keyword rules apply to new incoming customer messages. New rules are
-            paused until you enable them.
-          </p>
-        </div>
-        <button
-          onClick={() => setOpen(!open)}
-          className="bg-emerald-600 p-3 rounded-xl"
-        >
-          New rule
-        </button>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Automate"
+        title="Automations"
+        subtitle="Keyword rules apply to new incoming customer messages. New rules start paused until you enable them."
+        actions={
+          <button onClick={() => setOpen(true)} className={btn("primary")}>
+            <Plus className="w-4 h-4" /> New rule
+          </button>
+        }
+      />
       {error && (
-        <p role="alert" className="text-rose-300">
-          {error}
-        </p>
+        <div className="mb-4">
+          <Notice tone="error">{error}</Notice>
+        </div>
       )}
-      {open && (
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title="New rule"
+        subtitle="It starts paused, so you can review it before it goes live."
+        footer={
+          <>
+            <button
+              type="button"
+              className={btn("ghost")}
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </button>
+            <button form="rule-form" disabled={busy} className={btn("primary")}>
+              Save paused rule
+            </button>
+          </>
+        }
+      >
         <form
-          className="bg-[#111b21] rounded-xl p-5 space-y-3"
+          id="rule-form"
+          className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
@@ -67,62 +87,76 @@ export function Automations({
         >
           {[
             ["name", "Rule name"],
-            ["keyword", "Match keyword"],
+            ["keyword", "When a message contains"],
             ["value", "Reply text or exact teammate name"],
           ].map(([name, label]) => (
-            <label key={name} className="block">
-              {label}
-              <input
-                required
-                name={name}
-                className="block bg-[#202c33] p-2 w-full rounded"
-              />
-            </label>
+            <Field key={name} label={label}>
+              <input required name={name} className={inputCls} />
+            </Field>
           ))}
-          <label className="block">
-            Action
-            <select name="action" className="block bg-[#202c33] p-2 w-full">
-              <option value="reply_text">Send reply</option>
-              <option value="assign_agent">Assign teammate</option>
+          <Field label="Then">
+            <select name="action" className={inputCls}>
+              <option value="reply_text">Send a reply</option>
+              <option value="assign_agent">Assign a teammate</option>
             </select>
-          </label>
-          <button disabled={busy} className="bg-emerald-600 p-2 rounded">
-            Save paused rule
-          </button>
+          </Field>
         </form>
-      )}
-      <div className="grid md:grid-cols-2 gap-4">
-        {automations.map((a) => (
-          <article
-            key={a.id}
-            className="bg-[#111b21] p-5 rounded-xl border border-[#2a3942]"
-          >
-            <h2 className="font-bold">{a.name}</h2>
-            <p className="text-slate-400 my-2">When: {a.triggerCondition}</p>
-            <p>{a.actionSummary}</p>
-            <p className="text-xs my-3">
-              Completed executions: {a.executionsCount}
-            </p>
-            <button
-              disabled={busy}
-              onClick={() => void run(() => toggleAutomationApi(a.id))}
-              className="text-emerald-400"
-            >
-              {a.isEnabled ? "Pause" : "Enable"}
+      </Sheet>
+
+      {!automations.length ? (
+        <EmptyState
+          icon={<Bot className="w-6 h-6" />}
+          title="No automation rules yet"
+          body="Reply or assign a teammate automatically when a customer writes a keyword."
+          action={
+            <button onClick={() => setOpen(true)} className={btn("primary")}>
+              <Plus className="w-4 h-4" /> New rule
             </button>
-            <button
-              disabled={busy}
-              className="ml-4 text-rose-300"
-              onClick={() => void run(() => removeAutomation(a.id))}
-            >
-              Delete
-            </button>
-          </article>
-        ))}
-      </div>
-      {!automations.length && (
-        <p className="text-slate-400">No automation rules configured.</p>
+          }
+        />
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {automations.map((a) => (
+            <article key={a.id} className="card p-6 flex flex-col">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-[18px] font-semibold">{a.name}</h2>
+                <Pill tone={a.isEnabled ? "ok" : "neutral"} dot>
+                  {a.isEnabled ? "Live" : "Paused"}
+                </Pill>
+              </div>
+              <p className="mt-3 text-[14px] text-fg-2">
+                When a message contains{" "}
+                <span className="text-fg font-medium">
+                  “{a.triggerCondition}”
+                </span>
+              </p>
+              <p className="mt-2 text-[15px] text-fg leading-relaxed">
+                {a.actionSummary}
+              </p>
+              <p className="mt-4 text-[12.5px] text-fg-3">
+                Completed executions: {a.executionsCount}
+              </p>
+              <div className="mt-5 pt-4 border-t border-line flex items-center justify-between">
+                <button
+                  disabled={busy}
+                  onClick={() => void run(() => toggleAutomationApi(a.id))}
+                  className={btn("secondary", "sm")}
+                >
+                  {a.isEnabled ? "Pause" : "Enable"}
+                </button>
+                <button
+                  disabled={busy}
+                  aria-label={`Delete ${a.name}`}
+                  className="h-9 w-9 grid place-items-center rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
+                  onClick={() => void run(() => removeAutomation(a.id))}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
-    </section>
+    </Page>
   );
 }

@@ -23,7 +23,10 @@ import {
   Clock,
   FileText,
   ShoppingBag,
+  ChevronLeft,
+  Plus,
 } from "lucide-react";
+import { ScriwoMark } from "../brand/Logo";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
 import { safeAvatarFallback } from "../../utils/avatar";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -63,6 +66,7 @@ interface InboxProps {
     text: string;
   }) => Promise<void>;
   canManage?: boolean;
+  onOpenSessions?: () => void;
 }
 
 const avatarFallback = safeAvatarFallback;
@@ -142,6 +146,7 @@ export const Inbox: React.FC<InboxProps> = ({
   onFilterChange,
   onSaveReply,
   canManage = false,
+  onOpenSessions,
 }) => {
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "groups">(
     "all",
@@ -150,7 +155,11 @@ export const Inbox: React.FC<InboxProps> = ({
   const [activeChatId, setActiveChatId] = useState<string | null>(
     selectedChatId || null,
   );
-  const [showCrmPanel, setShowCrmPanel] = useState(true);
+  const [showCrmPanel, setShowCrmPanel] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 1280,
+  );
+  // Phones show the list first and the conversation after a tap; wider screens show both.
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   // Automatically select and load messages for the active or first chat
   useEffect(() => {
@@ -292,7 +301,7 @@ export const Inbox: React.FC<InboxProps> = ({
     if (msg.status === "uncertain")
       return (
         <span
-          className="text-amber-300"
+          className="text-warn"
           title="Delivery uncertain. Check WhatsApp before retrying."
         >
           ?
@@ -303,7 +312,7 @@ export const Inbox: React.FC<InboxProps> = ({
     if (msg.status === "failed") {
       return (
         <span
-          className="text-rose-400 font-bold text-[10px]"
+          className="text-danger font-bold text-[10px]"
           title="Failed to deliver"
         >
           !
@@ -313,20 +322,20 @@ export const Inbox: React.FC<InboxProps> = ({
     if (msg.status === "read" || msg.ack === 3 || msg.ack === 4) {
       return (
         <span title="Read">
-          <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />
+          <CheckCheck className="w-3.5 h-3.5 text-info" />
         </span>
       );
     }
     if (msg.status === "delivered" || msg.ack === 2) {
       return (
         <span title="Delivered">
-          <CheckCheck className="w-3.5 h-3.5 text-[#8696a0]" />
+          <CheckCheck className="w-3.5 h-3.5 text-fg-2" />
         </span>
       );
     }
     return (
       <span title="Sent">
-        <Check className="w-3.5 h-3.5 text-[#8696a0]" />
+        <Check className="w-3.5 h-3.5 text-fg-2" />
       </span>
     );
   };
@@ -334,142 +343,149 @@ export const Inbox: React.FC<InboxProps> = ({
   // Empty state: no connected sessions
   if (connectedSessions.length === 0 && chats.length === 0) {
     return (
-      <div className="flex h-[calc(100vh-80px)] bg-[#111b21] rounded-2xl border border-[#222e35] overflow-hidden shadow-2xl items-center justify-center">
-        <div className="text-center space-y-4 max-w-sm px-6">
-          <div className="w-16 h-16 bg-[#202c33] rounded-2xl flex items-center justify-center mx-auto border border-[#2a3942]">
-            <MessageSquare className="w-8 h-8 text-[#00a884]" />
-          </div>
-          <h3 className="text-[#e9edef] font-bold text-lg">
-            No WhatsApp Session Connected
+      <div className="flex h-full min-h-[70vh] bg-surface items-center justify-center animate-fade">
+        <div className="text-center space-y-5 max-w-sm px-6">
+          <ScriwoMark size={64} className="mx-auto drop-shadow-2xl" />
+          <h3 className="text-fg font-semibold text-xl">
+            Connect your first WhatsApp number
           </h3>
-          <p className="text-[#8696a0] text-sm leading-relaxed">
-            Pair a WhatsApp account from the{" "}
-            <strong className="text-[#e9edef]">Sessions</strong> tab to start
-            receiving and sending messages in the Shared Team Inbox.
+          <p className="text-fg-2 text-[15px] leading-relaxed">
+            Link a phone in a minute and every conversation lands here, shared
+            with your team.
           </p>
+          {onOpenSessions && (
+            <button
+              onClick={onOpenSessions}
+              className="inline-flex items-center gap-2 rounded-full bg-fg text-app px-5 h-11 text-sm font-semibold hover:opacity-90 transition"
+            >
+              <Plus className="w-4 h-4" />
+              Connect WhatsApp
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] bg-[#111b21] rounded-2xl border border-[#222e35] overflow-hidden shadow-2xl">
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* COLUMN 1: WhatsApp Web Left Pane (Chat List & Filter Tabs)         */}
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      <div className="w-80 sm:w-96 border-r border-[#222e35] flex flex-col bg-[#111b21] shrink-0">
-        {/* Top Header Bar */}
-        <div className="h-15 px-4 bg-[#202c33] border-b border-[#222e35] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-[#111b21] flex items-center justify-center text-[#00a884] font-bold text-sm ring-1 ring-[#00a884]/40">
-                W
-              </div>
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-[#00a884] rounded-full ring-2 ring-[#202c33]" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-sm text-[#e9edef] leading-tight">
-                WhatsApp Inbox
-              </h2>
-              <div className="text-[11px] text-[#00a884] flex items-center gap-1 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse" />
-                <span>Connected ({connectedSessions.length})</span>
-              </div>
+    <div className="flex h-full min-h-0 bg-surface overflow-hidden">
+      {/* ── Conversations ─────────────────────────────────────────────────── */}
+      <div
+        className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} w-full lg:w-[380px] lg:border-r border-line flex-col bg-surface shrink-0 min-h-0`}
+      >
+        <div className="px-5 pt-5 pb-3 flex items-start justify-between shrink-0">
+          <div>
+            <h2 className="text-[26px] font-semibold leading-tight text-fg">
+              Inbox
+            </h2>
+            <div className="mt-0.5 text-[13px] text-fg-2 flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-ok opacity-60 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-ok" />
+              </span>
+              {connectedSessions.length === 1
+                ? "1 number connected"
+                : `${connectedSessions.length} numbers connected`}
             </div>
           </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              title="Sync WhatsApp chats & contacts"
-              className="p-2 rounded-full text-[#aebac1] hover:text-[#00a884] hover:bg-[#111b21] transition-all disabled:opacity-40"
-            >
-              {isSyncing ? (
-                <Loader2 className="w-4 h-4 animate-spin text-[#00a884]" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            title="Refresh from WhatsApp"
+            aria-label="Refresh from WhatsApp"
+            className="h-10 w-10 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition disabled:opacity-40"
+          >
+            {isSyncing ? (
+              <Loader2 className="w-[18px] h-[18px] animate-spin" />
+            ) : (
+              <RefreshCw className="w-[18px] h-[18px]" />
+            )}
+          </button>
         </div>
 
         {syncStatus && (
-          <div className="px-3 py-1 bg-[#182229] border-b border-[#222e35] text-[11px] text-[#00a884] text-center font-medium animate-fade-in">
+          <div className="mx-5 mb-2 px-3 py-1.5 rounded-xl bg-brand/10 text-[12px] text-brand text-center font-medium animate-fade">
             {syncStatus}
           </div>
         )}
 
-        {/* Search Bar & WhatsApp Web Style Filter Pills */}
-        <div className="p-2.5 border-b border-[#222e35] space-y-2">
-          <div className="relative flex items-center bg-[#202c33] rounded-lg border border-transparent focus-within:border-[#00a884]">
-            <Search className="w-4 h-4 text-[#8696a0] ml-3 shrink-0" />
+        <div className="px-4 pb-3 space-y-3 shrink-0">
+          <div className="relative flex items-center bg-surface-2 rounded-2xl h-11 ring-1 ring-transparent focus-within:ring-gold/60 transition">
+            <Search className="w-4 h-4 text-fg-3 ml-3.5 shrink-0" />
             <input
               type="text"
-              placeholder="Search or start new chat"
+              placeholder="Search conversations"
+              aria-label="Search conversations"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent pl-2.5 pr-8 py-1.5 text-xs text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
+              className="w-full bg-transparent pl-2.5 pr-9 text-[15px] focus:outline-none"
             />
             {searchQuery && (
               <button
+                aria-label="Clear search"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 text-[#8696a0] hover:text-[#e9edef]"
+                className="absolute right-3 text-fg-3 hover:text-fg"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 pt-0.5">
-            <button
-              onClick={() => setFilterTab("all")}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                filterTab === "all"
-                  ? "bg-[#00a884] text-[#111b21] font-semibold shadow-sm"
-                  : "bg-[#202c33] text-[#8696a0] hover:text-[#e9edef] hover:bg-[#222e35]"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterTab("unread")}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
-                filterTab === "unread"
-                  ? "bg-[#00a884] text-[#111b21] font-semibold shadow-sm"
-                  : "bg-[#202c33] text-[#8696a0] hover:text-[#e9edef] hover:bg-[#222e35]"
-              }`}
-            >
-              <span>Unread</span>
-              {chats.some((c) => c.unreadCount > 0) && (
-                <span
-                  className={`w-2 h-2 rounded-full ${filterTab === "unread" ? "bg-[#111b21]" : "bg-[#00a884]"}`}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => setFilterTab("groups")}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                filterTab === "groups"
-                  ? "bg-[#00a884] text-[#111b21] font-semibold shadow-sm"
-                  : "bg-[#202c33] text-[#8696a0] hover:text-[#e9edef] hover:bg-[#222e35]"
-              }`}
-            >
-              Groups
-            </button>
+          <div
+            className="flex items-center gap-1 p-1 bg-surface-2 rounded-2xl"
+            role="tablist"
+            aria-label="Filter conversations"
+          >
+            {(
+              [
+                ["all", "All"],
+                ["unread", "Unread"],
+                ["groups", "Groups"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={filterTab === key}
+                onClick={() => setFilterTab(key)}
+                className={`flex-1 h-8 rounded-xl text-[13px] font-medium transition flex items-center justify-center gap-1.5 ${
+                  filterTab === key
+                    ? "bg-surface text-fg shadow-card"
+                    : "text-fg-2 hover:text-fg"
+                }`}
+              >
+                {label}
+                {key === "unread" && chats.some((c) => c.unreadCount > 0) && (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand-solid text-white text-[10px] font-semibold grid place-items-center num">
+                    {chats.filter((c) => c.unreadCount > 0).length}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* WhatsApp Web Chat List */}
+        {/* Conversation list */}
         <div
           ref={chatListRef}
-          className="flex-1 overflow-y-auto divide-y divide-[#202c33]/70"
+          className="flex-1 overflow-y-auto px-2 pb-3 min-h-0"
         >
-          {isLoading && (
-            <p role="status" className="p-3 text-xs text-[#8696a0]">
-              Loading conversations…
-            </p>
+          {isLoading && filteredChats.length === 0 && (
+            <div
+              role="status"
+              aria-label="Loading conversations"
+              className="px-4 py-2 space-y-3"
+            >
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <div className="skeleton h-12 w-12 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-3.5 w-1/2" />
+                    <div className="skeleton h-3 w-4/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
           <div
             style={
@@ -480,8 +496,8 @@ export const Inbox: React.FC<InboxProps> = ({
             }
           >
             {filteredChats.length === 0 ? (
-              <div className="p-8 text-center text-[#8696a0] text-xs space-y-2">
-                <MessageSquare className="w-8 h-8 text-[#8696a0]/40 mx-auto" />
+              <div className="p-8 text-center text-fg-2 text-sm space-y-2">
+                <MessageSquare className="w-8 h-8 text-fg-3 mx-auto" />
                 <p>
                   {searchQuery
                     ? `No chats match "${searchQuery}"`
@@ -490,7 +506,7 @@ export const Inbox: React.FC<InboxProps> = ({
                 {!searchQuery && (
                   <button
                     onClick={handleSync}
-                    className="mt-2 px-3 py-1.5 bg-[#00a884] hover:bg-[#00a884]/90 text-[#111b21] text-xs font-bold rounded-lg transition-all"
+                    className="mt-2 px-3 py-1.5 bg-brand-solid hover:bg-brand-solid/90 text-white text-xs font-bold rounded-lg transition-all"
                   >
                     Import WhatsApp Chats
                   </button>
@@ -509,9 +525,11 @@ export const Inbox: React.FC<InboxProps> = ({
                     key={chat.id}
                     role="button"
                     tabIndex={0}
+                    aria-current={isActive ? "true" : undefined}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         setActiveChatId(chat.id);
+                        setMobileChatOpen(true);
                         onOpenChat(chat.id);
                       }
                     }}
@@ -529,21 +547,21 @@ export const Inbox: React.FC<InboxProps> = ({
                     }
                     onClick={() => {
                       setActiveChatId(chat.id);
+                      setMobileChatOpen(true);
                       onOpenChat(chat.id);
                     }}
-                    className={`px-3 py-3 cursor-pointer transition-all flex items-center gap-3 hover:bg-[#202c33]/70 ${
-                      isActive ? "bg-[#2a3942]" : "bg-[#111b21]"
+                    className={`group px-3 py-3 my-0.5 cursor-pointer rounded-2xl transition-colors flex items-center gap-3 ${
+                      isActive ? "bg-surface-2" : "hover:bg-surface-2/60"
                     }`}
                   >
-                    {/* Avatar */}
                     <div className="relative shrink-0">
                       <img
                         src={
                           chat.avatar ||
                           avatarFallback(chat.contactName, chat.isGroup)
                         }
-                        alt={chat.contactName}
-                        className="w-12 h-12 rounded-full object-cover ring-1 ring-[#2a3942]"
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = avatarFallback(
                             chat.contactName,
@@ -552,50 +570,63 @@ export const Inbox: React.FC<InboxProps> = ({
                         }}
                       />
                       {chat.isGroup && (
-                        <span className="absolute -bottom-0.5 -right-0.5 bg-[#202c33] p-1 rounded-full text-[#aebac1] ring-1 ring-[#111b21]">
-                          <Users className="w-3 h-3 text-[#00a884]" />
+                        <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-[18px] h-[18px] rounded-full bg-surface ring-2 ring-surface text-fg-2">
+                          <Users className="w-2.5 h-2.5" />
                         </span>
                       )}
                     </div>
 
-                    {/* Chat Info */}
-                    <div className="flex-1 min-w-0 border-b border-[#202c33]/30 pb-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-[#e9edef] truncate max-w-[150px]">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span
+                          className={`text-[15px] truncate ${chat.unreadCount > 0 ? "font-semibold text-fg" : "font-medium text-fg"}`}
+                        >
                           {chat.contactName}
                         </span>
                         <span
-                          className={`text-[11px] shrink-0 ${chat.unreadCount > 0 ? "text-[#00a884] font-medium" : "text-[#8696a0]"}`}
+                          className={`text-[12px] shrink-0 num ${chat.unreadCount > 0 ? "text-brand font-medium" : "text-fg-3"}`}
                         >
                           {formattedTime}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="text-xs text-[#8696a0] truncate flex items-center gap-1 max-w-[180px]">
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <div
+                          className={`text-[13.5px] truncate flex items-center gap-1 min-w-0 ${chat.unreadCount > 0 ? "text-fg-2" : "text-fg-3"}`}
+                        >
                           {isOut && (
                             <span className="shrink-0">
                               {chat.lastMessage?.status === "read" ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />
+                                <CheckCheck className="w-3.5 h-3.5 text-info" />
                               ) : chat.lastMessage?.status === "delivered" ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-[#8696a0]" />
+                                <CheckCheck className="w-3.5 h-3.5" />
                               ) : chat.lastMessage?.status === "sending" ? (
-                                <Clock className="w-3 h-3 text-[#8696a0]" />
+                                <Clock className="w-3 h-3" />
                               ) : (
-                                <Check className="w-3.5 h-3.5 text-[#8696a0]" />
+                                <Check className="w-3.5 h-3.5" />
                               )}
                             </span>
                           )}
                           <span className="truncate">
-                            {chat.lastMessage?.text || "—"}
+                            {chat.lastMessage?.text || "No messages yet"}
                           </span>
                         </div>
 
-                        {chat.unreadCount > 0 && (
-                          <span className="bg-[#00a884] text-[#111b21] text-[11px] font-bold px-1.5 py-0.2 rounded-full min-w-4 text-center leading-tight">
-                            {chat.unreadCount}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {chat.assignedTo && (
+                            <span
+                              title={`Assigned to ${chat.assignedTo}`}
+                              className="w-5 h-5 rounded-full bg-gold/15 text-gold text-[10px] font-semibold grid place-items-center"
+                            >
+                              {chat.assignedTo.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                          {chat.unreadCount > 0 && (
+                            <span className="bg-brand-solid text-white text-[11px] font-semibold px-1.5 rounded-full min-w-[20px] h-5 grid place-items-center num">
+                              {chat.unreadCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -606,7 +637,7 @@ export const Inbox: React.FC<InboxProps> = ({
           {hasMoreChats && (
             <button
               onClick={onLoadMoreChats}
-              className="w-full p-3 text-[#00a884] text-sm"
+              className="w-full p-3 text-brand text-sm"
             >
               Load more conversations
             </button>
@@ -614,21 +645,27 @@ export const Inbox: React.FC<InboxProps> = ({
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* COLUMN 2: Active Chat Area (WhatsApp Web Viewport & Messages)       */}
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col bg-[#0b141a] min-w-0 relative">
-        {/* WhatsApp Web Chat Header */}
+      {/* ── Conversation ──────────────────────────────────────────────────── */}
+      <div
+        className={`${mobileChatOpen ? "flex" : "hidden lg:flex"} flex-1 flex-col bg-app min-w-0 min-h-0 relative`}
+      >
         {activeChat ? (
-          <div className="h-15 px-4 bg-[#202c33] border-b border-[#222e35] flex items-center justify-between gap-3 shrink-0 z-10 shadow-sm">
+          <div className="h-[68px] px-3 sm:px-5 glass border-b border-line flex items-center justify-between gap-3 shrink-0 z-10">
             <div className="flex items-center gap-3 min-w-0">
+              <button
+                aria-label="Back to conversations"
+                onClick={() => setMobileChatOpen(false)}
+                className="lg:hidden h-10 w-10 -ml-1 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
               <img
                 src={
                   activeChat.avatar ||
                   avatarFallback(activeChat.contactName, activeChat.isGroup)
                 }
-                alt={activeChat.contactName}
-                className="w-10 h-10 rounded-full object-cover ring-1 ring-[#00a884]/40 shrink-0"
+                alt=""
+                className="w-10 h-10 rounded-full object-cover shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = avatarFallback(
                     activeChat.contactName,
@@ -637,52 +674,44 @@ export const Inbox: React.FC<InboxProps> = ({
                 }}
               />
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm text-[#e9edef] truncate">
-                    {activeChat.contactName}
-                  </span>
-                  {activeChat.isGroup ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#182229] text-[#aebac1] border border-[#2a3942]">
-                      {activeChat.groupMembersCount || "Group"} Members
-                    </span>
-                  ) : (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-[#00a884]/15 text-[#00a884] font-medium border border-[#00a884]/30">
-                      WhatsApp conversation
-                    </span>
-                  )}
+                <div className="font-semibold text-[16px] text-fg truncate leading-tight">
+                  {activeChat.contactName}
                 </div>
-                <div className="text-[11px] text-[#8696a0] font-mono truncate">
-                  {activeChat.phone}
+                <div className="text-[12.5px] text-fg-3 truncate num">
+                  {activeChat.isGroup
+                    ? `${activeChat.groupMembersCount || ""} ${activeChat.groupMembersCount ? "members" : "Group"}`
+                    : activeChat.phone}
+                  {activeChat.isClosed && (
+                    <span className="ml-2 text-ok">Resolved</span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="flex items-center gap-1.5">
-              {/* Agent Assignment */}
-              <div className="hidden sm:flex items-center gap-1.5 bg-[#111b21] border border-[#2a3942] rounded-lg px-2.5 py-1 text-xs text-[#aebac1]">
-                <UserCheck className="w-3.5 h-3.5 text-[#00a884]" />
+            <div className="flex items-center gap-1">
+              <label className="hidden md:flex items-center gap-2 h-9 pl-2.5 pr-1.5 rounded-full bg-surface-2 text-[13px] text-fg-2 hover:text-fg transition">
+                <UserCheck className="w-4 h-4 text-gold" />
+                <span className="sr-only">Assign conversation</span>
                 <select
                   value={activeChat.assignedTo || "Unassigned"}
                   onChange={(e) => onAssignAgent(activeChat.id, e.target.value)}
-                  className="bg-transparent text-xs text-[#e9edef] focus:outline-none cursor-pointer"
+                  className="bg-transparent text-fg focus:outline-none cursor-pointer max-w-[140px] truncate pr-1"
                 >
-                  <option value="Unassigned" className="bg-[#111b21]">
+                  <option value="Unassigned" className="bg-surface">
                     Unassigned
                   </option>
                   {teammates.map((member) => (
                     <option
                       key={member.id}
                       value={member.name}
-                      className="bg-[#111b21]"
+                      className="bg-surface"
                     >
                       {member.name}
                     </option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              {/* Sync Chat */}
               <button
                 onClick={async () => {
                   if (!activeChat.id || isSyncingChat) return;
@@ -694,91 +723,82 @@ export const Inbox: React.FC<InboxProps> = ({
                   }
                 }}
                 disabled={isSyncingChat}
-                title="Sync recent messages from WhatsApp engine"
-                className="p-2 rounded-lg text-[#aebac1] hover:text-[#00a884] hover:bg-[#111b21] transition-all disabled:opacity-40"
+                title="Load earlier messages from WhatsApp"
+                aria-label="Load earlier messages from WhatsApp"
+                className="h-10 w-10 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition disabled:opacity-40"
               >
                 <RefreshCw
-                  className={`w-4 h-4 ${isSyncingChat ? "animate-spin text-[#00a884]" : ""}`}
+                  className={`w-[18px] h-[18px] ${isSyncingChat ? "animate-spin" : ""}`}
                 />
               </button>
 
-              {/* Resolve / Close Conversation */}
               <button
                 onClick={() => onToggleResolve(activeChat.id)}
-                title="Resolve Conversation"
-                className="p-2 rounded-lg text-[#aebac1] hover:text-[#00a884] hover:bg-[#111b21] transition-all"
+                title={
+                  activeChat.isClosed
+                    ? "Reopen conversation"
+                    : "Mark as resolved"
+                }
+                aria-label={
+                  activeChat.isClosed
+                    ? "Reopen conversation"
+                    : "Mark as resolved"
+                }
+                className={`h-10 w-10 grid place-items-center rounded-full transition ${activeChat.isClosed ? "text-ok bg-ok/10" : "text-fg-2 hover:text-fg hover:bg-surface-2"}`}
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-[18px] h-[18px]" />
               </button>
 
-              {/* Toggle CRM Drawer */}
               <button
                 onClick={() => setShowCrmPanel(!showCrmPanel)}
-                title={showCrmPanel ? "Collapse CRM Panel" : "Expand CRM Panel"}
-                className={`p-2 rounded-lg transition-all ${
+                title={showCrmPanel ? "Hide details" : "Show details"}
+                aria-label={showCrmPanel ? "Hide details" : "Show details"}
+                className={`h-10 w-10 grid place-items-center rounded-full transition ${
                   showCrmPanel
-                    ? "text-[#00a884] bg-[#111b21]"
-                    : "text-[#aebac1] hover:text-[#e9edef] hover:bg-[#111b21]"
+                    ? "text-fg bg-surface-2"
+                    : "text-fg-2 hover:text-fg hover:bg-surface-2"
                 }`}
               >
                 {showCrmPanel ? (
-                  <PanelRightClose className="w-4 h-4" />
+                  <PanelRightClose className="w-[18px] h-[18px]" />
                 ) : (
-                  <PanelRightOpen className="w-4 h-4" />
+                  <PanelRightOpen className="w-[18px] h-[18px]" />
                 )}
               </button>
             </div>
           </div>
         ) : (
-          <div className="h-15 px-4 bg-[#202c33] border-b border-[#222e35] flex items-center justify-between shrink-0" />
+          <div className="h-[68px] border-b border-line shrink-0" />
         )}
 
-        {/* ── Message Feed with WhatsApp Web Pattern Background ── */}
+        {/* ── Messages ── */}
         <div
           ref={feedRef}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3"
-          style={{
-            backgroundColor: "#0b141a",
-            backgroundImage: `radial-gradient(circle at 50% 50%, rgba(17, 27, 33, 0.6) 0%, rgba(11, 20, 26, 0.95) 100%), url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")`,
-          }}
+          className="flex-1 overflow-y-auto px-3 sm:px-8 py-6 space-y-1.5 chat-wallpaper min-h-0"
         >
           {!activeChat && (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-[#8696a0]">
-              <div className="w-16 h-16 rounded-full bg-[#202c33] flex items-center justify-center text-[#00a884] ring-1 ring-[#2a3942]">
-                <MessageSquare className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-semibold text-[#e9edef]">
-                WhatsApp Web for Teams
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 text-fg-2">
+              <ScriwoMark size={56} className="opacity-90" />
+              <h3 className="text-lg font-semibold text-fg">
+                Select a conversation
               </h3>
-              <p className="max-w-sm text-xs leading-relaxed">
-                Select a conversation on the left to start messaging, manage
-                customer relationships, and respond with WhatsApp Web speed.
+              <p className="max-w-xs text-sm leading-relaxed">
+                Pick a chat on the left to read it, reply, or leave a private
+                note for your team.
               </p>
             </div>
           )}
 
           {activeChat && (
             <>
-              {/* WhatsApp Web End-to-End Encryption Notice Pill */}
-              <div className="flex justify-center my-3">
-                <div className="bg-[#182229] border border-[#2a3942]/60 text-[#ffeecd]/80 text-[11px] px-3.5 py-1.5 rounded-lg max-w-md text-center shadow-sm flex items-center gap-2 font-medium">
-                  <Lock className="w-3.5 h-3.5 text-[#ffd279] shrink-0" />
-                  <span>
-                    WhatsApp is connected through WPPConnect. Your team’s
-                    messages and notes are saved in this workspace.
-                  </span>
-                </div>
-              </div>
-
-              {/* Date Separator */}
-              <div className="flex justify-center my-2">
-                <div className="bg-[#182229] text-[#8696a0] text-[11px] px-3 py-1 rounded-md shadow-sm font-medium tracking-wide">
+              <div className="flex justify-center pb-3">
+                <div className="glass ring-1 ring-line text-fg-2 text-[12px] px-3.5 py-1 rounded-full font-medium">
                   {getMessageDateGroup(activeChat.lastMessage?.timestamp)}
                 </div>
               </div>
 
               {currentMessages.length === 0 && (
-                <div className="h-48 flex items-center justify-center text-[#8696a0] text-xs">
+                <div className="h-48 flex items-center justify-center text-fg-2 text-xs">
                   No messages yet. Send a message to start the conversation!
                 </div>
               )}
@@ -786,7 +806,7 @@ export const Inbox: React.FC<InboxProps> = ({
               {/* Render Message Bubbles */}
               {hasOlderMessages && (
                 <button
-                  className="block mx-auto text-[#00a884]"
+                  className="block mx-auto text-[13px] font-medium text-fg-2 hover:text-fg glass ring-1 ring-line rounded-full px-4 py-1.5 transition"
                   onClick={() => {
                     olderHeight.current = feedRef.current?.scrollHeight || null;
                     onLoadOlder?.();
@@ -801,17 +821,21 @@ export const Inbox: React.FC<InboxProps> = ({
                 // Internal Team Note Bubble
                 if (msg.isNote || msg.type === "internal_note") {
                   return (
-                    <div key={msg.id} className="flex justify-center my-2">
-                      <div className="max-w-lg p-3 rounded-xl bg-[#2e1a06] border border-[#b45309]/50 text-[#fef3c7] text-xs shadow-md space-y-1">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#f59e0b]">
+                    <div key={msg.id} className="flex justify-center py-2">
+                      <div className="note-bubble max-w-xl w-full sm:w-auto rounded-2xl px-4 py-3 text-warn space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em]">
                           <Lock className="w-3 h-3" />
-                          <span>Internal Team Note (Hidden from Customer)</span>
+                          <span>Private team note</span>
+                          <span className="normal-case tracking-normal font-normal opacity-75">
+                            · customers never see this
+                          </span>
                         </div>
-                        <p className="leading-relaxed whitespace-pre-wrap">
+                        <p className="text-[14.5px] leading-snug text-fg whitespace-pre-wrap">
                           {msg.text}
                         </p>
-                        <div className="text-[10px] text-[#f59e0b]/80 text-right font-mono">
-                          {formatChatTimestamp(msg.timestamp)}
+                        <div className="text-[11px] text-fg-3 flex items-center justify-between gap-4 num">
+                          <span>{msg.agentName}</span>
+                          <span>{formatChatTimestamp(msg.timestamp)}</span>
                         </div>
                       </div>
                     </div>
@@ -824,29 +848,29 @@ export const Inbox: React.FC<InboxProps> = ({
                     className={`flex ${isOut ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`relative max-w-[80%] sm:max-w-[65%] rounded-lg p-2.5 px-3 text-xs text-[#e9edef] shadow-sm space-y-1.5 ${
+                      className={`relative max-w-[82%] md:max-w-[68%] rounded-[20px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade ${
                         isOut
-                          ? "bg-[#005c4b] rounded-tr-none"
-                          : "bg-[#202c33] rounded-tl-none"
+                          ? "bg-bubble-out rounded-br-md"
+                          : "bg-bubble-in ring-1 ring-line rounded-bl-md"
                       }`}
                     >
                       {/* Sender label for group participants or outgoing agents */}
                       {isOut
                         ? msg.agentName && (
-                            <div className="text-[10px] font-bold text-[#25d366] leading-tight">
+                            <div className="text-[12px] font-semibold text-brand leading-tight">
                               {msg.agentName}
                             </div>
                           )
                         : activeChat.isGroup &&
                           msg.agentName && (
-                            <div className="text-[10px] font-bold text-[#e5a00d] leading-tight">
+                            <div className="text-[12px] font-semibold text-gold leading-tight">
                               {msg.agentName}
                             </div>
                           )}
 
                       {/* Text Message */}
                       {(!msg.type || msg.type === "text") && (
-                        <p className="leading-relaxed whitespace-pre-wrap break-words">
+                        <p className="leading-[1.4] whitespace-pre-wrap break-words">
                           {msg.text}
                         </p>
                       )}
@@ -857,8 +881,8 @@ export const Inbox: React.FC<InboxProps> = ({
                           <div
                             className={`p-2 rounded-full ${
                               msg.text.includes("Missed")
-                                ? "bg-rose-500/20 text-rose-400"
-                                : "bg-[#00a884]/20 text-[#00a884]"
+                                ? "bg-danger/20 text-danger"
+                                : "bg-brand-solid/20 text-brand"
                             }`}
                           >
                             {msg.text.includes("Video") ? (
@@ -868,12 +892,12 @@ export const Inbox: React.FC<InboxProps> = ({
                             )}
                           </div>
                           <div className="text-xs">
-                            <div className="font-semibold text-[#e9edef]">
+                            <div className="font-semibold text-fg">
                               {msg.text.includes("Video")
                                 ? "Video call"
                                 : "Voice call"}
                             </div>
-                            <div className="text-[11px] text-[#8696a0]">
+                            <div className="text-[11px] text-fg-2">
                               {msg.text}
                             </div>
                           </div>
@@ -896,13 +920,13 @@ export const Inbox: React.FC<InboxProps> = ({
                                 className="w-full max-h-72 object-cover rounded-lg"
                               />
                               <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Maximize2 className="w-5 h-5 text-white drop-shadow-md" />
+                                <Maximize2 className="w-5 h-5 text-fg drop-shadow-md" />
                               </div>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 p-2.5 bg-black/20 rounded-lg">
-                              <ImageIcon className="w-5 h-5 text-[#00a884]" />
-                              <span className="text-xs text-[#aebac1]">
+                              <ImageIcon className="w-5 h-5 text-brand" />
+                              <span className="text-xs text-fg-2">
                                 {msg.text || "Photo"}
                               </span>
                             </div>
@@ -948,10 +972,10 @@ export const Inbox: React.FC<InboxProps> = ({
 
                       {/* Document Message */}
                       {msg.type === "document" && (
-                        <div className="flex items-center gap-2.5 p-2 bg-black/20 rounded-lg border border-white/5">
-                          <FileText className="w-6 h-6 text-rose-400 shrink-0" />
+                        <div className="flex items-center gap-2.5 p-2 bg-black/20 rounded-lg border border-line">
+                          <FileText className="w-6 h-6 text-danger shrink-0" />
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-[#e9edef] text-xs truncate">
+                            <div className="font-medium text-fg text-xs truncate">
                               {msg.fileName || "Document"}
                             </div>
                             {msg.mediaUrl && (
@@ -959,12 +983,12 @@ export const Inbox: React.FC<InboxProps> = ({
                                 href={msg.mediaUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-[#00a884]"
+                                className="text-brand"
                               >
                                 Download document
                               </a>
                             )}
-                            <div className="text-[10px] text-[#8696a0] font-mono">
+                            <div className="text-[10px] text-fg-2 font-mono">
                               {msg.fileSize || "PDF"}
                             </div>
                           </div>
@@ -972,7 +996,7 @@ export const Inbox: React.FC<InboxProps> = ({
                       )}
 
                       {/* Timestamp & Status Tick (Bottom Right aligned) */}
-                      <div className="flex items-center justify-end gap-1 text-[10px] text-[#8696a0] font-mono pt-0.5 select-none">
+                      <div className="flex items-center justify-end gap-1 text-[11px] text-fg-3 num select-none -mb-0.5">
                         <span>{formatChatTimestamp(msg.timestamp)}</span>
                         {isOut && renderStatusTick(msg)}
                       </div>
@@ -987,7 +1011,7 @@ export const Inbox: React.FC<InboxProps> = ({
 
         {/* Canned Quick Replies Menu */}
         {showCannedMenu && (
-          <div className="p-3 bg-[#202c33] border-t border-[#222e35] animate-fade-in z-20">
+          <div className="mx-3 sm:mx-6 mb-2 p-3 rounded-3xl bg-surface border border-line shadow-card animate-rise z-20">
             {canManage && onSaveReply && (
               <form
                 className="flex flex-wrap gap-2 mb-3"
@@ -1013,31 +1037,31 @@ export const Inbox: React.FC<InboxProps> = ({
                   name="shortcut"
                   aria-label="Reply shortcut"
                   placeholder="/shortcut"
-                  className="bg-[#111b21] p-1 rounded"
+                  className="bg-surface p-1 rounded"
                 />
                 <input
                   required
                   name="title"
                   aria-label="Reply title"
                   placeholder="Title"
-                  className="bg-[#111b21] p-1 rounded"
+                  className="bg-surface p-1 rounded"
                 />
                 <input
                   required
                   name="text"
                   aria-label="Reply text"
                   placeholder="Saved reply text"
-                  className="bg-[#111b21] p-1 rounded flex-1"
+                  className="bg-surface p-1 rounded flex-1"
                 />
-                <button className="text-[#00a884]">Save reply</button>
+                <button className="text-brand">Save reply</button>
               </form>
             )}
             {replyError && <p role="alert">{replyError}</p>}
-            <div className="flex items-center justify-between text-xs text-[#8696a0] font-medium mb-2">
-              <span>Quick Canned Responses (select or type shortcut)</span>
+            <div className="flex items-center justify-between text-xs text-fg-2 font-medium mb-2">
+              <span>Quick replies — pick one, or type “/” to search</span>
               <button
                 onClick={() => setShowCannedMenu(false)}
-                className="text-[#8696a0] hover:text-[#e9edef]"
+                className="text-fg-2 hover:text-fg"
               >
                 ✕
               </button>
@@ -1047,17 +1071,17 @@ export const Inbox: React.FC<InboxProps> = ({
                 <button
                   key={cr.shortcut}
                   onClick={() => handleInsertCanned(cr.text)}
-                  className="text-left p-2 rounded-lg bg-[#111b21] hover:bg-[#2a3942] border border-[#222e35] transition-all"
+                  className="text-left p-2 rounded-lg bg-surface hover:bg-surface-3 border border-line transition-all"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[#00a884] font-bold text-xs">
+                    <span className="font-mono text-brand font-bold text-xs">
                       {cr.shortcut}
                     </span>
-                    <span className="font-semibold text-[#e9edef] text-xs">
+                    <span className="font-semibold text-fg text-xs">
                       {cr.title}
                     </span>
                   </div>
-                  <div className="text-[11px] text-[#8696a0] truncate mt-0.5">
+                  <div className="text-[11px] text-fg-2 truncate mt-0.5">
                     {cr.text}
                   </div>
                 </button>
@@ -1066,314 +1090,324 @@ export const Inbox: React.FC<InboxProps> = ({
           </div>
         )}
 
-        {/* ── WhatsApp Web Message Composer ── */}
+        {/* ── Composer ── */}
         {activeChat && (
-          <div className="p-2.5 px-4 bg-[#202c33] border-t border-[#222e35] space-y-1.5 shrink-0 z-10">
-            {/* Mode Switcher: WhatsApp Message vs Team Internal Note */}
-            <div className="flex items-center justify-between text-xs px-1">
-              <div className="flex items-center gap-1.5 bg-[#111b21] p-0.5 rounded-lg border border-[#222e35]">
-                <button
-                  onClick={() => setIsNoteMode(false)}
-                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                    !isNoteMode
-                      ? "bg-[#00a884] text-[#111b21] font-semibold"
-                      : "text-[#8696a0] hover:text-[#e9edef]"
-                  }`}
+          <div className="px-3 sm:px-6 pt-2 pb-3 sm:pb-4 shrink-0 z-10 bg-app">
+            <div
+              className={`rounded-[26px] border bg-surface shadow-card transition-colors ${
+                isNoteMode ? "border-warn/50" : "border-line"
+              }`}
+            >
+              <div className="flex items-center justify-between px-3 pt-2.5">
+                <div
+                  className="flex items-center gap-0.5 p-0.5 bg-surface-2 rounded-full"
+                  role="tablist"
+                  aria-label="Reply type"
                 >
-                  WhatsApp
-                </button>
+                  <button
+                    role="tab"
+                    aria-selected={!isNoteMode}
+                    onClick={() => setIsNoteMode(false)}
+                    className={`px-3 h-7 rounded-full text-[12.5px] font-medium transition ${
+                      !isNoteMode
+                        ? "bg-surface text-fg shadow-card"
+                        : "text-fg-2 hover:text-fg"
+                    }`}
+                  >
+                    Reply
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={isNoteMode}
+                    onClick={() => setIsNoteMode(true)}
+                    className={`flex items-center gap-1 px-3 h-7 rounded-full text-[12.5px] font-medium transition ${
+                      isNoteMode
+                        ? "bg-note text-warn shadow-card"
+                        : "text-fg-2 hover:text-fg"
+                    }`}
+                  >
+                    <Lock className="w-3 h-3" />
+                    <span>Team note</span>
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setIsNoteMode(true)}
-                  className={`flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                    isNoteMode
-                      ? "bg-[#d97706] text-white font-semibold"
-                      : "text-[#8696a0] hover:text-[#e9edef]"
-                  }`}
+                  onClick={() => setShowCannedMenu(!showCannedMenu)}
+                  className="text-[12.5px] font-medium text-fg-2 hover:text-fg flex items-center gap-1.5 px-2 h-7 rounded-full hover:bg-surface-2 transition"
                 >
-                  <Lock className="w-3 h-3" />
-                  <span>Team Note</span>
+                  <Sparkles className="w-3.5 h-3.5 text-gold" />
+                  <span>Quick replies</span>
                 </button>
               </div>
 
-              <button
-                onClick={() => setShowCannedMenu(!showCannedMenu)}
-                className="text-xs font-medium text-[#00a884] hover:text-[#00a884]/80 flex items-center gap-1"
+              <form
+                onSubmit={handleSend}
+                className="flex items-end gap-1.5 p-2 pt-1"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Templates (/)</span>
-              </button>
-            </div>
-
-            {/* Input Bar */}
-            <form onSubmit={handleSend} className="flex items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,video/mp4,audio/mpeg,audio/ogg,audio/webm,application/pdf,text/plain"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file || !activeChat) return;
-                  if (file.size > 10 * 1024 * 1024) {
-                    setReplyError("Files must be 10 MB or smaller");
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const kind = file.type.startsWith("image/")
-                      ? "image"
-                      : file.type.startsWith("video/")
-                        ? "video"
-                        : file.type.startsWith("audio/")
-                          ? "audio"
-                          : "document";
-                    onSendAttachment(activeChat.id, {
-                      data: String(reader.result),
-                      filename: file.name,
-                      kind,
-                      mimeType: file.type,
-                    });
-                    event.target.value = "";
-                  };
-                  reader.readAsDataURL(file);
-                }}
-              />
-
-              <button
-                type="button"
-                disabled={!mediaEnabled}
-                onClick={() => fileInputRef.current?.click()}
-                title={
-                  mediaEnabled
-                    ? "Attach a file (maximum 10 MB)"
-                    : "Media storage is not configured"
-                }
-                className="p-2 rounded-full text-[#8696a0] hover:text-[#e9edef] hover:bg-[#111b21] transition-colors"
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
-
-              <div className="flex-1 relative">
                 <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => {
-                    setInputText(e.target.value);
-                    if (e.target.value === "/") setShowCannedMenu(true);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,video/mp4,audio/mpeg,audio/ogg,audio/webm,application/pdf,text/plain"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file || !activeChat) return;
+                    if (file.size > 10 * 1024 * 1024) {
+                      setReplyError("Files must be 10 MB or smaller");
+                      return;
                     }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const kind = file.type.startsWith("image/")
+                        ? "image"
+                        : file.type.startsWith("video/")
+                          ? "video"
+                          : file.type.startsWith("audio/")
+                            ? "audio"
+                            : "document";
+                      onSendAttachment(activeChat.id, {
+                        data: String(reader.result),
+                        filename: file.name,
+                        kind,
+                        mimeType: file.type,
+                      });
+                      event.target.value = "";
+                    };
+                    reader.readAsDataURL(file);
                   }}
-                  placeholder={
-                    isNoteMode
-                      ? "Internal team note (hidden from customer). Type @Name to notify a teammate..."
-                      : "Type a message"
-                  }
-                  className={`w-full rounded-lg px-4 py-2.5 text-xs text-[#e9edef] placeholder-[#8696a0] focus:outline-none transition-all ${
-                    isNoteMode
-                      ? "bg-[#2a1b0c] border border-[#d97706]/40 focus:border-[#d97706]"
-                      : "bg-[#2a3942] border border-transparent focus:border-[#00a884]/40"
-                  }`}
                 />
-              </div>
 
-              <button
-                type="submit"
-                disabled={!inputText.trim()}
-                className={`p-2.5 rounded-full transition-all shrink-0 ${
-                  isNoteMode
-                    ? "bg-[#d97706] hover:bg-[#b45309] text-white"
-                    : "bg-[#00a884] hover:bg-[#00a884]/90 text-[#111b21]"
-                } disabled:opacity-30 disabled:cursor-not-allowed`}
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
+                <button
+                  type="button"
+                  disabled={!mediaEnabled}
+                  onClick={() => fileInputRef.current?.click()}
+                  title={
+                    mediaEnabled
+                      ? "Attach a file (maximum 10 MB)"
+                      : "Media storage is not configured"
+                  }
+                  aria-label="Attach a file"
+                  className="h-10 w-10 shrink-0 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition-colors disabled:opacity-40"
+                >
+                  <Paperclip className="w-5 h-5" />
+                </button>
+
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => {
+                      setInputText(e.target.value);
+                      if (e.target.value === "/") setShowCannedMenu(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    aria-label={
+                      isNoteMode
+                        ? "Write a private team note"
+                        : "Write a message"
+                    }
+                    placeholder={
+                      isNoteMode
+                        ? "Private note for your team… type @Name to notify someone"
+                        : "Write a message"
+                    }
+                    className="w-full bg-transparent h-10 px-2 text-[15px] focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!inputText.trim()}
+                  aria-label={isNoteMode ? "Save note" : "Send message"}
+                  className={`h-10 w-10 grid place-items-center rounded-full transition shrink-0 ${
+                    isNoteMode
+                      ? "bg-warn text-white"
+                      : "bg-brand-solid hover:bg-brand-hover text-white"
+                  } disabled:opacity-30 disabled:cursor-not-allowed active:scale-95`}
+                >
+                  <Send className="w-[18px] h-[18px]" />
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* COLUMN 3: Collapsible Customer 360° CRM Drawer                      */}
-      {/* ─────────────────────────────────────────────────────────────────── */}
-      {showCrmPanel && activeContact && (
-        <div className="hidden lg:flex w-80 border-l border-[#222e35] bg-[#111b21] flex-col overflow-y-auto shrink-0 animate-fade-in">
-          {/* Header */}
-          <div className="h-15 px-4 bg-[#202c33] border-b border-[#222e35] flex items-center justify-between shrink-0">
-            <h3 className="font-semibold text-sm text-[#e9edef]">
-              Contact Info
-            </h3>
-            <button
-              onClick={() => setShowCrmPanel(false)}
-              className="p-1 rounded-full text-[#8696a0] hover:text-[#e9edef] transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="p-4 space-y-4">
-            {/* Profile Overview */}
-            <div className="text-center pb-3 border-b border-[#222e35]">
-              <img
-                src={activeContact.avatar || avatarFallback(activeContact.name)}
-                alt={activeContact.name}
-                className="w-20 h-20 rounded-full object-cover mx-auto ring-2 ring-[#00a884]/40"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = avatarFallback(
-                    activeContact.name,
-                  );
-                }}
-              />
-              <h4 className="font-semibold text-base text-[#e9edef] mt-2.5">
-                {activeContact.name}
-              </h4>
-              <div className="text-xs text-[#8696a0] font-mono mt-0.5">
-                {activeContact.phone}
-              </div>
-              {activeContact.email && (
-                <div className="text-[11px] text-[#8696a0] mt-0.5">
-                  {activeContact.email}
-                </div>
-              )}
-
-              <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#00a884]/15 border border-[#00a884]/30 text-[#00a884] text-xs font-semibold">
-                <span>
-                  {activeContact.storeConnected
-                    ? `LTV: $${activeContact.lifetimeValue?.toLocaleString()}`
-                    : "Store not connected"}
-                </span>
-              </div>
+      {/* ── Details (a side panel on wide screens, a sheet on small ones) ─── */}
+      {showCrmPanel && activeContact && activeChat && (
+        <>
+          <button
+            aria-label="Close details"
+            onClick={() => setShowCrmPanel(false)}
+            className="xl:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm animate-fade"
+          />
+          <aside className="fixed inset-y-0 right-0 z-40 w-[min(92vw,380px)] xl:static xl:z-auto xl:w-[340px] bg-surface border-l border-line flex flex-col overflow-y-auto shrink-0 animate-fade pop xl:shadow-none">
+            <div className="h-[68px] px-5 border-b border-line flex items-center justify-between shrink-0">
+              <h3 className="font-semibold text-[16px] text-fg">Details</h3>
+              <button
+                onClick={() => setShowCrmPanel(false)}
+                aria-label="Close details"
+                className="h-9 w-9 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Customer Tags */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8696a0]">
-                Customer Tags
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {(activeContact.tags || []).map((t: string) => (
-                  <span
-                    key={t}
-                    className="px-2.5 py-0.5 rounded-md bg-[#202c33] text-[#e9edef] border border-[#2a3942] text-[11px] font-medium"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Purchase History */}
-            <div className="space-y-2 pt-2 border-t border-[#222e35]">
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#8696a0]">
-                <span className="flex items-center gap-1">
-                  <ShoppingBag className="w-3 h-3 text-[#00a884]" />
-                  <span>Orders</span>
-                </span>
-                <span>
-                  {activeContact.storeConnected
-                    ? (activeContact.orders || []).length + " Recorded"
-                    : "Unavailable"}
-                </span>
-              </div>
-
-              {(activeContact.orders || []).length > 0 ? (
-                <div className="space-y-2">
-                  {(activeContact.orders || []).map((ord: any) => (
-                    <div
-                      key={ord.id}
-                      className="p-2.5 bg-[#202c33] rounded-xl border border-[#2a3942] text-xs space-y-1"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[#e9edef] font-mono">
-                          {ord.orderNumber}
-                        </span>
-                        <span className="text-[10px] text-[#00a884] font-bold">
-                          \${ord.total} {ord.currency}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-[#aebac1] line-clamp-1">
-                        {ord.itemsSummary}
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-[#8696a0] pt-1">
-                        <span>{ord.date}</span>
-                        <span className="px-1.5 py-0.2 rounded bg-[#111b21] text-[#00a884] font-medium">
-                          {ord.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            <div className="p-5 space-y-6">
+              <div className="text-center">
+                <img
+                  src={
+                    activeContact.avatar || avatarFallback(activeContact.name)
+                  }
+                  alt=""
+                  className="w-24 h-24 rounded-full object-cover mx-auto"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = avatarFallback(
+                      activeContact.name,
+                    );
+                  }}
+                />
+                <h4 className="font-semibold text-[20px] text-fg mt-3">
+                  {activeContact.name}
+                </h4>
+                <div className="text-[14px] text-fg-2 mt-0.5 num">
+                  {activeContact.phone}
                 </div>
-              ) : (
-                <div className="text-[#8696a0] text-xs italic">
-                  {activeContact.storeConnected
-                    ? "No orders recorded yet."
-                    : "Store integration is not connected."}
-                </div>
-              )}
-            </div>
-
-            {/* Custom Attributes */}
-            <div className="space-y-2 pt-2 border-t border-[#222e35]">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8696a0]">
-                Custom Traits
-              </span>
-              <div className="space-y-1 text-xs">
-                {Object.entries(activeContact.customTraits || {}).map(
-                  ([key, val]) => (
-                    <div
-                      key={key}
-                      className="flex justify-between py-1 border-b border-[#222e35]/60 text-[11px]"
-                    >
-                      <span className="text-[#8696a0]">{key}:</span>
-                      <span className="text-[#e9edef] font-medium text-right">
-                        {String(val)}
-                      </span>
-                    </div>
-                  ),
+                {activeContact.email && (
+                  <div className="text-[13px] text-fg-3 mt-0.5">
+                    {activeContact.email}
+                  </div>
                 )}
-              </div>
-            </div>
-
-            {/* Teammate Internal Notes */}
-            <div className="space-y-2 pt-2 border-t border-[#222e35]">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8696a0]">
-                Internal Notes
-              </span>
-              <div className="space-y-2">
-                {(activeContact.notes || []).length > 0 ? (
-                  activeContact.notes.map((n: any) => (
-                    <div
-                      key={n.id}
-                      className="p-2.5 bg-[#2e1a06]/60 border border-[#b45309]/30 rounded-lg text-xs space-y-1"
-                    >
-                      <div className="flex items-center justify-between text-[10px] text-[#f59e0b] font-medium">
-                        <span>{n.author}</span>
-                        <span>{n.createdAt}</span>
-                      </div>
-                      <p className="text-[#fef3c7] text-[11px] leading-snug">
-                        {n.content}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-[#8696a0] text-xs italic">
-                    No internal notes yet. Use the Team Note mode in the
-                    composer to log one.
+                {activeContact.storeConnected && (
+                  <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-brand/10 text-brand text-[12.5px] font-medium">
+                    Lifetime value $
+                    {activeContact.lifetimeValue?.toLocaleString()}
                   </div>
                 )}
               </div>
+
+              <section className="space-y-2">
+                <h5 className="eyebrow">Tags</h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {(activeContact.tags || []).length === 0 && (
+                    <span className="text-[13px] text-fg-3">No tags yet</span>
+                  )}
+                  {(activeContact.tags || []).map((t: string) => (
+                    <span
+                      key={t}
+                      className="px-2.5 py-1 rounded-full bg-surface-2 text-fg text-[12.5px] font-medium"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </section>
+
+              {activeContact.storeConnected && (
+                <section className="space-y-2">
+                  <h5 className="eyebrow flex items-center gap-1.5">
+                    <ShoppingBag className="w-3 h-3" />
+                    Orders
+                  </h5>
+                  {(activeContact.orders || []).length > 0 ? (
+                    <div className="space-y-2">
+                      {(activeContact.orders || []).map((ord: any) => (
+                        <div
+                          key={ord.id}
+                          className="p-3 bg-surface-2 rounded-2xl text-[13px] space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-fg num">
+                              {ord.orderNumber}
+                            </span>
+                            <span className="text-brand font-semibold num">
+                              {ord.total} {ord.currency}
+                            </span>
+                          </div>
+                          <div className="text-fg-2 line-clamp-1">
+                            {ord.itemsSummary}
+                          </div>
+                          <div className="flex items-center justify-between text-[12px] text-fg-3">
+                            <span>{ord.date}</span>
+                            <span>{ord.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-fg-3">
+                      No orders recorded yet.
+                    </p>
+                  )}
+                </section>
+              )}
+
+              {Object.keys(activeContact.customTraits || {}).length > 0 && (
+                <section className="space-y-2">
+                  <h5 className="eyebrow">Details</h5>
+                  <dl className="text-[13.5px] divide-y divide-line">
+                    {Object.entries(activeContact.customTraits || {}).map(
+                      ([key, val]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between gap-4 py-2"
+                        >
+                          <dt className="text-fg-2">{key}</dt>
+                          <dd className="text-fg font-medium text-right">
+                            {String(val)}
+                          </dd>
+                        </div>
+                      ),
+                    )}
+                  </dl>
+                </section>
+              )}
+
+              <section className="space-y-2">
+                <h5 className="eyebrow flex items-center gap-1.5">
+                  <Lock className="w-3 h-3" />
+                  Team notes
+                </h5>
+                {(activeContact.notes || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {activeContact.notes.map((n: any) => (
+                      <div
+                        key={n.id}
+                        className="note-bubble rounded-2xl px-3.5 py-2.5 space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-[12px] text-warn font-medium">
+                          <span>{n.author}</span>
+                          <span className="text-fg-3 font-normal num">
+                            {formatChatTimestamp(n.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-fg text-[13.5px] leading-snug whitespace-pre-wrap">
+                          {n.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-fg-3 leading-relaxed">
+                    Switch the composer to “Team note” to leave a private note
+                    only your team can see.
+                  </p>
+                )}
+              </section>
             </div>
-          </div>
-        </div>
+          </aside>
+        </>
       )}
 
       {/* Lightbox Modal */}
       {selectedImageModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fade"
           onClick={() => setSelectedImageModal(null)}
         >
           <div
@@ -1382,14 +1416,14 @@ export const Inbox: React.FC<InboxProps> = ({
           >
             <button
               onClick={() => setSelectedImageModal(null)}
-              className="absolute -top-10 right-0 p-2 text-white/80 hover:text-white transition-colors"
+              className="absolute -top-10 right-0 p-2 text-white/80 hover:text-fg transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
             <img
               src={selectedImageModal}
               alt="Full Preview"
-              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-line"
             />
           </div>
         </div>

@@ -19,14 +19,14 @@ describe("developer guide access", () => {
   it("gives employees the API tester and SDK samples only", () => {
     view(false);
     expect(screen.getByText("API tester")).toBeTruthy();
-    expect(screen.getByText("sdks")).toBeTruthy();
-    expect(screen.queryByText("keys")).toBeNull();
-    expect(screen.queryByText("webhooks")).toBeNull();
+    expect(screen.getByText("SDKs")).toBeTruthy();
+    expect(screen.queryByText("API keys")).toBeNull();
+    expect(screen.queryByText("Webhooks")).toBeNull();
   });
 
   it("gives company admins keys and webhooks as well", () => {
     view(true);
-    expect(screen.getByText("keys")).toBeTruthy();
-    expect(screen.getByText("webhooks")).toBeTruthy();
+    expect(screen.getByText("API keys")).toBeTruthy();
+    expect(screen.getByText("Webhooks")).toBeTruthy();
   });
 });

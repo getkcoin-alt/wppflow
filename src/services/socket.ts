@@ -21,11 +21,11 @@ export function getSocket(): Socket {
     });
 
     socket.on("connect", () => {
-      console.log("⚡ WppFlow socket connected to backend:", socket?.id);
+      console.log("⚡ Scriwo socket connected to backend:", socket?.id);
     });
 
     socket.on("disconnect", (reason) => {
-      console.log("🔌 WppFlow socket disconnected:", reason);
+      console.log("🔌 Scriwo socket disconnected:", reason);
       if (reason === "io server disconnect")
         refreshSession()
           .then((session) => {
@@ -35,7 +35,7 @@ export function getSocket(): Socket {
     });
 
     socket.on("connect_error", (err) => {
-      console.warn("⚠️ WppFlow socket connection error:", err.message);
+      console.warn("⚠️ Scriwo socket connection error:", err.message);
     });
   }
   return socket;

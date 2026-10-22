@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Smartphone,
   Battery,
   BatteryCharging,
-  ShieldCheck,
   RefreshCw,
   QrCode,
   Plus,
   CheckCircle2,
   AlertCircle,
   Trash2,
-  Sparkles,
-  ArrowRight,
+  Smartphone,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { WhatsAppSession } from "../../types";
@@ -21,6 +18,9 @@ import {
   getLiveSessionStatus,
 } from "../../services/api";
 import { getSocket } from "../../services/socket";
+import { EmptyState, Field, Page, PageHeader, Pill } from "../ui/Page";
+import { btn, inputCls } from "../ui/styles";
+import { Sheet } from "../ui/Sheet";
 
 interface SessionManagerProps {
   sessions: WhatsAppSession[];
@@ -35,6 +35,17 @@ interface SessionManagerProps {
   setIsPairModalOpen: (open: boolean) => void;
   canManage?: boolean;
 }
+
+const STATUS_UI = (
+  status: string,
+): { tone: "ok" | "warn" | "danger" | "neutral"; label: string } =>
+  status === "CONNECTED"
+    ? { tone: "ok", label: "Connected" }
+    : status === "QRCODE"
+      ? { tone: "warn", label: "Waiting for scan" }
+      : status === "STARTING"
+        ? { tone: "warn", label: "Starting" }
+        : { tone: "danger", label: "Disconnected" };
 
 export const SessionManager: React.FC<SessionManagerProps> = ({
   sessions,
@@ -83,7 +94,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
       setLiveQrImage(qrcode);
       qrVisibleRef.current = true;
       setPairingPhase("qr");
-      setStatusMessage("Scan QR Code with WhatsApp on your phone");
+      setStatusMessage("Scan this code with WhatsApp on your phone");
     };
 
     const onStatus = ({ session, status, phone }: any) => {
@@ -118,7 +129,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         setPairingPhase((prev) =>
           prev === "starting" || prev === "qr" ? "qr" : prev,
         );
-        setStatusMessage("Scan QR Code with WhatsApp on your phone");
+        setStatusMessage("Scan this code with WhatsApp on your phone");
         return;
       }
 
@@ -192,14 +203,14 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     setPairingPhase("starting");
     setLiveQrImage(null);
     setErrorMessage(null);
-    setStatusMessage("Booting isolated browser kernel...");
+    setStatusMessage("Preparing a secure connection…");
 
     try {
       // Staff always pair their own session; the server decides its name.
       const started = await startLiveSession(cleanKey);
       cleanKey = started?.sessionName || cleanKey;
       activeSessionKey.current = cleanKey;
-      setStatusMessage("Browser launched. Initializing WhatsApp Web...");
+      setStatusMessage("Connecting to WhatsApp…");
 
       pollTimerRef.current = setInterval(async () => {
         try {
@@ -210,7 +221,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
             setPairingPhase((prev) =>
               prev === "starting" || prev === "qr" ? "qr" : prev,
             );
-            setStatusMessage("Scan QR Code with WhatsApp on your phone");
+            setStatusMessage("Scan this code with WhatsApp on your phone");
           }
 
           const statusRes = await getLiveSessionStatus(cleanKey);
@@ -262,19 +273,17 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
               startingAttemptsRef.current += 1;
               if (startingAttemptsRef.current >= MAX_STARTING_ATTEMPTS) {
                 stopPolling();
-                setErrorMessage("Browser startup timed out. Please try again.");
+                setErrorMessage("Starting took too long. Please try again.");
                 return "error";
               }
               if (startingAttemptsRef.current === 10)
-                setStatusMessage("Chromium initializing...");
+                setStatusMessage("Still preparing…");
               if (startingAttemptsRef.current === 25)
                 setStatusMessage(
-                  "Loading WhatsApp Web... (up to 60s on cold start)",
+                  "Almost there. The first connection can take up to a minute.",
                 );
               if (startingAttemptsRef.current === 60)
-                setStatusMessage(
-                  "Still starting — Cloud browser boot in progress...",
-                );
+                setStatusMessage("Still working. Thanks for your patience.");
             }
             return current;
           });
@@ -295,361 +304,275 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     setIsPairModalOpen(false);
   };
 
+  const pairing = pairingPhase;
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111b21] p-5 rounded-2xl border border-[#2a3942]">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Smartphone className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              WhatsApp Multi-Session Engine
-            </h1>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
+    <Page>
+      <PageHeader
+        eyebrow="Numbers"
+        title="WhatsApp numbers"
+        subtitle={
+          canManage
+            ? "Every teammate’s WhatsApp number in your company is listed here."
+            : "Your WhatsApp number is linked to your login. Only you and your company’s administrators can see it."
+        }
+        actions={
+          <button
+            onClick={() => setIsPairModalOpen(true)}
+            className={btn("primary")}
+          >
+            <Plus className="w-4 h-4" />
             {canManage
-              ? "Every staff member's WhatsApp session in your company is listed here."
-              : "Your WhatsApp number is linked to your login and is private to you and your company administrators."}
-          </p>
-        </div>
-        <button
-          onClick={() => setIsPairModalOpen(true)}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all disabled:opacity-40"
-        >
-          <Plus className="w-4 h-4" />
-          <span>
-            {canManage
-              ? "Pair WhatsApp Account"
+              ? "Connect a number"
               : ownsSession
                 ? "Reconnect my WhatsApp"
                 : "Connect my WhatsApp"}
-          </span>
-        </button>
-      </div>
+          </button>
+        }
+      />
 
       {sessions.length === 0 ? (
-        <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl p-10 text-center flex flex-col items-center justify-center max-w-xl mx-auto my-8">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
-            <QrCode className="w-8 h-8" />
-          </div>
-          <h3 className="text-lg font-bold text-white mb-2">
-            No WhatsApp Accounts Paired Yet
-          </h3>
-          <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-            Link your phone to activate real-time inbox, automated responses,
-            and broadcast campaigns.
-          </p>
-          <button
-            onClick={() => setIsPairModalOpen(true)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all disabled:opacity-40"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Pair First WhatsApp Number</span>
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {sessions.map((sess) => (
-            <div
-              key={sess.id}
-              className="bg-[#111b21] border border-[#2a3942] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition-all shadow-md flex flex-col justify-between"
+        <EmptyState
+          icon={<QrCode className="w-6 h-6" />}
+          title="No numbers connected yet"
+          body="Link a phone to see its conversations here, reply as a team, and send broadcasts."
+          action={
+            <button
+              onClick={() => setIsPairModalOpen(true)}
+              className={btn("primary")}
             >
-              <div>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-sm text-white">
-                        {sess.displayName}
-                      </h2>
-                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#202c33] text-slate-300 border border-[#2a3942]">
-                        {sess.channel}
-                      </span>
-                    </div>
-                    <div className="font-mono text-xs text-slate-400 mt-0.5">
+              <Plus className="w-4 h-4" />
+              {canManage ? "Connect your first number" : "Connect now"}
+            </button>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {sessions.map((sess) => {
+            const ui = STATUS_UI(sess.status);
+            return (
+              <article key={sess.id} className="card p-6 flex flex-col">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <span className="h-12 w-12 shrink-0 rounded-2xl bg-surface-2 grid place-items-center text-gold">
+                    <Smartphone className="w-6 h-6" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-[17px] font-semibold text-fg truncate">
+                      {sess.displayName}
+                    </h2>
+                    <div className="text-[14px] text-fg-2 num truncate">
                       {sess.phone}
                     </div>
-                    {canManage && (
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Staff owner: {sess.ownerName || "Unassigned"}
-                      </div>
-                    )}
                   </div>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${sess.status === "CONNECTED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : sess.status === "QRCODE" ? "bg-amber-950 text-amber-400 border border-amber-800" : "bg-rose-950 text-rose-400 border border-rose-800"}`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${sess.status === "CONNECTED" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}
-                    />
-                    <span>{sess.status}</span>
-                  </span>
                 </div>
-                <div className="mt-4 p-3 bg-[#202c33] rounded-xl space-y-2 border border-[#2a3942]/60 text-xs">
-                  <div>
-                    <div className="flex justify-between items-center text-[11px] mb-1">
-                      <span className="text-slate-300 font-medium flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Provider connection</span>
-                      </span>
-                      <span className="text-emerald-400 font-mono font-bold">
-                        {sess.status}
-                      </span>
+                <div className="mt-4">
+                  <Pill tone={ui.tone} dot>
+                    {ui.label}
+                  </Pill>
+                </div>
+
+                <dl className="mt-5 space-y-2.5 text-[14px]">
+                  {canManage && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-fg-3">Staff owner</dt>
+                      <dd className="text-fg">
+                        {sess.ownerName || "Unassigned"}
+                      </dd>
                     </div>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-300 pt-1 border-t border-[#2a3942]">
-                    <span>Warmup telemetry:</span>
-                    <span className="text-white font-medium">Unavailable</span>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-300">
-                    <span className="flex items-center gap-1">
-                      {sess.isCharging ? (
-                        <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Battery className="w-3.5 h-3.5 text-slate-400" />
-                      )}
-                      <span>Battery:</span>
-                    </span>
-                    <span className="font-mono text-white">
-                      {sess.battery == null
-                        ? "Unavailable"
-                        : `${sess.battery}%`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-300">
-                    <span>Proxy telemetry:</span>
-                    <span>Unavailable</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between pt-3 border-t border-[#2a3942] text-xs">
-                <span className="text-[10px] text-slate-400">
-                  Active Engine
-                </span>
-                <div className="flex items-center gap-2">
+                  )}
+                  {sess.channel && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-fg-3">Channel</dt>
+                      <dd className="text-fg capitalize">{sess.channel}</dd>
+                    </div>
+                  )}
+                  {sess.battery != null && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-fg-3">Phone battery</dt>
+                      <dd className="text-fg num inline-flex items-center gap-1.5">
+                        {sess.isCharging ? (
+                          <BatteryCharging className="w-4 h-4 text-ok" />
+                        ) : (
+                          <Battery className="w-4 h-4 text-fg-2" />
+                        )}
+                        {sess.battery}%
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+
+                <div className="mt-6 pt-4 border-t border-line flex items-center justify-between">
                   <button
-                    aria-label="Reconnect session"
                     onClick={() => onRestartSession(sess.id)}
-                    className="p-1.5 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-lg transition-all disabled:opacity-40"
+                    className={btn("secondary", "sm")}
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <RefreshCw className="w-4 h-4" /> Reconnect
                   </button>
                   <button
                     aria-label="Remove session"
                     onClick={() => onDeleteSession(sess.id)}
-                    className="p-1.5 bg-[#202c33] hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg transition-all disabled:opacity-40"
+                    className="h-9 w-9 grid place-items-center rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 
-      {isPairModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-5 border-b border-[#2a3942] flex items-center justify-between bg-gradient-to-b from-[#182229] to-[#111b21]">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <QrCode className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-white tracking-tight">
-                    Pair WhatsApp Account
-                  </h2>
-                  <p className="text-[11px] text-slate-400">
-                    Scan QR code using WhatsApp on your phone
-                  </p>
-                </div>
-              </div>
+      <Sheet
+        open={isPairModalOpen}
+        onClose={handleCloseModal}
+        title="Connect a WhatsApp number"
+        subtitle="Link WhatsApp on your phone to Scriwo with a QR code."
+        footer={
+          pairing !== "connected" && (
+            <button
+              type="button"
+              onClick={handleCloseModal}
+              className={btn("ghost")}
+            >
+              Cancel
+            </button>
+          )
+        }
+      >
+        <div className="text-[14.5px]">
+          {pairing === "idle" && (
+            <div className="space-y-5">
+              {canManage && (
+                <>
+                  <Field label="Label">
+                    <input
+                      type="text"
+                      placeholder="e.g. Sales desk, Support"
+                      value={sessionName}
+                      onChange={(e) => setSessionName(e.target.value)}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Channel">
+                    <select
+                      value={channel}
+                      onChange={(e) => setChannel(e.target.value as any)}
+                      className={inputCls}
+                    >
+                      <option value="sales">Sales</option>
+                      <option value="support">Customer support</option>
+                      <option value="vip">VIP concierge</option>
+                      <option value="general">General</option>
+                    </select>
+                  </Field>
+                </>
+              )}
+              <ol className="rounded-3xl bg-surface-2 p-5 space-y-3">
+                {[
+                  "Press the button below to show a QR code.",
+                  "On your phone, open WhatsApp, then Settings, then Linked devices.",
+                  "Tap Link a device and scan the code.",
+                ].map((t, i) => (
+                  <li key={t} className="flex gap-3 text-fg">
+                    <span className="h-6 w-6 shrink-0 rounded-full bg-surface text-gold text-[12px] font-semibold grid place-items-center">
+                      {i + 1}
+                    </span>
+                    <span className="leading-snug">{t}</span>
+                  </li>
+                ))}
+              </ol>
               <button
-                onClick={handleCloseModal}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#202c33] transition-all"
+                type="button"
+                onClick={handleStartPairing}
+                className={`${btn("primary")} w-full !h-12 text-[15px]`}
               >
-                ✕
+                Show QR code
               </button>
             </div>
+          )}
 
-            <div className="p-6 space-y-5 text-xs">
-              {pairingPhase === "idle" && (
-                <div className="space-y-4">
-                  {canManage && (
-                    <>
-                      <div>
-                        <label className="block text-slate-300 mb-1.5 font-medium">
-                          Session Label
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Sales Dispatch, Support Desk"
-                          value={sessionName}
-                          onChange={(e) => setSessionName(e.target.value)}
-                          className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs font-medium"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-300 mb-1.5 font-medium">
-                          Channel
-                        </label>
-                        <select
-                          value={channel}
-                          onChange={(e) => setChannel(e.target.value as any)}
-                          className="w-full bg-[#202c33] border border-[#2a3942] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs"
-                        >
-                          <option value="sales">Sales Line</option>
-                          <option value="support">Customer Support</option>
-                          <option value="vip">VIP Concierge</option>
-                          <option value="general">General</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-                  <div className="bg-[#202c33]/70 border border-[#2a3942] p-3.5 rounded-2xl space-y-2">
-                    <div className="font-semibold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>How Cloud Pairing Works:</span>
-                    </div>
-                    <ul className="text-slate-400 space-y-1 text-[11px] list-disc list-inside">
-                      <li>Launches a secure browser instance in the cloud</li>
-                      <li>Generates an official WhatsApp Web QR code</li>
-                      <li>
-                        Session tokens are securely persisted on your dedicated
-                        cloud server
-                      </li>
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleStartPairing}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all"
-                  >
-                    <span>Generate WhatsApp QR Code</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
-              {pairingPhase === "starting" && (
-                <div className="py-8 flex flex-col items-center text-center space-y-3">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                    <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-sm">
-                      Launching Browser Instance
-                    </h3>
-                    <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
-                      {statusMessage}
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-2">
-                      First launch takes ~10–20s to initialize Chromium
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {pairingPhase === "qr" && (
-                <div className="flex flex-col items-center space-y-4 py-1">
-                  <div className="p-4 bg-white rounded-2xl shadow-2xl border-4 border-emerald-500/30">
-                    {liveQrImage ? (
-                      <img
-                        src={liveQrImage}
-                        alt="Scan WhatsApp QR"
-                        className="w-56 h-56 object-contain"
-                      />
-                    ) : (
-                      <div className="w-56 h-56 flex flex-col items-center justify-center">
-                        <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
-                        <span className="text-xs text-slate-500">
-                          Rendering QR...
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-medium bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-800/40">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Awaiting scan… Session: {sessionName}</span>
-                  </div>
-                  <div className="bg-[#202c33] p-3.5 rounded-2xl w-full space-y-1.5 text-[11px] border border-[#2a3942]">
-                    <div className="font-semibold text-white text-xs mb-1">
-                      To Link WhatsApp:
-                    </div>
-                    {[
-                      ["1", "Open WhatsApp on your phone"],
-                      ["2", "Settings → Linked Devices"],
-                      ["3", "Link a Device → scan this QR"],
-                    ].map(([n, t]) => (
-                      <div
-                        key={n}
-                        className="flex items-center gap-2 text-slate-300"
-                      >
-                        <span className="w-4 h-4 rounded-full bg-emerald-900/60 text-emerald-300 text-[10px] flex items-center justify-center font-bold shrink-0">
-                          {n}
-                        </span>
-                        <span>{t}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {pairingPhase === "connected" && (
-                <div className="py-8 flex flex-col items-center text-center space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce">
-                    <CheckCircle2 className="w-9 h-9" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-base">
-                      WhatsApp Paired!
-                    </h3>
-                    <p className="text-xs text-emerald-400 font-mono mt-1 font-semibold">
-                      {connectedPhone}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {pairingPhase === "error" && (
-                <div className="py-6 flex flex-col items-center text-center space-y-3">
-                  <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                    <AlertCircle className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-sm">
-                      Pairing Interrupted
-                    </h3>
-                    <p className="text-[11px] text-rose-300 mt-1 max-w-xs">
-                      {errorMessage}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleStartPairing}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-white rounded-xl text-xs font-semibold border border-[#2a3942] mt-2"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Try Again</span>
-                  </button>
-                </div>
-              )}
-
-              {pairingPhase !== "connected" && (
-                <div className="flex justify-end pt-2 border-t border-[#2a3942]">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white rounded-xl text-xs font-medium transition-all"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+          {pairing === "starting" && (
+            <div className="py-10 flex flex-col items-center text-center">
+              <div className="h-16 w-16 rounded-full bg-surface-2 grid place-items-center">
+                <RefreshCw className="w-7 h-7 animate-spin text-gold" />
+              </div>
+              <h3 className="mt-5 text-[18px] font-semibold">
+                Getting things ready
+              </h3>
+              <p className="mt-1.5 text-fg-2 max-w-xs">{statusMessage}</p>
+              <p className="mt-3 text-[13px] text-fg-3">
+                The first time can take 10 to 20 seconds.
+              </p>
             </div>
-          </div>
+          )}
+
+          {pairing === "qr" && (
+            <div className="flex flex-col items-center gap-5">
+              <div className="p-4 bg-white rounded-3xl ring-4 ring-gold/40 shadow-pop">
+                {liveQrImage ? (
+                  <img
+                    src={liveQrImage}
+                    alt="Scan WhatsApp QR"
+                    className="w-56 h-56 object-contain"
+                  />
+                ) : (
+                  <div className="w-56 h-56 flex flex-col items-center justify-center text-neutral-500">
+                    <RefreshCw className="w-7 h-7 animate-spin mb-2" />
+                    <span className="text-[13px]">Preparing your code…</span>
+                  </div>
+                )}
+              </div>
+              <Pill tone="gold" dot>
+                Waiting for you to scan
+              </Pill>
+              <ol className="w-full rounded-3xl bg-surface-2 p-5 space-y-3">
+                {[
+                  "Open WhatsApp on your phone",
+                  "Go to Settings, then Linked devices",
+                  "Tap Link a device and scan this code",
+                ].map((t, i) => (
+                  <li key={t} className="flex gap-3 items-center text-fg">
+                    <span className="h-6 w-6 shrink-0 rounded-full bg-surface text-gold text-[12px] font-semibold grid place-items-center">
+                      {i + 1}
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {pairing === "connected" && (
+            <div className="py-10 flex flex-col items-center text-center">
+              <div className="h-20 w-20 rounded-full bg-ok/10 grid place-items-center text-ok animate-rise">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h3 className="mt-5 text-[22px] font-semibold">
+                You’re connected
+              </h3>
+              <p className="mt-1.5 text-fg-2 num">{connectedPhone}</p>
+            </div>
+          )}
+
+          {pairing === "error" && (
+            <div className="py-8 flex flex-col items-center text-center">
+              <div className="h-16 w-16 rounded-full bg-danger/10 grid place-items-center text-danger">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h3 className="mt-5 text-[18px] font-semibold">
+                That didn’t work
+              </h3>
+              <p className="mt-1.5 text-danger max-w-xs">{errorMessage}</p>
+              <button
+                type="button"
+                onClick={handleStartPairing}
+                className={`${btn("secondary")} mt-6`}
+              >
+                <RefreshCw className="w-4 h-4" /> Try again
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </Sheet>
+    </Page>
   );
 };

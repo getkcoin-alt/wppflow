@@ -9,6 +9,11 @@ import {
   getStoredTenantId,
 } from "../../services/api";
 import { parseContactsCsv, contactsCsv } from "../../utils/csv";
+import { Download, Plus, Search, Upload, Users } from "lucide-react";
+import { safeAvatarFallback } from "../../utils/avatar";
+import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
+import { btn, inputCls } from "../ui/styles";
+import { Sheet } from "../ui/Sheet";
 export function Contacts({
   onSelectChat,
 }: {
@@ -45,55 +50,80 @@ export function Contacts({
       setBusy(false);
     }
   };
+  const save = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const data = {
+      name: String(f.get("name")),
+      phone: String(f.get("phone")),
+      email: String(f.get("email")),
+      tags: String(f.get("tags"))
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      optIn: f.get("consent") === "on",
+    };
+    void run(async () => {
+      if (editing) await patchContact(editing.id, data);
+      else {
+        const saved = await addContact(data);
+        await patchContact(saved.contact.id, { optIn: data.optIn });
+      }
+      setOpen(false);
+    });
+  };
   return (
-    <section className="space-y-5">
-      <header className="flex flex-wrap justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold">Contacts & Segments</h1>
-          <p className="text-sm text-slate-400 mt-2">
-            Workspace contacts, tags and recorded campaign permissions. Store
-            integration is not connected.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-            className="bg-emerald-600 p-2 rounded"
-          >
-            New contact
-          </button>
-          <button disabled={busy} onClick={() => file.current?.click()}>
-            Import CSV
-          </button>
-          <button
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                const all: any[] = [];
-                let cursor: string | null = null;
-                do {
-                  const page = await fetchContacts(cursor ? { cursor } : {});
-                  all.push(...page.contacts);
-                  cursor = page.nextCursor;
-                } while (cursor);
-                const url = URL.createObjectURL(
-                  new Blob([contactsCsv(all)], { type: "text/csv" }),
-                );
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = "contacts.csv";
-                link.click();
-                URL.revokeObjectURL(url);
-              })
-            }
-          >
-            Export contacts
-          </button>
-        </div>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="People"
+        title="Contacts"
+        subtitle="Everyone you talk to, with tags and recorded permission for broadcasts."
+        actions={
+          <>
+            <button
+              disabled={busy}
+              onClick={() => file.current?.click()}
+              className={btn("secondary")}
+            >
+              <Upload className="w-4 h-4" /> Import CSV
+            </button>
+            <button
+              disabled={busy}
+              className={btn("secondary")}
+              onClick={() =>
+                void run(async () => {
+                  const all: any[] = [];
+                  let cursor: string | null = null;
+                  do {
+                    const page = await fetchContacts(cursor ? { cursor } : {});
+                    all.push(...page.contacts);
+                    cursor = page.nextCursor;
+                  } while (cursor);
+                  const url = URL.createObjectURL(
+                    new Blob([contactsCsv(all)], { type: "text/csv" }),
+                  );
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "contacts.csv";
+                  link.click();
+                  URL.revokeObjectURL(url);
+                })
+              }
+            >
+              <Download className="w-4 h-4" /> Export contacts
+            </button>
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+              className={btn("primary")}
+            >
+              <Plus className="w-4 h-4" /> New contact
+            </button>
+          </>
+        }
+      />
       <input
         ref={file}
         type="file"
@@ -124,46 +154,59 @@ export function Contacts({
           e.target.value = "";
         }}
       />
-      {(error || query.error) && (
-        <p role="alert" className="text-rose-300">
-          {error || query.error?.message}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="text-emerald-300">
-          {notice}
-        </p>
-      )}
-      {open && (
+      <div className="space-y-3 mb-5">
+        {(error || query.error) && (
+          <Notice tone="error">{error || query.error?.message}</Notice>
+        )}
+        {notice && <Notice tone="success">{notice}</Notice>}
+      </div>
+
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editing ? "Edit contact" : "New contact"}
+        subtitle={
+          editing
+            ? "The phone number stays linked to its conversation history. Create a new contact for a different number."
+            : undefined
+        }
+        footer={
+          <>
+            <button
+              type="button"
+              className={btn("ghost")}
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              form="contact-form"
+              disabled={busy}
+              className={btn("primary")}
+            >
+              Save contact
+            </button>
+          </>
+        }
+      >
         <form
+          id="contact-form"
           key={editing?.id || "new"}
-          className="bg-[#111b21] p-5 rounded-xl space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const f = new FormData(e.currentTarget);
-            const data = {
-              name: String(f.get("name")),
-              phone: String(f.get("phone")),
-              email: String(f.get("email")),
-              tags: String(f.get("tags"))
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean),
-              optIn: f.get("consent") === "on",
-            };
-            void run(async () => {
-              if (editing) await patchContact(editing.id, data);
-              else {
-                const saved = await addContact(data);
-                await patchContact(saved.contact.id, { optIn: data.optIn });
-              }
-              setOpen(false);
-            });
-          }}
+          className="space-y-4"
+          onSubmit={save}
         >
           {(["name", "phone", "email", "tags"] as const).map((name) => (
-            <label key={name} className="block capitalize">
-              {name}
+            <Field
+              key={name}
+              label={
+                name === "tags" ? "Tags" : name[0].toUpperCase() + name.slice(1)
+              }
+              hint={
+                name === "tags"
+                  ? "Separate with commas, for example VIP, Lead"
+                  : undefined
+              }
+            >
               <input
                 name={name}
                 readOnly={name === "phone" && Boolean(editing)}
@@ -174,118 +217,134 @@ export function Contacts({
                     ? editing?.tags?.join(", ")
                     : editing?.[name] || ""
                 }
-                className="block bg-[#202c33] p-2 rounded w-full"
+                className={`${inputCls} ${name === "phone" && editing ? "opacity-60" : ""}`}
               />
-            </label>
+            </Field>
           ))}
-          <label className="block">
+          <label className="flex items-start gap-3 rounded-2xl bg-surface-2 p-4 cursor-pointer">
             <input
               type="checkbox"
               name="consent"
               defaultChecked={Boolean(editing?.optIn)}
-            />{" "}
-            Permission to receive campaigns has been recorded
+              className="mt-0.5 h-5 w-5 accent-[rgb(var(--c-brand-solid))]"
+            />
+            <span className="text-[14.5px] text-fg">
+              Permission to receive broadcasts has been recorded
+            </span>
           </label>
-          {editing && (
-            <p className="text-xs text-slate-400">
-              Phone identity is retained with its conversation history. Create a
-              new contact for a different number.
-            </p>
-          )}
-          <button disabled={busy} className="bg-emerald-600 p-2 rounded">
-            Save contact
-          </button>
-          <button type="button" className="ml-4" onClick={() => setOpen(false)}>
-            Cancel
-          </button>
         </form>
-      )}
-      <input
-        aria-label="Search contacts"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search all contacts by name, phone or email"
-        className="bg-[#202c33] p-3 rounded-xl w-full"
-      />
-      <div className="bg-[#111b21] rounded-xl overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              {[
-                "Contact",
-                "Phone",
-                "Tags",
-                "Campaign permission",
-                "Actions",
-              ].map((h) => (
-                <th key={h} className="p-3 text-left text-slate-400">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((c: any) => (
-              <tr key={c.id} className="border-t border-[#2a3942]">
-                <td className="p-3">
+      </Sheet>
+
+      <div className="relative mb-4">
+        <Search className="w-[18px] h-[18px] text-fg-3 absolute left-4 top-1/2 -translate-y-1/2" />
+        <input
+          aria-label="Search contacts"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, phone or email"
+          className={`${inputCls} pl-11`}
+        />
+      </div>
+
+      {query.isPending ? (
+        <div className="space-y-2" aria-busy>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton h-[72px] !rounded-2xl" />
+          ))}
+          <span className="sr-only">Loading contacts…</span>
+        </div>
+      ) : !rows.length ? (
+        <EmptyState
+          icon={<Users className="w-6 h-6" />}
+          title="No contacts match"
+          body={
+            search
+              ? "Try a different name, number or email."
+              : "Add your first contact or import a CSV."
+          }
+        />
+      ) : (
+        <ul className="card divide-y divide-line overflow-hidden !rounded-3xl">
+          {rows.map((c: any) => (
+            <li
+              key={c.id}
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 py-4 hover:bg-surface-2/50 transition lg:grid lg:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,1fr)_130px_auto]"
+            >
+              <img
+                src={safeAvatarFallback(c.name)}
+                alt=""
+                className="h-11 w-11 rounded-full shrink-0"
+              />
+              <div className="min-w-0 flex-1 basis-48 lg:basis-auto">
+                <div className="text-[15.5px] font-medium text-fg truncate">
                   {c.name}
-                  <span className="block text-xs text-slate-400">
-                    {c.email}
-                  </span>
-                </td>
-                <td>{c.phone}</td>
-                <td>{c.tags.join(", ")}</td>
-                <td>{c.optIn ? "Recorded opt-in" : "Not recorded"}</td>
-                <td>
-                  <button
-                    className="text-emerald-400 p-2"
-                    onClick={() => onSelectChat(c.id)}
-                  >
-                    Message
-                  </button>
-                  <button
-                    className="p-2"
-                    onClick={() => {
-                      setEditing(c);
-                      setOpen(true);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-rose-300 p-2"
-                    disabled={busy}
-                    onClick={() => {
-                      if (
-                        confirm(
-                          "Delete this contact? Conversation history will be retained.",
-                        )
+                </div>
+                <div className="text-[13.5px] text-fg-2 truncate">
+                  {c.phone}
+                  {c.email ? ` · ${c.email}` : ""}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {c.tags.map((t: string) => (
+                  <Pill key={t}>{t}</Pill>
+                ))}
+              </div>
+              <div>
+                {c.optIn ? (
+                  <Pill tone="ok" dot>
+                    Opted in
+                  </Pill>
+                ) : (
+                  <Pill>No permission</Pill>
+                )}
+              </div>
+              <div className="flex items-center gap-1 ml-auto">
+                <button
+                  className={btn("ghost", "sm")}
+                  onClick={() => onSelectChat(c.id)}
+                >
+                  Message
+                </button>
+                <button
+                  className={btn("ghost", "sm")}
+                  onClick={() => {
+                    setEditing(c);
+                    setOpen(true);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  className={`${btn("ghost", "sm")} !text-danger`}
+                  disabled={busy}
+                  onClick={() => {
+                    if (
+                      confirm(
+                        "Delete this contact? Conversation history will be retained.",
                       )
-                        void run(async () => {
-                          await removeContact(c.id);
-                        });
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {query.isPending && <p className="p-4">Loading contacts…</p>}
-        {!query.isPending && !rows.length && (
-          <p className="p-4 text-slate-400">No contacts match.</p>
-        )}
-        {query.hasNextPage && (
+                    )
+                      void run(async () => {
+                        await removeContact(c.id);
+                      });
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {query.hasNextPage && (
+        <div className="mt-4 flex justify-center">
           <button
-            className="p-4 text-emerald-400"
+            className={btn("secondary")}
             onClick={() => void query.fetchNextPage()}
           >
             Load more contacts
           </button>
-        )}
-      </div>
-    </section>
+        </div>
+      )}
+    </Page>
   );
 }

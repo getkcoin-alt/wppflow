@@ -1,5 +1,21 @@
 import { useState } from "react";
+import { Megaphone, Pause, Play, Plus } from "lucide-react";
 import type { WhatsAppSession } from "../../types";
+import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
+import { btn, inputCls, textareaCls } from "../ui/styles";
+import { Sheet } from "../ui/Sheet";
+
+const STATUS_TONE: Record<
+  string,
+  "ok" | "warn" | "danger" | "info" | "neutral"
+> = {
+  running: "ok",
+  completed: "info",
+  failed: "danger",
+  stopped: "warn",
+  paused: "warn",
+};
+
 export function Campaigns({
   campaigns,
   sessions,
@@ -31,30 +47,53 @@ export function Campaigns({
     }
   };
   return (
-    <section className="space-y-5">
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold">Broadcasts & Campaigns</h1>
-          <p className="text-slate-400 text-sm mt-2">
-            Send only to recorded opted-in contacts. Stopping prevents new
-            dispatch; messages already transmitted cannot be recalled.
-          </p>
-        </div>
-        <button
-          className="bg-emerald-600 p-3 rounded-xl shrink-0"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          New campaign
-        </button>
-      </header>
+    <Page>
+      <PageHeader
+        eyebrow="Reach"
+        title="Broadcasts"
+        subtitle="Send only to contacts with recorded permission. Stopping prevents new sends; messages already sent cannot be recalled."
+        actions={
+          <button
+            className={btn("primary")}
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus className="w-4 h-4" /> New campaign
+          </button>
+        }
+      />
       {error && (
-        <p role="alert" className="text-rose-300">
-          {error}
-        </p>
+        <div className="mb-4">
+          <Notice tone="error">{error}</Notice>
+        </div>
       )}
-      {isCreateModalOpen && (
+
+      <Sheet
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="New campaign"
+        subtitle="Saved as a draft. You choose when it starts."
+        footer={
+          <>
+            <button
+              type="button"
+              className={btn("ghost")}
+              onClick={() => setIsCreateModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              form="campaign-form"
+              disabled={busy}
+              className={btn("primary")}
+            >
+              Save draft
+            </button>
+          </>
+        }
+      >
         <form
-          className="bg-[#111b21] p-5 border border-[#2a3942] rounded-xl space-y-3"
+          id="campaign-form"
+          className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
@@ -73,117 +112,112 @@ export function Campaigns({
             });
           }}
         >
-          <label className="block">
-            Name
-            <input
-              required
-              name="name"
-              className="block bg-[#202c33] rounded p-2 w-full"
-            />
-          </label>
-          <label className="block">
-            WhatsApp account
-            <select
-              name="session"
-              required
-              className="block bg-[#202c33] p-2 w-full"
-            >
-              <option value="">Select an account</option>
+          <Field label="Name">
+            <input required name="name" className={inputCls} />
+          </Field>
+          <Field label="WhatsApp number">
+            <select name="session" required className={inputCls}>
+              <option value="">Select a number</option>
               {sessions.map((s) => (
                 <option key={s.id} value={s.sessionKey}>
                   {s.displayName} — {s.status}
                 </option>
               ))}
             </select>
-          </label>
-          <label className="block">
-            Contact tag (leave empty for all opted-in contacts)
-            <input name="segment" className="block bg-[#202c33] p-2 w-full" />
-          </label>
-          <label className="block">
-            Message
+          </Field>
+          <Field
+            label="Contact tag"
+            hint="Leave empty to send to all opted-in contacts."
+          >
+            <input name="segment" className={inputCls} />
+          </Field>
+          <Field
+            label="Message"
+            hint="Use {{name}} to insert the contact’s name."
+          >
             <textarea
               required
               name="message"
               maxLength={10000}
-              className="block bg-[#202c33] p-2 w-full"
-              placeholder="Use {{name}} to insert the contact name"
+              className={textareaCls}
             />
-          </label>
-          <label className="block">
-            Minimum seconds between recipients
-            <input
-              name="delay"
-              type="number"
-              min={4}
-              max={60}
-              defaultValue={4}
-              className="bg-[#202c33] p-2 ml-3"
-            />
-          </label>
-          <label className="block">
-            Optional start time
-            <input
-              name="schedule"
-              type="datetime-local"
-              className="bg-[#202c33] p-2 ml-3"
-            />
-          </label>
-          <button disabled={busy} className="bg-emerald-600 rounded p-2">
-            Save draft
-          </button>
-          <button
-            type="button"
-            className="ml-4"
-            onClick={() => setIsCreateModalOpen(false)}
-          >
-            Cancel
-          </button>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Seconds between sends"
+              hint="At least 4, to protect your number."
+            >
+              <input
+                name="delay"
+                type="number"
+                min={4}
+                max={60}
+                defaultValue={4}
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Start time" hint="Optional.">
+              <input
+                name="schedule"
+                type="datetime-local"
+                className={inputCls}
+              />
+            </Field>
+          </div>
         </form>
-      )}
-      <div className="overflow-x-auto bg-[#111b21] rounded-xl border border-[#2a3942]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              {[
-                "Campaign",
-                "Status",
-                "Recipients",
-                "Sent",
-                "Delivered",
-                "Read",
-                "Failed",
-                "Action",
-              ].map((h) => (
-                <th key={h} className="p-3 text-left text-slate-400">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {campaigns.map((c) => (
-              <tr key={c.id} className="border-t border-[#2a3942]">
-                <td className="p-3">{c.name}</td>
-                <td>{c.status}</td>
-                <td>{c.totalRecipients}</td>
-                <td>{c.sentCount}</td>
-                <td>{c.deliveredCount}</td>
-                <td>{c.readCount}</td>
-                <td>{c.failedCount}</td>
-                <td>
+      </Sheet>
+
+      {!campaigns.length ? (
+        <EmptyState
+          icon={<Megaphone className="w-6 h-6" />}
+          title="No campaigns yet"
+          body="Create a draft to reach your opted-in contacts."
+          action={
+            <button
+              className={btn("primary")}
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <Plus className="w-4 h-4" /> New campaign
+            </button>
+          }
+        />
+      ) : (
+        <ul className="space-y-3">
+          {campaigns.map((c) => {
+            const total = Number(c.totalRecipients || 0);
+            const sent = Number(c.sentCount || 0);
+            const progress = total
+              ? Math.min(100, Math.round((sent / total) * 100))
+              : 0;
+            const running = c.status === "running";
+            return (
+              <li key={c.id} className="card p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-[18px] font-semibold truncate">
+                      {c.name}
+                    </h2>
+                    <div className="mt-1.5">
+                      <Pill tone={STATUS_TONE[c.status] || "neutral"} dot>
+                        {c.status}
+                      </Pill>
+                    </div>
+                  </div>
                   <button
                     disabled={busy || c.status === "completed"}
                     onClick={() =>
                       void act(() =>
-                        c.status === "running"
-                          ? onStopCampaign(c.id)
-                          : onStartCampaign(c.id),
+                        running ? onStopCampaign(c.id) : onStartCampaign(c.id),
                       )
                     }
-                    className="text-emerald-400 p-2"
+                    className={btn(running ? "secondary" : "primary", "sm")}
                   >
-                    {c.status === "running"
+                    {running ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                    {running
                       ? "Stop"
                       : c.status === "completed"
                         ? "Completed"
@@ -191,17 +225,36 @@ export function Campaigns({
                           ? "Resume"
                           : "Start"}
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!campaigns.length && (
-          <p className="p-6 text-slate-400">
-            No campaigns yet. Create a draft to begin.
-          </p>
-        )}
-      </div>
-    </section>
+                </div>
+                <div className="mt-5 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gold-gradient transition-[width] duration-700"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <dl className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-4 text-[13px]">
+                  {[
+                    ["Recipients", c.totalRecipients],
+                    ["Sent", c.sentCount],
+                    ["Delivered", c.deliveredCount],
+                    ["Read", c.readCount],
+                    ["Failed", c.failedCount],
+                  ].map(([k, v]) => (
+                    <div key={k as string}>
+                      <dt className="text-fg-3">{k}</dt>
+                      <dd
+                        className={`text-[22px] font-semibold num ${k === "Failed" && Number(v) ? "text-danger" : "text-fg"}`}
+                      >
+                        {Number(v || 0).toLocaleString()}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Page>
   );
 }

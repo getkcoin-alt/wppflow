@@ -1,41 +1,268 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Scriwo design tokens.
+  Two themes share one vocabulary: "Obsidian" (dark) and "Pearl" (light). Colours are stored as
+  space-separated RGB so Tailwind opacity modifiers (bg-brand/10) keep working.
+  To re-skin the product, change the --c-brand* and --c-gold values below — nothing else.
+*/
+:root {
+  color-scheme: light;
+  --c-app: 245 245 247;
+  --c-surface: 255 255 255;
+  --c-surface-2: 240 240 243;
+  --c-surface-3: 230 230 235;
+  --c-fg: 29 29 31;
+  --c-fg-2: 81 81 84;
+  --c-fg-3: 134 134 139;
+  --c-line: 0 0 0;
+  --line-alpha: 0.09;
+
+  --c-brand: 11 107 85; /* emerald, used for text/icons on surfaces */
+  --c-brand-solid: 15 107 85; /* emerald, used behind white text */
+  --c-brand-hover: 18 128 102;
+  --c-gold: 154 122 50; /* champagne gold, the signature accent */
+  --c-ok: 18 140 90;
+  --c-warn: 176 108 0;
+  --c-danger: 200 45 38;
+  --c-info: 24 100 220;
+
+  --c-bubble-in: 255 255 255;
+  --c-bubble-out: 217 244 230;
+  --c-note: 255 244 214;
+  --c-wallpaper: 236 236 240;
+
+  --shadow-card:
+    0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+  --shadow-pop:
+    0 2px 6px rgb(0 0 0 / 0.06), 0 24px 56px -16px rgb(0 0 0 / 0.22);
+  --glass: rgb(255 255 255 / 0.86);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+  color-scheme: dark;
+  --c-app: 8 9 10;
+  --c-surface: 15 17 18;
+  --c-surface-2: 22 25 27;
+  --c-surface-3: 31 35 38;
+  --c-fg: 245 245 247;
+  --c-fg-2: 161 161 166;
+  --c-fg-3: 110 110 115;
+  --c-line: 255 255 255;
+  --line-alpha: 0.09;
+
+  --c-brand: 110 209 172;
+  --c-brand-solid: 15 107 85;
+  --c-brand-hover: 20 133 105;
+  --c-gold: 214 185 123;
+  --c-ok: 74 214 152;
+  --c-warn: 245 183 60;
+  --c-danger: 255 105 97;
+  --c-info: 110 168 255;
+
+  --c-bubble-in: 28 32 35;
+  --c-bubble-out: 15 77 62;
+  --c-note: 52 40 12;
+  --c-wallpaper: 11 13 14;
+
+  --shadow-card:
+    0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -16px rgb(0 0 0 / 0.7);
+  --shadow-pop:
+    0 1px 0 rgb(255 255 255 / 0.05) inset, 0 28px 64px -16px rgb(0 0 0 / 0.8);
+  --glass: rgb(18 20 22 / 0.84);
+}
+
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
   body {
-    @apply bg-[#0c1317] text-slate-100 antialiased font-sans selection:bg-emerald-500 selection:text-white;
+    @apply bg-app text-fg antialiased font-sans;
+    font-feature-settings: "cv11", "ss03";
+    letter-spacing: -0.005em;
+    transition:
+      background-color 0.3s var(--ease-out),
+      color 0.3s var(--ease-out);
+  }
+  ::selection {
+    background: rgb(var(--c-gold) / 0.28);
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.022em;
+    font-weight: 600;
+  }
+  /* One consistent, elegant keyboard focus ring */
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-gold) / 0.75);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  button,
+  [role="button"],
+  a,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
+  }
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--c-fg-3));
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--c-fg) / 0.18) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-fg) / 0.16);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--c-fg) / 0.3);
+    background-clip: content-box;
+    border: 2px solid transparent;
   }
 }
 
-/* Custom Scrollbar for WhatsApp style chat list */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+@layer components {
+  /* Frosted glass: top bars, sheets, floating controls */
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+    backdrop-filter: saturate(180%) blur(22px);
+  }
+  .card {
+    @apply bg-surface border border-line rounded-3xl;
+    box-shadow: var(--shadow-card);
+  }
+  .pop {
+    box-shadow: var(--shadow-pop);
+  }
+  /* Quiet section label */
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase text-fg-3;
+    letter-spacing: 0.14em;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Signature gold gradient, for the logo and rare highlights */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #f3e3bc, #d2b06a 55%, #a8843f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, #f3e3bc, #d2b06a 55%, #a8843f);
+  }
+  .skeleton {
+    background: linear-gradient(
+      100deg,
+      rgb(var(--c-fg) / 0.05) 30%,
+      rgb(var(--c-fg) / 0.1) 50%,
+      rgb(var(--c-fg) / 0.05) 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+    border-radius: 12px;
+  }
+
+  /* Chat surfaces */
+  .chat-bubble-out {
+    position: relative;
+    background-color: rgb(var(--c-bubble-out));
+    color: rgb(var(--c-fg));
+  }
+  .chat-bubble-in {
+    position: relative;
+    background-color: rgb(var(--c-bubble-in));
+    color: rgb(var(--c-fg));
+    box-shadow: 0 0 0 1px rgb(var(--c-line) / var(--line-alpha));
+  }
+  .note-bubble {
+    position: relative;
+    background-color: rgb(var(--c-note));
+    border: 1px dashed rgb(var(--c-warn) / 0.55);
+  }
+  .chat-wallpaper {
+    background-color: rgb(var(--c-wallpaper));
+    background-image: radial-gradient(
+      rgb(var(--c-fg) / 0.045) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+  }
 }
 
-.chat-bubble-out {
-  position: relative;
-  background-color: #005c4b;
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(3%, -4%, 0) scale(1.08);
+  }
 }
 
-.chat-bubble-in {
-  position: relative;
-  background-color: #202c33;
-}
-
-.note-bubble {
-  position: relative;
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(202, 138, 4, 0.22));
-  border: 1px solid rgba(234, 179, 8, 0.35);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

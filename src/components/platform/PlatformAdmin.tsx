@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2, LogOut, Plus } from "lucide-react";
+import { ScriwoMark, Wordmark } from "../brand/Logo";
+import { Sheet } from "../ui/Sheet";
+import { EmptyState, Field, Notice, Pill } from "../ui/Page";
+import { btn, inputCls } from "../ui/styles";
+import { ThemeSwitch } from "../layout/ProfileMenu";
+import { useTheme } from "../../hooks/useTheme";
 import {
   listCompanies,
   createCompany,
@@ -27,6 +34,8 @@ export function PlatformAdmin({
   onLogout: () => void;
 }) {
   const qc = useQueryClient();
+  const theme = useTheme();
+  const [adding, setAdding] = useState(false);
   const { data, error, isPending } = useQuery<Company[]>({
     queryKey: ["companies"],
     queryFn: listCompanies,
@@ -49,195 +58,290 @@ export function PlatformAdmin({
       setBusy(false);
     }
   };
+  const totals = {
+    companies: data?.length || 0,
+    active: data?.filter((c) => c.status === "active").length || 0,
+    live: data?.reduce((n, c) => n + c.connectedSessions, 0) || 0,
+    people: data?.reduce((n, c) => n + c.staffCount, 0) || 0,
+  };
   return (
-    <div className="min-h-screen bg-[#0c1317] text-[#e9edef]">
-      <header className="flex items-center justify-between bg-[#111b21] border-b border-[#2a3942] px-5 py-3">
-        <div>
-          <span className="font-extrabold text-lg">WppFlow</span>
-          <span className="ml-2 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
-            Platform admin
-          </span>
-        </div>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-slate-400">{adminName}</span>
-          <button onClick={onLogout} className="underline">
-            Sign out
-          </button>
+    <div className="min-h-dvh bg-app text-fg">
+      <header className="glass sticky top-0 z-30 border-b border-line">
+        <div className="mx-auto max-w-6xl px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <ScriwoMark size={34} />
+            <Wordmark className="text-[13px]" />
+            <Pill tone="gold">Platform</Pill>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block w-56">
+              <ThemeSwitch value={theme.choice} onChange={theme.setChoice} />
+            </div>
+            <span className="hidden md:inline text-[14px] text-fg-2">
+              {adminName}
+            </span>
+            <button onClick={onLogout} className={btn("ghost", "sm")}>
+              <LogOut className="w-4 h-4" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto p-4 sm:p-6 space-y-5">
-        <h1 className="text-xl font-bold">Companies</h1>
-        {(failure || error) && (
-          <p role="alert" className="p-3 rounded-lg bg-rose-950 text-rose-200">
-            {failure || (error as Error).message}
-          </p>
-        )}
-        {notice && (
-          <p
-            role="status"
-            className="p-3 rounded-lg bg-emerald-950 text-emerald-200"
-          >
-            {notice}
-          </p>
-        )}
-        <form
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 bg-[#111b21] rounded-xl p-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.currentTarget,
-              f = new FormData(form);
-            void run(() =>
-              createCompany({
-                companyName: String(f.get("companyName")),
-                ownerName: String(f.get("ownerName")),
-                ownerEmail: String(f.get("ownerEmail")),
-                sessionsLimit: Number(f.get("sessionsLimit")),
-              }),
-            ).then((r) => r && form.reset());
-          }}
-        >
-          <input
-            aria-label="Company name"
-            name="companyName"
-            required
-            placeholder="Company name"
-            className="bg-[#202c33] p-2 rounded"
-          />
-          <input
-            aria-label="Owner name"
-            name="ownerName"
-            required
-            placeholder="Owner name"
-            className="bg-[#202c33] p-2 rounded"
-          />
-          <input
-            aria-label="Owner email"
-            name="ownerEmail"
-            type="email"
-            required
-            placeholder="Owner Gmail / email"
-            className="bg-[#202c33] p-2 rounded"
-          />
-          <input
-            aria-label="WhatsApp session limit"
-            name="sessionsLimit"
-            type="number"
-            min={1}
-            max={500}
-            defaultValue={5}
-            required
-            className="bg-[#202c33] p-2 rounded"
-          />
-          <button
-            disabled={busy}
-            className="bg-emerald-600 hover:bg-emerald-500 p-2 rounded font-semibold disabled:opacity-50"
-          >
-            Add company &amp; email setup link
+
+      <main className="mx-auto max-w-6xl px-4 sm:px-8 pt-8 sm:pt-12 pb-16 animate-rise">
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="eyebrow mb-2">Platform</div>
+            <h1 className="text-[32px] sm:text-[40px] leading-[1.1] font-semibold">
+              Companies
+            </h1>
+            <p className="text-[16px] text-fg-2 mt-1.5">
+              Create a company and its owner receives an email to set their
+              password.
+            </p>
+          </div>
+          <button className={btn("primary")} onClick={() => setAdding(true)}>
+            <Plus className="w-4 h-4" /> Add company
           </button>
-        </form>
-        <div className="bg-[#111b21] rounded-xl overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                {[
-                  "Company",
-                  "Owner",
-                  "Staff",
-                  "WhatsApp (connected / total / limit)",
-                  "Status",
-                  "Actions",
-                ].map((h) => (
-                  <th key={h} className="text-left p-3">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isPending && (
-                <tr>
-                  <td className="p-3" colSpan={6}>
-                    Loading companies…
-                  </td>
-                </tr>
-              )}
-              {data?.length === 0 && (
-                <tr>
-                  <td className="p-3" colSpan={6}>
-                    No companies yet. Add the first one above.
-                  </td>
-                </tr>
-              )}
-              {data?.map((c) => (
-                <tr key={c.id} className="border-t border-[#2a3942]">
-                  <td className="p-3">{c.name}</td>
-                  <td>
-                    {c.owner ? `${c.owner.name} (${c.owner.email})` : "—"}
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[
+            ["Companies", totals.companies],
+            ["Active", totals.active],
+            ["Numbers live", totals.live],
+            ["People", totals.people],
+          ].map(([k, v]) => (
+            <div key={k as string} className="card p-5">
+              <p className="text-[13px] text-fg-2">{k}</p>
+              <p className="mt-1.5 text-[34px] leading-none font-semibold num">
+                {v}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-3 mb-5">
+          {(failure || error) && (
+            <Notice tone="error">{failure || (error as Error).message}</Notice>
+          )}
+          {notice && <Notice tone="success">{notice}</Notice>}
+        </div>
+
+        <Sheet
+          open={adding}
+          onClose={() => setAdding(false)}
+          title="Add a company"
+          subtitle="We email the owner a secure link to choose their password."
+          footer={
+            <>
+              <button
+                type="button"
+                className={btn("ghost")}
+                onClick={() => setAdding(false)}
+              >
+                Cancel
+              </button>
+              <button
+                form="company-form"
+                disabled={busy}
+                className={btn("primary")}
+              >
+                Add company &amp; email setup link
+              </button>
+            </>
+          }
+        >
+          <form
+            id="company-form"
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.currentTarget,
+                f = new FormData(form);
+              void run(() =>
+                createCompany({
+                  companyName: String(f.get("companyName")),
+                  ownerName: String(f.get("ownerName")),
+                  ownerEmail: String(f.get("ownerEmail")),
+                  sessionsLimit: Number(f.get("sessionsLimit")),
+                }),
+              ).then((r) => {
+                if (r) {
+                  form.reset();
+                  setAdding(false);
+                }
+              });
+            }}
+          >
+            <Field label="Company name">
+              <input
+                aria-label="Company name"
+                name="companyName"
+                required
+                placeholder="Acme Retail"
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Owner name">
+              <input
+                aria-label="Owner name"
+                name="ownerName"
+                required
+                placeholder="Jane Doe"
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Owner email">
+              <input
+                aria-label="Owner email"
+                name="ownerEmail"
+                type="email"
+                required
+                placeholder="jane@acme.com"
+                className={inputCls}
+              />
+            </Field>
+            <Field
+              label="WhatsApp number limit"
+              hint="How many numbers this company may connect."
+            >
+              <input
+                aria-label="WhatsApp session limit"
+                name="sessionsLimit"
+                type="number"
+                min={1}
+                max={500}
+                defaultValue={5}
+                required
+                className={inputCls}
+              />
+            </Field>
+          </form>
+        </Sheet>
+
+        {isPending && (
+          <div className="space-y-3" aria-busy>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-24 !rounded-3xl" />
+            ))}
+            <span className="sr-only">Loading companies…</span>
+          </div>
+        )}
+        {data?.length === 0 && (
+          <EmptyState
+            icon={<Building2 className="w-6 h-6" />}
+            title="No companies yet"
+            body="Add the first one to get started."
+            action={
+              <button
+                className={btn("primary")}
+                onClick={() => setAdding(true)}
+              >
+                <Plus className="w-4 h-4" /> Add company
+              </button>
+            }
+          />
+        )}
+        <ul className="space-y-3">
+          {data?.map((c) => (
+            <li key={c.id} className="card p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-[19px] font-semibold truncate">
+                      {c.name}
+                    </h2>
+                    <Pill tone={c.status === "active" ? "ok" : "warn"} dot>
+                      {c.status}
+                    </Pill>
+                  </div>
+                  <p className="text-[14px] text-fg-2 mt-1">
+                    {c.owner
+                      ? `${c.owner.name} · ${c.owner.email}`
+                      : "No owner"}
                     {c.owner && !c.owner.activated ? (
-                      <span className="ml-2 text-amber-300">
-                        awaiting password setup
+                      <span className="ml-2 inline-block align-middle">
+                        <Pill tone="warn">Awaiting password setup</Pill>
                       </span>
                     ) : null}
-                  </td>
-                  <td>{c.staffCount}</td>
-                  <td>
-                    {c.connectedSessions} / {c.sessionsCount} /{" "}
-                    {c.sessionsLimit}
-                  </td>
-                  <td>{c.status}</td>
-                  <td>
-                    <button
-                      disabled={busy}
-                      className="text-emerald-400 p-2"
-                      onClick={() =>
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-1">
+                  <button
+                    disabled={busy}
+                    className={btn("ghost", "sm")}
+                    onClick={() =>
+                      void run(
+                        () =>
+                          updateCompany(c.id, {
+                            status:
+                              c.status === "active" ? "suspended" : "active",
+                          }),
+                        () =>
+                          `${c.name} is now ${c.status === "active" ? "suspended" : "active"}.`,
+                      )
+                    }
+                  >
+                    {c.status === "active" ? "Suspend" : "Reactivate"}
+                  </button>
+                  <button
+                    disabled={busy}
+                    className={btn("ghost", "sm")}
+                    onClick={() => {
+                      const v = window.prompt(
+                        "WhatsApp session limit",
+                        String(c.sessionsLimit),
+                      );
+                      if (v)
                         void run(
                           () =>
-                            updateCompany(c.id, {
-                              status:
-                                c.status === "active" ? "suspended" : "active",
-                            }),
-                          () =>
-                            `${c.name} is now ${c.status === "active" ? "suspended" : "active"}.`,
-                        )
-                      }
-                    >
-                      {c.status === "active" ? "Suspend" : "Reactivate"}
-                    </button>
+                            updateCompany(c.id, { sessionsLimit: Number(v) }),
+                          () => "Session limit updated.",
+                        );
+                    }}
+                  >
+                    Set limit
+                  </button>
+                  {c.owner && (
                     <button
                       disabled={busy}
-                      className="text-emerald-400 p-2"
-                      onClick={() => {
-                        const v = window.prompt(
-                          "WhatsApp session limit",
-                          String(c.sessionsLimit),
-                        );
-                        if (v)
-                          void run(
-                            () =>
-                              updateCompany(c.id, { sessionsLimit: Number(v) }),
-                            () => "Session limit updated.",
-                          );
-                      }}
+                      className={btn("secondary", "sm")}
+                      onClick={() =>
+                        void run(() => resendOwnerCredentials(c.id))
+                      }
                     >
-                      Set limit
+                      Resend setup link
                     </button>
-                    {c.owner && (
-                      <button
-                        disabled={busy}
-                        className="text-emerald-400 p-2"
-                        onClick={() =>
-                          void run(() => resendOwnerCredentials(c.id))
-                        }
-                      >
-                        Resend setup link
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                </div>
+              </div>
+              <dl className="mt-5 grid grid-cols-3 gap-4">
+                <div>
+                  <dt className="text-[12.5px] text-fg-3">People</dt>
+                  <dd className="text-[24px] font-semibold num">
+                    {c.staffCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[12.5px] text-fg-3">Numbers live</dt>
+                  <dd className="text-[24px] font-semibold num">
+                    {c.connectedSessions}
+                    <span className="text-fg-3 text-[16px]">
+                      {" "}
+                      / {c.sessionsCount}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[12.5px] text-fg-3">Limit</dt>
+                  <dd className="text-[24px] font-semibold num">
+                    {c.sessionsLimit}
+                  </dd>
+                </div>
+              </dl>
+            </li>
+          ))}
+        </ul>
       </main>
     </div>
   );

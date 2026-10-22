@@ -102,7 +102,7 @@ const mockContacts = {
   },
 };
 
-describe("WhatsApp Web Inbox Component", () => {
+describe("Inbox component", () => {
   it("renders chat threads and header indicators", () => {
     render(
       <Inbox
@@ -125,8 +125,8 @@ describe("WhatsApp Web Inbox Component", () => {
       1,
     );
     expect(screen.getByText("Product VIP Group")).toBeDefined();
-    expect(screen.getByText("WhatsApp Inbox")).toBeDefined();
-    expect(screen.getByText("Connected (1)")).toBeDefined();
+    expect(screen.getByText("Inbox")).toBeDefined();
+    expect(screen.getByText("1 number connected")).toBeDefined();
   });
 
   it("filters conversation list when clicking Unread or Groups pills", () => {
@@ -148,7 +148,7 @@ describe("WhatsApp Web Inbox Component", () => {
     );
 
     // Click 'Unread' filter pill
-    const unreadButton = screen.getByRole("button", { name: /Unread/i });
+    const unreadButton = screen.getByRole("tab", { name: /Unread/i });
     fireEvent.click(unreadButton);
 
     expect(screen.getAllByText("Alice Johnson").length).toBeGreaterThanOrEqual(
@@ -157,7 +157,7 @@ describe("WhatsApp Web Inbox Component", () => {
     expect(screen.queryByText("Product VIP Group")).toBeNull();
 
     // Click 'Groups' filter pill
-    const groupsButton = screen.getByRole("button", { name: /Groups/i });
+    const groupsButton = screen.getByRole("tab", { name: /Groups/i });
     fireEvent.click(groupsButton);
 
     expect(screen.queryByText("Product VIP Group")).toBeDefined();
@@ -183,7 +183,7 @@ describe("WhatsApp Web Inbox Component", () => {
       />,
     );
 
-    const input = screen.getByPlaceholderText("Type a message");
+    const input = screen.getByPlaceholderText("Write a message");
     fireEvent.change(input, { target: { value: "Your order is confirmed!" } });
 
     fireEvent.keyDown(input, { key: "Enter", code: "Enter" });

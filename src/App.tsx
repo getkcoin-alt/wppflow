@@ -4,13 +4,28 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Navbar } from "./components/layout/Navbar";
+import { Dock } from "./components/layout/Dock";
+import { TabBar } from "./components/layout/TabBar";
+import { ProfileMenu, ThemeSwitch } from "./components/layout/ProfileMenu";
 import {
-  Sidebar,
-  type UserSubTab,
+  CommandPalette,
+  type Command,
+} from "./components/layout/CommandPalette";
+import {
+  ADMIN_TABS,
+  NAV,
+  NAV_SECONDARY,
   type AdminSubTab,
   type DevSubTab,
-} from "./components/layout/Sidebar";
+  type NavItem,
+  type UserSubTab,
+  type View,
+} from "./components/layout/navigation";
+import { Page, PageHeader, Segmented } from "./components/ui/Page";
+import { ScriwoMark } from "./components/brand/Logo";
+import { useTheme } from "./hooks/useTheme";
+import { useBackendHealth } from "./hooks/useBackendHealth";
+import { LogOut, Moon, Plus, RefreshCw, Sun } from "lucide-react";
 import { LoginPage } from "./components/auth/LoginPage";
 import { ChangePassword } from "./components/auth/ChangePassword";
 import { PlatformAdmin } from "./components/platform/PlatformAdmin";
@@ -50,10 +65,14 @@ import { reconcileMessages } from "./utils/messages";
 
 export function App() {
   const qc = useQueryClient();
+  const theme = useTheme();
+  const engine = useBackendHealth();
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null),
     [ready, setReady] = useState(false),
     [error, setError] = useState("");
-  const [view, setView] = useState<"user" | "admin" | "developer">("user");
+  const [info, setInfo] = useState("");
+  const [view, setView] = useState<View>("user");
   const [tab, setTab] = useState<UserSubTab>("inbox"),
     [adminTab, setAdminTab] = useState<AdminSubTab>("users"),
     [devTab, setDevTab] = useState<DevSubTab>("docs");
@@ -262,6 +281,18 @@ export function App() {
       );
     },
   });
+  useEffect(() => {
+    if (!user || platformAdmin || user.mustChangePassword) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [user, platformAdmin]);
+
   const run = async (action: () => Promise<any>) => {
     setError("");
     try {
@@ -373,7 +404,15 @@ export function App() {
     }
   };
   if (!ready)
-    return <div className="p-8 text-slate-300">Restoring your workspace…</div>;
+    return (
+      <div
+        className="h-dvh grid place-items-center bg-app"
+        role="status"
+        aria-label="Loading Scriwo"
+      >
+        <ScriwoMark size={56} className="animate-pulse" />
+      </div>
+    );
   if (!user)
     return (
       <LoginPage
@@ -401,40 +440,136 @@ export function App() {
     conversations.error ||
     contactQuery.error ||
     history.error;
+  const connected = sessions.filter((x) => x.status === "CONNECTED").length;
+  const unreadChats = chats.filter((c) => c.unreadCount > 0).length;
+  const go = (item: NavItem) => {
+    setView(item.view);
+    if (item.tab) setTab(item.tab);
+  };
+  const openPair = () => {
+    setView("user");
+    setTab("sessions");
+    setPairOpen(true);
+  };
+  const openBroadcast = () => {
+    setView("user");
+    setTab("campaigns");
+    setCampaignOpen(true);
+  };
+  const switchWorkspace = async (id: string) => {
+    const result = await api.switchWorkspace(id);
+    if (result.status === "error") {
+      setError(result.message || "Workspace switch failed");
+      return;
+    }
+    disconnectSocket();
+    qc.clear();
+    setOptimistic({});
+    setSelected(null);
+    setOpenedThread(null);
+    setUser(result.user);
+  };
+  const commands: Command[] = [
+    ...[...NAV, ...NAV_SECONDARY]
+      .filter((i) => !i.manager || manager)
+      .map((i) => ({
+        id: `go-${i.key}`,
+        label: i.label,
+        hint: "Go to",
+        icon: i.icon,
+        run: () => go(i),
+      })),
+    {
+      id: "pair",
+      label: "Connect a WhatsApp number",
+      hint: "Action",
+      icon: Plus,
+      run: openPair,
+    },
+    ...(manager
+      ? [
+          {
+            id: "broadcast",
+            label: "New broadcast",
+            hint: "Action",
+            icon: Plus,
+            run: openBroadcast,
+          },
+        ]
+      : []),
+    {
+      id: "light",
+      label: "Switch to light appearance",
+      hint: "Appearance",
+      icon: Sun,
+      run: () => theme.setChoice("light"),
+    },
+    {
+      id: "dark",
+      label: "Switch to dark appearance",
+      hint: "Appearance",
+      icon: Moon,
+      run: () => theme.setChoice("dark"),
+    },
+    {
+      id: "refresh",
+      label: "Refresh everything",
+      hint: "Action",
+      icon: RefreshCw,
+      run: () =>
+        void refresh("sessions", "conversations", "contacts", "messages"),
+    },
+    {
+      id: "logout",
+      label: "Sign out",
+      hint: "Account",
+      icon: LogOut,
+      run: () => void logout(),
+    },
+  ];
+  const bell = (placement: "dock" | "tab") => (
+    <NotificationBell
+      placement={placement}
+      items={notificationsQuery.data?.notifications || []}
+      unreadCount={unreadNotifications}
+      desktop={desktop}
+      onOpen={goTo}
+      onMarkAllRead={() => {
+        markNotificationsRead(qc, tenant, "all");
+        void api.markAllNotificationsRead().catch(() => {});
+      }}
+      onEnableDesktop={() =>
+        void requestDesktopPermission().then(() =>
+          setDesktop(desktopPermission()),
+        )
+      }
+    />
+  );
+  const workspaceList = workspaces.data?.workspaces || [];
+  const inbox = view === "user" && tab === "inbox";
   return (
-    <div className="min-h-screen bg-[#0c1317] text-[#e9edef]">
-      <Navbar
-        currentView={view}
-        onSelectView={setView}
-        sessions={sessions}
-        currentUser={user}
-        onOpenNewSession={() => {
-          setView("user");
-          setTab("sessions");
-          setPairOpen(true);
-        }}
-        onOpenNewBroadcast={() => {
-          setView("user");
-          setTab("campaigns");
-          setCampaignOpen(true);
-        }}
-        onOpenAuthModal={() => {}}
-        onLogout={() => void logout()}
-        bell={
-          <NotificationBell
-            items={notificationsQuery.data?.notifications || []}
-            unreadCount={unreadNotifications}
-            desktop={desktop}
-            onOpen={goTo}
-            onMarkAllRead={() => {
-              markNotificationsRead(qc, tenant, "all");
-              void api.markAllNotificationsRead().catch(() => {});
-            }}
-            onEnableDesktop={() =>
-              void requestDesktopPermission().then(() =>
-                setDesktop(desktopPermission()),
-              )
+    <div className="h-dvh flex flex-col lg:flex-row bg-app text-fg overflow-hidden">
+      <Dock
+        view={view}
+        tab={tab}
+        onNavigate={go}
+        unreadChats={unreadChats}
+        manager={manager}
+        onSearch={() => setPaletteOpen(true)}
+        bell={bell("dock")}
+        profile={
+          <ProfileMenu
+            user={user}
+            theme={theme.choice}
+            onTheme={theme.setChoice}
+            onLogout={() => void logout()}
+            workspaces={workspaceList}
+            currentWorkspace={tenant}
+            onSwitchWorkspace={(id) => void switchWorkspace(id)}
+            status={
+              engine === "ok" ? "ok" : engine === "down" ? "warn" : undefined
             }
+            connected={connected}
           />
         }
       />
@@ -443,107 +578,72 @@ export function App() {
         onOpen={goTo}
         onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))}
       />
-      <div className="flex">
-        <div className="hidden lg:block">
-          <Sidebar
-            currentView={view}
-            activeUserTab={tab}
-            onSelectUserTab={setTab}
-            activeAdminTab={adminTab}
-            onSelectAdminTab={setAdminTab}
-            activeDevTab={devTab}
-            onSelectDevTab={setDevTab}
-            unreadChatCount={chats.filter((c) => c.unreadCount > 0).length}
-            canManage={manager}
-          />
-        </div>
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={commands}
+      />
+      <div className="flex-1 min-h-0 min-w-0 relative">
+        {(error || queryError || sync || info) && (
+          <div className="absolute top-3 inset-x-0 z-40 flex flex-col items-center gap-2 px-4 pointer-events-none">
+            {(error || queryError) && (
+              <div
+                role="alert"
+                className="pointer-events-auto glass ring-1 ring-danger/30 pop rounded-full pl-5 pr-2 h-12 flex items-center gap-3 text-[14px] text-fg max-w-full animate-rise"
+              >
+                <span className="truncate">
+                  {error || (queryError as Error).message}
+                </span>
+                <button
+                  className={`${"h-8 px-4 rounded-full bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 shrink-0"}`}
+                  onClick={() => {
+                    setError("");
+                    void refresh(
+                      "sessions",
+                      "conversations",
+                      "contacts",
+                      "messages",
+                    );
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {info && (
+              <div
+                role="status"
+                className="pointer-events-auto glass ring-1 ring-gold/40 pop rounded-3xl pl-5 pr-2 py-2.5 flex items-center gap-3 text-[14px] text-fg max-w-xl animate-rise"
+              >
+                <span>{info}</span>
+                <button
+                  className="h-8 px-4 rounded-full bg-surface-2 text-[13px] font-medium hover:bg-surface-3 shrink-0"
+                  onClick={() => setInfo("")}
+                >
+                  Got it
+                </button>
+              </div>
+            )}
+            {sync && (
+              <div
+                role="status"
+                className="pointer-events-auto glass ring-1 ring-line pop rounded-full px-5 h-10 flex items-center gap-2.5 text-[13.5px] text-fg-2 animate-rise"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-gold ${sync.phase === "failed" ? "" : "animate-spin"}`}
+                />
+                {sync.phase === "failed"
+                  ? "Couldn't finish syncing WhatsApp. It will retry automatically."
+                  : sync.total
+                    ? `Syncing your WhatsApp · ${sync.done} of ${sync.total} chats`
+                    : "Syncing your WhatsApp…"}
+              </div>
+            )}
+          </div>
+        )}
         <main
-          className={`flex-1 min-w-0 ${view === "user" && tab === "inbox" ? "" : "p-4 sm:p-6"}`}
+          className={`h-full min-w-0 ${inbox ? "overflow-hidden" : "overflow-y-auto"}`}
         >
-          {workspaces.data?.workspaces?.length > 1 && (
-            <label className="block p-3 text-sm">
-              Workspace{" "}
-              <select
-                className="ml-2 p-2 bg-[#202c33] rounded"
-                value={tenant || ""}
-                onChange={async (e) => {
-                  const result = await api.switchWorkspace(e.target.value);
-                  if (result.status === "error") {
-                    setError(result.message || "Workspace switch failed");
-                    return;
-                  }
-                  disconnectSocket();
-                  qc.clear();
-                  setOptimistic({});
-                  setSelected(null);
-                  setOpenedThread(null);
-                  setUser(result.user);
-                }}
-              >
-                {workspaces.data.workspaces.map((w: any) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <nav className="lg:hidden flex flex-wrap gap-3 p-3 text-sm">
-            {(
-              [
-                "inbox",
-                "sessions",
-                "contacts",
-                "dashboard",
-                "campaigns",
-                "automations",
-              ] as UserSubTab[]
-            ).map((t) => (
-              <button
-                key={t}
-                onClick={() => {
-                  setView("user");
-                  setTab(t);
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </nav>
-          {(error || queryError) && (
-            <div
-              role="alert"
-              className="m-3 p-3 rounded-lg bg-rose-950 text-rose-200"
-            >
-              {error || (queryError as Error).message}
-              <button
-                className="ml-3 underline"
-                onClick={() => {
-                  setError("");
-                  void refresh(
-                    "sessions",
-                    "conversations",
-                    "contacts",
-                    "messages",
-                  );
-                }}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          {sync && (
-            <div
-              role="status"
-              className="m-3 px-3 py-2 rounded-lg bg-[#202c33] text-sm text-slate-300"
-            >
-              {sync.phase === "failed"
-                ? "Couldn't finish syncing WhatsApp. It will retry automatically."
-                : sync.total
-                  ? `Syncing your WhatsApp… ${sync.done} of ${sync.total} chats`
-                  : "Syncing your WhatsApp…"}
-            </div>
-          )}
           {view === "user" && tab === "inbox" && (
             <Inbox
               chats={chats}
@@ -616,11 +716,14 @@ export function App() {
                 if (
                   s &&
                   window.confirm(
-                    "Disconnect and remove this session? Saved credentials and inbox history will be retained.",
+                    "Remove this number? It will be disconnected from WhatsApp and unlinked from the phone. Your saved conversations stay in Scriwo.",
                   )
                 )
                   void run(async () => {
-                    await api.deleteSession(s.sessionKey);
+                    const result = await api.deleteSession(s.sessionKey);
+                    // The phone could not be unlinked automatically: tell the person exactly what to do.
+                    if (result?.unlinked === false && result?.message)
+                      setInfo(result.message);
                     await refresh("sessions");
                   }).catch(() => {});
               }}
@@ -699,16 +802,32 @@ export function App() {
                 Automations require workspace administrator access.
               </p>
             ))}
-          {view === "admin" && manager && adminTab === "users" && (
-            <UserManagement
-              canChangeRoles={Boolean(
-                (user as any).membershipRole === "owner" || user.isSuperAdmin,
+          {view === "admin" && manager && (
+            <Page>
+              <PageHeader
+                eyebrow={user.company_name}
+                title="Team"
+                subtitle="Invite teammates, keep an eye on the system and review activity."
+                actions={
+                  <Segmented
+                    label="Team sections"
+                    items={ADMIN_TABS}
+                    value={adminTab}
+                    onChange={setAdminTab}
+                  />
+                }
+              />
+              {adminTab === "users" && (
+                <UserManagement
+                  canChangeRoles={Boolean(
+                    (user as any).membershipRole === "owner" ||
+                    user.isSuperAdmin,
+                  )}
+                />
               )}
-            />
-          )}
-          {view === "admin" && manager && adminTab === "audit" && <AuditLogs />}
-          {view === "admin" && manager && adminTab === "cluster" && (
-            <ClusterHealth />
+              {adminTab === "audit" && <AuditLogs />}
+              {adminTab === "cluster" && <ClusterHealth />}
+            </Page>
           )}
           {view === "developer" && (
             <DeveloperGuide
@@ -723,6 +842,40 @@ export function App() {
           )}
         </main>
       </div>
+      <TabBar
+        view={view}
+        tab={tab}
+        onNavigate={go}
+        unreadChats={unreadChats}
+        manager={manager}
+        bell={bell("tab")}
+        sheetExtras={
+          <div className="space-y-3">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="w-full h-12 rounded-2xl bg-surface-2 text-[14.5px] text-fg-2 text-left px-4"
+            >
+              Search or jump to…
+            </button>
+            <div className="rounded-3xl bg-surface-2 p-4 space-y-3">
+              <div>
+                <div className="font-semibold text-[15px]">{user.name}</div>
+                <div className="text-[13px] text-fg-2">{user.email}</div>
+                <div className="text-[12px] text-gold font-medium mt-1">
+                  {user.company_name}
+                </div>
+              </div>
+              <ThemeSwitch value={theme.choice} onChange={theme.setChoice} />
+              <button
+                onClick={() => void logout()}
+                className="w-full h-11 rounded-2xl bg-danger/10 text-danger text-[14px] font-medium"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 }

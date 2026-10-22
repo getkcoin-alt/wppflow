@@ -1,23 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Smartphone,
-  ShieldCheck,
-  LogIn,
-  UserPlus,
-  Mail,
-  Lock,
-  User,
-  Building2,
-  Sparkles,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Zap,
-  MessageSquare,
-  BarChart3,
-  Bot,
-} from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import {
   loginUser,
   signupUser,
@@ -26,6 +8,8 @@ import {
   getInviteInfo,
 } from "../../services/api";
 import { AuthUser } from "../../types";
+import { AuthNote, AuthShell } from "./AuthShell";
+import { btn, inputCls } from "../ui/styles";
 
 interface LoginPageProps {
   onAuthSuccess: (user: AuthUser, token: string) => void;
@@ -92,7 +76,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
         const res = await loginUser(email, password);
         if (res.status === "success" && res.token && res.user) {
           setStoredToken(res.token);
-          setSuccessMsg("Authenticated! Loading your workspace...");
+          setSuccessMsg("Welcome back. Opening your workspace…");
           setTimeout(() => onAuthSuccess(res.user, res.token!), 700);
         } else {
           setError(res.message || "Invalid email or password.");
@@ -101,7 +85,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
         const res = await signupUser(name, email, password, companyName, role);
         if (res.status === "success" && res.token && res.user) {
           setStoredToken(res.token);
-          setSuccessMsg("Account created! Welcome to WppFlow.");
+          setSuccessMsg("Account created. Welcome to Scriwo.");
           setTimeout(() => onAuthSuccess(res.user, res.token!), 700);
         } else {
           setError(res.message || "Signup failed. Please try again.");
@@ -114,46 +98,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     }
   };
 
-  const features = [
-    {
-      icon: MessageSquare,
-      label: "Multi-Session WhatsApp Inbox",
-      color: "text-emerald-400",
-    },
-    {
-      icon: BarChart3,
-      label: "Opt-in Campaigns & Delivery Tracking",
-      color: "text-teal-400",
-    },
-    { icon: Bot, label: "Keyword & Flow Automations", color: "text-cyan-400" },
-    {
-      icon: Zap,
-      label: "Real-Time WebSocket Delivery",
-      color: "text-indigo-400",
-    },
-  ];
+  const field = (label: string, input: React.ReactNode) => (
+    <label className="block">
+      <span className="block text-[13px] font-medium text-fg-2 mb-1.5 ml-1">
+        {label}
+      </span>
+      {input}
+    </label>
+  );
 
   if (invite)
     return (
-      <main className="min-h-screen bg-[#0c1317] text-white flex items-center justify-center p-6">
-        <form
-          className="bg-[#111b21] border border-[#2a3942] p-8 rounded-2xl space-y-4 w-full max-w-md"
-          onSubmit={handleSubmit}
-        >
-          <h1 className="text-xl font-bold">
-            {inviteInfo?.setPassword
-              ? "Set your password"
-              : "Join your team on WppFlow"}
-          </h1>
-          <p className="text-slate-400">
-            {!inviteInfo
-              ? error || "Checking your invitation…"
-              : inviteInfo.setPassword
-                ? `Choose a password of at least 10 characters for ${inviteInfo.email}${inviteInfo.company ? " (" + inviteInfo.company + ")" : ""}.`
-                : `Enter the current password of your existing account ${inviteInfo.email} to join ${inviteInfo.company}.`}
-          </p>
+      <AuthShell>
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <h1 className="text-[32px] leading-tight font-semibold">
+              {inviteInfo?.setPassword
+                ? "Set your password"
+                : "Join your team on Scriwo"}
+            </h1>
+            <p className="text-[15.5px] text-fg-2 mt-2 leading-relaxed">
+              {!inviteInfo
+                ? error || "Checking your invitation…"
+                : inviteInfo.setPassword
+                  ? `Choose a password of at least 10 characters for ${inviteInfo.email}${inviteInfo.company ? " (" + inviteInfo.company + ")" : ""}.`
+                  : `Enter the current password of your existing account ${inviteInfo.email} to join ${inviteInfo.company}.`}
+            </p>
+          </div>
           <label className="block">
-            {inviteInfo?.setPassword ? "New password" : "Password"}
+            <span className="block text-[13px] font-medium text-fg-2 mb-1.5 ml-1">
+              {inviteInfo?.setPassword ? "New password" : "Password"}
+            </span>
             <input
               required
               minLength={inviteInfo?.setPassword ? 10 : 1}
@@ -162,12 +137,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full mt-2 p-3 bg-[#202c33] rounded"
+              className={inputCls}
             />
           </label>
           {inviteInfo?.setPassword && (
             <label className="block">
-              Confirm new password
+              <span className="block text-[13px] font-medium text-fg-2 mb-1.5 ml-1">
+                Confirm new password
+              </span>
               <input
                 required
                 minLength={10}
@@ -176,306 +153,142 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                 autoComplete="new-password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="block w-full mt-2 p-3 bg-[#202c33] rounded"
+                className={inputCls}
               />
             </label>
           )}
-          {error && inviteInfo && (
-            <p role="alert" className="text-rose-300">
-              {error}
-            </p>
-          )}
+          {error && inviteInfo && <AuthNote tone="error">{error}</AuthNote>}
           <button
             disabled={loading || !inviteInfo}
-            className="bg-emerald-600 p-3 rounded w-full disabled:opacity-50"
+            className={`${btn("primary")} w-full !h-12 text-[15px]`}
           >
             {inviteInfo?.setPassword ? "Save password" : "Join team"}
           </button>
         </form>
-      </main>
+      </AuthShell>
     );
+
   return (
-    <div className="min-h-screen bg-[#0c1317] flex">
-      {/* Left Panel — Branding */}
-      <div className="hidden lg:flex flex-col justify-between w-[52%] bg-gradient-to-br from-[#0d1f17] via-[#0c1317] to-[#0a1a22] p-12 border-r border-[#1a2a32] relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-900/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-teal-900/15 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
-
-        {/* Logo */}
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-900/40">
-            <Smartphone className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <div className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white to-emerald-400 bg-clip-text text-transparent">
-              WppFlow
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium">
-              Next-Gen WhatsApp CRM
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Text */}
-        <div className="relative z-10 space-y-6">
-          <div>
-            <h1 className="text-4xl font-black text-white leading-tight tracking-tight">
-              WhatsApp Conversations
-              <br />
-              <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                Built for Your Team
-              </span>
-            </h1>
-            <p className="text-slate-400 text-sm mt-3 leading-relaxed max-w-sm">
-              Connect your business accounts, manage conversations together, and
-              build opt-in campaigns with recorded delivery status.
-            </p>
-          </div>
-
-          {/* Feature List */}
-          <div className="space-y-3">
-            {features.map(({ icon: Icon, label, color }) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#111b21] border border-[#2a3942] flex items-center justify-center shrink-0">
-                  <Icon className={`w-4 h-4 ${color}`} />
-                </div>
-                <span className="text-sm text-slate-300 font-medium">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Social Proof */}
-          <div className="flex items-center gap-3 bg-[#111b21]/80 border border-[#2a3942] rounded-2xl px-4 py-3">
-            <div className="flex -space-x-2">
-              {[
-                "bg-emerald-500",
-                "bg-teal-500",
-                "bg-cyan-500",
-                "bg-indigo-500",
-              ].map((c, i) => (
-                <div
-                  key={i}
-                  className={`w-7 h-7 rounded-full ${c} border-2 border-[#111b21] flex items-center justify-center text-[10px] font-bold text-white`}
-                >
-                  {["A", "E", "C", "M"][i]}
-                </div>
-              ))}
-            </div>
-            <div className="text-xs text-slate-300">
-              Shared conversations, private notes and workspace permissions
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom badge */}
-        <div className="relative z-10 flex items-center gap-2 text-xs text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>
-            WPPConnect sessions · Workspace permissions · Saved team history
-          </span>
-        </div>
+    <AuthShell>
+      <div className="mb-8">
+        <h2 className="text-[32px] leading-tight font-semibold">
+          {mode === "login" ? "Welcome back" : "Create your workspace"}
+        </h2>
+        <p className="text-[15.5px] text-fg-2 mt-2">
+          {mode === "login"
+            ? "Sign in to continue to your inbox."
+            : "Set up your company and start inviting your team."}
+        </p>
       </div>
 
-      {/* Right Panel — Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md space-y-6">
-          {/* Mobile Logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-extrabold text-lg text-white">WppFlow</span>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <AuthNote tone="error">{error}</AuthNote>}
+        {successMsg && <AuthNote tone="success">{successMsg}</AuthNote>}
 
-          {/* Heading */}
-          <div>
-            <h2 className="text-2xl font-black text-white tracking-tight">
-              {mode === "login" ? "Welcome back" : "Create your workspace"}
-            </h2>
-            <p className="text-sm text-slate-400 mt-1">
-              {mode === "login"
-                ? "Sign in to access your WhatsApp CRM dashboard"
-                : "Register a new organization and start for free"}
+        {mode === "signup" && (
+          <>
+            {field(
+              "Your name",
+              <input
+                type="text"
+                required
+                autoComplete="name"
+                placeholder="Jane Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={inputCls}
+              />,
+            )}
+            {field(
+              "Company",
+              <input
+                type="text"
+                placeholder="Acme Logistics"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className={inputCls}
+              />,
+            )}
+            <p className="text-[13px] text-fg-3 leading-relaxed px-1">
+              Creating a workspace makes you its owner. You can invite teammates
+              as agents or administrators from Team.
             </p>
-          </div>
+          </>
+        )}
 
-          {/* Mode Tabs */}
-          <div className="flex bg-[#111b21] p-1 rounded-xl border border-[#2a3942]">
+        {field(
+          "Email",
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="name@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputCls}
+          />,
+        )}
+        {field(
+          "Password",
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={mode === "signup" ? 10 : 1}
+              autoComplete={
+                mode === "signup" ? "new-password" : "current-password"
+              }
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${inputCls} pr-12`}
+            />
             <button
               type="button"
-              onClick={() => {
-                setMode("login");
-                setError(null);
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                mode === "login"
-                  ? "bg-emerald-600 text-white shadow"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 grid place-items-center rounded-full text-fg-3 hover:text-fg"
             >
-              <LogIn className="w-3.5 h-3.5" />
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signup");
-                setError(null);
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                mode === "signup"
-                  ? "bg-emerald-600 text-white shadow"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Create Account
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-start gap-2 p-3 bg-rose-950/80 border border-rose-800 text-rose-300 rounded-xl text-xs">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {successMsg && (
-              <div className="flex items-start gap-2 p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-300 rounded-xl text-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>{successMsg}</span>
-              </div>
-            )}
-
-            {mode === "signup" && (
-              <>
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-[#111b21] border border-[#2a3942] focus:border-emerald-500 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">
-                    Organization Name
-                  </label>
-                  <div className="relative">
-                    <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Acme Logistics"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full bg-[#111b21] border border-[#2a3942] focus:border-emerald-500 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1.5 font-medium">
-                    Account Type
-                  </label>
-                  <div className="rounded-xl border border-[#2a3942] bg-[#111b21] px-3 py-2.5 text-xs text-slate-400">
-                    Creating a workspace makes you its owner. Invite teammates
-                    as agents or administrators from Workspace Team.
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div>
-              <label className="block text-xs text-slate-300 mb-1.5 font-medium">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#111b21] border border-[#2a3942] focus:border-emerald-500 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs text-slate-300 mb-1.5 font-medium">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  minLength={mode === "signup" ? 10 : 1}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#111b21] border border-[#2a3942] focus:border-emerald-500 rounded-xl pl-9 pr-10 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-900/30 mt-2"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Authenticating...
-                </span>
-              ) : mode === "login" ? (
-                <>
-                  <LogIn className="w-4 h-4" />
-                  Sign In to Dashboard
-                </>
+              {showPassword ? (
+                <EyeOff className="w-[18px] h-[18px]" />
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Create Workspace
-                </>
+                <Eye className="w-[18px] h-[18px]" />
               )}
             </button>
-          </form>
+          </div>,
+        )}
 
-          <div className="text-center pt-2">
-            <span className="text-xs text-slate-500">
-              Enterprise Grade Multi-Tenant WhatsApp CRM
+        <button
+          type="submit"
+          disabled={loading}
+          className={`${btn("primary")} w-full !h-12 text-[15px] mt-2`}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              One moment…
             </span>
-          </div>
-        </div>
-      </div>
-    </div>
+          ) : mode === "login" ? (
+            "Sign in"
+          ) : (
+            "Create workspace"
+          )}
+        </button>
+      </form>
+
+      <p className="mt-8 text-center text-[14.5px] text-fg-2">
+        {mode === "login" ? "New to Scriwo?" : "Already have an account?"}{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "login" ? "signup" : "login");
+            setError(null);
+          }}
+          className="font-medium text-gold hover:underline"
+        >
+          {mode === "login" ? "Create a workspace" : "Sign in"}
+        </button>
+      </p>
+    </AuthShell>
   );
 };

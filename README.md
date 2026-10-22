@@ -1,6 +1,6 @@
-# WppFlow
+# Scriwo
 
-WhatsApp-style team inbox backed by [wppflow-backend](https://github.com/getkcoin-alt/wppflow-backend). React, TypeScript, Vite, TanStack Query/Virtual and Socket.IO.
+A calm, shared WhatsApp inbox for teams, backed by [wppflow-backend](https://github.com/getkcoin-alt/wppflow-backend). React, TypeScript, Vite, TanStack Query/Virtual and Socket.IO.
 
 ## Local development
 
@@ -27,7 +27,7 @@ The old production mock dataset and simulated API/webhook screens were removed. 
 
 ## Company, owner and staff flow
 
-- **Platform admin** signs in and gets a Companies screen: add a company (owner name/email, WhatsApp session limit), suspend/reactivate, change the limit, resend credentials. The owner receives a temporary password by email.
+- **Platform admin** signs in and gets a Companies screen: add a company (owner name/email, WhatsApp session limit), suspend/reactivate, change the limit, resend credentials. The owner receives an email with a single-use link to choose their own password.
 - **Owner** is forced to choose a new password on first login, then invites staff under Workspace Team (invitations are emailed; the one-time link is only shown when email is unavailable). The Sessions screen lists every staff member's WhatsApp session with its owner.
 - **Staff** use Sessions to connect their own number and see only that session and its conversations.
 

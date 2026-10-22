@@ -1,5 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { ScrollText } from "lucide-react";
 import { apiGet, getStoredTenantId } from "../../services/api";
+import { EmptyState, Notice } from "../ui/Page";
+
+const label = (t: string) =>
+  String(t || "event")
+    .replace(/[._:]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 export function AuditLogs() {
   const { data, error, isPending } = useQuery({
     queryKey: ["audit", getStoredTenantId()],
@@ -7,23 +15,51 @@ export function AuditLogs() {
   });
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-bold">Workspace Audit Logs</h1>
-      {error && <p role="alert">{error.message}</p>}
-      {isPending && <p>Loading audit events…</p>}
-      <div className="bg-[#111b21] rounded-xl p-5 space-y-3">
-        {data?.events.map((e: any) => (
-          <article key={e.id} className="border-b border-[#2a3942] pb-3">
-            <strong>{e.event_type}</strong>
-            <p className="text-sm text-slate-400">
-              {e.actor || "System"} · {new Date(e.created_at).toLocaleString()}
-            </p>
-            <pre className="text-xs whitespace-pre-wrap">
-              {JSON.stringify(e.metadata)}
-            </pre>
-          </article>
-        ))}
-        {data && !data.events.length && <p>No audit events recorded.</p>}
-      </div>
+      {error && <Notice tone="error">{error.message}</Notice>}
+      {isPending && (
+        <div className="space-y-3" aria-busy>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton h-16" />
+          ))}
+          <span className="sr-only">Loading audit events…</span>
+        </div>
+      )}
+      {data && !data.events.length && (
+        <EmptyState
+          icon={<ScrollText className="w-6 h-6" />}
+          title="No activity recorded yet"
+          body="Sign-ins, invitations and other important changes will appear here."
+        />
+      )}
+      {!!data?.events.length && (
+        <ol className="card !rounded-3xl divide-y divide-line overflow-hidden">
+          {data.events.map((e: any) => (
+            <li key={e.id} className="px-5 sm:px-6 py-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                <strong className="text-[15px] font-medium text-fg">
+                  {label(e.event_type)}
+                </strong>
+                <span className="text-[13px] text-fg-3 num">
+                  {new Date(e.created_at).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-[13.5px] text-fg-2 mt-0.5">
+                {e.actor || "System"}
+              </p>
+              {e.metadata && Object.keys(e.metadata).length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-[12.5px] text-fg-3 cursor-pointer select-none">
+                    Details
+                  </summary>
+                  <pre className="mt-2 rounded-2xl bg-surface-2 p-3 font-mono text-[12px] text-fg-2 whitespace-pre-wrap break-all">
+                    {JSON.stringify(e.metadata, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }
