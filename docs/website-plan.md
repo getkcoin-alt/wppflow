@@ -6,7 +6,7 @@ Marketing website for www.scriwo.com, aimed at the UAE and India. Code lives in 
 
 - **Goal:** be the site Google, AI Overviews, ChatGPT, Gemini and Perplexity find and cite for "WhatsApp CRM / shared WhatsApp inbox / team WhatsApp" searches in the UAE and India. Turn visitors into demo requests and plan sign-ups.
 - **Payments:** not live yet. Every plan button opens `/contact` with the plan filled in. The enquiry is saved in the backend (`website_leads`) and emailed to `LEADS_EMAIL`. When the payment gateway is approved, set `PAYMENTS_LIVE = true` in `website/src/content/plans.ts`, then swap the plan buttons for checkout.
-- **Prices (set October 2026):** Starter AED 299 / ₹2,499 (3 numbers), Growth AED 799 / ₹6,999 (10), Business AED 1,699 / ₹14,999 (25), Enterprise custom. Monthly, before VAT/GST, with no per-message fees. Sales WhatsApp: +91 91191 12999.
+- **Prices (set October 2026):** Free for one account with one WhatsApp number; Starter AED 299 / ₹2,499 (3 numbers), Growth AED 799 / ₹6,999 (10), Business AED 1,699 / ₹14,999 (25), Enterprise custom. Monthly, before VAT/GST, with no per-message fees. Sales WhatsApp: +91 91191 12999. Every account is set up by the onboarding team; the website has no sign-in link (people get theirs by email).
 - **Built now (62 static pages):** home, features (10), industries (8), UAE and India city pages (16), comparisons (3), pricing, contact, security, developers, about, guides (4), privacy, terms, sitemap, robots, `llms.txt`, Open Graph image.
 
 ## 2. Domains

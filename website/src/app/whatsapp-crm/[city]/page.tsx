@@ -33,10 +33,11 @@ export default async function CityPage({ params }: Props) {
   if (!c) notFound();
   const path = `/whatsapp-crm/${c.slug}`;
   const currency = c.country === "UAE" ? "AED" : "INR";
-  const from = formatMoney(PLANS[0].price[currency] ?? 0, currency);
+  // Cheapest paid plan; the free plan is mentioned separately.
+  const from = formatMoney(PLANS.find((p) => (p.price[currency] ?? 0) > 0)?.price[currency] ?? 0, currency);
   const faqs = [
     { q: `Is there a WhatsApp CRM for teams in ${c.name}?`, a: `Yes. Scriwo is a shared WhatsApp inbox and CRM used by teams in ${c.name}. Each staff member links their own number, owners see every chat, and chats can be assigned, noted and resolved.` },
-    { q: `How much does Scriwo cost in ${c.name}?`, a: `Plans start at ${from} a month for up to 3 WhatsApp numbers, billed in ${currency} with no per-message fees. ${TAX_NOTE[currency]}` },
+    { q: `How much does Scriwo cost in ${c.name}?`, a: `One account with one WhatsApp number is free. Team plans start at ${from} a month for up to 3 numbers, billed in ${currency} with no per-message fees. ${TAX_NOTE[currency]}` },
     { q: `Do I need an office in ${c.name} to use Scriwo?`, a: "No. Scriwo runs in the browser. Your team signs in from anywhere and links their WhatsApp by scanning a QR code." },
   ];
   const nearby = CITIES.filter((o) => o.country === c.country && o.slug !== c.slug).slice(0, 6);
@@ -60,7 +61,7 @@ export default async function CityPage({ params }: Props) {
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Locations", path: "/whatsapp-crm" }, { name: c.name, path }]} />
       <PageHero eyebrow={c.region === c.name ? `${c.name} · ${c.country === "UAE" ? "United Arab Emirates" : "India"}` : `${c.name} · ${c.region}`} title={<>WhatsApp CRM for teams in {c.name}</>} intro={c.local}>
         <Link href="/contact?interest=demo" className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
-        <Link href="/pricing" className="btn-ghost">From {from} / month</Link>
+        <Link href="/pricing" className="btn-ghost">Free for 1 number · teams from {from}</Link>
       </PageHero>
       <Container className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="card p-8">

@@ -42,9 +42,9 @@ export function PricingGrid() {
             </button>
           ))}
         </div>
-        <p className="text-sm text-fg-3">Billed monthly. {TAX_NOTE[cur]} No per-message fees.</p>
+        <p className="text-sm text-fg-3">Paid plans billed monthly. {TAX_NOTE[cur]} No per-message fees.</p>
       </div>
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {PLANS.map((p) => {
           const price = p.price[cur];
           return (
@@ -53,7 +53,11 @@ export function PricingGrid() {
               <h2 id={`plan-${p.id}`} className="text-xl">{p.name}</h2>
               <p className="mt-1 text-sm text-fg-2">{p.for}</p>
               <p className="mt-6">
-                {price ? (
+                {price === 0 ? (
+                  <>
+                    <span className="text-4xl font-semibold tracking-tight">Free</span>
+                  </>
+                ) : price ? (
                   <>
                     <span className="text-4xl font-semibold tracking-tight">{formatMoney(price, cur)}</span>
                     <span className="text-sm text-fg-3"> / month</span>
@@ -68,7 +72,7 @@ export function PricingGrid() {
                 href={`/contact?interest=${p.id}&plan=${encodeURIComponent(`${p.name} (${cur})`)}`}
                 className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}
               >
-                {p.id === "enterprise" ? "Talk to sales" : `Choose ${p.name}`}
+                {p.id === "enterprise" ? "Talk to sales" : p.id === "free" ? "Get started free" : `Choose ${p.name}`}
               </Link>
             </section>
           );
