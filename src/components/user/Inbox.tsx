@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
 import { MediaBlock } from "./MediaBlock";
+import { MediaViewer } from "./MediaViewer";
+import { galleryItems } from "../../utils/viewer";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
 import { safeAvatarFallback } from "../../utils/avatar";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -78,6 +80,8 @@ interface InboxProps {
   } | null;
   onLoadMedia?: (chatId: string, messageId: string) => Promise<void>;
   onLoadAllMedia?: (chatId: string) => void;
+  /** Photo addresses stopped working (the chat sat open for a long time): fetch fresh ones */
+  onRefreshMedia?: () => void;
 }
 
 const avatarFallback = safeAvatarFallback;
@@ -151,6 +155,7 @@ export const Inbox: React.FC<InboxProps> = ({
   mediaProgress,
   onLoadMedia,
   onLoadAllMedia,
+  onRefreshMedia,
   onSyncInbox,
   teammates = [],
   mediaEnabled = false,
@@ -206,9 +211,7 @@ export const Inbox: React.FC<InboxProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>("");
   const [isSyncingChat, setIsSyncingChat] = useState(false);
-  const [selectedImageModal, setSelectedImageModal] = useState<string | null>(
-    null,
-  );
+  const [viewerId, setViewerId] = useState<string | null>(null);
 
   const chatListRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -224,6 +227,13 @@ export const Inbox: React.FC<InboxProps> = ({
   const currentMessages = useMemo(() => {
     return activeChat ? messages[activeChat.id] || [] : [];
   }, [messages, activeChat]);
+  // Every saved photo and video of the open chat, for the viewer.
+  const gallery = useMemo(
+    () => galleryItems(currentMessages, activeContact?.name || "Customer"),
+    [currentMessages, activeContact?.name],
+  );
+  // Switching chats closes the viewer: its photos belong to the chat it was opened from.
+  useEffect(() => setViewerId(null), [activeChatId]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -1007,7 +1017,8 @@ export const Inbox: React.FC<InboxProps> = ({
                       ].includes(String(msg.type)) && (
                         <MediaBlock
                           msg={msg}
-                          onZoom={setSelectedImageModal}
+                          onOpen={setViewerId}
+                          onBroken={onRefreshMedia}
                           onLoad={
                             onLoadMedia
                               ? (messageId) =>
@@ -1426,29 +1437,20 @@ export const Inbox: React.FC<InboxProps> = ({
         </>
       )}
 
-      {/* Lightbox Modal */}
-      {selectedImageModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fade"
-          onClick={() => setSelectedImageModal(null)}
-        >
-          <div
-            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedImageModal(null)}
-              className="absolute -top-10 right-0 p-2 text-white/80 hover:text-fg transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <img
-              src={selectedImageModal}
-              alt="Full Preview"
-              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-line"
-            />
-          </div>
-        </div>
+      {/* Photo and video viewer */}
+      {viewerId && (
+        <MediaViewer
+          items={gallery}
+          currentId={viewerId}
+          onChange={setViewerId}
+          onClose={() => setViewerId(null)}
+          hasOlder={hasOlderMessages}
+          onLoadOlder={() => {
+            olderHeight.current = feedRef.current?.scrollHeight || null;
+            onLoadOlder?.();
+          }}
+          onExpired={onRefreshMedia}
+        />
       )}
     </div>
   );

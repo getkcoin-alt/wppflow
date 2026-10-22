@@ -149,6 +149,28 @@ export function App() {
     enabled: enabled && Boolean(selected),
     refetchInterval: 240000,
   });
+  // Photos saved before previews existed get theirs in the background: look again shortly, a few times.
+  const previewsPending = history.data?.pages[0]?.previewsPending || 0;
+  const previewChecks = useRef({ chat: "", count: 0 });
+  useEffect(() => {
+    if (!previewsPending || !selected) return;
+    if (previewChecks.current.chat !== selected)
+      previewChecks.current = { chat: selected, count: 0 };
+    if (previewChecks.current.count >= 4) return;
+    const timer = setTimeout(() => {
+      previewChecks.current.count += 1;
+      void history.refetch();
+    }, 3500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewsPending, selected, history.dataUpdatedAt]);
+  // A photo failed to open, or the chat sat open until its photo addresses expired: fetch fresh ones.
+  const lastMediaRefresh = useRef(0);
+  const refreshMedia = useCallback(() => {
+    if (Date.now() - lastMediaRefresh.current < 15000) return;
+    lastMediaRefresh.current = Date.now();
+    void qc.invalidateQueries({ queryKey: ["messages", tenant, selected] });
+  }, [qc, tenant, selected]);
   const campaigns = useQuery({
     queryKey: ["campaigns", tenant],
     queryFn: api.fetchCampaigns,
@@ -725,6 +747,7 @@ export function App() {
               mediaPending={history.data?.pages[0]?.mediaPending || 0}
               mediaProgress={mediaProgress}
               onLoadMedia={loadMedia}
+              onRefreshMedia={refreshMedia}
               onLoadAllMedia={(id) => void loadAllMedia(id)}
               onSendMessage={send}
               onSendAttachment={attachment}

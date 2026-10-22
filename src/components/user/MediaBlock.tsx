@@ -7,9 +7,14 @@ import {
   Loader2,
   Maximize2,
   Mic,
+  Play,
   Video as VideoIcon,
 } from "lucide-react";
 import type { ChatMessage } from "../../types";
+import { fitWithin } from "../../utils/viewer";
+
+// The most space a photo takes in the chat. Its own proportions are kept inside this box.
+const PHOTO_BOX = { width: 320, height: 300 };
 
 const LABEL: Record<string, string> = {
   image: "Photo",
@@ -51,11 +56,15 @@ const Icon = ({ type }: { type: string }) =>
 export function MediaBlock({
   msg,
   onLoad,
-  onZoom,
+  onOpen,
+  onBroken,
 }: {
   msg: ChatMessage;
   onLoad?: (messageId: string) => Promise<void>;
-  onZoom: (url: string) => void;
+  /** Opens this photo or video in the viewer */
+  onOpen: (messageId: string) => void;
+  /** A photo's address stopped working: ask for fresh ones */
+  onBroken?: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -76,34 +85,76 @@ export function MediaBlock({
 
   let body;
   if (msg.mediaUrl) {
-    if (type === "image" || type === "gif" || type === "sticker")
+    if (type === "sticker")
+      body = (
+        <button
+          type="button"
+          aria-label="View sticker"
+          className="block max-w-[160px]"
+          onClick={() => onOpen(msg.id)}
+        >
+          <img
+            src={msg.mediaUrl}
+            alt={msg.fileName || "Sticker"}
+            loading="lazy"
+            decoding="async"
+            onError={onBroken}
+            className="w-full rounded-xl object-contain"
+          />
+        </button>
+      );
+    else if (type === "image" || type === "gif") {
+      // With the photo's size known, its space is reserved up front so the chat doesn't jump as photos arrive.
+      const box =
+        msg.width && msg.height
+          ? fitWithin(msg.width, msg.height, PHOTO_BOX.width, PHOTO_BOX.height)
+          : null;
       body = (
         <button
           type="button"
           aria-label={`View ${LABEL[type].toLowerCase()}`}
-          className={`relative group block overflow-hidden rounded-xl ${type === "sticker" ? "max-w-[160px]" : "max-w-sm"}`}
-          onClick={() => onZoom(msg.openUrl || msg.mediaUrl!)}
+          className="relative group block overflow-hidden rounded-xl bg-black/10 dark:bg-white/5 max-w-full"
+          style={box ? { width: box.width, aspectRatio: `${box.width} / ${box.height}` } : { maxWidth: PHOTO_BOX.width }}
+          onClick={() => onOpen(msg.id)}
         >
           <img
-            src={msg.mediaUrl}
+            src={msg.thumbUrl || msg.mediaUrl}
             alt={msg.fileName || LABEL[type]}
-            className={`w-full rounded-xl ${type === "sticker" ? "object-contain" : "max-h-72 object-cover"}`}
+            loading="lazy"
+            decoding="async"
+            onError={onBroken}
+            width={box?.width}
+            height={box?.height}
+            className={`w-full rounded-xl ${box ? "h-full object-cover" : "max-h-72 object-cover"}`}
           />
-          {type !== "sticker" && (
-            <span className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Maximize2 className="w-5 h-5 text-white drop-shadow-md" />
-            </span>
-          )}
+          <span className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center">
+            <Maximize2 className="w-5 h-5 text-white drop-shadow-md" />
+          </span>
         </button>
       );
-    else if (type === "video")
+    } else if (type === "video")
       body = (
-        <video
-          src={msg.mediaUrl}
-          controls
-          preload="metadata"
-          className="max-w-full max-h-80 rounded-xl bg-black"
-        />
+        <button
+          type="button"
+          aria-label="Play video"
+          className="relative group block overflow-hidden rounded-xl bg-black w-[min(100%,320px)] aspect-video"
+          onClick={() => onOpen(msg.id)}
+        >
+          {/* The first frame stands in for a poster. */}
+          <video
+            src={`${msg.mediaUrl}#t=0.1`}
+            preload="metadata"
+            muted
+            playsInline
+            onError={onBroken}
+            className="h-full w-full object-cover pointer-events-none"
+          />
+          <span className="absolute inset-0 grid place-items-center bg-black/25 group-hover:bg-black/35 transition-colors">
+            <span className="h-12 w-12 rounded-full bg-black/60 grid place-items-center">
+              <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+            </span>
+          </span>
+        </button>
       );
     else if (type === "audio")
       body = (

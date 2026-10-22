@@ -124,6 +124,7 @@ export interface ChatMessage {
   type:
     | "text"
     | "image"
+    | "gif"
     | "video"
     | "audio"
     | "document"
@@ -138,6 +139,11 @@ export interface ChatMessage {
   mediaUrl?: string;
   /** Opens in the browser (PDF, photo, video, audio) instead of downloading */
   openUrl?: string;
+  /** Small version of a photo, shown in the chat while the full file stays for the viewer */
+  thumbUrl?: string;
+  /** The photo's own size, so the chat can reserve its space before it loads */
+  width?: number;
+  height?: number;
   mimeType?: string;
   /** ready: saved. not_saved: can be loaded from WhatsApp. storage_off / unavailable: cannot. */
   mediaState?: "ready" | "not_saved" | "storage_off" | "unavailable";

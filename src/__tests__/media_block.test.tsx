@@ -17,8 +17,8 @@ const msg = (over: Partial<ChatMessage>): ChatMessage =>
   }) as ChatMessage;
 
 describe("files in a chat", () => {
-  it("shows a saved photo and opens it larger from its viewable address", () => {
-    const zoom = vi.fn();
+  it("shows a saved photo and opens it in the viewer when tapped", () => {
+    const open = vi.fn();
     render(
       <MediaBlock
         msg={msg({
@@ -27,12 +27,60 @@ describe("files in a chat", () => {
           mediaState: "ready",
           text: "📷 Photo",
         })}
-        onZoom={zoom}
+        onOpen={open}
       />,
     );
     fireEvent.click(screen.getByLabelText("View photo"));
-    expect(zoom).toHaveBeenCalledWith("https://s/photo?inline");
+    expect(open).toHaveBeenCalledWith("m1");
     expect(screen.queryByText("📷 Photo")).toBeNull();
+  });
+
+  it("shows the small preview in the chat and reserves the photo's space", () => {
+    render(
+      <MediaBlock
+        msg={msg({
+          mediaUrl: "https://s/photo?dl",
+          thumbUrl: "https://s/photo.preview",
+          width: 4000,
+          height: 3000,
+          mediaState: "ready",
+        })}
+        onOpen={vi.fn()}
+      />,
+    );
+    const img = screen.getByRole("img") as HTMLImageElement;
+    expect(img.getAttribute("src")).toBe("https://s/photo.preview");
+    expect(img.getAttribute("loading")).toBe("lazy");
+    // 4:3 within 320 x 300: the width is the limit
+    expect(img.getAttribute("width")).toBe("320");
+    expect(img.getAttribute("height")).toBe("240");
+  });
+
+  it("falls back to the full photo when it has no preview yet, and asks for fresh addresses if it fails", () => {
+    const broken = vi.fn();
+    render(
+      <MediaBlock
+        msg={msg({ mediaUrl: "https://s/photo?dl", mediaState: "ready" })}
+        onOpen={vi.fn()}
+        onBroken={broken}
+      />,
+    );
+    const img = screen.getByRole("img");
+    expect(img.getAttribute("src")).toBe("https://s/photo?dl");
+    fireEvent.error(img);
+    expect(broken).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a saved video as a play tile that opens the viewer", () => {
+    const open = vi.fn();
+    render(
+      <MediaBlock
+        msg={msg({ type: "video", mediaUrl: "https://s/v?dl", mediaState: "ready", text: "🎥 Video" })}
+        onOpen={open}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Play video"));
+    expect(open).toHaveBeenCalledWith("m1");
   });
 
   it("offers both Open and Download for a saved PDF, and keeps its caption", () => {
@@ -47,7 +95,7 @@ describe("files in a chat", () => {
           text: "Please review",
           mediaState: "ready",
         })}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.getByText("Quote 12.pdf")).toBeDefined();
@@ -69,7 +117,7 @@ describe("files in a chat", () => {
           fileName: "Prices.xlsx",
           mediaState: "ready",
         })}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.queryByText("Open")).toBeNull();
@@ -89,7 +137,7 @@ describe("files in a chat", () => {
       <MediaBlock
         msg={msg({ mediaState: "not_saved", text: "📷 Photo" })}
         onLoad={load}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByText("Load photo"));
@@ -105,7 +153,7 @@ describe("files in a chat", () => {
       <MediaBlock
         msg={msg({ type: "video", mediaState: "not_saved" })}
         onLoad={vi.fn()}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.getByText("Load video")).toBeDefined();
@@ -113,7 +161,7 @@ describe("files in a chat", () => {
       <MediaBlock
         msg={msg({ type: "audio", mediaState: "not_saved" })}
         onLoad={vi.fn()}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.getByText("Load voice message")).toBeDefined();
@@ -121,7 +169,7 @@ describe("files in a chat", () => {
       <MediaBlock
         msg={msg({ type: "document", mediaState: "not_saved", fileName: "" })}
         onLoad={vi.fn()}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.getByText("Load file")).toBeDefined();
@@ -132,7 +180,7 @@ describe("files in a chat", () => {
       <MediaBlock
         msg={msg({ mediaState: "storage_off" })}
         onLoad={vi.fn()}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.getByText("Media storage isn't set up yet.")).toBeDefined();
@@ -141,7 +189,7 @@ describe("files in a chat", () => {
       <MediaBlock
         msg={msg({ mediaState: "unavailable" })}
         onLoad={vi.fn()}
-        onZoom={vi.fn()}
+        onOpen={vi.fn()}
       />,
     );
     expect(screen.getByText("This file isn't available.")).toBeDefined();
