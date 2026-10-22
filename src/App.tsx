@@ -39,6 +39,7 @@ import { FeatureLocked } from "./components/ui/FeatureLocked";
 import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
+import { PlanCard } from "./components/admin/PlanCard";
 import { DeveloperGuide } from "./components/developer/DeveloperGuide";
 import type {
   AuthUser,
@@ -943,7 +944,16 @@ export function App() {
                 ) : (
                   <AuditLogs />
                 ))}
-              {adminTab === "cluster" && <ClusterHealth />}
+              {adminTab === "cluster" && (
+                <div className="space-y-4">
+                  <PlanCard
+                    plan={capabilities.data?.plan}
+                    numbersLimit={capabilities.data?.numbersLimit}
+                    numbersUsed={sessionsQuery.data?.length}
+                  />
+                  <ClusterHealth />
+                </div>
+              )}
             </Page>
           )}
           {view === "developer" && (

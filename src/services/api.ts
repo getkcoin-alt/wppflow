@@ -327,11 +327,25 @@ export const changePassword = async (
 };
 export const listCompanies = async () =>
   (await apiGet("/api/admin/companies")).companies;
+/** A plan the platform admin can give a company, as the server defines it (the same five as the pricing page). */
+export interface PlanChoice {
+  id: "free" | "starter" | "growth" | "business" | "enterprise";
+  name: string;
+  /** WhatsApp numbers included; null when agreed per company */
+  numbers: number | null;
+  /** People it is for; null when there is no limit */
+  seats: number | null;
+  features: { key: string; label: string; included: boolean }[];
+}
+export const listPlans = async (): Promise<PlanChoice[]> =>
+  (await apiGet("/api/admin/plans")).plans;
 export const createCompany = (data: {
   companyName: string;
   ownerName: string;
   ownerEmail: string;
-  sessionsLimit: number;
+  plan: string;
+  /** Leave out to give the company what the plan includes */
+  sessionsLimit?: number;
 }) => apiPost("/api/admin/companies", data);
 export const updateCompany = (id: string, data: Record<string, unknown>) =>
   apiPatch(`/api/admin/companies/${encodeURIComponent(id)}`, data);

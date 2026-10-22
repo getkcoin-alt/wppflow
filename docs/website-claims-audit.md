@@ -31,13 +31,23 @@ no dedicated test yet.
 
 ## Plans
 
+Checked again on 22 October 2026, after the platform admin was given the choice of plan.
+
 | Website says | Status | Evidence |
 |---|---|---|
-| Free: one account, one number | Fixed | The number limit already held. The one-person limit was not enforced; it is now (`plans.js`, `ai-assistant.test.js`) |
-| Starter has no broadcasts, automations, audit log or API | Fixed | Before this phase the plan was only a label: a Starter company could use everything. Those features are now locked by plan, in the server and in the screens |
-| Growth adds broadcasts, automations, desktop and offline alerts, audit log | Fixed | Broadcasts, automations and the audit log are enforced. Alerts are deliberately not locked, because they protect customers from a missed message |
-| Business adds API keys, webhooks, API tester and SDK samples | Fixed | API keys and webhooks are enforced; the guide and samples stay readable on every plan |
-| Companies on the original "Workspace" plan | Kept | Any plan name that is not one of the five keeps every feature, so nothing already working stops |
+| Free: one account, one number | Test | The number limit is 1 and the second number is refused; a teammate can't be invited (`plans-admin.test.js`, `ai-assistant.test.js`) |
+| Starter: up to 3 numbers; shared inbox, assign and resolve, private notes and @mentions, contacts CSV, themes | Test | Limit of 3 set from the plan; the inbox features are covered in the table above and are open on every plan |
+| Starter has no broadcasts, automations, audit log or API | Test | Locked by plan in the server and the screens (`plans-admin.test.js`, `ai-assistant.test.js`) |
+| Growth: up to 10 numbers; adds broadcasts, automations, audit log | Test | Limit of 10 set from the plan; the three are open on Growth and above |
+| Growth: saved replies, desktop and offline alerts | Code | Built and working, but deliberately open on **every** plan: alerts protect customers from a missed message, and saved replies are a small convenience. The page lists them under Growth, so Free and Starter get more than it promises |
+| Business: up to 25 numbers; scoped API keys, signed webhooks | Test | Limit of 25 set from the plan; keys and webhooks are locked below Business |
+| Business: API tester and SDK samples | Code | The Developers guide is readable on every plan; only creating keys and webhooks is locked |
+| Enterprise: custom number limit | Test | The platform admin must type the limit; no default is guessed |
+| Onboarding call, dedicated onboarding, help connecting your systems | Service | Not software |
+| The platform admin chooses the plan when creating a company, and can change it later | Test | Required, one of the five, with the plan's number limit filled in and editable; changing it takes effect at once, removes nothing, and says what a smaller plan leaves the company with (`plans-admin.test.js`, `platform_plans.test.tsx`) |
+| Companies see their own plan and what it includes | Test | "Your plan" card in Team, System (`platform_plans.test.tsx`) |
+| Companies on the original "Workspace" plan | Kept | Any plan name that is not one of the five keeps every feature, so nothing already working stops. They can be moved to a plan from the platform screen |
+| Self-service sign-up | Fixed | It used to create a "Workspace" company with every feature and 5 numbers, which skipped the pricing page entirely. It now creates a Free company: one person, one number. Set `ALLOW_PUBLIC_SIGNUP=false` on the server to turn sign-up off |
 
 ## Not software
 

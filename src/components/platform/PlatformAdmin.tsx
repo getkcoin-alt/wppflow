@@ -4,19 +4,24 @@ import { Building2, LogOut, Plus } from "lucide-react";
 import { ScriwoMark, Wordmark } from "../brand/Logo";
 import { Sheet } from "../ui/Sheet";
 import { EmptyState, Field, Notice, Pill } from "../ui/Page";
-import { btn, inputCls } from "../ui/styles";
+import { btn, inputCls, selectCls } from "../ui/styles";
 import { ThemeSwitch } from "../layout/ProfileMenu";
 import { useTheme } from "../../hooks/useTheme";
 import {
   listCompanies,
+  listPlans,
   createCompany,
   updateCompany,
   resendOwnerCredentials,
+  type PlanChoice,
 } from "../../services/api";
 
 interface Company {
   id: string;
   name: string;
+  /** The plan's name, or the original "Workspace" for companies from before plans */
+  plan: string;
+  planId: PlanChoice["id"] | null;
   status: "active" | "suspended";
   sessionsLimit: number;
   staffCount: number;
@@ -24,6 +29,81 @@ interface Company {
   connectedSessions: number;
   createdAt: string;
   owner: { name: string; email: string; activated: boolean } | null;
+}
+
+// What a plan gives, in one sentence, so the choice is clear before it is made.
+const featureName = (label: string) => {
+  const bare = label.replace(/^The /, "");
+  return bare.charAt(0).toUpperCase() + bare.slice(1);
+};
+function describePlan(plan: PlanChoice): string {
+  const numbers = plan.numbers === null ? "A custom number of WhatsApp numbers" : `${plan.numbers === 1 ? "One WhatsApp number" : `Up to ${plan.numbers} WhatsApp numbers`}`;
+  const people = plan.seats === 1 ? ", for one person" : "";
+  const extras = plan.features.filter((f) => f.included).map((f) => featureName(f.label));
+  return `${numbers}${people}. ${extras.length ? `Adds ${extras.join(", ")}.` : "No broadcasts, automations, audit log, API or AI assistant."}`;
+}
+
+// The plan and number limit fields, shared by "Add a company" and "Change plan": picking a plan fills in the
+// number limit that plan includes, which can still be changed.
+function PlanFields({
+  plans,
+  planId,
+  limit,
+  onPlan,
+  onLimit,
+}: {
+  plans: PlanChoice[] | undefined;
+  planId: string;
+  limit: string;
+  onPlan: (id: string) => void;
+  onLimit: (value: string) => void;
+}) {
+  const chosen = plans?.find((p) => p.id === planId);
+  return (
+    <>
+      <Field label="Plan" hint={chosen ? describePlan(chosen) : "Choose what this company has bought."}>
+        <select
+          aria-label="Plan"
+          name="plan"
+          required
+          value={planId}
+          onChange={(e) => onPlan(e.target.value)}
+          className={selectCls}
+        >
+          <option value="" disabled>
+            Choose a plan…
+          </option>
+          {plans?.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field
+        label="WhatsApp number limit"
+        hint={
+          chosen?.numbers === null
+            ? "Enterprise has no standard limit: enter the number you agreed."
+            : chosen
+              ? `${chosen.name} includes ${chosen.numbers}. Change it only for a special agreement.`
+              : "How many numbers this company may connect."
+        }
+      >
+        <input
+          aria-label="WhatsApp session limit"
+          name="sessionsLimit"
+          type="number"
+          min={1}
+          max={500}
+          value={limit}
+          onChange={(e) => onLimit(e.target.value)}
+          required
+          className={inputCls}
+        />
+      </Field>
+    </>
+  );
 }
 
 export function PlatformAdmin({
@@ -40,6 +120,27 @@ export function PlatformAdmin({
     queryKey: ["companies"],
     queryFn: listCompanies,
   });
+  const plans = useQuery<PlanChoice[]>({ queryKey: ["plans"], queryFn: listPlans });
+  const [newPlan, setNewPlan] = useState(""),
+    [newLimit, setNewLimit] = useState("");
+  const pickNew = (id: string) => {
+    setNewPlan(id);
+    setNewLimit(String(plans.data?.find((p) => p.id === id)?.numbers ?? ""));
+  };
+  // Changing the plan of an existing company
+  const [moving, setMoving] = useState<Company | null>(null);
+  const [movePlan, setMovePlan] = useState(""),
+    [moveLimit, setMoveLimit] = useState("");
+  const startMove = (c: Company) => {
+    setMoving(c);
+    setMovePlan(c.planId || "");
+    setMoveLimit(String(c.sessionsLimit));
+  };
+  const pickMove = (id: string) => {
+    setMovePlan(id);
+    const included = plans.data?.find((p) => p.id === id)?.numbers;
+    setMoveLimit(String(included ?? (id === moving?.planId ? moving.sessionsLimit : "")));
+  };
   const [notice, setNotice] = useState(""),
     [failure, setFailure] = useState(""),
     [busy, setBusy] = useState(false);
@@ -163,11 +264,14 @@ export function PlatformAdmin({
                   companyName: String(f.get("companyName")),
                   ownerName: String(f.get("ownerName")),
                   ownerEmail: String(f.get("ownerEmail")),
-                  sessionsLimit: Number(f.get("sessionsLimit")),
+                  plan: newPlan,
+                  sessionsLimit: Number(newLimit),
                 }),
               ).then((r) => {
                 if (r) {
                   form.reset();
+                  setNewPlan("");
+                  setNewLimit("");
                   setAdding(false);
                 }
               });
@@ -201,21 +305,44 @@ export function PlatformAdmin({
                 className={inputCls}
               />
             </Field>
-            <Field
-              label="WhatsApp number limit"
-              hint="How many numbers this company may connect."
-            >
-              <input
-                aria-label="WhatsApp session limit"
-                name="sessionsLimit"
-                type="number"
-                min={1}
-                max={500}
-                defaultValue={5}
-                required
-                className={inputCls}
-              />
-            </Field>
+            <PlanFields plans={plans.data} planId={newPlan} limit={newLimit} onPlan={pickNew} onLimit={setNewLimit} />
+            {plans.error && <Notice tone="error">{(plans.error as Error).message}</Notice>}
+          </form>
+        </Sheet>
+
+        <Sheet
+          open={!!moving}
+          onClose={() => setMoving(null)}
+          title={`Change plan for ${moving?.name ?? ""}`}
+          subtitle="What the company can use changes straight away. Nothing it already has is removed."
+          footer={
+            <>
+              <button type="button" className={btn("ghost")} onClick={() => setMoving(null)}>
+                Cancel
+              </button>
+              <button form="plan-form" disabled={busy} className={btn("primary")}>
+                Save plan
+              </button>
+            </>
+          }
+        >
+          <form
+            id="plan-form"
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!moving) return;
+              const company = moving;
+              void run(
+                () => updateCompany(company.id, { plan: movePlan, sessionsLimit: Number(moveLimit) }),
+                (r) => [`${company.name} is now on the ${r.company.plan} plan.`, ...(r.warnings || [])].join(" "),
+              ).then((r) => r && setMoving(null));
+            }}
+          >
+            <p className="text-[14px] text-fg-2">
+              Now on <span className="font-medium text-fg">{moving?.plan}</span> with {moving?.sessionsLimit} WhatsApp numbers.
+            </p>
+            <PlanFields plans={plans.data} planId={movePlan} limit={moveLimit} onPlan={pickMove} onLimit={setMoveLimit} />
           </form>
         </Sheet>
 
@@ -254,6 +381,7 @@ export function PlatformAdmin({
                     <Pill tone={c.status === "active" ? "ok" : "warn"} dot>
                       {c.status}
                     </Pill>
+                    <Pill tone="gold">{c.plan}</Pill>
                   </div>
                   <p className="text-[14px] text-fg-2 mt-1">
                     {c.owner
@@ -301,6 +429,13 @@ export function PlatformAdmin({
                     }}
                   >
                     Set limit
+                  </button>
+                  <button
+                    disabled={busy}
+                    className={btn("ghost", "sm")}
+                    onClick={() => startMove(c)}
+                  >
+                    Change plan
                   </button>
                   {c.owner && (
                     <button

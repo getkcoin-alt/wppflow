@@ -258,6 +258,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           </div>,
         )}
 
+        {mode === "signup" && (
+          <p className="text-[13px] text-fg-3 -mt-1">
+            A new workspace starts on the Free plan: one person and one WhatsApp number. For a team, write to us and we will move you to a bigger plan.
+          </p>
+        )}
+
         <button
           type="submit"
           disabled={loading}
