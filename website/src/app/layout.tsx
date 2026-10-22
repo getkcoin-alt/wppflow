@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { MobileCta, WhatsAppButton } from "@/components/WhatsAppButton";
 import { themeScript } from "@/components/ThemeToggle";
 import { organization, website } from "@/lib/jsonld";
+import { SiteAnalytics } from "@/components/Analytics";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <WhatsAppButton />
         <MobileCta />
+        <SiteAnalytics />
       </body>
     </html>
   );

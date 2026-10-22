@@ -4,6 +4,7 @@ import { Container, Crumbs } from "@/components/ui";
 import { ContactForm } from "@/components/ContactForm";
 import { JsonLd } from "@/components/JsonLd";
 import { absolute, SITE, whatsappHref } from "@/lib/site";
+import { trackAttrs } from "@/lib/analytics";
 
 export const metadata: Metadata = {
   title: "Contact Scriwo — Book a Demo or Start a Plan",
@@ -22,7 +23,7 @@ export default function ContactPage() {
             <p className="eyebrow">Contact</p>
             <h1 className="mt-4 text-4xl leading-tight sm:text-5xl">Let&apos;s get your team on Scriwo</h1>
             <p className="mt-6 text-lg text-fg-2">Book a demo, ask for a quote or start a plan. Online checkout is coming soon; until then, this form is the fastest way to get started.</p>
-            <a href={whatsappHref("Hi Scriwo, I would like a demo for my team.")} target="_blank" rel="noopener" className="btn-ghost mt-8">
+            <a href={whatsappHref("Hi Scriwo, I would like a demo for my team.")} target="_blank" rel="noopener" {...trackAttrs("whatsapp_click", { place: "contact-page" })} className="btn-ghost mt-8">
               <MessageCircle className="h-4 w-4 text-brand" aria-hidden="true" /> WhatsApp sales: {SITE.whatsappDisplay}
             </a>
             <ul className="mt-10 space-y-5">

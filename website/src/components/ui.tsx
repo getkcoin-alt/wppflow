@@ -3,6 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 import type { ReactNode } from "react";
 import { JsonLd } from "./JsonLd";
 import { breadcrumbs } from "@/lib/jsonld";
+import { trackAttrs } from "@/lib/analytics";
 import type { Faq } from "@/content/faqs";
 
 export function Container({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -94,7 +95,7 @@ export function CtaBand({ title = "See Scriwo with your own team", body = "Tell 
           <h2 className="text-3xl sm:text-4xl">{title}</h2>
           <p className="mt-4 text-lg text-white/75">{body}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/contact?interest=demo" className="btn bg-white text-[#0a0b0c] hover:bg-white/90">
+            <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "cta-band" })} className="btn bg-white text-[#0a0b0c] hover:bg-white/90">
               Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link href="/pricing" className="btn border border-white/20 text-white hover:bg-white/10">See plans</Link>
