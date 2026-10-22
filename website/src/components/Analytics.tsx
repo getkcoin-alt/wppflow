@@ -14,11 +14,13 @@ const CLARITY_ID = CLARITY_SETTING === "off" ? "" : CLARITY_SETTING.replace(/[^a
 const GA_SETTING = process.env.NEXT_PUBLIC_GA_ID || "G-JDN3EJSHC2";
 const GA_ID = GA_SETTING === "off" ? "" : GA_SETTING.replace(/[^A-Z0-9-]/gi, "");
 
-// Consent Mode: analytics cookies stay off until the visitor accepts; ads storage is never used.
+// Consent Mode: analytics and advertising signals stay denied until the visitor accepts. Accept
+// grants both (Google Analytics and Google Ads measurement); Decline keeps everything denied.
 // A returning visitor's earlier choice is applied before the tag loads.
 const gaBootstrap = (id: string) => `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
 var c=null;try{c=localStorage.getItem("scriwo_cookie_consent")}catch(e){}
-gtag('consent','default',{analytics_storage:c==='granted'?'granted':'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+var g=c==='granted'?'granted':'denied';
+gtag('consent','default',{analytics_storage:g,ad_storage:g,ad_user_data:g,ad_personalization:g});
 gtag('js',new Date());gtag('config','${id}');`;
 
 function ConsentBanner() {
@@ -32,7 +34,7 @@ function ConsentBanner() {
   return (
     <div role="dialog" aria-label="Cookie choice" className="glass fixed inset-x-3 bottom-20 z-50 mx-auto max-w-xl rounded-2xl border border-line p-4 shadow-pop sm:bottom-5">
       <p className="text-sm text-fg-2">
-        We use Google Analytics cookies to understand how people use this site. No advertising cookies.{" "}
+        We use Google cookies for analytics and to measure our ads. Accept to allow them, or decline and we won&apos;t set them.{" "}
         <Link href="/privacy" className="underline">Privacy notice</Link>
       </p>
       <div className="mt-3 flex gap-2">
