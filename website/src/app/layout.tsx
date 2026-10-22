@@ -11,7 +11,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  title: { default: "Scriwo — Shared WhatsApp Inbox & CRM for Teams in UAE and India", template: "%s | Scriwo" },
+  title: { default: "Scriwo — WhatsApp CRM & Shared Team Inbox for UAE and India", template: "%s | Scriwo" },
   description: SITE.description,
   applicationName: "Scriwo",
   alternates: { canonical: "/" },

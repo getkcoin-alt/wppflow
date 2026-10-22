@@ -158,6 +158,100 @@ export const POSTS: Post[] = [
     ],
     related: ["whatsapp-team-inbox", "whatsapp-automation", "team-notifications"],
   },
+  {
+    slug: "whatsapp-business-multiple-users",
+    title: "WhatsApp Business with multiple users: the options for teams in 2026",
+    description: "Can several staff use one WhatsApp Business number? The app's limits, the three real options for teams in the UAE and India, and what each costs.",
+    keyword: "WhatsApp Business multiple users",
+    published: "2026-10-22",
+    readingMinutes: 6,
+    answer:
+      "The WhatsApp Business app lets one number run on the main phone plus up to four linked devices, but everyone shares the same chats with no assignment and no record of who replied. Teams have three options: share linked devices, move to a WhatsApp Business API platform that charges per message, or use a team inbox like Scriwo where each staff member links their own number and the owner sees every chat.",
+    sections: [
+      {
+        heading: "What the WhatsApp Business app allows",
+        body: [
+          "One WhatsApp Business number can be open on the main phone and up to four linked devices, such as WhatsApp Web on office computers. It works for a two or three person shop.",
+          "Past that, the gaps show. Every device sees every chat, nothing is assigned to anyone, replies are not tagged with who sent them, and linked devices log out if the main phone is not used for about 14 days.",
+        ],
+      },
+      {
+        heading: "Option 1: share the number on linked devices",
+        body: ["Free and quick. Good for a small team at one desk."],
+        list: [
+          "Limited to five devices in total.",
+          "Two people can answer the same customer at once.",
+          "No way to tell who promised what, or who should follow up.",
+          "When someone leaves, they can still have copies of every chat on their own devices.",
+        ],
+      },
+      {
+        heading: "Option 2: a WhatsApp Business API platform",
+        body: [
+          "Platforms such as Wati, Interakt and AiSensy put one official API number behind a team inbox, with templates, chatbots and campaigns.",
+          "The trade-off is cost and setup: Meta's per-message charges apply on top of the platform fee, and the number goes through business verification. It suits high-volume notifications and marketing campaigns.",
+        ],
+      },
+      {
+        heading: "Option 3: a team inbox for the numbers you already use",
+        body: [
+          "This is how Scriwo works. Each staff member gets their own login and links their own WhatsApp number by scanning a QR code. The owner sees every conversation from every number in one inbox, and staff see only their own chats plus anything assigned to them.",
+          "There are no per-message fees, chats can be assigned and resolved, notes stay private, and every reply shows who sent it. One account with one number is free; team plans start at AED 299 or ₹2,499 a month for three numbers.",
+        ],
+      },
+      {
+        heading: "Which one to choose",
+        body: [],
+        list: [
+          "Two or three people at one desk: linked devices on the Business app are fine.",
+          "Thousands of automated notifications a day: an API platform.",
+          "A sales or support team where each person talks to their own customers: a team inbox like Scriwo.",
+        ],
+      },
+    ],
+    related: ["multiple-whatsapp-numbers", "whatsapp-team-inbox", "chat-assignment"],
+  },
+  {
+    slug: "best-whatsapp-crm-uae-india",
+    title: "How to choose the best WhatsApp CRM in the UAE and India",
+    description: "A buyer's checklist for WhatsApp CRMs in Dubai, Abu Dhabi, Mumbai, Delhi and Bengaluru: connection type, message fees, team controls, data and price.",
+    keyword: "best WhatsApp CRM UAE India",
+    published: "2026-10-22",
+    readingMinutes: 5,
+    answer:
+      "The best WhatsApp CRM depends on how your team uses WhatsApp. If you send automated campaigns from one official number, pick an API platform and budget for Meta's per-message fees. If your staff sell and support customers from their own numbers, pick a team inbox like Scriwo with per-person logins, chat assignment, owner visibility and no per-message fees. Check the price in AED or INR, the free plan and how fast you can go live.",
+    sections: [
+      {
+        heading: "Start with how your team uses WhatsApp",
+        body: [
+          "In Dubai real estate, Indian coaching institutes and retail across both countries, customers already have a salesperson's personal WhatsApp number. Replacing those numbers with one official sender changes how customers reach you.",
+          "If most of your messages are order updates, OTPs or campaigns, an official API number is the right base. If most are conversations, keep the numbers and add a shared inbox on top.",
+        ],
+      },
+      {
+        heading: "The checklist",
+        body: [],
+        list: [
+          "Connection: official API number, or your team's existing numbers linked by QR code?",
+          "Message fees: are Meta's per-message charges billed on top of the plan?",
+          "Team controls: one login per person, chat assignment, private notes, roles and an audit log.",
+          "Owner visibility: can a manager see every staff number in one place?",
+          "Offboarding: when someone leaves, can you remove their access and keep the history?",
+          "Price in local currency: clear AED and INR pricing, VAT or GST shown separately.",
+          "Free plan: can you try it with one number before you commit?",
+          "Time to go live: minutes with a QR code, or days of verification?",
+        ],
+      },
+      {
+        heading: "Where Scriwo fits",
+        body: [
+          "Scriwo is a team inbox for the WhatsApp numbers your staff already use, built for companies in the UAE and India. It is free for one account with one number, and team plans start at AED 299 or ₹2,499 a month with no per-message fees.",
+          "It is not the WhatsApp Business API, so it does not offer a green tick or approved template campaigns. If you need those, an API platform is the better fit.",
+        ],
+      },
+    ],
+    related: ["whatsapp-team-inbox", "whatsapp-contacts-crm", "security-and-roles"],
+  },
 ];
 
 export const postBySlug = (slug: string) => POSTS.find((p) => p.slug === slug);

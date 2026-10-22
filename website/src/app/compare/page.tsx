@@ -3,7 +3,7 @@ import { Container, PageHero, LinkCard, Crumbs, CtaBand } from "@/components/ui"
 import { COMPARISONS } from "@/content/compare";
 
 export const metadata: Metadata = {
-  title: "Compare Scriwo — WhatsApp Business App, Shared Phones, API Platforms",
+  title: "Compare Scriwo — Wati, Interakt & AiSensy Alternative, WhatsApp Business App",
   description: "Honest comparisons: Scriwo vs the WhatsApp Business app, vs sharing one office phone, and vs WhatsApp Business API platforms.",
   alternates: { canonical: "/compare" },
 };
