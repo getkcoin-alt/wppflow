@@ -63,6 +63,28 @@ export const COMPARISONS: Comparison[] = [
     ],
     verdict: "If you need thousands of automated notifications a day from one official number, use an API platform. If your people sell and support customers on their own WhatsApp, Scriwo fits better.",
   },
+  // Alternative pages: only the connection and billing model, which each vendor states publicly.
+  // No competitor prices or feature claims; those change and readers are pointed to the vendor.
+  ...([
+    ["wati", "Wati", "wati.io"],
+    ["interakt", "Interakt", "interakt.shop"],
+    ["aisensy", "AiSensy", "aisensy.com"],
+  ] as const).map(([slug, name, site]): Comparison => ({
+    slug: `${slug}-alternative`,
+    title: `${name} alternative for WhatsApp teams: Scriwo vs ${name}`,
+    keyword: `${name} alternative`,
+    them: name,
+    intro: `${name} is a WhatsApp Business API platform, built for template messages and automation from an official number. Scriwo is a different kind of tool: a shared inbox for the WhatsApp numbers your staff already use, with no per-message fees. Here is how to tell which one fits your team in the UAE or India.`,
+    rows: [
+      { label: "How it connects", scriwo: "Each staff member links their existing WhatsApp number by QR code", them: "Official WhatsApp Business API number registered through the platform" },
+      { label: "Per-message charges", scriwo: "None; one monthly price per company", them: "Meta's WhatsApp message charges apply on top of the plan" },
+      { label: "Setup time", scriwo: "Minutes: scan a QR code", them: "Business verification and number registration with Meta" },
+      { label: "Best at", scriwo: "Named staff selling and supporting on their own numbers, with owner oversight", them: "Automated template campaigns and notifications at volume" },
+      { label: "Green tick / official sender", scriwo: "No", them: "Possible, subject to Meta approval" },
+      { label: "Free option", scriwo: "Free for one account with one number", them: `See ${site} for current plans` },
+    ],
+    verdict: `Choose ${name} if you need official API features such as template campaigns at scale or a verified sender. Choose Scriwo if your team talks to customers personally from their own WhatsApp numbers and you want one inbox, ownership and oversight without per-message fees.`,
+  })),
 ];
 
 export const comparisonBySlug = (slug: string) => COMPARISONS.find((c) => c.slug === slug);

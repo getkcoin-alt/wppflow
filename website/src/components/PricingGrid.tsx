@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckList } from "./ui";
 import { PLANS, TAX_NOTE } from "@/content/plans";
 import { currencyForZone, formatMoney, type Currency } from "@/lib/money";
+import { trackAttrs } from "@/lib/analytics";
 
 const KEY = "scriwo_currency";
 
@@ -70,6 +71,7 @@ export function PricingGrid() {
               <div className="mt-6 flex-1 text-sm"><CheckList items={p.includes} /></div>
               <Link
                 href={`/contact?interest=${p.id}&plan=${encodeURIComponent(`${p.name} (${cur})`)}`}
+                {...trackAttrs("plan_choose", { plan: p.id, currency: cur })}
                 className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}
               >
                 {p.id === "enterprise" ? "Talk to sales" : p.id === "free" ? "Get started free" : `Choose ${p.name}`}

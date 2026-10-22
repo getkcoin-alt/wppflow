@@ -11,6 +11,7 @@ import { absolute } from "@/lib/site";
 import { faqPage, speakable } from "@/lib/jsonld";
 import { PLANS, TAX_NOTE } from "@/content/plans";
 import { formatMoney } from "@/lib/money";
+import { trackAttrs } from "@/lib/analytics";
 
 type Props = { params: Promise<{ city: string }> };
 
@@ -60,7 +61,7 @@ export default async function CityPage({ params }: Props) {
       />
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Locations", path: "/whatsapp-crm" }, { name: c.name, path }]} />
       <PageHero eyebrow={c.region === c.name ? `${c.name} · ${c.country === "UAE" ? "United Arab Emirates" : "India"}` : `${c.name} · ${c.region}`} title={<>WhatsApp CRM for teams in {c.name}</>} intro={c.local}>
-        <Link href="/contact?interest=demo" className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+        <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "whatsapp-crm" })} className="btn-primary">Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         <Link href="/pricing" className="btn-ghost">Free for 1 number · teams from {from}</Link>
       </PageHero>
       <Container className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">

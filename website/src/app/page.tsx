@@ -9,6 +9,7 @@ import { CITIES } from "@/content/cities";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { faqPage, softwareApplication, speakable } from "@/lib/jsonld";
 import { SITE } from "@/lib/site";
+import { trackAttrs } from "@/lib/analytics";
 
 const PILLARS = [
   { icon: Users, title: "Built for companies with staff", body: "A platform admin creates your company, the owner sets a password from a single-use link, and invites the team. Each person links their own number. Owners see everything; staff see their own chats plus any assigned to them. The server enforces it." },
@@ -35,7 +36,7 @@ export default function Home() {
               Scriwo is the shared WhatsApp inbox and CRM for companies with staff. Each teammate links their own number, owners see every conversation, and the team assigns, notes and resolves chats together.
             </p>
             <div className="rise-3 mt-8 flex flex-wrap gap-3">
-              <Link href="/contact?interest=demo" className="btn-primary">
+              <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "home-hero" })} className="btn-primary">
                 Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link href="/pricing" className="btn-ghost">See plans</Link>
