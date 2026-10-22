@@ -302,14 +302,44 @@ export function App() {
       throw e;
     }
   };
+  // Opening a chat also asks WhatsApp for its recent history, once per chat per visit. The inbox only
+  // backfills the most recent chats up front, so without this an older chat can open empty.
+  const syncedChats = useRef(new Set<string>());
+  const [historyState, setHistoryState] = useState<{
+    id: string;
+    loading: boolean;
+    note?: string;
+  } | null>(null);
   const openChat = useCallback(
-    (id: string, sync = false) => {
+    (id: string, force = false) => {
       setSelected(id);
-      if (sync)
+      if (force || !syncedChats.current.has(id)) {
+        syncedChats.current.add(id);
+        setHistoryState({ id, loading: true });
         void api
           .fetchConversationMessages(id, { sync: true })
-          .then(() => refresh("messages"))
-          .catch(() => {}); // older history is a bonus, never an error banner
+          .then(async (result) => {
+            await refresh("messages", "conversations");
+            const h = result?.historySync;
+            setHistoryState({
+              id,
+              loading: false,
+              note: h?.error
+                ? `WhatsApp could not load this chat's history right now (${h.error}).`
+                : h && h.fetched === 0
+                  ? "WhatsApp has no earlier messages for this chat."
+                  : undefined,
+            });
+          })
+          // Older history is a bonus, never an error banner.
+          .catch(() =>
+            setHistoryState({
+              id,
+              loading: false,
+              note: "Could not reach WhatsApp to load this chat's history.",
+            }),
+          );
+      }
       // Clearing the unread badge also happens locally via the realtime update, so a
       // failure here is not worth interrupting the person who is just reading a chat.
       void api
@@ -400,6 +430,7 @@ export function App() {
       setOptimistic({});
       setSelected(null);
       setOpenedThread(null);
+      syncedChats.current.clear();
       setUser(null);
     }
   };
@@ -467,6 +498,7 @@ export function App() {
     setOptimistic({});
     setSelected(null);
     setOpenedThread(null);
+    syncedChats.current.clear();
     setUser(result.user);
   };
   const commands: Command[] = [
@@ -653,6 +685,9 @@ export function App() {
               sessions={sessions}
               selectedChatId={selected}
               onOpenChat={openChat}
+              historyStatus={
+                historyState?.id === selected ? historyState : null
+              }
               onSendMessage={send}
               onSendAttachment={attachment}
               onAssignAgent={(id, name) => {

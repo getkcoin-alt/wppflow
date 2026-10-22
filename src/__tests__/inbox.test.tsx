@@ -194,4 +194,56 @@ describe("Inbox component", () => {
       false,
     );
   });
+
+  describe("a chat whose messages are not saved yet", () => {
+    const base = (extra: Record<string, unknown>, onOpenChat = vi.fn()) =>
+      render(
+        <Inbox
+          chats={mockChats}
+          messages={{ conv_1: [] }}
+          contacts={mockContacts}
+          cannedReplies={[]}
+          sessions={mockSessions}
+          selectedChatId="conv_1"
+          onSendMessage={vi.fn()}
+          onSendAttachment={vi.fn()}
+          onAssignAgent={vi.fn()}
+          onToggleResolve={vi.fn()}
+          onOpenChat={onOpenChat}
+          onSyncInbox={vi.fn()}
+          {...extra}
+        />,
+      );
+
+    it("says it is loading from WhatsApp instead of claiming the chat is empty", () => {
+      base({ historyStatus: { loading: true } });
+      expect(screen.getByText("Loading messages from WhatsApp…")).toBeDefined();
+      expect(screen.queryByText(/No messages yet\. Send a message/)).toBeNull();
+    });
+
+    it("explains why history could not be loaded and offers to try again", () => {
+      const open = vi.fn();
+      base(
+        {
+          historyStatus: {
+            loading: false,
+            note: "WhatsApp could not load this chat's history right now (WhatsApp session is offline).",
+          },
+        },
+        open,
+      );
+      expect(screen.getByText(/session is offline/)).toBeDefined();
+      fireEvent.click(screen.getByText("Try again"));
+      expect(open).toHaveBeenCalledWith("conv_1", true);
+    });
+
+    it("keeps the plain empty message for a genuinely new chat", () => {
+      base({ historyStatus: null });
+      expect(
+        screen.getByText(
+          /No messages yet\. Send a message to start the conversation!/,
+        ),
+      ).toBeDefined();
+    });
+  });
 });

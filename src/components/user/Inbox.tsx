@@ -67,6 +67,8 @@ interface InboxProps {
   }) => Promise<void>;
   canManage?: boolean;
   onOpenSessions?: () => void;
+  /** Whether WhatsApp history for the open chat is loading, or why it could not be loaded */
+  historyStatus?: { loading: boolean; note?: string } | null;
 }
 
 const avatarFallback = safeAvatarFallback;
@@ -135,6 +137,7 @@ export const Inbox: React.FC<InboxProps> = ({
   onAssignAgent,
   onToggleResolve,
   onOpenChat,
+  historyStatus,
   onSyncInbox,
   teammates = [],
   mediaEnabled = false,
@@ -797,11 +800,39 @@ export const Inbox: React.FC<InboxProps> = ({
                 </div>
               </div>
 
-              {currentMessages.length === 0 && (
-                <div className="h-48 flex items-center justify-center text-fg-2 text-xs">
-                  No messages yet. Send a message to start the conversation!
-                </div>
-              )}
+              {currentMessages.length === 0 &&
+                (historyStatus?.loading ? (
+                  <div
+                    role="status"
+                    className="h-48 flex flex-col items-center justify-center gap-3 text-fg-2 text-[14px]"
+                  >
+                    <Loader2 className="w-5 h-5 animate-spin text-gold" />
+                    Loading messages from WhatsApp…
+                  </div>
+                ) : (
+                  <div className="py-10 flex flex-col items-center gap-3 text-center text-fg-2 text-[14px]">
+                    <p>
+                      {historyStatus?.note ||
+                        "No messages yet. Send a message to start the conversation!"}
+                    </p>
+                    {activeChat.lastMessage?.text && (
+                      <p className="max-w-sm rounded-2xl bg-surface-2 px-4 py-3 text-fg">
+                        <span className="block text-[11px] uppercase tracking-[0.12em] text-fg-3 mb-1">
+                          Last message
+                        </span>
+                        {activeChat.lastMessage.text}
+                      </p>
+                    )}
+                    {historyStatus?.note && (
+                      <button
+                        className="text-[13.5px] font-medium text-gold hover:underline"
+                        onClick={() => onOpenChat(activeChat.id, true)}
+                      >
+                        Try again
+                      </button>
+                    )}
+                  </div>
+                ))}
 
               {/* Render Message Bubbles */}
               {hasOlderMessages && (
