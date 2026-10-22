@@ -1,5 +1,5 @@
 export type Plan = {
-  id: "starter" | "growth" | "business" | "enterprise";
+  id: "free" | "starter" | "growth" | "business" | "enterprise";
   name: string;
   for: string;
   numbers: string;
@@ -9,7 +9,8 @@ export type Plan = {
   includes: string[];
 };
 
-// Online payments are not live yet: every plan is started through the contact form.
+// Online payments are not live yet: every plan, free or paid, is set up by the onboarding team
+// through the contact form, at the prices below.
 export const PAYMENTS_LIVE = false;
 
 // Prices exclude tax: 5% VAT in the UAE, 18% GST in India.
@@ -19,6 +20,11 @@ export const PAYMENTS_LIVE = false;
 export const TAX_NOTE = { AED: "Prices exclude 5% VAT.", INR: "Prices exclude 18% GST." } as const;
 
 export const PLANS: Plan[] = [
+  {
+    id: "free", name: "Free", for: "One person getting started", numbers: "1 number",
+    price: { AED: 0, INR: 0 },
+    includes: ["One WhatsApp number on one account", "Live inbox with chat history", "Private notes", "Contacts with CSV import and export", "Dark and light themes"],
+  },
   {
     id: "starter", name: "Starter", for: "Small teams getting organised", numbers: "Up to 3 numbers",
     price: { AED: 299, INR: 2499 },

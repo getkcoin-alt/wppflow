@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
-import { SITE } from "@/lib/site";
 
 const NAV = [
   { href: "/features", label: "Features" },
@@ -32,9 +31,6 @@ export function Header() {
         </nav>
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           <ThemeToggle />
-          <a href={SITE.appUrl} className="hidden rounded-full px-3 py-2 text-sm text-fg-2 hover:text-fg sm:block">
-            Sign in
-          </a>
           <Link href="/contact?interest=demo" className="btn-primary hidden !py-2 text-sm sm:inline-flex">
             Book a demo
           </Link>
@@ -57,7 +53,6 @@ export function Header() {
               {n.label}
             </Link>
           ))}
-          <a href={SITE.appUrl} className="block rounded-xl px-3 py-3 text-base hover:bg-surface-2">Sign in</a>
         </nav>
       )}
     </header>

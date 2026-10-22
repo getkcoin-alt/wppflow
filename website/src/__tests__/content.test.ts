@@ -50,12 +50,19 @@ describe("contact form checks", () => {
 
 describe("pricing", () => {
   it("paid plans have prices in both currencies, rising with the number limit", async () => {
-    const paid = PLANS.filter((p) => p.id !== "enterprise");
+    const paid = PLANS.filter((p) => p.id !== "enterprise" && p.id !== "free");
     for (const cur of ["AED", "INR"] as const) {
       const prices = paid.map((p) => p.price[cur]);
       expect(prices.every((n) => typeof n === "number" && n > 0)).toBe(true);
       expect([...prices].sort((a, b) => a! - b!)).toEqual(prices);
     }
+  });
+
+  it("one number is free and the FAQ says so", async () => {
+    const free = PLANS.find((p) => p.id === "free")!;
+    expect(free.price).toEqual({ AED: 0, INR: 0 });
+    const { GENERAL_FAQS } = await import("@/content/faqs");
+    expect(GENERAL_FAQS.map((f) => f.a).join(" ")).toMatch(/free for one account with one WhatsApp number/i);
   });
 
   it("prices written in the FAQ match the plans", async () => {
