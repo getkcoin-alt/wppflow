@@ -71,7 +71,7 @@ export default function PrivacyPage() {
       <p>
         If you have a concern about how your data is handled, contact our Grievance Officer
         {L.grievanceOfficer.name ? <>, {L.grievanceOfficer.name}</> : null}
-        {contact ? <>, at <a href={`mailto:${contact}`} className="underline">{contact}</a></> : null}.
+        {contact ? <>{L.grievanceOfficer.name ? "," : ""} at <a href={`mailto:${contact}`} className="underline">{contact}</a></> : null}.
         We acknowledge complaints within 24 hours and aim to resolve them within 15 days. In India you may also complain to the Data Protection Board of India.
       </p>
 

@@ -13,7 +13,7 @@ export const organization = () => ({
   description: SITE.description,
   parentOrganization: { "@type": "Organization", name: LEGAL.legalName, url: LEGAL.companySite },
   ...(LEGAL.supportEmail ? { email: LEGAL.supportEmail } : {}),
-  ...(LEGAL.registeredAddress ? { address: { "@type": "PostalAddress", streetAddress: LEGAL.registeredAddress, addressLocality: "Udaipur", addressRegion: "Rajasthan", postalCode: "313001", addressCountry: "IN" } } : {}),
+  ...(LEGAL.registeredAddress ? { address: { "@type": "PostalAddress", streetAddress: "488, Pandit Plaza, Sector-9, Savina", addressLocality: "Udaipur", addressRegion: "Rajasthan", postalCode: "313001", addressCountry: "IN" } } : {}),
   legalName: LEGAL.legalName,
   ...(LEGAL.cin ? { identifier: [{ "@type": "PropertyValue", propertyID: "CIN", value: LEGAL.cin }, { "@type": "PropertyValue", propertyID: "GSTIN", value: LEGAL.gstin }] } : {}),
   areaServed: [
