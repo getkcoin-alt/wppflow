@@ -1,6 +1,7 @@
 import { SITE, absolute } from "./site";
 import type { Faq } from "@/content/faqs";
 import { PLANS } from "@/content/plans";
+import { LEGAL } from "./legal";
 
 export const organization = () => ({
   "@context": "https://schema.org",
@@ -10,6 +11,11 @@ export const organization = () => ({
   url: SITE.url,
   logo: absolute("/favicon.svg"),
   description: SITE.description,
+  parentOrganization: { "@type": "Organization", name: LEGAL.legalName, url: LEGAL.companySite },
+  ...(LEGAL.supportEmail ? { email: LEGAL.supportEmail } : {}),
+  ...(LEGAL.registeredAddress ? { address: { "@type": "PostalAddress", streetAddress: LEGAL.registeredAddress, addressLocality: "Udaipur", addressRegion: "Rajasthan", postalCode: "313001", addressCountry: "IN" } } : {}),
+  legalName: LEGAL.legalName,
+  ...(LEGAL.cin ? { identifier: [{ "@type": "PropertyValue", propertyID: "CIN", value: LEGAL.cin }, { "@type": "PropertyValue", propertyID: "GSTIN", value: LEGAL.gstin }] } : {}),
   areaServed: [
     { "@type": "Country", name: "United Arab Emirates" },
     { "@type": "Country", name: "India" },

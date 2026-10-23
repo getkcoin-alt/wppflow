@@ -4,6 +4,7 @@ import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { COMPARISONS } from "@/content/compare";
+import { LEGAL, POLICY_LINKS } from "@/lib/legal";
 
 const col = "space-y-2.5 text-sm";
 const link = "text-fg-2 hover:text-fg";
@@ -38,14 +39,13 @@ export function Footer() {
             { href: "/free-whatsapp-crm", label: "Free WhatsApp CRM" },
             ...COMPARISONS.map((c) => ({ href: `/compare/${c.slug}`, label: `Scriwo vs ${c.them}` })),
             { href: "/contact", label: "Contact" },
-            { href: "/privacy", label: "Privacy" },
-            { href: "/terms", label: "Terms" },
+            ...POLICY_LINKS,
           ]}
         />
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-page flex-col gap-2 px-4 py-6 text-xs text-fg-3 sm:flex-row sm:justify-between sm:px-6">
-          <p>© {new Date().getFullYear()} Scriwo. Conversations, thoughtfully handled.</p>
+          <p>© {new Date().getFullYear()} {LEGAL.legalName}. Scriwo is a product of {LEGAL.legalName}.{LEGAL.registeredAddress ? ` ${LEGAL.registeredAddress}.` : ""}</p>
           <p>Scriwo is an independent product and is not affiliated with WhatsApp or Meta. WhatsApp is a trademark of its owner.</p>
         </div>
       </div>

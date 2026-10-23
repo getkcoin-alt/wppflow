@@ -4,6 +4,7 @@ import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
 import { COMPARISONS } from "@/content/compare";
+import { LEGAL } from "@/lib/legal";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { PLANS } from "@/content/plans";
 
@@ -44,6 +45,8 @@ export function GET() {
     ...POSTS.map((p) => `- [${p.title}](${absolute(`/blog/${p.slug}`)}): ${p.answer}`),
     "",
     "## Contact",
+    `- Operated by ${LEGAL.legalName} (${LEGAL.companySite}).`,
+    `- [Terms](${absolute("/terms")}), [Privacy](${absolute("/privacy")}), [Refunds](${absolute("/refund-policy")}), [Delivery](${absolute("/shipping-policy")})`,
     `- [Free WhatsApp CRM](${absolute("/free-whatsapp-crm")})`,
     `- [Contact and pricing](${absolute("/contact")})`,
   ];
