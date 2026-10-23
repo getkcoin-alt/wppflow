@@ -51,7 +51,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(60%_50%_at_20%_0%,rgba(15,107,85,0.35),transparent),radial-gradient(50%_40%_at_90%_100%,rgba(214,185,123,0.14),transparent)]" />
         <div className="relative flex items-center gap-4">
           <ScriwoMark size={44} />
-          <Wordmark className="text-[17px] !text-white" />
+          <Wordmark className="text-[26px] !text-white" />
         </div>
         <div className="relative">
           <h1 className="font-serif text-[64px] leading-[1.02] tracking-[-0.02em] font-normal">
@@ -91,7 +91,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <div className="w-full max-w-[420px] animate-rise">
           <div className="lg:hidden mb-10 flex flex-col items-center text-center">
             <ScriwoMark size={56} />
-            <Wordmark className="mt-5 text-[15px]" />
+            <Wordmark className="mt-4 text-[26px]" />
             <p className="mt-4 font-serif text-[30px] leading-tight">
               Every conversation,{" "}
               <span className="italic text-gold">thoughtfully handled.</span>

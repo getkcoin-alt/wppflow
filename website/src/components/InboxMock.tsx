@@ -10,7 +10,7 @@ const chats = [
 
 export function InboxMock() {
   return (
-    <div className="float card overflow-hidden !rounded-4xl shadow-pop" role="img" aria-label="Preview of the Scriwo shared inbox with assigned chats and a private note">
+    <div className="no-reveal float card overflow-hidden !rounded-4xl shadow-pop" role="img" aria-label="Preview of the Scriwo shared inbox with assigned chats and a private note">
       <div className="flex items-center gap-2 border-b border-line px-5 py-3">
         <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
         <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
@@ -41,18 +41,24 @@ export function InboxMock() {
               <p className="font-medium">Aisha · Marina Homes</p>
               <p className="text-xs text-fg-3">via Rahul&apos;s number · assigned to Rahul</p>
             </div>
-            <span className="rounded-full bg-ok/15 px-2.5 py-1 text-[11px] font-medium text-ok">Live</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/15 px-2.5 py-1 text-[11px] font-medium text-ok"><span className="pulse-ring h-1.5 w-1.5 rounded-full bg-ok" />Live</span>
           </div>
-          <p className="max-w-[80%] self-start rounded-2xl rounded-tl-md bg-bubble-in px-3.5 py-2 shadow-card">Hi, is the 2 bedroom in Marina still available?</p>
-          <p className="max-w-[80%] self-end rounded-2xl rounded-tr-md bg-bubble-out px-3.5 py-2">
+          <p className="pop-in max-w-[80%] self-start rounded-2xl rounded-tl-md bg-bubble-in px-3.5 py-2 shadow-card" style={{ animationDelay: "0.4s" }}>Hi, is the 2 bedroom in Marina still available?</p>
+          <p className="pop-in max-w-[80%] self-end rounded-2xl rounded-tr-md bg-bubble-out px-3.5 py-2" style={{ animationDelay: "0.9s" }}>
             Yes it is. Floor plan attached. Would Saturday 11am work for a viewing?
             <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] text-fg-3">Rahul <CheckCheck className="h-3 w-3 text-info" /></span>
           </p>
-          <p className="max-w-[80%] self-start rounded-2xl rounded-tl-md bg-bubble-in px-3.5 py-2 shadow-card">Can we view the 2BR on Saturday?</p>
-          <p className="flex max-w-[85%] items-start gap-2 self-end rounded-2xl bg-note px-3.5 py-2">
+          <p className="pop-in max-w-[80%] self-start rounded-2xl rounded-tl-md bg-bubble-in px-3.5 py-2 shadow-card" style={{ animationDelay: "1.4s" }}>Can we view the 2BR on Saturday?</p>
+          <p className="pop-in flex max-w-[85%] items-start gap-2 self-end rounded-2xl bg-note px-3.5 py-2" style={{ animationDelay: "1.9s" }}>
             <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
             <span><b>Private note:</b> budget AED 2.4M, cash buyer. <span className="text-brand">@Sara</span> can you hold the key?</span>
           </p>
+          <div className="pop-in mt-auto flex items-center gap-2.5 rounded-2xl border border-gold/30 bg-surface px-3 py-2.5 shadow-card" style={{ animationDelay: "2.5s" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- decorative avatar */}
+            <img src="/brand/riwo-hold.webp" alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
+            <span className="text-xs text-fg-2"><b className="text-fg">Riwo</b> is drafting a reply</span>
+            <span className="typing ml-auto flex gap-1" aria-hidden="true"><span className="h-1.5 w-1.5 rounded-full bg-gold" /><span className="h-1.5 w-1.5 rounded-full bg-gold" /><span className="h-1.5 w-1.5 rounded-full bg-gold" /></span>
+          </div>
         </div>
       </div>
     </div>

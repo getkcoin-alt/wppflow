@@ -1,27 +1,33 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource/instrument-serif/400.css";
 @import "@fontsource/instrument-serif/400-italic.css";
+@import "@fontsource/montserrat/600.css";
+@import "@fontsource/montserrat/700.css";
+@import "@fontsource/montserrat/800.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Same tokens as the Scriwo app: "Pearl" (light) and "Obsidian" (dark). */
+/* Brand tokens from the Scriwo logo: charcoal wordmark, brushed gold, and the green glow of the paper plane.
+   Light is "Pearl" (warm white), dark is "Obsidian". */
 :root {
   color-scheme: light;
-  --c-app: 245 245 247;
+  --c-app: 251 250 247;
   --c-surface: 255 255 255;
-  --c-surface-2: 240 240 243;
-  --c-surface-3: 230 230 235;
-  --c-fg: 29 29 31;
-  --c-fg-2: 81 81 84;
-  --c-fg-3: 110 110 115;
+  --c-surface-2: 244 242 237;
+  --c-surface-3: 234 231 224;
+  --c-fg: 30 34 39;
+  --c-fg-2: 78 82 88;
+  --c-fg-3: 108 111 117;
+  --c-ink: 30 34 39;
+  --c-leaf: 46 190 104;
   --c-line: 0 0 0;
   --line-alpha: 0.09;
-  --c-brand: 11 107 85;
-  --c-brand-solid: 15 107 85;
-  --c-brand-hover: 18 128 102;
-  --c-gold: 140 108 40;
+  --c-brand: 22 128 74;
+  --c-brand-solid: 22 120 70;
+  --c-brand-hover: 26 140 82;
+  --c-gold: 150 112 44;
   --c-ok: 18 140 90;
   --c-info: 24 100 220;
   --c-danger: 200 45 38;
@@ -31,6 +37,7 @@
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
   --shadow-pop: 0 2px 6px rgb(0 0 0 / 0.06), 0 24px 56px -16px rgb(0 0 0 / 0.22);
   --glass: rgb(255 255 255 / 0.72);
+  --gold-grad: linear-gradient(110deg, #f3e3bc 0%, #d2b06a 35%, #a8843f 60%, #e9d5a4 85%, #c9a35b 100%);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -43,11 +50,13 @@
   --c-fg: 245 245 247;
   --c-fg-2: 161 161 166;
   --c-fg-3: 130 130 136;
+  --c-ink: 245 245 247;
+  --c-leaf: 92 222 140;
   --c-line: 255 255 255;
   --line-alpha: 0.09;
-  --c-brand: 110 209 172;
-  --c-brand-solid: 15 107 85;
-  --c-brand-hover: 20 133 105;
+  --c-brand: 110 214 150;
+  --c-brand-solid: 22 120 70;
+  --c-brand-hover: 26 140 82;
   --c-gold: 214 185 123;
   --c-ok: 74 214 152;
   --c-info: 110 168 255;
@@ -67,7 +76,7 @@
     font-feature-settings: "cv11", "ss03";
     letter-spacing: -0.005em;
   }
-  h1, h2, h3 { letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; }
+  h1, h2, h3 { @apply font-display; letter-spacing: -0.03em; font-weight: 700; text-wrap: balance; }
   p { text-wrap: pretty; }
   ::selection { background: rgb(var(--c-gold) / 0.28); }
   :focus-visible { outline: 2px solid rgb(var(--c-gold) / 0.8); outline-offset: 2px; border-radius: 8px; }
@@ -79,31 +88,75 @@
   .card { @apply rounded-3xl bg-surface shadow-card hairline; }
   .eyebrow { @apply text-xs font-medium uppercase tracking-[0.22em] text-gold; }
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold transition-colors duration-200; }
-  .btn-primary { @apply btn bg-brand-solid text-white hover:bg-brand-hover; }
+  /* Primary actions take the wordmark's charcoal in light mode and brushed gold in dark mode. */
+  .btn-primary { @apply btn relative overflow-hidden text-white; background: rgb(30 34 39); box-shadow: 0 8px 24px -12px rgb(30 34 39 / 0.6); }
+  .btn-primary:hover { background: rgb(44 49 56); box-shadow: 0 10px 28px -10px rgb(168 132 63 / 0.55); }
+  .dark .btn-primary { color: rgb(20 22 25); background: var(--gold-grad); background-size: 200% 100%; box-shadow: 0 8px 28px -12px rgb(214 185 123 / 0.6); }
+  .dark .btn-primary:hover { background-position: 100% 0; }
   .btn-ghost { @apply btn hairline text-fg hover:bg-surface-2; }
   .prose-scriwo p { @apply mb-4 leading-relaxed text-fg-2; }
   .prose-scriwo li { @apply leading-relaxed text-fg-2; }
   /* Deeper gold on light backgrounds so the headline keeps readable contrast. */
   .gold-text {
-    background: linear-gradient(100deg, #9a7432, #7d5c22 55%, #6b4e1c);
+    background: linear-gradient(100deg, #9a7432, #7d5c22 35%, #b88d3e 50%, #7d5c22 65%, #6b4e1c);
+    background-size: 220% 100%;
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .dark .gold-text {
-    background: linear-gradient(100deg, #f3e3bc, #d2b06a 55%, #a8843f);
+    background: linear-gradient(100deg, #f3e3bc, #d2b06a 35%, #fff3d1 50%, #d2b06a 65%, #a8843f);
+    background-size: 220% 100%;
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .hero-glow {
-    background:
-      radial-gradient(60% 50% at 50% 0%, rgb(var(--c-brand) / 0.18), transparent 70%),
-      radial-gradient(40% 40% at 85% 20%, rgb(var(--c-gold) / 0.14), transparent 70%);
+  .hero-glow { position: relative; isolation: isolate; }
+  /* Two soft lights, gold and leaf green, that drift slowly behind the hero. */
+  .hero-glow::before, .hero-glow::after {
+    content: ""; position: absolute; z-index: -1; border-radius: 9999px; filter: blur(60px); pointer-events: none;
   }
+  .hero-glow::before { width: 46rem; height: 30rem; left: 50%; top: -12rem; margin-left: -23rem; background: radial-gradient(closest-side, rgb(var(--c-gold) / 0.22), transparent); }
+  .hero-glow::after { width: 28rem; height: 22rem; right: -6rem; top: 4rem; background: radial-gradient(closest-side, rgb(var(--c-leaf) / 0.16), transparent); }
+  .lift { transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out), border-color 0.35s; }
+  .lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-pop); border-color: rgb(var(--c-gold) / 0.35); }
+  .logo-mark { transition: transform 0.5s var(--ease-out); }
+  .group:hover .logo-mark { transform: rotate(-8deg) translate(1px, -2px); }
+  .marquee { mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .marquee-track { display: flex; width: max-content; gap: 0.75rem; }
 }
 
+/* Motion: everything below is skipped for people who ask their system for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .rise { animation: rise 0.7s var(--ease-out) both; }
   .rise-2 { animation: rise 0.7s 0.08s var(--ease-out) both; }
   .rise-3 { animation: rise 0.7s 0.16s var(--ease-out) both; }
   .float { animation: float 7s ease-in-out infinite; }
+  .float-slow { animation: float 9s 1s ease-in-out infinite; }
+  .gold-text { animation: shimmer 6s ease-in-out infinite; }
+  .hero-glow::before { animation: drift 16s ease-in-out infinite alternate; }
+  .hero-glow::after { animation: drift 12s -4s ease-in-out infinite alternate-reverse; }
+  .marquee-track { animation: marquee 40s linear infinite; }
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+  .pop-in { animation: pop 0.6s var(--ease-out) both; }
+  .typing span { animation: blink 1.2s infinite both; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  .pulse-ring { animation: ring 2.4s var(--ease-out) infinite; }
+  .plane { offset-path: path("M -40 220 C 120 120, 260 260, 420 140 S 700 40, 860 -30"); offset-rotate: auto 0deg; animation: fly 9s 1.2s ease-in-out infinite; }
+  .trail { stroke-dasharray: 6 10; animation: dash 9s 1.2s linear infinite; }
+  .wave { transform-origin: 70% 80%; animation: wave 3.6s ease-in-out infinite; }
+  /* Scroll reveal: set up by RevealOnScroll, which adds .in as each block enters the viewport. */
+  .reveal-ready [data-reveal]:not(.in), .reveal-ready main .card:not(.in):not(.no-reveal) { opacity: 0; transform: translateY(18px) scale(0.985); }
+  .reveal-ready [data-reveal], .reveal-ready main .card:not(.no-reveal) {
+    transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out), box-shadow 0.35s var(--ease-out), border-color 0.35s;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes shimmer { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+@keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(6rem, 3rem) scale(1.15); } }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes blink { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 rgb(var(--c-leaf) / 0.45); } 70%, 100% { box-shadow: 0 0 0 10px rgb(var(--c-leaf) / 0); } }
+@keyframes fly { 0% { offset-distance: 0%; opacity: 0; } 8% { opacity: 1; } 70% { offset-distance: 100%; opacity: 1; } 71%, 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes dash { to { stroke-dashoffset: -320; } }
+@keyframes wave { 0%, 60%, 100% { transform: rotate(0deg); } 70% { transform: rotate(-6deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }

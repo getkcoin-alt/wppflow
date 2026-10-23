@@ -5,6 +5,7 @@ import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
 import { COMPARISONS } from "@/content/compare";
 import { LEGAL } from "@/lib/legal";
+import { RIWO } from "@/content/riwo";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { PLANS } from "@/content/plans";
 
@@ -28,6 +29,9 @@ export function GET() {
     "",
     "## Key facts",
     ...GENERAL_FAQS.map((f) => `- ${f.q} ${f.a}`),
+    "",
+    "## Riwo, the AI assistant",
+    `- [Riwo](${absolute("/riwo")}): ${RIWO.oneLine} Included in the ${RIWO.plan}.`,
     "",
     "## Features",
     ...FEATURES.map((f) => `- [${f.name}](${absolute(`/features/${f.slug}`)}): ${f.summary}`),

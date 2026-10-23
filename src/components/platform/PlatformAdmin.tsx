@@ -171,7 +171,7 @@ export function PlatformAdmin({
         <div className="mx-auto max-w-6xl px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <ScriwoMark size={34} />
-            <Wordmark className="text-[13px]" />
+            <Wordmark className="text-[19px]" />
             <Pill tone="gold">Platform</Pill>
           </div>
           <div className="flex items-center gap-3">

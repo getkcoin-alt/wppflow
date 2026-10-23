@@ -14,14 +14,11 @@ export function Footer() {
     <footer className="mt-24 border-t border-line bg-surface">
       <div className="mx-auto grid max-w-page gap-10 px-4 py-14 sm:px-6 md:grid-cols-5">
         <div className="md:col-span-1">
-          <div className="flex items-center gap-2.5">
-            <Logo />
-            <span className="text-[13px] font-medium tracking-[0.34em]">SCRIWO</span>
-          </div>
+          <Logo size={40} tagline />
           <p className="mt-4 text-sm text-fg-2">The shared WhatsApp inbox for teams in the UAE and India.</p>
           <Link href="/contact" className="btn-primary mt-6 !py-2 text-sm">Contact sales</Link>
         </div>
-        <FooterCol title="Product" items={[...FEATURES.slice(0, 6).map((f) => ({ href: `/features/${f.slug}`, label: f.name })), { href: "/pricing", label: "Pricing" }, { href: "/security", label: "Security" }, { href: "/developers", label: "API and webhooks" }]} />
+        <FooterCol title="Product" items={[...FEATURES.slice(0, 6).map((f) => ({ href: `/features/${f.slug}`, label: f.name })), { href: "/riwo", label: "Riwo AI assistant" }, { href: "/pricing", label: "Pricing" }, { href: "/security", label: "Security" }, { href: "/developers", label: "API and webhooks" }]} />
         <FooterCol title="Industries" items={INDUSTRIES.map((i) => ({ href: `/industries/${i.slug}`, label: i.name }))} />
         <FooterCol
           title="Locations"

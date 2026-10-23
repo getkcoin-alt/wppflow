@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Gauge, Users, Sparkles, KeyRound, RotateCcw } from "lucide-react";
+import { ArrowRight, Sparkle, ShieldCheck, Gauge, Users, Sparkles, KeyRound, RotateCcw } from "lucide-react";
 import { Container, SectionTitle, FaqList, CtaBand, LinkCard, CheckList } from "@/components/ui";
 import { InboxMock } from "@/components/InboxMock";
+import { PlaneTrail, Ribbon } from "@/components/Motion";
+import { RIWO, RIWO_ACTIONS } from "@/content/riwo";
 import { JsonLd } from "@/components/JsonLd";
 import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
@@ -26,11 +28,12 @@ export default function Home() {
       <JsonLd data={[softwareApplication(), faqPage(GENERAL_FAQS), speakable("/", ["[data-speakable]"])]} />
 
       <section className="hero-glow overflow-hidden">
-        <Container className="grid items-center gap-14 pb-20 pt-14 sm:pt-20 lg:grid-cols-[1.05fr_1fr]">
+        <PlaneTrail />
+        <Container className="grid items-center gap-14 pb-16 pt-14 sm:pt-20 lg:grid-cols-[1.05fr_1fr]">
           <div>
             <p className="eyebrow rise">For teams in the UAE and India</p>
-            <h1 className="rise-2 mt-5 text-[2.75rem] leading-[1.04] sm:text-6xl lg:text-[4.25rem]">
-              Every WhatsApp chat your team has, <span className="font-serif font-normal italic gold-text">in one calm place.</span>
+            <h1 className="rise-2 mt-5 text-[2.5rem] leading-[1.05] sm:text-[3.25rem] lg:text-[3.6rem]">
+              Every WhatsApp chat your team has, <span className="gold-text">in one calm place.</span>
             </h1>
             <p data-speakable className="rise-3 mt-6 max-w-xl text-lg leading-relaxed text-fg-2">
               Scriwo is the shared WhatsApp inbox and CRM for companies with staff. Each teammate links their own number, owners see every conversation, and the team assigns, notes and resolves chats together.
@@ -47,15 +50,20 @@ export default function Home() {
               <li>Free for 1 number · teams from AED 299 / ₹2,499</li>
             </ul>
           </div>
-          <InboxMock />
+          <div className="relative">
+            <InboxMock />
+            {/* eslint-disable-next-line @next/next/no-img-element -- decorative mascot */}
+            <img src="/brand/riwo-hold.webp" alt="" width={150} height={150} aria-hidden="true" className="float-slow pointer-events-none absolute -bottom-10 -left-8 hidden w-36 rounded-full shadow-pop ring-4 ring-surface sm:block" />
+          </div>
         </Container>
+        <Ribbon />
       </section>
 
       <Container className="mt-8">
         <SectionTitle eyebrow="Why teams switch" title="WhatsApp, finally organised for a whole company" intro="The WhatsApp Business app is built for one person. Scriwo is built for the moment a second, fifth or fiftieth person starts answering customers." />
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {PILLARS.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="card p-6">
+            <div key={title} className="card lift p-6">
               <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand"><Icon className="h-5 w-5" aria-hidden="true" /></div>
               <h3 className="text-lg">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-fg-2">{body}</p>
@@ -63,6 +71,28 @@ export default function Home() {
           ))}
         </div>
       </Container>
+
+      <section className="mt-24 bg-surface-2/60 py-20">
+        <Container className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+          <div data-reveal className="relative mx-auto w-full max-w-md">
+            <div aria-hidden="true" className="absolute inset-6 rounded-full bg-gold/20 blur-3xl" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- illustration */}
+            <img src="/brand/riwo-chats.webp" alt="Riwo, the Scriwo AI assistant, sorting WhatsApp messages" width={800} height={800} loading="lazy" className="float relative w-full rounded-4xl shadow-pop" />
+          </div>
+          <div>
+            <SectionTitle eyebrow="Meet Riwo · AI assistant" title="Your team writes better replies, faster" intro={RIWO.oneLine} />
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {RIWO_ACTIONS.map((a) => (
+                <div key={a.title} className="card lift p-5">
+                  <h3 className="flex items-center gap-2 text-base"><Sparkle className="h-4 w-4 text-gold" aria-hidden="true" />{a.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-fg-2">{a.body}</p>
+                </div>
+              ))}
+            </div>
+            <Link href="/riwo" className="btn-ghost mt-8">How teams use Riwo <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+          </div>
+        </Container>
+      </section>
 
       <Container className="mt-24">
         <div className="grid gap-12 lg:grid-cols-2">
