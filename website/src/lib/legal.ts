@@ -11,17 +11,19 @@ export const LEGAL = {
   /** Short name used in running text ("Scriza", "we"). */
   shortName: "Scriza",
   companySite: "https://scriza.in",
-  registeredAddress: "488 Pandit Plaza, Sector 9, Savina, Udaipur, Rajasthan 313001, India",
-  /** Principal place of business on the GST registration. */
-  corporateAddress: "Ground Floor, 4-5, Logix Park, Sector 16, Noida, Uttar Pradesh 201301, India",
+  registeredAddress: "488, Pandit Plaza, Sector-9, Savina, Udaipur, Rajasthan 313001, India",
+  /** Corporate head office, the principal place of business on the GST registration. */
+  corporateAddress: "NX One, T1-507, Tech Zone IV, Amrapali Dream Valley, Greater Noida, Uttar Pradesh 201318, India",
   /** City whose courts have jurisdiction: the registered office's city. */
   jurisdiction: "Udaipur, Rajasthan",
   gstin: "09ABICS9865M1Z8",
   cin: "U74999RJ2022PTC082624",
-  supportEmail: "",
-  phone: SITE.whatsappDisplay,
+  supportEmail: "info@scriza.in",
+  salesEmail: "sales@scriza.in",
+  phone: `${SITE.whatsappDisplay} (also WhatsApp), +91 91160 11899`,
+  directors: ["Laxman Sonigara Singh (Founder and Director)", "Chotu Kunwar Sonigara (Director)"],
   /** Grievance Officer under India's IT Rules 2021 and DPDP Act 2023. */
-  grievanceOfficer: { name: "", email: "" },
+  grievanceOfficer: { name: "", email: "info@scriza.in" },
   supportHours: "Monday to Saturday, 10:00 to 19:00 IST (08:30 to 17:30 GST)",
   updated: "23 October 2026",
 } as const;
@@ -38,10 +40,12 @@ export const businessDetails = () =>
   [
     ["Legal name", LEGAL.legalName],
     ["Registered office", LEGAL.registeredAddress],
-    ["Corporate office", LEGAL.corporateAddress],
+    ["Corporate head office", LEGAL.corporateAddress],
     ["GSTIN", LEGAL.gstin],
     ["CIN", LEGAL.cin],
-    ["Email", LEGAL.supportEmail],
-    ["Phone and WhatsApp", LEGAL.phone],
+    ["Support and grievances", LEGAL.supportEmail],
+    ["Sales", LEGAL.salesEmail],
+    ["Phone", LEGAL.phone],
+    ["Directors", LEGAL.directors.join(", ")],
     ["Support hours", LEGAL.supportHours],
   ].filter(([, v]) => v) as [string, string][];
