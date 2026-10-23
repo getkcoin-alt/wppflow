@@ -10,6 +10,9 @@ export type Post = {
   answer: string;
   sections: { heading: string; body: string[]; list?: string[] }[];
   related: string[];
+  /** Industry slugs and markets the guide speaks to, used to link it from those pages. */
+  industries?: string[];
+  country?: "UAE" | "India";
 };
 
 export const POSTS: Post[] = [
@@ -127,6 +130,8 @@ export const POSTS: Post[] = [
       },
     ],
     related: ["multiple-whatsapp-numbers", "chat-assignment", "private-notes-and-mentions"],
+    industries: ["real-estate"],
+    country: "UAE",
   },
   {
     slug: "whatsapp-response-time-benchmarks",
@@ -252,6 +257,212 @@ export const POSTS: Post[] = [
     ],
     related: ["whatsapp-team-inbox", "whatsapp-contacts-crm", "security-and-roles"],
   },
+  {
+    slug: "whatsapp-customer-service-ramadan-uae",
+    title: "WhatsApp customer service during Ramadan: a playbook for UAE teams",
+    description: "How UAE businesses keep WhatsApp replies fast during Ramadan: shorter working hours, evening peaks, Eid offers and respectful broadcasts.",
+    keyword: "WhatsApp customer service Ramadan UAE",
+    published: "2026-10-23",
+    readingMinutes: 5,
+    answer:
+      "During Ramadan, UAE working hours are shorter and customers message most after iftar and late into the evening. Keep WhatsApp replies fast by moving cover to the evening, assigning every new chat to a named person, using saved replies for timings and Eid offers, and only broadcasting to contacts who opted in.",
+    sections: [
+      {
+        heading: "What changes in Ramadan",
+        body: [
+          "Office hours in the UAE are usually shortened during Ramadan, while customers shift their shopping, viewings and appointments to the evening. Messages pile up after iftar, exactly when a small team is off shift.",
+        ],
+      },
+      {
+        heading: "Set the team up before the month starts",
+        body: [],
+        list: [
+          "Agree an evening rota so someone covers the hours after iftar.",
+          "Put every number in one shared inbox so the person on shift sees every customer, not just their own.",
+          "Assign each new chat to a named person, and hand over open chats at the end of each shift.",
+          "Save replies for Ramadan timings, delivery cut-offs and Eid offers so everyone answers the same way.",
+          "Turn on desktop alerts and the offline alert so a phone that dies does not go unnoticed.",
+        ],
+      },
+      {
+        heading: "Broadcasts with care",
+        body: [
+          "Ramadan and Eid greetings are welcome when they are short and sent only to customers who agreed to hear from you. Space messages out, avoid sending during iftar, and never buy or scrape lists: that is the fastest way to get a number restricted.",
+        ],
+      },
+      {
+        heading: "Let Riwo help with the volume",
+        body: [
+          "On busy evenings, Riwo can draft a first reply in Arabic or English for a teammate to check and send, and sum up a long chat when a customer comes back after a few days.",
+        ],
+      },
+    ],
+    related: ["whatsapp-team-inbox", "chat-assignment", "whatsapp-broadcast"],
+    country: "UAE",
+    industries: ["ecommerce-and-d2c", "jewellery-and-retail", "travel-agencies"],
+  },
+  {
+    slug: "festive-season-whatsapp-broadcasts-india",
+    title: "Diwali and festive season WhatsApp broadcasts: an opt-in playbook for Indian businesses",
+    description: "Send Diwali, Navratri and wedding season offers on WhatsApp without risking your number: opt-in, timing, segmentation and follow-up.",
+    keyword: "Diwali WhatsApp broadcast",
+    published: "2026-10-23",
+    readingMinutes: 5,
+    answer:
+      "Festive offers work on WhatsApp when they go only to customers who opted in, are split into small relevant groups, are spaced out with delays between messages, and every reply is picked up quickly by a named person. Blasting a bought list before Diwali is the quickest way to get a number restricted.",
+    sections: [
+      {
+        heading: "Start with permission",
+        body: [
+          "Ask customers to opt in at the counter, on your website, or on the invoice, and record it. India's Digital Personal Data Protection Act 2023 expects clear consent and an easy way to withdraw it, and WhatsApp itself restricts numbers that people report as spam.",
+        ],
+      },
+      {
+        heading: "Plan the festive calendar",
+        body: [],
+        list: [
+          "Navratri and Dussehra: early-bird offers and new arrivals.",
+          "Dhanteras and Diwali: gold rates, gift sets, delivery cut-off dates.",
+          "Wedding season: appointment slots, catalogues and payment plans.",
+          "After the festival: thank-you messages and service reminders, not more discounts.",
+        ],
+      },
+      {
+        heading: "Send in small, relevant groups",
+        body: [
+          "Tag contacts by what they bought or asked about, and send each group one short, useful message. A jeweller's gold-coin buyers and bridal customers want different offers. Keep delays between messages so sending looks like a person, not a machine.",
+        ],
+      },
+      {
+        heading: "Be ready for the replies",
+        body: [
+          "A broadcast creates conversations. Make sure replies land in a shared inbox, get assigned straight away, and that saved replies cover price, stock and delivery questions. Riwo can draft answers in Hindi, Gujarati, Marathi, Tamil and more for staff to check and send.",
+        ],
+      },
+    ],
+    related: ["whatsapp-broadcast", "whatsapp-contacts-crm", "whatsapp-automation"],
+    country: "India",
+    industries: ["jewellery-and-retail", "ecommerce-and-d2c"],
+  },
+  {
+    slug: "dpdp-act-whatsapp-marketing-consent-india",
+    title: "India's DPDP Act and WhatsApp: what businesses should do about consent",
+    description: "A plain-language checklist for Indian businesses that message customers on WhatsApp under the Digital Personal Data Protection Act 2023.",
+    keyword: "DPDP Act WhatsApp consent",
+    published: "2026-10-23",
+    readingMinutes: 6,
+    answer:
+      "Under India's Digital Personal Data Protection Act 2023, businesses should collect customer phone numbers for a stated purpose, get clear consent before sending marketing messages, let people withdraw that consent as easily as they gave it, keep the data secure and delete it when it is no longer needed. This is general information, not legal advice.",
+    sections: [
+      {
+        heading: "Why it matters for WhatsApp",
+        body: [
+          "A phone number and a chat history are personal data. If your staff message customers on WhatsApp, your business decides why and how that data is used, which makes it responsible under the Act.",
+        ],
+      },
+      {
+        heading: "A practical checklist",
+        body: [],
+        list: [
+          "Tell customers why you collect their number and what you will send them.",
+          "Record opt-in before sending offers or broadcasts, and keep the record.",
+          "Honour 'stop' or opt-out requests straight away, on every number your team uses.",
+          "Limit who can see which chats: staff see their own, owners see everything.",
+          "Keep an audit trail of important actions, and remove staff access when they leave.",
+          "Delete contacts you no longer need, and name a person customers can contact about their data.",
+        ],
+      },
+      {
+        heading: "How Scriwo helps",
+        body: [
+          "Scriwo records opt-in on contacts and sends broadcasts only to people who opted in. Roles are enforced on the server, important actions go into an audit log, and removing a staff member's number unlinks it and deletes its saved login. You still decide your own policies; these tools make them easier to follow.",
+        ],
+      },
+    ],
+    related: ["security-and-roles", "whatsapp-broadcast", "whatsapp-contacts-crm"],
+    country: "India",
+  },
+  {
+    slug: "whatsapp-for-clinics-uae",
+    title: "WhatsApp for clinics in the UAE: appointments, reminders and patient privacy",
+    description: "How clinics in Dubai, Abu Dhabi and Sharjah run front-desk WhatsApp as a team without losing bookings or oversharing patient details.",
+    keyword: "WhatsApp for clinics UAE",
+    published: "2026-10-23",
+    readingMinutes: 5,
+    answer:
+      "Clinics in the UAE use WhatsApp for bookings, reminders and directions. Run it as a team: put every front-desk number in one shared inbox, assign each patient chat, keep clinical details out of broadcasts, leave internal notes privately, and make sure only the staff who need a chat can see it.",
+    sections: [
+      {
+        heading: "Where front desks lose patients",
+        body: [
+          "One reception phone, several receptionists and doctors who also reply from their own numbers: messages get missed, two people confirm different slots, and nobody can see what was promised.",
+        ],
+      },
+      {
+        heading: "A better front-desk setup",
+        body: [],
+        list: [
+          "Link every front-desk and doctor number to one inbox so the clinic manager sees every booking chat.",
+          "Assign each new patient chat to a named receptionist.",
+          "Use saved replies for timings, location, parking and insurance questions.",
+          "Keep notes about the patient private to the team; the patient never sees them.",
+          "Use keyword automations for 'timings' or 'location' outside working hours.",
+        ],
+      },
+      {
+        heading: "Privacy first",
+        body: [
+          "Health information is sensitive. Keep diagnoses and test results out of broadcasts, share them only with the patient, and limit which staff can see which chats. Roles in Scriwo are enforced on the server, and every important action is logged.",
+        ],
+      },
+    ],
+    related: ["whatsapp-team-inbox", "chat-assignment", "security-and-roles"],
+    country: "UAE",
+    industries: ["clinics-and-healthcare"],
+  },
+  {
+    slug: "whatsapp-crm-for-real-estate-india",
+    title: "WhatsApp CRM for real estate in India: from portal lead to site visit",
+    description: "How Indian brokers and developers in Mumbai, Bengaluru, Pune and Delhi NCR handle portal leads, site visits and follow-ups on WhatsApp as a team.",
+    keyword: "WhatsApp CRM real estate India",
+    published: "2026-10-23",
+    readingMinutes: 6,
+    answer:
+      "Indian real estate teams win on speed: the first broker to send a floor plan and a site-visit slot on WhatsApp usually gets the visit. A WhatsApp CRM puts every broker's number in one inbox, assigns each portal lead within minutes, keeps notes on budget and possession timelines, and lets the owner see every conversation, including when a broker leaves.",
+    sections: [
+      {
+        heading: "Why leads go cold",
+        body: [
+          "Leads from property portals and ads arrive on several brokers' phones. Some are answered in minutes, some the next day, and when a broker leaves, the buyer conversations leave with their phone.",
+        ],
+      },
+      {
+        heading: "The setup that works",
+        body: [],
+        list: [
+          "Each broker links their own WhatsApp number; the owner sees every chat in one place.",
+          "New portal leads are assigned to whoever is free, not whoever saw them first.",
+          "Private notes record budget, preferred locality, loan status and possession timeline.",
+          "Saved replies carry brochures, price sheets, RERA details and location pins.",
+          "Broadcasts announce new launches only to buyers who opted in.",
+        ],
+      },
+      {
+        heading: "Follow-ups that do not slip",
+        body: [
+          "Most deals need several touches after the site visit. With every chat assigned and searchable, a manager can see which buyers have gone quiet and reassign them. Riwo can sum up a long chat so the next broker picks up without asking the buyer to repeat themselves.",
+        ],
+      },
+    ],
+    related: ["chat-assignment", "multiple-whatsapp-numbers", "private-notes-and-mentions"],
+    country: "India",
+    industries: ["real-estate"],
+  },
 ];
 
 export const postBySlug = (slug: string) => POSTS.find((p) => p.slug === slug);
+
+/** Guides that speak to an industry or market, newest first, for cross-links from those pages. */
+export const guidesFor = ({ industry, country, exclude }: { industry?: string; country?: "UAE" | "India"; exclude?: string }) =>
+  POSTS.filter((p) => p.slug !== exclude && ((industry && p.industries?.includes(industry)) || (country && p.country === country)))
+    .sort((a, b) => Number(!!(industry && b.industries?.includes(industry))) - Number(!!(industry && a.industries?.includes(industry))) || b.published.localeCompare(a.published));

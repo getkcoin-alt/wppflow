@@ -17,6 +17,8 @@ export const organization = () => ({
   ...(LEGAL.registeredAddress ? { address: { "@type": "PostalAddress", streetAddress: "488, Pandit Plaza, Sector-9, Savina", addressLocality: "Udaipur", addressRegion: "Rajasthan", postalCode: "313001", addressCountry: "IN" } } : {}),
   legalName: LEGAL.legalName,
   ...(LEGAL.cin ? { identifier: [{ "@type": "PropertyValue", propertyID: "CIN", value: LEGAL.cin }, { "@type": "PropertyValue", propertyID: "GSTIN", value: LEGAL.gstin }] } : {}),
+  slogan: "Every WhatsApp chat your team has, in one calm place.",
+  knowsAbout: ["WhatsApp CRM", "Shared WhatsApp inbox", "WhatsApp team inbox", "WhatsApp broadcast", "WhatsApp automation", "AI reply assistant", "Customer support on WhatsApp"],
   areaServed: [
     { "@type": "Country", name: "United Arab Emirates" },
     { "@type": "Country", name: "India" },
@@ -38,7 +40,7 @@ export const website = () => ({
   name: SITE.name,
   url: SITE.url,
   publisher: { "@id": absolute("/#organization") },
-  inLanguage: "en",
+  inLanguage: ["en", "ar", "hi"],
 });
 
 export const softwareApplication = () => ({

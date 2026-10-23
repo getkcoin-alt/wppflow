@@ -1,3 +1,5 @@
+import { guidesFor } from "@/content/blog";
+import { AR, HI, LANGUAGE_ALTERNATES } from "@/content/locales";
 import { POLICY_LINKS } from "@/lib/legal";
 import { describe, expect, it } from "vitest";
 import { FEATURES } from "@/content/features";
@@ -77,5 +79,16 @@ describe("pricing", () => {
   it("lists every policy page payment gateways ask for", () => {
     const paths = allRoutes().map((r) => r.path);
     for (const l of POLICY_LINKS) expect(paths).toContain(l.href);
+  });
+  it("tags guides only with real industries, and every city and industry page has a guide", () => {
+    const industries = INDUSTRIES.map((i) => i.slug);
+    for (const p of POSTS) for (const s of p.industries ?? []) expect(industries, `${p.slug} → ${s}`).toContain(s);
+    for (const i of INDUSTRIES) expect(guidesFor({ industry: i.slug }).length + guidesFor({ country: "UAE" }).length, i.slug).toBeGreaterThan(0);
+  });
+  it("links the language pages to each other with hreflang", () => {
+    const paths = allRoutes().map((r) => r.path);
+    for (const v of Object.values(LANGUAGE_ALTERNATES)) expect(paths).toContain(v);
+    expect(AR.dir).toBe("rtl");
+    expect(HI.faqs.length).toBe(AR.faqs.length);
   });
 });
