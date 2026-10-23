@@ -7,15 +7,17 @@ import { SITE } from "./site";
  */
 export const LEGAL = {
   /** Registered legal name, e.g. "Scriza Technologies Private Limited". */
-  legalName: "Scriza",
+  legalName: "Scriza Private Limited",
   /** Short name used in running text ("Scriza", "we"). */
   shortName: "Scriza",
   companySite: "https://scriza.in",
-  registeredAddress: "",
+  registeredAddress: "488 Pandit Plaza, Sector 9, Savina, Udaipur, Rajasthan 313001, India",
+  /** Principal place of business on the GST registration. */
+  corporateAddress: "Ground Floor, 4-5, Logix Park, Sector 16, Noida, Uttar Pradesh 201301, India",
   /** City whose courts have jurisdiction: the registered office's city. */
-  jurisdiction: "",
-  gstin: "",
-  cin: "",
+  jurisdiction: "Udaipur, Rajasthan",
+  gstin: "09ABICS9865M1Z8",
+  cin: "U74999RJ2022PTC082624",
   supportEmail: "",
   phone: SITE.whatsappDisplay,
   /** Grievance Officer under India's IT Rules 2021 and DPDP Act 2023. */
@@ -36,6 +38,7 @@ export const businessDetails = () =>
   [
     ["Legal name", LEGAL.legalName],
     ["Registered office", LEGAL.registeredAddress],
+    ["Corporate office", LEGAL.corporateAddress],
     ["GSTIN", LEGAL.gstin],
     ["CIN", LEGAL.cin],
     ["Email", LEGAL.supportEmail],
