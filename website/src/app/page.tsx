@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { LANGUAGE_ALTERNATES } from "@/content/locales";
 import { ArrowRight, Sparkle, ShieldCheck, Gauge, Users, Sparkles, KeyRound, RotateCcw } from "lucide-react";
 import { Container, SectionTitle, FaqList, CtaBand, LinkCard, CheckList } from "@/components/ui";
 import { InboxMock } from "@/components/InboxMock";
@@ -21,6 +23,10 @@ const PILLARS = [
   { icon: KeyRound, title: "Numbers look after themselves", body: "Removing a number unlinks it from the phone and deletes its saved login. Leftover browsers are cleaned up automatically." },
   { icon: RotateCcw, title: "Engineering discipline", body: `${SITE.facts.backendSuites} backend test suites and ${SITE.facts.frontendTests} frontend tests. Deploys check health and roll back on their own, and the database is backed up before any change.` },
 ];
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/", languages: LANGUAGE_ALTERNATES },
+};
 
 export default function Home() {
   return (

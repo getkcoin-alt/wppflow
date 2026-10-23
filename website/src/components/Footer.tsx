@@ -43,6 +43,11 @@ export function Footer() {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-page flex-col gap-2 px-4 py-6 text-xs text-fg-3 sm:flex-row sm:justify-between sm:px-6">
           <p>© {new Date().getFullYear()} {LEGAL.legalName}. Scriwo is a product of {LEGAL.legalName}.{LEGAL.registeredAddress ? ` ${LEGAL.registeredAddress}.` : ""}</p>
+          <p className="flex gap-3">
+            <Link href="/" hrefLang="en" className="hover:text-fg">English</Link>
+            <Link href="/ar" hrefLang="ar-AE" lang="ar" className="hover:text-fg">العربية</Link>
+            <Link href="/hi" hrefLang="hi-IN" lang="hi" className="hover:text-fg">हिन्दी</Link>
+          </p>
           <p>Scriwo is an independent product and is not affiliated with WhatsApp or Meta. WhatsApp is a trademark of its owner.</p>
         </div>
       </div>

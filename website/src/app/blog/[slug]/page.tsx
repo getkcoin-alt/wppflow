@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Container, Crumbs, CtaBand, LinkCard } from "@/components/ui";
 import { JsonLd } from "@/components/JsonLd";
-import { POSTS, postBySlug } from "@/content/blog";
+import Link from "next/link";
+import { POSTS, postBySlug, guidesFor } from "@/content/blog";
+import { industryBySlug } from "@/content/industries";
+import { GuideLinks } from "@/components/GuideLinks";
 import { featureBySlug } from "@/content/features";
 import { absolute } from "@/lib/site";
 import { speakable } from "@/lib/jsonld";
@@ -41,7 +44,12 @@ export default async function PostPage({ params }: Props) {
             author: { "@type": "Organization", name: "Scriwo team", url: absolute("/about") },
             publisher: { "@id": absolute("/#organization") },
             mainEntityOfPage: absolute(path),
+            isPartOf: { "@id": absolute("/#website") },
+            image: absolute("/opengraph-image"),
+            inLanguage: "en",
             keywords: p.keyword,
+            about: { "@type": "SoftwareApplication", name: "Scriwo", applicationCategory: "BusinessApplication" },
+            ...(p.country ? { contentLocation: { "@type": "Country", name: p.country === "UAE" ? "United Arab Emirates" : "India" } } : {}),
           },
           speakable(path, ["[data-speakable]"]),
         ]}
@@ -75,6 +83,20 @@ export default async function PostPage({ params }: Props) {
           {p.related.map((s) => featureBySlug(s)).filter((f) => !!f).map((f) => <LinkCard key={f.slug} href={`/features/${f.slug}`} title={f.name} body={f.summary} />)}
         </div>
       </Container>
+      {(p.industries?.length || p.country) && (
+        <Container className="mt-10 max-w-3xl">
+          <ul className="flex flex-wrap gap-2.5 text-sm">
+            {p.industries?.map((s) => industryBySlug(s)).filter((i) => !!i).map((i) => (
+              <li key={i.slug}><Link href={`/industries/${i.slug}`} className="inline-block rounded-full bg-surface px-4 py-2 hairline hover:bg-surface-2">WhatsApp for {i.name.toLowerCase()}</Link></li>
+            ))}
+            {p.country && <li><Link href="/whatsapp-crm" className="inline-block rounded-full bg-surface px-4 py-2 hairline hover:bg-surface-2">WhatsApp CRM in {p.country === "UAE" ? "the UAE" : "India"}</Link></li>}
+          </ul>
+        </Container>
+      )}
+      <GuideLinks
+        title="Keep reading"
+        posts={[...(p.industries ?? []).flatMap((s) => guidesFor({ industry: s, exclude: p.slug })), ...guidesFor({ country: p.country, exclude: p.slug }), ...POSTS.filter((o) => o.slug !== p.slug)].filter((o, n, all) => all.findIndex((q) => q.slug === o.slug) === n)}
+      />
       <CtaBand />
     </>
   );

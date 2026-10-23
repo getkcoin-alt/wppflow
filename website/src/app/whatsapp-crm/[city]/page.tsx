@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Container, PageHero, SectionTitle, CtaBand, Crumbs, FaqList, LinkCard } from "@/components/ui";
 import { JsonLd } from "@/components/JsonLd";
+import { GuideLinks } from "@/components/GuideLinks";
+import { guidesFor } from "@/content/blog";
 import { CITIES, cityBySlug } from "@/content/cities";
 import { industryBySlug } from "@/content/industries";
 import { FEATURES } from "@/content/features";
@@ -96,6 +98,7 @@ export default async function CityPage({ params }: Props) {
         <SectionTitle eyebrow="FAQ" title={`WhatsApp CRM in ${c.name}: questions`} />
         <div className="mt-8"><FaqList faqs={faqs} /></div>
       </Container>
+      <GuideLinks title={`Guides for ${c.name} teams`} posts={c.industries.flatMap((s) => guidesFor({ industry: s })).concat(guidesFor({ country: c.country })).filter((p, n, all) => all.findIndex((q) => q.slug === p.slug) === n)} />
       <Container className="mt-16">
         <h2 className="text-xl">Also in {c.country === "UAE" ? "the UAE" : "India"}</h2>
         <div className="mt-4 flex flex-wrap gap-2.5">

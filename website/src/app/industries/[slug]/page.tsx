@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArrowRight, Lightbulb } from "lucide-react";
 import { Container, PageHero, SectionTitle, CtaBand, Crumbs, LinkCard } from "@/components/ui";
 import { JsonLd } from "@/components/JsonLd";
+import { GuideLinks } from "@/components/GuideLinks";
+import { guidesFor } from "@/content/blog";
 import { INDUSTRIES, industryBySlug } from "@/content/industries";
 import { featureBySlug } from "@/content/features";
 import { CITIES } from "@/content/cities";
@@ -73,6 +75,7 @@ export default async function IndustryPage({ params }: Props) {
           </div>
         </Container>
       )}
+      <GuideLinks title={`Guides for ${i.name.toLowerCase()} teams`} posts={guidesFor({ industry: i.slug })} />
       <CtaBand title={`Run ${i.name.toLowerCase()} WhatsApp as a team`} />
     </>
   );
