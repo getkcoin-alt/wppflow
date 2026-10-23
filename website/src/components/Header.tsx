@@ -8,6 +8,7 @@ import { trackAttrs } from "@/lib/analytics";
 
 const NAV = [
   { href: "/features", label: "Features" },
+  { href: "/riwo", label: "Riwo AI" },
   { href: "/industries", label: "Industries" },
   { href: "/pricing", label: "Pricing" },
   { href: "/developers", label: "Developers" },
@@ -20,8 +21,7 @@ export function Header() {
     <header className="glass sticky top-0 z-40 border-b border-line">
       <div className="mx-auto flex h-16 max-w-page items-center gap-6 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2.5" aria-label="Scriwo home">
-          <Logo />
-          <span className="text-[13px] font-medium tracking-[0.34em]">SCRIWO</span>
+          <Logo size={34} />
         </Link>
         <nav aria-label="Main" className="hidden flex-1 items-center gap-1 md:flex">
           {NAV.map((n) => (

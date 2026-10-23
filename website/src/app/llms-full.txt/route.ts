@@ -6,6 +6,7 @@ import { POSTS } from "@/content/blog";
 import { COMPARISONS } from "@/content/compare";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { PLANS, TAX_NOTE } from "@/content/plans";
+import { RIWO, RIWO_ACTIONS, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
 
 export const dynamic = "force-static";
 
@@ -27,6 +28,9 @@ export function GET() {
     "## Frequently asked questions",
     ...GENERAL_FAQS.flatMap((f) => [`### ${f.q}`, f.a, ""]),
   ];
+  out.push(`## Riwo, the AI assistant`, `URL: ${absolute("/riwo")}`, "", RIWO.oneLine, `Included in the ${RIWO.plan}.`, "");
+  out.push(...RIWO_ACTIONS.map((a) => `- ${a.title}: ${a.body}`), "", "How to use it:", ...RIWO_STEPS.map((s, i) => `${i + 1}. ${s}`), "");
+  out.push(...RIWO_FAQS.flatMap((q) => [`Q: ${q.q}`, `A: ${q.a}`]), "");
   for (const f of FEATURES) {
     out.push(`## ${f.title}`, `URL: ${absolute(`/features/${f.slug}`)}`, "", f.summary, "");
     out.push(...f.points.map((p) => `- ${p.title}: ${p.body}`), "", "How it works:", ...f.howTo.map((s, i) => `${i + 1}. ${s}`), "");

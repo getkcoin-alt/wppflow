@@ -20,10 +20,13 @@ export default {
         danger: token("danger"),
         bubble: { in: token("bubble-in"), out: token("bubble-out") },
         note: token("note"),
+        ink: token("ink"),
+        leaf: token("leaf"),
       },
       fontFamily: {
         sans: ['"Inter Variable"', "Inter", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "sans-serif"],
         serif: ['"Instrument Serif"', "Georgia", "serif"],
+        display: ['"Montserrat"', '"Inter Variable"', "sans-serif"],
       },
       borderRadius: { "4xl": "2rem" },
       boxShadow: { card: "var(--shadow-card)", pop: "var(--shadow-pop)" },

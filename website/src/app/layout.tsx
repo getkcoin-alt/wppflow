@@ -8,6 +8,7 @@ import { themeScript } from "@/components/ThemeToggle";
 import { organization, website } from "@/lib/jsonld";
 import { SiteAnalytics } from "@/components/Analytics";
 import { SITE } from "@/lib/site";
+import { RevealOnScroll, revealScript } from "@/components/RevealOnScroll";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -17,7 +18,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: { type: "website", siteName: "Scriwo", locale: "en_AE", alternateLocale: ["en_IN"], url: SITE.url },
   twitter: { card: "summary_large_image" },
-  icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
   robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   category: "business software",
   // Search engine ownership codes, set in Vercel when each console asks for one (Bing and Google are verified already).
@@ -37,7 +37,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
+    { media: "(prefers-color-scheme: light)", color: "#fbfaf7" },
     { media: "(prefers-color-scheme: dark)", color: "#08090a" },
   ],
 };
@@ -47,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: revealScript }} />
         <JsonLd data={[organization(), website()]} />
       </head>
       <body className="min-h-screen pb-20 sm:pb-0">
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <WhatsAppButton />
         <MobileCta />
         <SiteAnalytics />
+        <RevealOnScroll />
       </body>
     </html>
   );

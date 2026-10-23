@@ -49,7 +49,7 @@ export function Crumbs({ items }: { items: { name: string; path: string }[] }) {
 
 export function SectionTitle({ eyebrow, title, intro }: { eyebrow?: string; title: string; intro?: string }) {
   return (
-    <div className="max-w-2xl">
+    <div data-reveal className="max-w-2xl">
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h2 className="mt-3 text-3xl sm:text-4xl">{title}</h2>
       {intro && <p className="mt-4 text-lg leading-relaxed text-fg-2">{intro}</p>}
@@ -89,8 +89,10 @@ export function FaqList({ faqs }: { faqs: Faq[] }) {
 export function CtaBand({ title = "See Scriwo with your own team", body = "Tell us how many people answer WhatsApp at your company. We will set you up and walk your team through it." }: { title?: string; body?: string }) {
   return (
     <Container className="mt-24">
-      <div className="relative overflow-hidden rounded-4xl bg-[#0a0b0c] px-6 py-14 text-white sm:px-14">
-        <div aria-hidden="true" className="absolute inset-0 opacity-70" style={{ background: "radial-gradient(50% 80% at 85% 0%, rgba(210,176,106,.28), transparent 70%), radial-gradient(40% 70% at 0% 100%, rgba(15,107,85,.45), transparent 70%)" }} />
+      <div data-reveal className="relative overflow-hidden rounded-4xl bg-[#1e2227] px-6 py-14 text-white sm:px-14">
+        <div aria-hidden="true" className="absolute inset-0 opacity-80" style={{ background: "radial-gradient(50% 80% at 85% 0%, rgba(210,176,106,.32), transparent 70%), radial-gradient(40% 70% at 0% 100%, rgba(46,190,104,.28), transparent 70%)" }} />
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative brand mark */}
+        <img src="/brand/scriwo-mark.webp" alt="" width={220} height={220} aria-hidden="true" className="float-slow pointer-events-none absolute -right-6 -top-6 hidden w-56 opacity-90 drop-shadow-2xl md:block" />
         <div className="relative max-w-2xl">
           <h2 className="text-3xl sm:text-4xl">{title}</h2>
           <p className="mt-4 text-lg text-white/75">{body}</p>
@@ -108,7 +110,7 @@ export function CtaBand({ title = "See Scriwo with your own team", body = "Tell 
 
 export function LinkCard({ href, title, body, icon }: { href: string; title: string; body: string; icon?: ReactNode }) {
   return (
-    <Link href={href} className="card group block p-6 transition-transform duration-300 hover:-translate-y-0.5">
+    <Link href={href} className="card lift group block p-6">
       {icon && <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand">{icon}</div>}
       <h3 className="text-lg">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-fg-2">{body}</p>

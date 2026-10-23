@@ -33,7 +33,7 @@ export const PLANS: Plan[] = [
   {
     id: "growth", name: "Growth", for: "Sales and support teams", numbers: "Up to 10 numbers", highlight: true,
     price: { AED: 799, INR: 6999 },
-    includes: ["Everything in Starter", "Broadcasts to opted-in contacts", "Keyword automations and saved replies", "Desktop and offline alerts", "Audit log"],
+    includes: ["Everything in Starter", "Riwo, the AI reply assistant", "Broadcasts to opted-in contacts", "Keyword automations and saved replies", "Desktop and offline alerts", "Audit log"],
   },
   {
     id: "business", name: "Business", for: "Multi-branch companies", numbers: "Up to 25 numbers",
