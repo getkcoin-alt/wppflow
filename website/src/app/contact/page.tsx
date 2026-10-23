@@ -5,6 +5,7 @@ import { ContactForm } from "@/components/ContactForm";
 import { JsonLd } from "@/components/JsonLd";
 import { absolute, SITE, whatsappHref } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
+import { BusinessDetails } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Contact Scriwo — Book a Demo or Start a Plan",
@@ -33,6 +34,9 @@ export default function ContactPage() {
             </ul>
           </div>
           <ContactForm />
+        </Container>
+        <Container className="max-w-3xl pb-8">
+          <BusinessDetails />
         </Container>
       </section>
     </>

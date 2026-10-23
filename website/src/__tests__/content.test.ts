@@ -1,3 +1,4 @@
+import { POLICY_LINKS } from "@/lib/legal";
 import { describe, expect, it } from "vitest";
 import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
@@ -72,5 +73,9 @@ describe("pricing", () => {
       expect(text).toContain(`AED ${p.price.AED!.toLocaleString("en-US")}`);
       expect(text).toContain(`₹${p.price.INR!.toLocaleString("en-IN")}`);
     }
+  });
+  it("lists every policy page payment gateways ask for", () => {
+    const paths = allRoutes().map((r) => r.path);
+    for (const l of POLICY_LINKS) expect(paths).toContain(l.href);
   });
 });

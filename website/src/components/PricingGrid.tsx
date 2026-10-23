@@ -43,7 +43,7 @@ export function PricingGrid() {
             </button>
           ))}
         </div>
-        <p className="text-sm text-fg-3">Paid plans billed monthly. {TAX_NOTE[cur]} No per-message fees.</p>
+        <p className="text-sm text-fg-3">Paid plans billed monthly or annually, in advance. {TAX_NOTE[cur]} No per-message fees. <Link href="/refund-policy" className="underline">Cancel anytime</Link>.</p>
       </div>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {PLANS.map((p) => {
