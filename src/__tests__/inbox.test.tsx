@@ -348,11 +348,11 @@ describe("an inbox with more than one WhatsApp number", () => {
     show({ onFilterChange });
     expect(numbers().getByRole("button", { name: "All numbers" })).toBeDefined();
     fireEvent.click(numbers().getByRole("button", { name: /Sam/ }));
-    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "staff-9"));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "staff-9", expect.objectContaining({ labels: [] })));
     fireEvent.click(numbers().getByRole("button", { name: /Olivia \(you\)/ }));
-    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "staff-1"));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "staff-1", expect.objectContaining({ labels: [] })));
     fireEvent.click(numbers().getByRole("button", { name: "All numbers" }));
-    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", ""));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "", expect.objectContaining({ labels: [] })));
   });
 
   it("says which number each chat came in on while every number is shown together", () => {

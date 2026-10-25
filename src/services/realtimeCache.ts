@@ -13,14 +13,17 @@ type ConversationPage = {
   [key: string]: unknown;
 };
 type MessagePage = { messages: ChatMessage[]; [key: string]: unknown };
-type ListFilter = { search?: string; filter?: string; sessionName?: string };
+type ListFilter = { search?: string; filter?: string; sessionName?: string; labels?: string; assigned?: string; activeDays?: string | number };
 
 const epochOf = (c: Partial<ChatThread> & { lastActiveEpoch?: number }) =>
   Number(c.lastActiveEpoch || 0);
 
+// Filters the browser cannot check from a pushed event (a search, labels, who has it, how recent).
+const narrowed = (f: ListFilter) => Boolean(f.search?.trim() || f.labels || f.assigned || f.activeDays);
+
 // Would this conversation appear in a list loaded with these filters?
 function belongsIn(conv: ChatThread, f: ListFilter) {
-  if (f.search?.trim()) return false; // searches are only updated for rows they already show
+  if (narrowed(f)) return false; // these lists are only updated for rows they already show
   // A list for one WhatsApp number never takes in another number's chats.
   if (f.sessionName && conv.channel !== f.sessionName) return false;
   if (f.filter === "unread") return conv.unreadCount > 0;
@@ -47,11 +50,9 @@ export function upsertConversation(
         return false;
       }),
     }));
-    const wanted = previous
-      ? f.search?.trim()
-        ? true
-        : belongsIn(conv, f)
-      : belongsIn(conv, f);
+    // A pushed update carries no labels: keep the ones the row already had.
+    const next: ChatThread = previous && conv.labels === undefined ? { ...conv, labels: previous.labels } : conv;
+    const wanted = previous ? (narrowed(f) ? true : belongsIn(next, f)) : belongsIn(next, f);
     if (!wanted) {
       qc.setQueryData(key, { ...data, pages });
       return;
@@ -62,7 +63,7 @@ export function upsertConversation(
       const rebuilt = data.pages.map((p) => ({
         ...p,
         conversations: p.conversations.map((c) =>
-          c.id === conv.id ? conv : c,
+          c.id === conv.id ? next : c,
         ),
       }));
       qc.setQueryData(key, { ...data, pages: rebuilt });
@@ -75,7 +76,7 @@ export function upsertConversation(
         return qc.setQueryData(key, { ...data, pages });
       at = first.conversations.length;
     }
-    first.conversations.splice(at, 0, conv);
+    first.conversations.splice(at, 0, next);
     qc.setQueryData(key, { ...data, pages });
   });
 }

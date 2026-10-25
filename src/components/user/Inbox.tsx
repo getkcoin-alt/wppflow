@@ -22,11 +22,17 @@ import {
   ShoppingBag,
   ChevronLeft,
   Plus,
+  MessageSquarePlus,
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
 import { MediaBlock } from "./MediaBlock";
 import { MediaViewer } from "./MediaViewer";
 import { NumberSwitch } from "./NumberSwitch";
+import { InboxFilters, FiltersToggle, NO_EXTRA, countExtra, type InboxExtraFilters } from "./InboxFilters";
+import { ContactName } from "./ContactName";
+import type { Label } from "../../services/api";
+import { LabelChip } from "../labels/LabelChip";
+import { LabelPicker } from "../labels/LabelPicker";
 import { RiwoButton, RiwoTray, TranslateMessage } from "./Riwo";
 import { useRiwo } from "../../hooks/useRiwo";
 import type { AiClient } from "../../services/ai";
@@ -64,7 +70,14 @@ interface InboxProps {
   onLoadMoreChats?: () => void;
   hasOlderMessages?: boolean;
   onLoadOlder?: () => void;
-  onFilterChange?: (search: string, filter: string, sessionName: string) => void;
+  onFilterChange?: (search: string, filter: string, sessionName: string, extra: InboxExtraFilters) => void;
+  /** The company's labels, for the label filter */
+  labels?: Label[];
+  /** Opens the New chat dialog */
+  onNewChat?: () => void;
+  /** Renames the contact in the details panel, or hands the name back to WhatsApp's */
+  onRenameContact?: (contactId: string, patch: { name?: string; resetName?: boolean }) => Promise<void>;
+  onSetContactLabels?: (contactId: string, labelIds: string[]) => Promise<void>;
   /** The signed-in person, so their own number reads "(you)" */
   currentUserId?: number | string | null;
   /** The AI assistant: usable, or shown as locked when the plan doesn't include it */
@@ -169,6 +182,10 @@ export const Inbox: React.FC<InboxProps> = ({
   onLoadAllMedia,
   onRefreshMedia,
   onSyncInbox,
+  labels = [],
+  onNewChat,
+  onRenameContact,
+  onSetContactLabels,
   teammates = [],
   mediaEnabled = false,
   isLoading = false,
@@ -190,6 +207,9 @@ export const Inbox: React.FC<InboxProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [numberFilter, setNumberFilter] = useState("");
+  const [extra, setExtra] = useState<InboxExtraFilters>(NO_EXTRA),
+    [showFilters, setShowFilters] = useState(false);
+
   const [activeChatId, setActiveChatId] = useState<string | null>(
     selectedChatId || null,
   );
@@ -297,11 +317,11 @@ export const Inbox: React.FC<InboxProps> = ({
   }, [chats, searchQuery, filterTab]);
   useEffect(() => {
     const timer = setTimeout(
-      () => onFilterChange?.(searchQuery, filterTab, activeNumber),
+      () => onFilterChange?.(searchQuery, filterTab, activeNumber, extra),
       250,
     );
     return () => clearTimeout(timer);
-  }, [searchQuery, filterTab, activeNumber, onFilterChange]);
+  }, [searchQuery, filterTab, activeNumber, extra, onFilterChange]);
   const virtualChats = useVirtualizer({
     count: filteredChats.length,
     getScrollElement: () => chatListRef.current,
@@ -441,6 +461,17 @@ export const Inbox: React.FC<InboxProps> = ({
                 : `${connectedSessions.length} numbers connected`}
             </div>
           </div>
+          <div className="flex items-center gap-1">
+          {onNewChat && (
+            <button
+              onClick={onNewChat}
+              title="New chat"
+              aria-label="New chat"
+              className="h-10 w-10 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition"
+            >
+              <MessageSquarePlus className="w-[18px] h-[18px]" />
+            </button>
+          )}
           <button
             onClick={handleSync}
             disabled={isSyncing}
@@ -454,6 +485,7 @@ export const Inbox: React.FC<InboxProps> = ({
               <RefreshCw className="w-[18px] h-[18px]" />
             )}
           </button>
+          </div>
         </div>
 
         {syncStatus && (
@@ -522,6 +554,8 @@ export const Inbox: React.FC<InboxProps> = ({
             onChange={setNumberFilter}
             currentUserId={currentUserId}
           />
+          <FiltersToggle open={showFilters} count={countExtra(extra)} onToggle={() => setShowFilters((o) => !o)} />
+          {showFilters && <InboxFilters labels={labels} value={extra} onChange={setExtra} />}
         </div>
 
         {/* Conversation list */}
@@ -689,6 +723,14 @@ export const Inbox: React.FC<InboxProps> = ({
                           )}
                         </div>
                       </div>
+                      {(chat.labels?.length ?? 0) > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1" aria-label="Labels">
+                          {chat.labels!.slice(0, 3).map((l) => (
+                            <LabelChip key={l.id} label={l} size="sm" />
+                          ))}
+                          {chat.labels!.length > 3 && <span className="text-[11.5px] text-fg-3 self-center">+{chat.labels!.length - 3}</span>}
+                        </div>
+                      )}
                       {/* With several numbers in one list, say which one each chat is on */}
                       {sessions.length > 1 && !activeNumber && (() => {
                         const line = sessionOfChat(sessions, chat);
@@ -1403,9 +1445,12 @@ export const Inbox: React.FC<InboxProps> = ({
                     );
                   }}
                 />
-                <h4 className="font-semibold text-[20px] text-fg mt-3">
-                  {activeContact.name}
-                </h4>
+                <ContactName
+                  key={activeContact.id}
+                  name={activeContact.name}
+                  whatsappName={activeContact.whatsappName}
+                  onRename={onRenameContact ? (patch) => onRenameContact(activeContact.id, patch) : undefined}
+                />
                 <div className="text-[14px] text-fg-2 mt-0.5 num">
                   {activeContact.phone}
                 </div>
@@ -1423,20 +1468,17 @@ export const Inbox: React.FC<InboxProps> = ({
               </div>
 
               <section className="space-y-2">
-                <h5 className="eyebrow">Tags</h5>
-                <div className="flex flex-wrap gap-1.5">
-                  {(activeContact.tags || []).length === 0 && (
-                    <span className="text-[13px] text-fg-3">No tags yet</span>
-                  )}
-                  {(activeContact.tags || []).map((t: string) => (
-                    <span
-                      key={t}
-                      className="px-2.5 py-1 rounded-full bg-surface-2 text-fg text-[12.5px] font-medium"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
+                <h5 className="eyebrow">Labels</h5>
+                {onSetContactLabels ? (
+                  <LabelPicker value={activeContact.labels ?? []} onChange={(ids) => onSetContactLabels(activeContact.id, ids)} />
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {(activeContact.labels ?? []).length === 0 && <span className="text-[13px] text-fg-3">No labels yet</span>}
+                    {(activeContact.labels ?? []).map((l: { id: string; name: string; color: string }) => (
+                      <LabelChip key={l.id} label={l as any} />
+                    ))}
+                  </div>
+                )}
               </section>
 
               {activeContact.storeConnected && (

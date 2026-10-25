@@ -16,6 +16,9 @@ const api = vi.hoisted(() => ({
   aiLeadSuggestion: vi.fn(),
   fetchPipelineSettings: vi.fn(),
   getStoredTenantId: () => "t1",
+  fetchLabels: vi.fn(),
+  applyLabels: vi.fn(),
+  apiGet: vi.fn(),
 }));
 vi.mock("../services/api", () => api);
 import { Contacts } from "../components/user/Contacts";
@@ -35,6 +38,7 @@ beforeEach(() => {
   for (const fn of Object.values(api)) if (typeof fn === "function" && "mockReset" in fn) (fn as any).mockReset();
   api.fetchContacts.mockResolvedValue({ contacts: people, nextCursor: null });
   api.fetchPipelineSettings.mockResolvedValue(settings());
+  api.fetchLabels.mockResolvedValue([]);
 });
 afterEach(cleanup);
 
@@ -43,14 +47,18 @@ describe("Contacts and the pipeline", () => {
     wrap(undefined);
     await screen.findByText("Aisha Khan");
     expect(screen.queryByRole("button", { name: /to the pipeline/ })).toBeNull();
-    expect(screen.queryByLabelText("Select Aisha Khan")).toBeNull();
+    // anyone can select contacts to label them, but adding to the pipeline is not offered
+    fireEvent.click(screen.getByLabelText("Select Aisha Khan"));
+    expect(screen.getByText("1 selected")).toBeDefined();
+    expect(screen.queryByRole("button", { name: /Add to pipeline/ })).toBeNull();
   });
 
   it("adds one contact to the pipeline from their row", async () => {
     api.createLead.mockResolvedValue({ lead: lead({ contactName: "Bilal" }), existing: false });
     wrap({ teammates: TEAM, isManager: false, aiAvailable: false });
     await screen.findByText("Bilal");
-    expect(screen.queryByLabelText("Select Bilal")).toBeNull(); // staff pick one at a time
+    fireEvent.click(screen.getByLabelText("Select Bilal")); // staff can select to label, but only managers add many to the pipeline
+    expect(screen.queryByRole("button", { name: /^Add to pipeline$/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add Bilal to the pipeline" }));
     const d = within(await screen.findByRole("dialog", { name: "Add to pipeline" }));
     expect(d.getAllByText("Bilal").length).toBeGreaterThan(0);

@@ -43,6 +43,9 @@ import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
 import { PlanCard } from "./components/admin/PlanCard";
 import { PlanCompare } from "./components/admin/PlanCompare";
+import { NewChatSheet, type NewChatPerson } from "./components/user/NewChatSheet";
+import { NO_EXTRA, type InboxExtraFilters } from "./components/user/InboxFilters";
+import { useLabels } from "./components/labels/useLabels";
 import { DeveloperGuide } from "./components/developer/DeveloperGuide";
 import type {
   AuthUser,
@@ -85,7 +88,16 @@ export function App() {
     [campaignOpen, setCampaignOpen] = useState(false),
     [selected, setSelected] = useState<string | null>(null);
   const [openedThread, setOpenedThread] = useState<ChatThread | null>(null);
-  const [filter, setFilter] = useState({ search: "", filter: "all", sessionName: "" }),
+  const [filter, setFilter] = useState({
+    search: "",
+    filter: "all",
+    sessionName: "",
+    labels: "",
+    labelMode: "any" as "any" | "all",
+    assigned: "",
+    activeDays: "",
+  }),
+    [newChat, setNewChat] = useState<{ person?: NewChatPerson } | null>(null),
     [optimistic, setOptimistic] = useState<Record<string, ChatMessage[]>>({});
   const tenant = api.getStoredTenantId(),
     platformAdmin = user?.role === "superadmin",
@@ -137,6 +149,7 @@ export function App() {
     getNextPageParam: (p) => p.nextCursor || undefined,
     enabled,
   });
+  const labelList = useLabels(enabled);
   const contactQuery = useInfiniteQuery({
     queryKey: ["contacts", tenant],
     queryFn: ({ pageParam }) =>
@@ -249,14 +262,21 @@ export function App() {
     [qc, tenant],
   );
   const changeFilter = useCallback(
-    (search: string, filter: string, sessionName = "") =>
-      setFilter((old) =>
-        old.search === search &&
-        old.filter === filter &&
-        old.sessionName === sessionName
+    (search: string, filterTab: string, sessionName = "", extra: InboxExtraFilters = NO_EXTRA) =>
+      setFilter((old) => {
+        const labels = extra.labels.join(",");
+        // the any/all choice only matters with two labels, so it does not reload the list on its own
+        const labelMode = extra.labels.length > 1 ? extra.labelMode : "any";
+        return old.search === search &&
+          old.filter === filterTab &&
+          old.sessionName === sessionName &&
+          old.labels === labels &&
+          old.labelMode === labelMode &&
+          old.assigned === extra.assigned &&
+          old.activeDays === extra.activeDays
           ? old
-          : { search, filter, sessionName },
-      ),
+          : { search, filter: filterTab, sessionName, labels, labelMode, assigned: extra.assigned, activeDays: extra.activeDays };
+      }),
     [],
   );
   useEffect(() => {
@@ -554,6 +574,14 @@ export function App() {
   const planAction = manager ? openPlan : undefined;
   const connected = sessions.filter((x) => x.status === "CONNECTED").length;
   const unreadChats = chats.filter((c) => c.unreadCount > 0).length;
+  // A chat was opened or created (from Contacts or New chat): refresh and go to it.
+  const openStartedChat = async (result: api.StartedChat) => {
+    await refresh("conversations", ...(result.contactCreated ? ["contacts"] : []));
+    setOpenedThread(result.conversation);
+    setSelected(result.conversation.id);
+    setTab("inbox");
+    setView("user");
+  };
   const go = (item: NavItem) => {
     setView(item.view);
     if (item.tab) setTab(item.tab);
@@ -814,6 +842,16 @@ export function App() {
               hasOlderMessages={Boolean(history.hasNextPage)}
               onLoadOlder={() => void history.fetchNextPage()}
               onFilterChange={changeFilter}
+              labels={labelList.data ?? []}
+              onNewChat={() => setNewChat({})}
+              onRenameContact={async (contactId, patch) => {
+                await api.patchContact(contactId, patch);
+                await refresh("contacts", "conversations");
+              }}
+              onSetContactLabels={async (contactId, labelIds) => {
+                await api.patchContact(contactId, { labelIds });
+                await refresh("contacts", "conversations", "labels");
+              }}
               currentUserId={user?.id}
               onSaveReply={async (data) => {
                 await api.apiPost("/api/workspace/canned-replies", data);
@@ -884,22 +922,15 @@ export function App() {
           )}
           {view === "user" && tab === "contacts" && (
             <Contacts
+              canManageLabels={manager}
               pipeline={locked("leads") ? undefined : { teammates: team.data?.members || [], isManager: manager, aiAvailable: false }}
-              onSelectChat={(id) => {
+              onSelectChat={(person) => {
+                const usable = sessions.filter((x) => x.status === "CONNECTED");
+                if (usable.length !== 1) return setNewChat({ person });
+                // one connected number: no need to ask which
                 void run(async () => {
-                  const session = sessions.find(
-                    (s) => s.status === "CONNECTED",
-                  );
-                  if (!session)
-                    throw new Error("Connect a WhatsApp session first");
-                  const result = await api.addChat({
-                    contactId: id,
-                    sessionName: session.sessionKey,
-                  });
-                  await refresh("conversations");
-                  setOpenedThread(result.conversation);
-                  setSelected(result.conversation.id);
-                  setTab("inbox");
+                  const result = await api.startChat({ contactId: person.contactId, sessionName: usable[0].sessionKey });
+                  await openStartedChat(result);
                 }).catch(() => {});
               }}
             />
@@ -1057,6 +1088,18 @@ export function App() {
             </div>
           </div>
         }
+      />
+      <NewChatSheet
+        open={newChat !== null}
+        person={newChat?.person}
+        sessions={sessions}
+        currentUserId={user?.id}
+        preferredNumber={filter.sessionName}
+        onClose={() => setNewChat(null)}
+        onStarted={(result) => {
+          setNewChat(null);
+          void openStartedChat(result);
+        }}
       />
     </div>
   );

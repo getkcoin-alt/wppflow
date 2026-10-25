@@ -107,8 +107,10 @@ export async function apiRequest(
   if (!res.ok) {
     const error = new Error(data.message || `HTTP ${res.status}`) as Error & {
       status: number;
+      data: Record<string, any>;
     };
     error.status = res.status;
+    error.data = data;
     throw error;
   }
   return data;
@@ -207,6 +209,43 @@ export const syncInboxForSession = (name: string) =>
 export const fetchContacts = (params: Record<string, string> = {}) =>
   apiGet(`/api/contacts?${new URLSearchParams(params)}`);
 export const addContact = (data: any) => apiPost("/api/contacts", data);
+
+// ── Labels: the company's own coloured tags ──────────────────────────────────────────────────────
+export const LABEL_COLORS = ["slate", "red", "orange", "amber", "green", "teal", "blue", "indigo", "purple", "pink"] as const;
+export type LabelColor = (typeof LABEL_COLORS)[number];
+export interface Label {
+  id: string;
+  name: string;
+  color: LabelColor;
+  /** How many contacts have it (the manager shows this) */
+  contacts?: number;
+}
+export const fetchLabels = async (): Promise<Label[]> => (await apiGet("/api/labels")).labels;
+export const createLabel = async (name: string, color?: LabelColor): Promise<Label> =>
+  (await apiPost("/api/labels", color ? { name, color } : { name })).label;
+export const updateLabel = async (id: string, data: { name?: string; color?: LabelColor }): Promise<Label> =>
+  (await apiPatch(`/api/labels/${id}`, data)).label;
+export const deleteLabel = (id: string) => apiDelete(`/api/labels/${id}`);
+export const applyLabels = (data: { contactIds: string[]; add?: string[]; remove?: string[] }) => apiPost("/api/labels/apply", data);
+
+// Before starting a chat with a typed number: is it a full number, and do we know the person already?
+export interface NumberLookup {
+  valid: boolean;
+  message?: string;
+  phone?: string;
+  display?: string;
+  contact?: { id: string; name: string; optIn: boolean; labels: Label[] } | null;
+}
+export const lookupNumber = (phone: string): Promise<NumberLookup> =>
+  apiGet(`/api/contacts/lookup?phone=${encodeURIComponent(phone)}`);
+export interface StartedChat {
+  conversation: any;
+  contactCreated: boolean;
+  /** true / false when permission for broadcasts was recorded; null when nobody has asked */
+  optedIn: boolean | null;
+}
+export const startChat = (data: { sessionName: string; phone?: string; name?: string; contactId?: string }): Promise<StartedChat> =>
+  apiPost("/api/conversations", data);
 export const patchContact = (id: string, data: any) =>
   apiPatch(`/api/contacts/${id}`, data);
 export const removeContact = (id: string) => apiDelete(`/api/contacts/${id}`);
@@ -218,6 +257,13 @@ export function fetchConversations(
     search?: string;
     /** Only this WhatsApp number's chats */
     sessionName?: string;
+    /** Comma-separated label ids, and whether a chat needs any or all of them */
+    labels?: string;
+    labelMode?: "any" | "all";
+    /** "me", "none" (unassigned) or a teammate's id */
+    assigned?: string;
+    /** Only chats active in the last N days */
+    activeDays?: string | number;
   } = {},
 ) {
   const q = new URLSearchParams();

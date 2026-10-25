@@ -121,9 +121,12 @@ export function useInboxRealtime({
       }
       setSync({ phase: p.phase, done: p.done || 0, total: p.total || 0 });
     };
+    // a rename or a label also changes the chat list
     const onContacts = () => {
       invalidate("contacts");
       invalidate("contact");
+      invalidate("labels");
+      invalidate("conversations");
     };
     const onCampaign = () => invalidate("campaigns");
     const onLead = () => invalidate("leads", "lead", "lead-tasks");

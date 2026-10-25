@@ -5,12 +5,21 @@ import {
   addContact,
   patchContact,
   apiPost,
+  apiGet,
   removeContact,
   getStoredTenantId,
   bulkCreateLeads,
+  applyLabels,
+  type Label,
 } from "../../services/api";
+import { LabelChip } from "../labels/LabelChip";
+import { LabelFilter } from "../labels/LabelFilter";
+import { LabelManager } from "../labels/LabelManager";
+import { LabelPicker } from "../labels/LabelPicker";
+import { useLabels } from "../labels/useLabels";
+import type { NewChatPerson } from "./NewChatSheet";
 import { parseContactsCsv, contactsCsv } from "../../utils/csv";
-import { Download, Funnel, Plus, Search, Upload, Users } from "lucide-react";
+import { Download, Funnel, Plus, Search, Tag, Upload, Users } from "lucide-react";
 import { NewLeadSheet } from "../pipeline/NewLeadSheet";
 import { usePipelineSettings } from "../pipeline/usePipelineSettings";
 import { safeAvatarFallback } from "../../utils/avatar";
@@ -20,8 +29,11 @@ import { Sheet } from "../ui/Sheet";
 export function Contacts({
   onSelectChat,
   pipeline,
+  canManageLabels = false,
 }: {
-  onSelectChat: (id: string) => void;
+  onSelectChat: (person: NewChatPerson) => void;
+  /** Owners and administrators can rename, recolour and delete the company's labels */
+  canManageLabels?: boolean;
   /** Set when the company's plan has the sales pipeline: adds the "Add to pipeline" actions */
   pipeline?: { teammates: { id: number; name: string }[]; isManager: boolean; aiAvailable: boolean };
 }) {
@@ -35,14 +47,25 @@ export function Contacts({
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [leadFor, setLeadFor] = useState<any | null>(null),
-    [picked, setPicked] = useState<Set<string>>(new Set());
+    [picked, setPicked] = useState<Set<string>>(new Set()),
+    [labelFilter, setLabelFilter] = useState<string[]>([]),
+    [labelMode, setLabelMode] = useState<"any" | "all">("any"),
+    [managing, setManaging] = useState(false),
+    [formLabels, setFormLabels] = useState<Label[]>([]),
+    [formName, setFormName] = useState(""),
+    [duplicate, setDuplicate] = useState<{ id: string; message: string } | null>(null);
+  const labels = useLabels();
   const pipelineSettings = usePipelineSettings(Boolean(pipeline));
   const stages = (pipelineSettings.data?.stages || []).map(({ id, name, kind, position }) => ({ id, name, kind, position }));
   const query = useInfiniteQuery({
-    queryKey: ["contacts", tenant, search],
+    queryKey: ["contacts", tenant, search, labelFilter, labelMode],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) =>
-      fetchContacts({ search, ...(pageParam ? { cursor: pageParam } : {}) }),
+      fetchContacts({
+        search,
+        ...(labelFilter.length ? { label: labelFilter.join(","), ...(labelFilter.length > 1 ? { labelMode } : {}) } : {}),
+        ...(pageParam ? { cursor: pageParam } : {}),
+      }),
     getNextPageParam: (p) => p.nextCursor || undefined,
   });
   const rows = query.data?.pages.flatMap((p) => p.contacts) || [];
@@ -54,40 +77,65 @@ export function Contacts({
       await qc.invalidateQueries({ queryKey: ["contacts", tenant] });
       await qc.invalidateQueries({ queryKey: ["contact", tenant] });
       await qc.invalidateQueries({ queryKey: ["conversations", tenant] });
+      await qc.invalidateQueries({ queryKey: ["labels", tenant] });
     } catch (e: any) {
       setError(e.message);
     } finally {
       setBusy(false);
     }
   };
+  const openForm = (contact: any | null) => {
+    setEditing(contact);
+    setFormLabels(contact?.labels ?? []);
+    setFormName(contact?.name ?? "");
+    setDuplicate(null);
+    setOpen(true);
+  };
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const data = {
-      name: String(f.get("name")),
+      name: formName.trim(),
       phone: String(f.get("phone")),
       email: String(f.get("email")),
-      tags: String(f.get("tags"))
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      labelIds: formLabels.map((l) => l.id),
       optIn: f.get("consent") === "on",
     };
+    setDuplicate(null);
     void run(async () => {
-      if (editing) await patchContact(editing.id, data);
+      if (editing) await patchContact(editing.id, { name: data.name, email: data.email, labelIds: data.labelIds, optIn: data.optIn });
       else {
-        const saved = await addContact(data);
-        await patchContact(saved.contact.id, { optIn: data.optIn });
+        try {
+          const saved = await addContact({ name: data.name, phone: data.phone, email: data.email, labelIds: data.labelIds });
+          await patchContact(saved.contact.id, { optIn: data.optIn });
+        } catch (err: any) {
+          // the number is already saved: offer the existing contact instead of a second one
+          if (err.status === 409 && err.data?.contactId) {
+            setDuplicate({ id: err.data.contactId, message: err.message });
+            return;
+          }
+          throw err;
+        }
       }
       setOpen(false);
     });
   };
+  // The picker hands back label ids; the form keeps the labels themselves (including one made a moment ago).
+  const pickLabels = (ids: string[]) => {
+    const known: Label[] = qc.getQueryData(["labels", tenant]) ?? labels.data ?? [];
+    setFormLabels(ids.map((id) => known.find((l) => l.id === id) ?? formLabels.find((l) => l.id === id)).filter(Boolean) as Label[]);
+  };
+  const bulk = (change: { add?: string[]; remove?: string[] }) =>
+    run(async () => {
+      const r = await applyLabels({ contactIds: [...picked], ...change });
+      setNotice(`${r.updated} ${r.updated === 1 ? "contact" : "contacts"} updated.`);
+    });
   return (
     <Page>
       <PageHeader
         eyebrow="People"
         title="Contacts"
-        subtitle="Everyone you talk to, with tags and recorded permission for broadcasts."
+        subtitle="Everyone you talk to, with labels and recorded permission for broadcasts."
         actions={
           <>
             <button
@@ -122,13 +170,12 @@ export function Contacts({
             >
               <Download className="w-4 h-4" /> Export contacts
             </button>
-            <button
-              onClick={() => {
-                setEditing(null);
-                setOpen(true);
-              }}
-              className={btn("primary")}
-            >
+            {canManageLabels && (
+              <button disabled={busy} className={btn("secondary")} onClick={() => setManaging(true)}>
+                <Tag className="w-4 h-4" /> Labels
+              </button>
+            )}
+            <button onClick={() => openForm(null)} className={btn("primary")}>
               <Plus className="w-4 h-4" /> New contact
             </button>
           </>
@@ -146,20 +193,24 @@ export function Contacts({
             if (selected.size > 2 * 1024 * 1024)
               throw new Error("CSV must be 2 MB or smaller");
             const parsed = parseContactsCsv(await selected.text());
-            let imported = 0;
+            let imported = 0,
+              skipped = 0,
+              why = "";
             try {
               for (let i = 0; i < parsed.length; i += 200) {
                 const result = await apiPost("/api/contacts/import", {
                   rows: parsed.slice(i, i + 200),
                 });
                 imported += result.imported;
+                skipped += result.skippedCount || 0;
+                why ||= result.skipped?.[0] ? `${result.skipped[0].name || result.skipped[0].phone}: ${result.skipped[0].reason}` : "";
               }
             } catch (error: any) {
               throw new Error(
                 `${imported} rows imported before the error: ${error.message}`,
               );
             }
-            setNotice(`${imported} contact rows imported.`);
+            setNotice(`${imported} contact rows imported.${skipped ? ` ${skipped} skipped (${why}).` : ""}`);
           });
           e.target.value = "";
         }}
@@ -205,32 +256,54 @@ export function Contacts({
           className="space-y-4"
           onSubmit={save}
         >
-          {(["name", "phone", "email", "tags"] as const).map((name) => (
-            <Field
-              key={name}
-              label={
-                name === "tags" ? "Tags" : name[0].toUpperCase() + name.slice(1)
-              }
-              hint={
-                name === "tags"
-                  ? "Separate with commas, for example VIP, Lead"
-                  : undefined
-              }
-            >
-              <input
-                name={name}
-                readOnly={name === "phone" && Boolean(editing)}
-                required={name === "name" || name === "phone"}
-                type={name === "email" ? "email" : "text"}
-                defaultValue={
-                  name === "tags"
-                    ? editing?.tags?.join(", ")
-                    : editing?.[name] || ""
+          <Field
+            label="Name"
+            hint={
+              editing?.whatsappName && editing.whatsappName !== formName ? (
+                <>
+                  WhatsApp shows “{editing.whatsappName}”.{" "}
+                  <button type="button" className="underline" onClick={() => setFormName(editing.whatsappName)}>
+                    Use that name
+                  </button>
+                </>
+              ) : undefined
+            }
+          >
+            <input name="name" required maxLength={255} value={formName} onChange={(e) => setFormName(e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Phone" hint={editing ? undefined : "With the country code, for example +971 50 123 4567"}>
+            <input
+              name="phone"
+              readOnly={Boolean(editing)}
+              required
+              type="tel"
+              defaultValue={editing?.phone || ""}
+              className={`${inputCls} ${editing ? "opacity-60" : ""}`}
+            />
+          </Field>
+          <Field label="Email">
+            <input name="email" type="email" defaultValue={editing?.email || ""} className={inputCls} />
+          </Field>
+          <Field label="Labels">
+            <LabelPicker value={formLabels} onChange={pickLabels} />
+          </Field>
+          {duplicate && (
+            <Notice tone="error">
+              {duplicate.message}.{" "}
+              <button
+                type="button"
+                className="underline font-medium"
+                onClick={() =>
+                  void run(async () => {
+                    const found = await apiGet(`/api/contacts/${duplicate.id}`);
+                    openForm(found.contact);
+                  })
                 }
-                className={`${inputCls} ${name === "phone" && editing ? "opacity-60" : ""}`}
-              />
-            </Field>
-          ))}
+              >
+                Open that contact
+              </button>
+            </Notice>
+          )}
           <label className="flex items-start gap-3 rounded-2xl bg-surface-2 p-4 cursor-pointer">
             <input
               type="checkbox"
@@ -245,7 +318,7 @@ export function Contacts({
         </form>
       </Sheet>
 
-      <div className="relative mb-4">
+      <div className="relative mb-3">
         <Search className="w-[18px] h-[18px] text-fg-3 absolute left-4 top-1/2 -translate-y-1/2" />
         <input
           aria-label="Search contacts"
@@ -254,6 +327,10 @@ export function Contacts({
           placeholder="Search by name, phone or email"
           className={`${inputCls} pl-11`}
         />
+      </div>
+
+      <div className="mb-4">
+        <LabelFilter labels={labels.data ?? []} value={labelFilter} mode={labelMode} onChange={setLabelFilter} onMode={setLabelMode} allowNone />
       </div>
 
       {query.isPending ? (
@@ -278,9 +355,9 @@ export function Contacts({
           {rows.map((c: any) => (
             <li
               key={c.id}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 py-4 hover:bg-surface-2/50 transition lg:grid lg:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,1fr)_130px_auto]"
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 py-4 hover:bg-surface-2/50 transition lg:grid lg:grid-cols-[auto_auto_minmax(0,1.6fr)_minmax(0,1.2fr)_130px_auto]"
             >
-              {pipeline?.isManager && (
+              {(
                 <input
                   type="checkbox"
                   aria-label={`Select ${c.name}`}
@@ -311,8 +388,8 @@ export function Contacts({
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {c.tags.map((t: string) => (
-                  <Pill key={t}>{t}</Pill>
+                {(c.labels ?? []).map((l: Label) => (
+                  <LabelChip key={l.id} label={l} />
                 ))}
               </div>
               <div>
@@ -327,7 +404,7 @@ export function Contacts({
               <div className="flex items-center gap-1 ml-auto">
                 <button
                   className={btn("ghost", "sm")}
-                  onClick={() => onSelectChat(c.id)}
+                  onClick={() => onSelectChat({ contactId: c.id, name: c.name, phone: c.phone, optIn: Boolean(c.optIn) })}
                 >
                   Message
                 </button>
@@ -338,10 +415,7 @@ export function Contacts({
                 )}
                 <button
                   className={btn("ghost", "sm")}
-                  onClick={() => {
-                    setEditing(c);
-                    setOpen(true);
-                  }}
+                  onClick={() => openForm(c)}
                 >
                   Edit
                 </button>
@@ -366,22 +440,56 @@ export function Contacts({
           ))}
         </ul>
       )}
-      {pipeline && picked.size > 0 && (
-        <div className="sticky bottom-4 mt-4 mx-auto w-fit card px-5 py-3 flex items-center gap-4 shadow-card" role="status">
+      {picked.size > 0 && (
+        <div className="sticky bottom-4 mt-4 mx-auto w-fit max-w-full card px-5 py-3 flex flex-wrap items-center gap-3 shadow-card" role="status">
           <span className="text-[14px]">{picked.size} selected</span>
-          <button
-            className={btn("primary", "sm")}
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                const r = await bulkCreateLeads([...picked]);
-                setPicked(new Set());
-                setNotice(`${r.created} added to the pipeline${r.skipped ? `. ${r.skipped} already had a lead.` : "."}`);
-              })
-            }
-          >
-            <Funnel className="w-4 h-4" /> Add to pipeline
-          </button>
+          {(labels.data?.length ?? 0) > 0 && (
+            <>
+              <select
+                aria-label="Add a label to the selected contacts"
+                value=""
+                disabled={busy}
+                onChange={(e) => e.target.value && void bulk({ add: [e.target.value] })}
+                className="h-9 rounded-xl bg-surface-2 px-3 text-[13.5px]"
+              >
+                <option value="">Add label…</option>
+                {labels.data!.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Remove a label from the selected contacts"
+                value=""
+                disabled={busy}
+                onChange={(e) => e.target.value && void bulk({ remove: [e.target.value] })}
+                className="h-9 rounded-xl bg-surface-2 px-3 text-[13.5px]"
+              >
+                <option value="">Remove label…</option>
+                {labels.data!.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          {pipeline?.isManager && (
+            <button
+              className={btn("primary", "sm")}
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  const r = await bulkCreateLeads([...picked]);
+                  setPicked(new Set());
+                  setNotice(`${r.created} added to the pipeline${r.skipped ? `. ${r.skipped} already had a lead.` : "."}`);
+                })
+              }
+            >
+              <Funnel className="w-4 h-4" /> Add to pipeline
+            </button>
+          )}
           <button className={btn("ghost", "sm")} onClick={() => setPicked(new Set())}>
             Clear
           </button>
@@ -397,6 +505,7 @@ export function Contacts({
           </button>
         </div>
       )}
+      {canManageLabels && <LabelManager open={managing} onClose={() => setManaging(false)} />}
       {pipeline && (
         <NewLeadSheet
           open={!!leadFor}

@@ -176,6 +176,8 @@ export interface ChatThread {
   isSnoozed?: boolean;
   isClosed?: boolean;
   tags: string[];
+  /** The labels on the person this chat is with. Updates pushed over the socket leave this out. */
+  labels?: { id: string; name: string; color: string }[];
   lastMessage: {
     text: string;
     timestamp: string;
