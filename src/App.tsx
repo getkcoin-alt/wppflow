@@ -42,6 +42,7 @@ import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
 import { BillingPage } from "./components/billing/BillingPage";
+import { Reports } from "./components/reports/Reports";
 import { NewChatSheet, type NewChatPerson } from "./components/user/NewChatSheet";
 import { NO_EXTRA, type InboxExtraFilters } from "./components/user/InboxFilters";
 import { useLabels } from "./components/labels/useLabels";
@@ -303,6 +304,9 @@ export function App() {
       else if (n.type === "lead_task") {
         setView("user");
         setTab("pipeline");
+      } else if (n.type === "report") {
+        setView("user");
+        setTab("reports");
       } else if (n.type === "subscription") {
         // the renewal, the invoices and the pay buttons are under Team, Plans & Billing
         setView("admin");
@@ -933,6 +937,9 @@ export function App() {
                 }).catch(() => {});
               }}
             />
+          )}
+          {view === "user" && tab === "reports" && manager && (
+            <Reports sessions={sessions} currentUserId={user?.id} onOpenChat={(id) => openConversationRef.current(id)} />
           )}
           {view === "user" && tab === "dashboard" && (
             <Dashboard

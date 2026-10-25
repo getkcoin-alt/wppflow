@@ -4,6 +4,7 @@ import {
   AtSign,
   Bell,
   CalendarClock,
+  BarChart3,
   CreditCard,
   Funnel,
   NotebookPen,
@@ -22,6 +23,7 @@ const ICON: Record<string, typeof Bell> = {
   lead: Funnel,
   lead_task: CalendarClock,
   subscription: CreditCard,
+  report: BarChart3,
 };
 
 export function NotificationBell({

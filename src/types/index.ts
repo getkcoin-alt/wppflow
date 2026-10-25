@@ -276,7 +276,7 @@ export interface ClusterMetrics {
   systemStatus: "healthy" | "degraded" | "maintenance";
 }
 
-export type NotificationType = "note" | "mention" | "assignment" | "session" | "lead" | "lead_task" | "subscription";
+export type NotificationType = "note" | "mention" | "assignment" | "session" | "lead" | "lead_task" | "subscription" | "report";
 export interface AppNotification {
   id: string;
   type: NotificationType;

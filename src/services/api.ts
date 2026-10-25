@@ -920,19 +920,102 @@ export const verifyAutopaySetup = (data: { razorpay_payment_id: string; razorpay
 export const stopAutopay = () => apiDelete("/api/billing/autopay");
 export const scheduleBillingChange = (plan: string) => apiPost("/api/billing/downgrade", { plan });
 export const keepBillingPlan = () => apiDelete("/api/billing/downgrade");
-// The invoice is a PDF behind the login, so it is fetched with the token and saved from memory.
-export async function downloadInvoice(id: string, number: string) {
+// Files behind the login (an invoice, a spreadsheet) are fetched with the token and saved from memory.
+export async function downloadFile(path: string, filename: string, failure = "The file could not be downloaded. Please try again.") {
   const headers: Record<string, string> = {};
   const token = getStoredToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const tenant = getStoredTenantId();
   if (tenant) headers["X-Tenant-Id"] = tenant;
-  const res = await fetch(resolveEndpoint(`/api/billing/invoices/${encodeURIComponent(id)}/pdf`), { headers, credentials: "include", cache: "no-store" });
-  if (!res.ok) throw new Error("The invoice could not be downloaded. Please try again.");
+  const res = await fetch(resolveEndpoint(path), { headers, credentials: "include", cache: "no-store" });
+  if (!res.ok) throw new Error(failure);
   const url = URL.createObjectURL(await res.blob());
   const link = document.createElement("a");
   link.href = url;
-  link.download = `Scriwo-invoice-${number.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`;
+  link.download = filename;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+export const downloadInvoice = (id: string, number: string) =>
+  downloadFile(`/api/billing/invoices/${encodeURIComponent(id)}/pdf`, `Scriwo-invoice-${number.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`, "The invoice could not be downloaded. Please try again.");
+
+
+// ── Reports: how fast the team answers ────────────────────────────────────────────────────────────
+export interface ReplyStats {
+  answered: number;
+  /** false when too few chats were answered for a median to mean anything */
+  enoughData: boolean;
+  medianSeconds: number | null;
+  p90Seconds: number | null;
+  meanSeconds: number | null;
+}
+export interface AgentReport extends ReplyStats {
+  rank: number | null;
+  userId: number | null;
+  name: string;
+  team: string;
+  withinSlaPercent: number | null;
+  chatsHandled: number;
+  repliesSent: number;
+  slaMinutes: number;
+}
+export interface WaitingChat {
+  conversationId: string;
+  contact: string;
+  session: string;
+  assignedTo: string;
+  since: string;
+  waitingSeconds: number;
+}
+export interface ReportSettings {
+  slaMinutes: number;
+  dailyInApp: boolean;
+  dailyEmail: boolean;
+  teams: Record<string, number>;
+}
+export interface TeamResponseReport {
+  range: { from: string; to: string };
+  timeNote: string;
+  minSample: number;
+  settings: ReportSettings;
+  teams: string[];
+  totals: ReplyStats & { withinSlaPercent: number | null; waiting: number };
+  agents: AgentReport[];
+  waiting: WaitingChat[];
+  daily: ({ date: string } & ReplyStats)[];
+}
+export interface ReportFilters {
+  from: string;
+  to: string;
+  team?: string;
+  sessionName?: string;
+}
+const reportQuery = (f: object) => {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(f) as [string, string | number | undefined][]) if (v !== undefined && v !== "") q.set(k, String(v));
+  return q.toString();
+};
+export const fetchTeamResponse = (f: ReportFilters): Promise<TeamResponseReport> => apiGet(`/api/reports/team-response?${reportQuery(f)}`);
+export const fetchAgentEpisodes = async (f: ReportFilters & { userId: number }): Promise<{ conversationId: string; contact: string; session: string; asked: string; replied: string; seconds: number }[]> =>
+  (await apiGet(`/api/reports/team-response/episodes?${reportQuery(f)}`)).episodes;
+export const exportTeamResponse = (f: ReportFilters) => downloadFile(`/api/reports/team-response?${reportQuery({ ...f, format: "csv" })}`, `reply-times-${f.from}-to-${f.to}.csv`);
+export const exportAgentEpisodes = (f: ReportFilters & { userId: number }) => downloadFile(`/api/reports/team-response/episodes?${reportQuery({ ...f, format: "csv" })}`, `reply-times-detail.csv`);
+export interface DailyReport {
+  date: string;
+  newChats: number;
+  received: number;
+  replied: number;
+  answered: number;
+  medianSeconds: number | null;
+  withinSlaPercent: number | null;
+  waitingNow: number;
+  topAgent: { name: string; answered: number } | null;
+  numbers: { session: string; label: string; team: string; newChats: number; chatsActive: number; received: number; replied: number }[];
+  teams: { team: string; answered: number; repliesSent: number; people: number }[];
+  agents: AgentReport[];
+}
+export const fetchDailyReport = (date: string): Promise<DailyReport> => apiGet(`/api/reports/daily?date=${encodeURIComponent(date)}`);
+export const fetchDailyChats = async (f: { date: string; sessionName?: string; team?: string; userId?: number }): Promise<{ id: string; contact: string; session: string; assignedTo: string; received: number; replied: number; repliedBy: string | null; lastAt: string }[]> =>
+  (await apiGet(`/api/reports/daily/chats?${reportQuery(f)}`)).chats;
+export const fetchReportSettings = async (): Promise<ReportSettings> => (await apiGet("/api/reports/settings")).settings;
+export const saveReportSettings = async (data: Partial<ReportSettings>): Promise<ReportSettings> => (await apiPut("/api/reports/settings", data)).settings;

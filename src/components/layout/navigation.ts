@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bot,
   Code2,
   Contact,
@@ -18,7 +19,8 @@ export type UserSubTab =
   | "campaigns"
   | "contacts"
   | "pipeline"
-  | "automations";
+  | "automations"
+  | "reports";
 export type AdminSubTab = "users" | "billing" | "cluster" | "audit";
 export type DevSubTab = "docs" | "webhooks" | "sdks" | "keys";
 export type View = "user" | "admin" | "developer";
@@ -85,6 +87,14 @@ export const NAV: NavItem[] = [
     icon: LayoutDashboard,
     view: "user",
     tab: "dashboard",
+  },
+  {
+    key: "reports",
+    label: "Reports",
+    icon: BarChart3,
+    view: "user",
+    tab: "reports",
+    manager: true,
   },
 ];
 export const NAV_SECONDARY: NavItem[] = [
