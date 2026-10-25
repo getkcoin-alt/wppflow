@@ -1018,6 +1018,8 @@ export function App() {
           {view === "user" && tab === "contacts" && (
             <Contacts
               canManageLabels={manager}
+              usage={capabilities.data?.usage}
+              onOpenPlan={planAction}
               pipeline={locked("leads") ? undefined : { teammates: team.data?.members || [], isManager: manager, aiAvailable: false }}
               onSelectChat={(person) => {
                 const usable = sessions.filter((x) => x.status === "CONNECTED");
@@ -1132,6 +1134,7 @@ export function App() {
                   plan={capabilities.data?.plan}
                   numbersLimit={capabilities.data?.numbersLimit}
                   numbersUsed={sessionsQuery.data?.length}
+                  usage={capabilities.data?.usage}
                   ai={capabilities.data?.ai}
                   subscription={capabilities.data?.subscription}
                 />

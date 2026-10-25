@@ -1,6 +1,6 @@
 import { Check, Minus } from "lucide-react";
 import { Pill } from "../ui/Page";
-import type { AiStatus } from "../../services/api";
+import type { AiStatus, PlanUsage, UsageRow } from "../../services/api";
 import { describeSubscription, type Subscription } from "../../utils/subscription";
 
 // What the company's plan includes, so owners can see it instead of finding out from a locked screen.
@@ -63,14 +63,70 @@ function AiUsage({ ai }: { ai: AiStatus }) {
   );
 }
 
+const BAR = { ok: "bg-ok", near: "bg-warn", full: "bg-danger", unlimited: "bg-ok" } as const;
+
+// One limit: how much is used, as a bar that turns amber at 80% and red at the limit.
+function UsageLine({ label, row, note }: { label: string; row: UsageRow; note?: string }) {
+  if (row.limit === null) return null;
+  const percent = Math.min(100, Math.round((row.used / Math.max(row.limit, 1)) * 100));
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[13.5px] text-fg-2">{label}</p>
+        <p className="num text-[15px] text-fg">
+          <span className={`font-semibold ${row.state === "full" ? "text-danger" : row.state === "near" ? "text-warn" : ""}`}>{row.used.toLocaleString()}</span> of {row.limit.toLocaleString()}
+        </p>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-surface-2 overflow-hidden" role="img" aria-label={`${label}: ${percent}% of the plan's limit used`}>
+        <div className={`h-full rounded-full transition-[width] duration-700 ${BAR[row.state]}`} style={{ width: `${percent}%` }} />
+      </div>
+      {note && <p className="mt-1.5 text-[12.5px] text-fg-3">{note}</p>}
+    </div>
+  );
+}
+
+// Contacts and broadcasts against what the plan allows. Nothing shows for a plan with no limit on either.
+export function PlanUsageBlock({ usage }: { usage?: PlanUsage }) {
+  if (!usage || (usage.contacts.limit === null && usage.broadcasts.limit === null)) return null;
+  const { contacts, broadcasts } = usage;
+  return (
+    <div className="mt-5 border-t border-line pt-4 space-y-4" data-testid="plan-usage">
+      <UsageLine label="Contacts" row={contacts} />
+      <UsageLine label="Broadcasts started this month" row={broadcasts} note={`Starts again on ${broadcasts.resets}.`} />
+      {contacts.state === "near" && (
+        <p className="rounded-2xl bg-warn/10 text-warn px-4 py-3 text-[14px]" role="status">
+          You are using {contacts.used.toLocaleString()} of your {contacts.limit!.toLocaleString()} contacts. Choose a bigger plan below before you reach the limit.
+        </p>
+      )}
+      {contacts.state === "full" && (
+        <p className="rounded-2xl bg-danger/10 text-danger px-4 py-3 text-[14px]" role="alert">
+          You have reached your contact limit. Your team can't add more until you remove some or choose a bigger plan. Customers can still message you and nothing is deleted.
+        </p>
+      )}
+      {broadcasts.state === "full" && (
+        <p className="rounded-2xl bg-danger/10 text-danger px-4 py-3 text-[14px]" role="alert">
+          You have started all {broadcasts.limit} broadcasts your plan includes this month. You can start more from {broadcasts.resets}, or choose a bigger plan below.
+        </p>
+      )}
+      {broadcasts.state === "near" && (
+        <p className="rounded-2xl bg-warn/10 text-warn px-4 py-3 text-[14px]" role="status">
+          You have started {broadcasts.used} of your {broadcasts.limit} broadcasts this month.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function PlanCard({
   plan,
   numbersLimit,
   numbersUsed,
   ai,
   subscription,
+  usage,
 }: {
   plan?: PlanInfo;
+  usage?: PlanUsage;
   numbersLimit?: number | null;
   numbersUsed?: number;
   ai?: AiStatus;
@@ -132,6 +188,7 @@ export function PlanCard({
           );
         })}
       </ul>
+      <PlanUsageBlock usage={usage} />
       {ai && plan.features.ai !== false && <AiUsage ai={ai} />}
       {plan.restricted && Object.values(plan.features).some((v) => !v) && (
         <p className="mt-4 text-[13px] text-fg-3">

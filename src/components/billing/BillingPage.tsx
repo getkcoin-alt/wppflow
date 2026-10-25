@@ -18,6 +18,7 @@ import {
   stopAutopay,
   verifyAutopaySetup,
   type AiStatus,
+  type PlanUsage,
   type BillingAutopay,
   type BillingOrder,
   type BillingOverview,
@@ -130,12 +131,14 @@ export function BillingPage({
   numbersLimit,
   numbersUsed,
   ai,
+  usage,
   subscription,
 }: {
   plan?: PlanInfo;
   numbersLimit?: number | null;
   numbersUsed?: number;
   ai?: AiStatus;
+  usage?: PlanUsage;
   subscription?: Subscription;
 }) {
   const qc = useQueryClient();
@@ -173,7 +176,7 @@ export function BillingPage({
           <Notice tone={notice.tone}>{notice.text}</Notice>
         </div>
       )}
-      <PlanCard plan={plan} numbersLimit={numbersLimit} numbersUsed={numbersUsed} ai={ai} subscription={subscription} />
+      <PlanCard plan={plan} numbersLimit={numbersLimit} numbersUsed={numbersUsed} ai={ai} subscription={subscription} usage={usage} />
       {overview.error && <Notice tone="error">{(overview.error as Error).message}</Notice>}
       {o && !o.payments.configured && (
         <div className="rounded-2xl bg-surface-2 px-4 py-3 text-[14px] text-fg-2" role="note">

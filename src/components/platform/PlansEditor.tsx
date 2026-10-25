@@ -20,6 +20,8 @@ function PlanForm({ plan }: { plan: PlanChoice }) {
     name: plan.name,
     numbers: plan.numbers === null ? "" : String(plan.numbers),
     seats: plan.seats === null ? "" : String(plan.seats),
+    maxContacts: plan.maxContacts == null ? "" : String(plan.maxContacts),
+    maxBroadcasts: plan.maxBroadcasts == null ? "" : String(plan.maxBroadcasts),
     isActive: plan.isActive,
     features: plan.features.filter((f) => f.included).map((f) => f.key),
     prices: Object.fromEntries(
@@ -41,6 +43,8 @@ function PlanForm({ plan }: { plan: PlanChoice }) {
         name: form.name,
         numbers: form.numbers.trim() === "" ? null : Number(form.numbers),
         seats: form.seats.trim() === "" ? null : Number(form.seats),
+        maxContacts: form.maxContacts.trim() === "" ? null : Number(form.maxContacts),
+        maxBroadcasts: form.maxBroadcasts.trim() === "" ? null : Number(form.maxBroadcasts),
         isActive: form.isActive,
         features: form.features,
         ...(free
@@ -85,6 +89,12 @@ function PlanForm({ plan }: { plan: PlanChoice }) {
         </Field>
         <Field label="People" hint="Blank: no limit.">
           <input aria-label={`${plan.id} people`} type="number" min={1} max={1000} value={form.seats} onChange={(e) => setForm({ ...form, seats: e.target.value })} className={inputCls} />
+        </Field>
+        <Field label="Contacts" hint="Blank: no limit. Customers who write in are never turned away.">
+          <input aria-label={`${plan.id} contacts`} type="number" min={1} max={100000000} value={form.maxContacts} onChange={(e) => setForm({ ...form, maxContacts: e.target.value })} className={inputCls} />
+        </Field>
+        <Field label="Broadcasts a month" hint="Blank: no limit. Counted when one is first started.">
+          <input aria-label={`${plan.id} broadcasts a month`} type="number" min={1} max={100000} value={form.maxBroadcasts} onChange={(e) => setForm({ ...form, maxBroadcasts: e.target.value })} className={inputCls} />
         </Field>
       </div>
       <fieldset className="mt-4">

@@ -11,6 +11,7 @@ import {
   bulkCreateLeads,
   applyLabels,
   type Label,
+  type PlanUsage,
 } from "../../services/api";
 import { LabelChip } from "../labels/LabelChip";
 import { LabelFilter } from "../labels/LabelFilter";
@@ -30,8 +31,13 @@ export function Contacts({
   onSelectChat,
   pipeline,
   canManageLabels = false,
+  usage,
+  onOpenPlan,
 }: {
   onSelectChat: (person: NewChatPerson) => void;
+  /** What the plan allows in contacts and how much is used, to warn before the limit */
+  usage?: PlanUsage;
+  onOpenPlan?: () => void;
   /** Owners and administrators can rename, recolour and delete the company's labels */
   canManageLabels?: boolean;
   /** Set when the company's plan has the sales pipeline: adds the "Add to pipeline" actions */
@@ -220,6 +226,20 @@ export function Contacts({
           <Notice tone="error">{error || query.error?.message}</Notice>
         )}
         {notice && <Notice tone="success">{notice}</Notice>}
+        {usage && (usage.contacts.state === "near" || usage.contacts.state === "full") && (
+          <div role={usage.contacts.state === "full" ? "alert" : "status"} className={`rounded-2xl px-4 py-3 text-[14px] flex flex-wrap items-center justify-between gap-3 ${usage.contacts.state === "full" ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}>
+            <span>
+              {usage.contacts.state === "full"
+                ? `You have reached the ${usage.contacts.limit!.toLocaleString()} contacts your ${usage.plan} plan includes. You can't add more until you remove some or choose a bigger plan. Customers can still message you.`
+                : `You are using ${usage.contacts.used.toLocaleString()} of the ${usage.contacts.limit!.toLocaleString()} contacts your ${usage.plan} plan includes.`}
+            </span>
+            {onOpenPlan && (
+              <button type="button" onClick={onOpenPlan} className="underline font-medium">
+                See plans
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <Sheet

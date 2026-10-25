@@ -484,6 +484,7 @@ export interface PlanChoice {
   isActive: boolean;
   trialDays: number;
   maxContacts: number | null;
+  maxBroadcasts: number | null;
   taxMode: "exclusive" | "inclusive";
   /** Price per billing interval and currency, in paise or fils */
   prices: PlanPrice[];
@@ -511,6 +512,7 @@ export const updatePlan = (
     numbers: number | null;
     seats: number | null;
     maxContacts: number | null;
+    maxBroadcasts: number | null;
     trialDays: number;
     isActive: boolean;
     features: string[];
@@ -1142,3 +1144,15 @@ export const fetchSupportSection = async <T,>(companyId: string, section: Suppor
   (await apiGet(`/api/admin/companies/${encodeURIComponent(companyId)}/support/${section}`)).data;
 /** What the company itself can read: every time Scriwo support looked at its account. */
 export const fetchSupportAccess = async (): Promise<SupportSession[]> => (await apiGet("/api/workspace/support-access")).sessions;
+
+/** What the plan allows in contacts and broadcasts, and how much is used: "near" from 80%, "full" at the limit. */
+export interface UsageRow {
+  used: number;
+  limit: number | null;
+  state: "unlimited" | "ok" | "near" | "full";
+}
+export interface PlanUsage {
+  plan: string;
+  contacts: UsageRow;
+  broadcasts: UsageRow & { resets: string };
+}
