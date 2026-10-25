@@ -1,6 +1,6 @@
 # What the website promises, and what backs it
 
-Checked on 22 October 2026 against the code and the automated tests. "Test" means a named automated test
+Checked on 22 October 2026 against the code and the automated tests; updated on 25 October 2026 for task board 1.2. "Test" means a named automated test
 that fails if the behaviour breaks. "Code" means the behaviour is implemented and was read in the code, with
 no dedicated test yet.
 
@@ -65,9 +65,11 @@ claim that is about selling. Every line is covered by an automated test.
 | Riwo can suggest a title, value, next step and follow-up for a new lead; nothing is saved until a person confirms, and the customer's number is never sent | `ai-assistant.test.js`, `lead_sheets.test.tsx` |
 | Part of the Growth plan and above; locked screens and server both enforce it | `ai-assistant.test.js`, `plans-admin.test.js` |
 
-**Not built yet** (phase 2): reports for managers (win rate, first-reply time, leaderboard), round-robin assignment,
-"no reply in two days" alerts, broadcasts to a step, lead webhooks and an API key scope for leads, custom fields,
-more than one pipeline. The pricing page does not mention the pipeline yet.
+**Built since** (25 October, task board 1.2): reply-time reports and a leaderboard, round-robin and least-busy
+assignment of new chats, follow-ups on chats with no lead and escalation of overdue ones (see "Built since the
+pipeline"). **Not built yet:** win-rate reports, "no reply in two days" alerts on a lead, broadcasts to a step, lead
+webhooks and an API key scope for leads, custom fields, more than one pipeline. The pricing page does not mention the
+pipeline yet.
 
 ## Plans
 
@@ -95,22 +97,23 @@ Checked again on 25 October 2026 (first on 22 October, after the platform admin 
 
 ## Subscription terms: what the legal pages promise, and what the product does
 
-The terms of service, the refund and cancellation policy and the pricing page describe a subscription. Payments are
-taken outside the product (an invoice or a payment link), so the platform admin records each one, and the period it
-covers gives the company its renewal date. Built on 25 October 2026 (`subscriptionService.js`, migration 017).
+The terms of service, the refund and cancellation policy and the pricing page describe a subscription. Payments can be
+recorded by the platform admin (an invoice or a payment link) or, once the Razorpay keys are set, made online by the
+company; either way the period paid for gives the company its renewal date. Built on 25 October 2026
+(`subscriptionService.js`, migration 017; online payment in `billingService.js`, migration 020).
 
 | The pages say | Status | What the product does |
 |---|---|---|
 | Paid plans are billed monthly or annually, in advance | Test | Each company has a billing cycle and a period (start and renewal date), set by recording a payment; the payments are kept with plan, amount and reference (`subscription.test.js`) |
 | The plan renews at the end of each period, or we send an invoice or payment link before each period | Test, partly | Owners see "Renews on" in Your plan; owners and administrators get an in-app notice once, 14 days before; the platform list shows who renews in 14 days. The invoice or payment link itself is still sent by hand |
-| If a payment fails or is overdue we may suspend paid features after notice | Test, by design not automatic | An overdue company is flagged on the platform list, and told once in the app. Nothing is switched off by a clock: suspending stays a person's decision |
+| If a payment fails or is overdue we may suspend paid features after notice | Test | Updated 25 October (owner decision: seven days' grace). The company is flagged and told when it is overdue; seven days after the renewal date its paid features switch off and it has what Free has; nothing is deleted and paying brings everything back at once (`subscription.test.js`, `plan-catalogue.test.js`) |
 | Cancel at any time; the plan stays active until the end of the period paid for | Test | "Change at period end" to Free: the plan stays until the renewal date, then the company is on Free; its conversations and numbers are kept |
-| Upgrades take effect straight away | Test | Changing the plan applies at once (`plans-admin.test.js`). The pro-rated difference is invoiced by hand |
+| Upgrades take effect straight away | Test | Changing the plan applies at once (`plans-admin.test.js`). Paying online for a bigger plan credits the unused days of the current one; a payment recorded by hand is invoiced as agreed (`billing.test.js`) |
 | Downgrades take effect from the next billing period | Test | A smaller plan can be scheduled for the end of the period; paying for the next period names the plan it is for |
 | Accounts are activated within one working day | Service | Not software |
 | 30 days' notice before a price change | Service | Not software |
 
-Staff never see billing. The company sees its plan, cycle and dates, not what was paid.
+Staff never see billing. Owners and administrators see the plan, cycle and dates, every payment and every invoice (task board decision 6).
 
 ## AI usage in the subscription
 
@@ -119,6 +122,37 @@ Staff never see billing. The company sees its plan, cycle and dates, not what wa
 | Your plan shows Riwo requests today against the allowance, whether it is the plan's or agreed for the company, when it starts again, and the month so far | `ai-assistant.test.js`, `platform_plans.test.tsx` |
 | The platform list shows each company's Riwo use (today, this month) and its allowance, or that Riwo is not in its plan | `plans-admin.test.js`, `platform_plans.test.tsx` |
 | The platform admin can agree a daily allowance when adding a company or changing its plan, with the old value in the audit log | `plans-admin.test.js` |
+
+## Online payment, invoices and plan limits
+
+Built on 25 October 2026 (task board 1.2). Everything here is covered by an automated test **against a simulated
+Razorpay**. Nothing has been run against Razorpay itself: online payment stays off until the keys exist
+(`/health` shows `payments.configured`).
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| Monthly and yearly prices are read from the database; a year costs ten months; the platform admin edits them without a release | Test | `plan-catalogue.test.js`, `plans-admin.test.js`, `plan_catalogue.test.tsx`, `platform_plans.test.tsx` |
+| The price, the credit for unused days and the 18% GST are worked out on the server; the browser never says what something costs | Test | `billing.test.js` |
+| A payment activates a plan once, however many times the browser and the webhook report it, in either order; a wrong amount, currency or company, a tampered signature and a failed payment activate nothing | Test | `billing.test.js` (the checks were broken on purpose to confirm the tests fail) |
+| A webhook with a bad signature is refused; the same event twice does nothing the second time | Test | `billing.test.js` |
+| A lost webhook is recovered by a job that asks Razorpay | Test | `billing.test.js` |
+| GST invoices: gapless numbers, CGST + SGST for Uttar Pradesh buyers and IGST elsewhere, PDF, only the company's own invoices | Test | `billing.test.js`. The accountant still has to confirm the fields and the service code |
+| Autopay is opt-in and for monthly plans only; one charge is one period | Test | `billing.test.js` |
+| AED: "Online payment in AED is coming soon" on the pricing page and in the plan comparison | Code | `website/src/content/plans.ts`, `PlanCompare.tsx` |
+| A plan can limit contacts and broadcasts started in a month; the limit is enforced on the server and warned about from 80%; a customer's message is never refused | Test | `plan-limits.test.js`, `plan_limits.test.tsx`. No plan has a limit set today and the pricing page advertises none |
+| The pricing page's FAQ "Can I pay online?" | Needs a change | It still says online payment is "being added for India first". Change it when the keys are live |
+
+## Built since the pipeline
+
+| Behaviour | Evidence |
+|---|---|
+| Coloured labels, filters by label, New chat for a typed number, contact names that keep WhatsApp's name apart | `labels-and-names.test.js`, `labels_names_newchat.test.tsx` |
+| Reply-time reports: median and 90th percentile, share inside a target, leaderboard, waiting chats, CSV, daily summary for owners | `reports.test.js`, `reports_page.test.tsx` |
+| Waiting and overdue chat filters, pinned chats, "is writing a reply" warning, follow-ups on chats with no lead, escalation | `inbox-followups.test.js`, `inbox_followups.test.tsx` |
+| Number health: heartbeat, failed and waiting sends, alerts to the owner and managers | `number-health.test.js`, `batch3_screens.test.tsx`. The heartbeat asks WhatsApp Web's `isConnected()`; to be watched on the live server |
+| Automatic assignment of new chats: in turn or least busy, away switch, hours, limits, returning customers | `assignment-rules.test.js`, `batch3_screens.test.tsx` |
+| Platform console: totals, every company's number health, billing audit, support access written down and readable by the company | `platform-console.test.js`, `batch3_screens.test.tsx` |
+| Summaries say how the customer sounds | `ai-assistant.test.js`, `riwo.test.tsx` |
 
 ## What to build next
 
@@ -131,11 +165,12 @@ Staff never see billing. The company sees its plan, cycle and dates, not what wa
    them under Growth, but they work on every plan.
 4. **Reminders by email** to owners, and a weekly list of renewals and overdue companies to the sales inbox. Today
    the reminders are in the app only.
-5. **A choice on late payment**: grace days, then a flag that switches paid features off. Left out on purpose until
-   there is a payment record to trust.
-6. **Online payment** (`PAYMENTS_LIVE` is false). The records above are what a payment provider would update.
+5. **Switch on online payment**: Razorpay test keys, the test-mode run, live keys; then change the pricing FAQ and the
+   terms wording. **AED online payment** waits for the international gateway.
+6. **A staging smoke test and a restore drill** for the database backup.
 
 ## Not software
 
 "Onboarding call for your team", "Dedicated onboarding" and "Help connecting your systems" are services, not
-features. Online payments are not live (`PAYMENTS_LIVE = false`); every plan is set up by the onboarding team.
+features. Online payment is built but off until the Razorpay keys are set (the website flag `PAYMENTS_LIVE` is still
+false); until then every plan is set up by the onboarding team and payments are recorded by hand.
