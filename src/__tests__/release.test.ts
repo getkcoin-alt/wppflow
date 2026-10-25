@@ -69,7 +69,33 @@ it("still holds the release when the backend stays unreachable, after three trie
       throw new Error("offline");
     }),
   ).toBe(0);
-  expect(calls).toBe(3);
+  expect(calls).toBe(6);
+});
+it("reads the contract through the app's own address when the server refuses the build machine", async () => {
+  const asked: string[] = [];
+  const lines: string[] = [];
+  expect(
+    await releaseExitCode(
+      prod,
+      async (url: string) => {
+        asked.push(url);
+        if (url.includes("hstgr.cloud")) throw Object.assign(new Error("fetch failed"), { cause: { code: "ECONNRESET" } });
+        return new Response(READY);
+      },
+      (line: string) => lines.push(line),
+    ),
+  ).toBe(1);
+  expect(asked).toEqual(["https://srv1628639.hstgr.cloud/health", "https://app.scriwo.com/health"]);
+  expect(lines[0]).toContain("ECONNRESET");
+  expect(lines[1]).toContain("answered: ready");
+});
+it("a backend that is not ready through the app's address holds the release too", async () => {
+  expect(
+    await releaseExitCode(prod, async (url: string) => {
+      if (url.includes("hstgr.cloud")) return new Response("forbidden", { status: 403 });
+      return new Response(JSON.stringify({ status: "ok", apiContract: 2 }));
+    }),
+  ).toBe(0);
 });
 it("holds at once, without retrying, when the backend answers that it is not ready", async () => {
   let calls = 0;

@@ -23,7 +23,7 @@ and the status check **Frontend checks**. Vercel deploys production when `main` 
 
 - Every branch and pull request gets a preview URL; `main` is published to production automatically.
 - `vercel.json` runs `scripts/release-check.mjs` as the ignore step: production is held while the backend at
-  `https://srv1628639.hstgr.cloud/health` is unreachable or reports a different `apiContract`.
+  `https://srv1628639.hstgr.cloud/health` is unreachable or reports a different `apiContract`. If the server refuses the build machine, the check reads the same contract through `https://app.scriwo.com/health`, and the build log says why each address failed.
 - `/api/*` and `/health` are proxied to the backend; no secrets belong in `VITE_*` variables.
 - Roll back from the Vercel dashboard (Deployments → Promote a previous deployment).
 
