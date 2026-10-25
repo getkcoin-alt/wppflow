@@ -36,6 +36,7 @@ import { Campaigns } from "./components/user/Campaigns";
 import { Automations } from "./components/user/Automations";
 import { Pipeline } from "./components/pipeline/Pipeline";
 import { LeadPanel } from "./components/pipeline/LeadPanel";
+import { SupportAccessCard } from "./components/admin/SupportAccessCard";
 import { Dashboard } from "./components/user/Dashboard";
 import { FeatureLocked } from "./components/ui/FeatureLocked";
 import { UserManagement } from "./components/admin/UserManagement";
@@ -124,6 +125,23 @@ export function App() {
     enabled,
     refetchInterval: 30000,
   });
+  // How each number is doing, while the Numbers screen is open
+  const numberHealth = useQuery({
+    queryKey: ["number-health", tenant],
+    queryFn: api.fetchNumberHealth,
+    enabled: enabled && view === "user" && tab === "sessions",
+    refetchInterval: 30000,
+  });
+  // The person's own "I'm taking new chats" switch, shown only if the company put them in its rotation
+  const myAvailability = useQuery({
+    queryKey: ["my-availability", tenant],
+    queryFn: api.fetchMyAvailability,
+    enabled: enabled && view === "user" && tab === "inbox",
+  });
+  const healthByNumber = useMemo(
+    () => Object.fromEntries((numberHealth.data?.numbers || []).map((n) => [n.sessionName, n])),
+    [numberHealth.data],
+  );
   const workspaces = useQuery({
     queryKey: ["workspaces", user?.id],
     queryFn: () => api.apiGet("/api/auth/workspaces"),
@@ -324,6 +342,10 @@ export function App() {
       } else if (n.type === "report") {
         setView("user");
         setTab("reports");
+      } else if (n.type === "support") {
+        // the list of support sessions is under Team
+        setView("admin");
+        setAdminTab("users");
       } else if (n.type === "subscription") {
         // the renewal, the invoices and the pay buttons are under Team, Plans & Billing
         setView("admin");
@@ -896,6 +918,14 @@ export function App() {
               hasOlderMessages={Boolean(history.hasNextPage)}
               onLoadOlder={() => void history.fetchNextPage()}
               onFilterChange={changeFilter}
+              availability={myAvailability.data}
+              onSetAvailable={(available) => {
+                void run(async () => {
+                  await api.setMyAvailability(available);
+                  await qc.invalidateQueries({ queryKey: ["my-availability", tenant] });
+                  await qc.invalidateQueries({ queryKey: ["assignment", tenant] });
+                }).catch(() => {});
+              }}
               replyTargetMinutes={capabilities.data?.replyTargetMinutes}
               teams={capabilities.data?.teams}
               typing={typing}
@@ -954,6 +984,7 @@ export function App() {
           {view === "user" && tab === "sessions" && (
             <SessionManager
               canManage={manager}
+              health={healthByNumber}
               sessions={sessions}
               isPairModalOpen={pairOpen}
               setIsPairModalOpen={setPairOpen}
@@ -1080,12 +1111,15 @@ export function App() {
                 }
               />
               {adminTab === "users" && (
-                <UserManagement
-                  canChangeRoles={Boolean(
-                    (user as any).membershipRole === "owner" ||
-                    user.isSuperAdmin,
-                  )}
-                />
+                <>
+                  <UserManagement
+                    canChangeRoles={Boolean(
+                      (user as any).membershipRole === "owner" ||
+                      user.isSuperAdmin,
+                    )}
+                  />
+                  <SupportAccessCard />
+                </>
               )}
               {adminTab === "audit" &&
                 (locked("audit") ? (

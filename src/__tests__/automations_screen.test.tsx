@@ -9,6 +9,9 @@ const api = vi.hoisted(() => ({
   updateAutomation: vi.fn(),
   toggleAutomationApi: vi.fn(),
   removeAutomation: vi.fn(),
+  fetchAssignment: vi.fn(),
+  saveAssignment: vi.fn(),
+  getStoredTenantId: vi.fn(() => "t1"),
 }));
 vi.mock("../services/api", () => api);
 import { Automations } from "../components/user/Automations";
@@ -55,6 +58,8 @@ const useRule = async (name: string) => {
 beforeEach(() => {
   for (const fn of Object.values(api)) fn.mockReset();
   onChanged.mockReset();
+  api.getStoredTenantId.mockReturnValue("t1");
+  api.fetchAssignment.mockResolvedValue({ enabled: false, mode: "round_robin", team: "", sessionNames: [], keepOwner: true, maxOpen: null, useHours: false, timezone: "Asia/Kolkata", workDays: [1, 2, 3, 4, 5], workStart: "09:00", workEnd: "18:00", members: [], teams: [], numbers: [] });
   api.fetchAutomationTemplates.mockResolvedValue({ templates: TEMPLATES });
   api.addAutomation.mockResolvedValue({ automation: saved() });
   api.updateAutomation.mockResolvedValue({ automation: saved() });

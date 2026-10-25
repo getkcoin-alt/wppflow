@@ -780,6 +780,8 @@ export interface AiStatus {
 export interface AiSummary {
   text: string;
   sections: { label: string; text: string }[];
+  /** How the customer sounds in this chat, when Riwo said so */
+  mood?: { label: "positive" | "neutral" | "frustrated" | "urgent"; note: string } | null;
 }
 /** What the connection test found: the AI account, the models available and every attempt. */
 export interface AiTestResult {
@@ -1033,3 +1035,110 @@ export const fetchDailyChats = async (f: { date: string; sessionName?: string; t
   (await apiGet(`/api/reports/daily/chats?${reportQuery(f)}`)).chats;
 export const fetchReportSettings = async (): Promise<ReportSettings> => (await apiGet("/api/reports/settings")).settings;
 export const saveReportSettings = async (data: Partial<ReportSettings>): Promise<ReportSettings> => (await apiPut("/api/reports/settings", data)).settings;
+
+// ── How each WhatsApp number is doing ────────────────────────────────────────────────────────────────────
+export interface NumberHealthRow {
+  sessionName: string;
+  label: string;
+  phone: string | null;
+  status: string;
+  ownerUserId: number | null;
+  ownerName: string | null;
+  lastError: string | null;
+  lastHeartbeatAt: string | null;
+  lastHeartbeatOkAt: string | null;
+  heartbeatFailures: number;
+  heartbeatError: string | null;
+  connectedSince: string | null;
+  downSince: string | null;
+  reconnectAttempts: number;
+  lastReconnectAt: string | null;
+  sends: { sentLast24h: number; failedLast24h: number; failedLastHour: number; totalLastHour: number };
+  queued: { count: number; oldestSeconds: number | null };
+  level: "ok" | "warn" | "down" | "unpaired";
+  problems: { code: "down" | "unresponsive" | "failing" | "stuck"; text: string }[];
+}
+export const fetchNumberHealth = (): Promise<{ scope: "workspace" | "own"; checkedEverySeconds: number; numbers: NumberHealthRow[] }> => apiGet("/api/sessions/health");
+
+// ── Automatic assignment of new chats ───────────────────────────────────────────────────────────────────
+export interface AssignmentSettings {
+  enabled: boolean;
+  mode: "round_robin" | "least_busy";
+  team: string;
+  sessionNames: string[];
+  keepOwner: boolean;
+  maxOpen: number | null;
+  useHours: boolean;
+  timezone: string;
+  /** 0 is Sunday */
+  workDays: number[];
+  workStart: string;
+  workEnd: string;
+  members: { id: number; name: string; role: string; team: string; inRotation: boolean; available: boolean; openChats: number }[];
+  teams: string[];
+  numbers: { sessionName: string; phone: string | null; ownerName: string | null }[];
+}
+export type AssignmentChange = Partial<Omit<AssignmentSettings, "members" | "teams" | "numbers" | "team"> & { team: string; rotation: number[] }>;
+export const fetchAssignment = async (): Promise<AssignmentSettings> => (await apiGet("/api/assignment")).settings;
+export const saveAssignment = async (data: AssignmentChange): Promise<AssignmentSettings> => (await apiPut("/api/assignment", data)).settings;
+export const fetchMyAvailability = (): Promise<{ available: boolean; inRotation: boolean }> => apiGet("/api/assignment/me");
+export const setMyAvailability = (available: boolean): Promise<{ available: boolean }> => apiPut("/api/assignment/me", { available });
+
+// ── The platform console ────────────────────────────────────────────────────────────────────────────────
+export interface PlatformOverview {
+  generatedAt: string;
+  companies: { total: number; active: number; suspended: number; newLast30Days: number; byPlan: Record<string, number>; bySubscription: Record<string, number> };
+  people: { active: number };
+  numbers: { linked: number; connected: number; notConnected: number };
+  messages: { sentLast24h: number; sentLast7Days: number; sentLast30Days: number; receivedLast7Days: number; failedLast7Days: number; activeCompaniesLast7Days: number };
+  ai: { requestsThisMonth: number; tokensThisMonth: number; companiesUsing: number };
+  payments: { last30Days: { currency: string; payments: number; amount: number }[] };
+}
+export const fetchPlatformOverview = async (fresh = false): Promise<PlatformOverview> => (await apiGet(`/api/admin/overview${fresh ? "?fresh=1" : ""}`)).overview;
+export interface PlatformNumberHealth {
+  generatedAt: string;
+  totals: { down: number; warn: number; ok: number; unpaired: number };
+  companies: { id: string; name: string; status: string; counts: { down: number; warn: number; ok: number; unpaired: number }; numbers: NumberHealthRow[] }[];
+}
+export const fetchPlatformNumberHealth = (problemsOnly = false): Promise<PlatformNumberHealth> => apiGet(`/api/admin/number-health${problemsOnly ? "?problems=1" : ""}`);
+export interface BillingAudit {
+  range: { days: number; since: string };
+  payments: { configured: { configured: boolean; mode: string | null }; takings: { currency: string; amount: number; source: string; payments: number }[] };
+  invoices: { currency: string; invoices: number; taxableMinor: number; taxMinor: number; totalMinor: number }[];
+  orders: Record<string, number>;
+  refunds: { currency: string; refunds: number; amountMinor: number }[];
+  exceptions: {
+    amountMismatch: { orderId: string; company: string; companyId: string; totalMinor: number; currency: string; paymentId: string | null; reason: string | null; at: string }[];
+    notSettled: { orderId: string; company: string; companyId: string; totalMinor: number; currency: string; paymentId: string | null; status: string; at: string }[];
+    paidButNoSubscriptionRecord: { orderId: string; company: string; companyId: string; totalMinor: number; currency: string; paymentId: string | null; at: string }[];
+    paymentWithoutInvoice: { paymentId: string; company: string; companyId: string; plan: string; amount: number; currency: string; source: string; at: string }[];
+    webhooksNotProcessed: { eventId: string; event: string; receivedAt: string; attempts: number; result: string | null }[];
+    invoiceNumberGaps: { series: string; missing: number }[];
+    invalidSignatures: { company: string; companyId: string; details: Record<string, unknown>; at: string }[];
+  };
+  exceptionCount: number;
+  events: { id: number; type: string; company: string; actor: string | null; at: string; details: Record<string, unknown> }[];
+}
+export const fetchBillingAudit = async (days = 30): Promise<BillingAudit> => (await apiGet(`/api/admin/billing/audit?days=${days}`)).audit;
+
+export interface SupportSession {
+  id: string;
+  adminName: string;
+  reason: string;
+  startedAt: string;
+  expiresAt: string;
+  endedAt: string | null;
+  active: boolean;
+  actions: { action: string; at: string; detail: Record<string, unknown> }[];
+}
+export const fetchSupportSessions = async (companyId: string): Promise<SupportSession[]> => (await apiGet(`/api/admin/companies/${encodeURIComponent(companyId)}/support`)).sessions;
+export const startSupportSession = async (companyId: string, reason: string, minutes = 60): Promise<SupportSession> =>
+  (await apiPost(`/api/admin/companies/${encodeURIComponent(companyId)}/support`, { reason, minutes })).session;
+export const endSupportSession = (companyId: string): Promise<{ ended: boolean }> => apiDelete(`/api/admin/companies/${encodeURIComponent(companyId)}/support`);
+export type SupportSection = "team" | "numbers" | "activity";
+export interface SupportTeamMember { id: number; name: string; email: string; role: string; team: string; status: string; joinedAt: string }
+export interface SupportActivity { id: number; type: string; actor: string | null; at: string; details: Record<string, unknown> }
+export const fetchSupportSection = async <T,>(companyId: string, section: SupportSection): Promise<T[]> =>
+  (await apiGet(`/api/admin/companies/${encodeURIComponent(companyId)}/support/${section}`)).data;
+/** What the company itself can read: every time Scriwo support looked at its account. */
+export const fetchSupportAccess = async (): Promise<SupportSession[]> => (await apiGet("/api/workspace/support-access")).sessions;

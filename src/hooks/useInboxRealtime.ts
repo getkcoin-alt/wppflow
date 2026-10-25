@@ -111,7 +111,7 @@ export function useInboxRealtime({
         patchMessageStatus(qc, tenant, p.conversationId, p);
       else invalidate("messages");
     };
-    const onSession = () => invalidate("sessions");
+    const onSession = () => invalidate("sessions", "number-health");
     const onSynced = () => void catchUp();
     const onProgress = (p: any) => {
       clearTimeout(clearTimer);

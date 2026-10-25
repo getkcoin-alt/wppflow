@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { WhatsAppSession } from "../../types";
+import type { NumberHealthRow } from "../../services/api";
+import { NumberHealthBlock } from "./NumberHealth";
 import {
   startLiveSession,
   getLiveSessionQr,
@@ -36,6 +38,8 @@ interface SessionManagerProps {
   isPairModalOpen: boolean;
   setIsPairModalOpen: (open: boolean) => void;
   canManage?: boolean;
+  /** How each number is doing, by its name */
+  health?: Record<string, NumberHealthRow>;
 }
 
 const STATUS_UI = (
@@ -57,6 +61,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   isPairModalOpen,
   setIsPairModalOpen,
   canManage = false,
+  health = {},
 }) => {
   const ownsSession = !canManage && sessions.length > 0;
   const [sessionName, setSessionName] = useState("Primary WhatsApp");
@@ -409,6 +414,8 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                     </div>
                   )}
                 </dl>
+
+                {health[sess.sessionKey] && <NumberHealthBlock health={health[sess.sessionKey]} />}
 
                 <div className="mt-6 pt-4 border-t border-line flex items-center justify-between">
                   <button

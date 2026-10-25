@@ -13,6 +13,7 @@ import {
 import { Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
 import { RuleEditor } from "./RuleEditor";
+import { AssignmentRule } from "./AssignmentRule";
 import { blankRule, describeRule, endSentence, withOwnTimezone } from "../../utils/automationText";
 
 type Editing = { rule: RuleDraft; id?: string; hint?: string };
@@ -132,6 +133,8 @@ export function Automations({
           onChanged();
         }}
       />
+
+      <AssignmentRule />
 
       {!automations.length ? (
         <div className="card p-6 mb-8 flex items-start gap-4">

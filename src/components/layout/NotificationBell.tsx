@@ -11,6 +11,7 @@ import {
   Smartphone,
   UserCheck,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import type { AppNotification } from "../../types";
 import { timeAgo } from "../../utils/timeAgo";
@@ -24,6 +25,7 @@ const ICON: Record<string, typeof Bell> = {
   lead_task: CalendarClock,
   subscription: CreditCard,
   report: BarChart3,
+  support: ShieldCheck,
 };
 
 export function NotificationBell({

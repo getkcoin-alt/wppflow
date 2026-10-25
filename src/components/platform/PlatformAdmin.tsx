@@ -22,6 +22,7 @@ import type { Company } from "./types";
 import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
 import { PlansEditor } from "./PlansEditor";
 import { OnlinePayments, useOnlinePayments } from "./OnlinePayments";
+import { BillingAuditSheet, NumberHealthSheet, OverviewSheet, SupportSheet } from "./PlatformConsole";
 import { describeSubscription, needsAttention, type Attention } from "../../utils/subscription";
 
 
@@ -133,7 +134,9 @@ export function PlatformAdmin({
   const theme = useTheme();
   const [adding, setAdding] = useState(false),
     [editingPlans, setEditingPlans] = useState(false),
-    [viewingPayments, setViewingPayments] = useState(false);
+    [viewingPayments, setViewingPayments] = useState(false),
+    [console_, setConsole] = useState<"overview" | "numbers" | "audit" | null>(null),
+    [supportFor, setSupportFor] = useState<Company | null>(null);
   const online = useOnlinePayments();
   const { data, error, isPending } = useQuery<Company[]>({
     queryKey: ["companies"],
@@ -232,6 +235,15 @@ export function PlatformAdmin({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button className={btn("secondary")} onClick={() => setConsole("overview")}>
+              Overview
+            </button>
+            <button className={btn("secondary")} onClick={() => setConsole("numbers")}>
+              Number health
+            </button>
+            <button className={btn("secondary")} onClick={() => setConsole("audit")}>
+              Billing audit
+            </button>
             <button className={btn("secondary")} onClick={() => setEditingPlans(true)}>
               Plans &amp; prices
             </button>
@@ -596,6 +608,9 @@ export function PlatformAdmin({
                       Resend setup link
                     </button>
                   )}
+                  <button disabled={busy} className={btn("ghost", "sm")} aria-label={`Support access for ${c.name}`} onClick={() => setSupportFor(c)}>
+                    Support access
+                  </button>
                 </div>
               </div>
               <dl className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -642,6 +657,10 @@ export function PlatformAdmin({
           ))}
         </ul>
       </main>
+      <OverviewSheet open={console_ === "overview"} onClose={() => setConsole(null)} />
+      <NumberHealthSheet open={console_ === "numbers"} onClose={() => setConsole(null)} />
+      <BillingAuditSheet open={console_ === "audit"} onClose={() => setConsole(null)} />
+      <SupportSheet company={supportFor} onClose={() => setSupportFor(null)} />
     </div>
   );
 }

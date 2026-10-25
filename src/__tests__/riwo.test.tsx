@@ -105,6 +105,32 @@ describe("Riwo in the composer", () => {
     expect(screen.queryByRole("button", { name: "Use this" })).toBeNull();
   });
 
+  it("says how the customer sounds beside the summary, only when Riwo said so", async () => {
+    const withMood = fakeClient({
+      summarize: vi.fn().mockResolvedValue({
+        text: "Wants: a refund\nStatus: waited three days\nMood: Frustrated - waited three days",
+        sections: [
+          { label: "Wants", text: "a refund" },
+          { label: "Status", text: "waited three days" },
+        ],
+        mood: { label: "frustrated", note: "waited three days, asked twice" },
+      }),
+    });
+    const { unmount } = render(<Harness client={withMood} />);
+    open();
+    fireEvent.click(menu().getByRole("button", { name: "Summarize this chat" }));
+    expect(await screen.findByText("a refund")).toBeDefined();
+    expect(screen.getByText("How the customer sounds")).toBeDefined();
+    expect(screen.getByText("frustrated").className).toContain("text-warn");
+    expect(screen.getByText("waited three days, asked twice")).toBeDefined();
+    unmount();
+    render(<Harness client={fakeClient()} />);
+    open();
+    fireEvent.click(menu().getByRole("button", { name: "Summarize this chat" }));
+    expect(await screen.findByText("a 2 bedroom in Marina")).toBeDefined();
+    expect(screen.queryByText("How the customer sounds")).toBeNull();
+  });
+
   it("explains a failure in the server's words and lets the person try again", async () => {
     const suggestReply = vi
       .fn()

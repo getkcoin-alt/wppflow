@@ -86,6 +86,9 @@ interface InboxProps {
   onCompose?: (chatId: string, typing: boolean) => void;
   /** Pin a chat to the top of the list, or take it off */
   onTogglePin?: (chatId: string, pinned: boolean) => void;
+  /** Whether this person takes the chats the company hands out automatically, and their own switch for it */
+  availability?: { available: boolean; inRotation: boolean };
+  onSetAvailable?: (available: boolean) => void;
   /** Opens the New chat dialog */
   onNewChat?: () => void;
   /** Renames the contact in the details panel, or hands the name back to WhatsApp's */
@@ -201,6 +204,8 @@ export const Inbox: React.FC<InboxProps> = ({
   typing = {},
   onCompose,
   onTogglePin,
+  availability,
+  onSetAvailable,
   onNewChat,
   onRenameContact,
   onSetContactLabels,
@@ -505,6 +510,19 @@ export const Inbox: React.FC<InboxProps> = ({
                 ? "1 number connected"
                 : `${connectedSessions.length} numbers connected`}
             </div>
+            {availability?.inRotation && onSetAvailable && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={availability.available}
+                aria-label="Taking new chats"
+                onClick={() => onSetAvailable(!availability.available)}
+                className={`mt-2 h-7 px-3 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5 ring-1 transition ${availability.available ? "bg-ok/10 text-ok ring-ok/30" : "bg-warn/10 text-warn ring-warn/30"}`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden />
+                {availability.available ? "Taking new chats" : "Away: no new chats"}
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1">
           {onNewChat && (

@@ -164,6 +164,8 @@ export function RiwoButton({ riwo, locked = false }: { riwo: Riwo; locked?: bool
   );
 }
 
+// Colours for how a customer sounds: calm ones are green or grey, the ones that need a person soon are warm.
+const MOOD_TONE = { positive: "bg-ok/10 text-ok", neutral: "bg-surface-2 text-fg-2", frustrated: "bg-warn/10 text-warn", urgent: "bg-danger/10 text-danger" } as const;
 const TITLES: Record<Request["kind"], (r: Request) => string> = {
   reply: (r) => `Suggested reply · ${TONES.find((t) => r.kind === "reply" && t.key === r.tone)?.label ?? ""}`,
   improve: (r) => `Improved draft · ${STYLES.find((s) => r.kind === "improve" && s.key === r.style)?.label ?? ""}`,
@@ -249,6 +251,17 @@ export function RiwoTray({
           <X className="w-4 h-4" />
         </button>
       </div>
+      {summary?.mood && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="text-fg-3">How the customer sounds</span>
+          <span className={`inline-flex items-center h-6 px-2.5 rounded-full text-[12px] font-medium capitalize ${MOOD_TONE[summary.mood.label]}`}>{summary.mood.label}</span>
+          {summary.mood.note && (
+            <span className="text-fg-2" dir="auto">
+              {summary.mood.note}
+            </span>
+          )}
+        </p>
+      )}
       {summary && summary.sections.length ? (
         <dl className="mt-3 space-y-2 rounded-2xl bg-surface-2 p-3.5 text-[14px] leading-relaxed">
           {summary.sections.map((s) => (
