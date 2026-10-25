@@ -334,12 +334,12 @@ function Settings({ teams }: { teams: string[] }) {
   const tenant = getStoredTenantId();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["report-settings", tenant], queryFn: fetchReportSettings });
-  const [form, setForm] = useState<{ sla: string; teams: Record<string, string>; app: boolean; email: boolean } | null>(null),
+  const [form, setForm] = useState<{ sla: string; escalate: string; teams: Record<string, string>; app: boolean; email: boolean } | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false);
   const s = q.data;
-  const f = form ?? (s && { sla: String(s.slaMinutes), teams: Object.fromEntries(teams.map((t) => [t, s.teams[t] ? String(s.teams[t]) : ""])), app: s.dailyInApp, email: s.dailyEmail });
+  const f = form ?? (s && { sla: String(s.slaMinutes), escalate: String(s.taskEscalationHours), teams: Object.fromEntries(teams.map((t) => [t, s.teams[t] ? String(s.teams[t]) : ""])), app: s.dailyInApp, email: s.dailyEmail });
   if (q.error) return <Notice tone="error">{(q.error as Error).message}</Notice>;
   if (!f) return <p className="text-[14px] text-fg-3">Loading…</p>;
   const change = (patch: Partial<typeof f>) => {
@@ -357,6 +357,7 @@ function Settings({ teams }: { teams: string[] }) {
         try {
           await saveReportSettings({
             slaMinutes: Number(f.sla),
+            taskEscalationHours: Number(f.escalate),
             dailyInApp: f.app,
             dailyEmail: f.email,
             teams: Object.fromEntries(Object.entries(f.teams).filter(([, v]) => v.trim()).map(([k, v]) => [k, Number(v)])),
@@ -373,6 +374,9 @@ function Settings({ teams }: { teams: string[] }) {
     >
       <Field label="Reply target, in minutes" hint="A chat answered inside this time counts as on target.">
         <input aria-label="Reply target in minutes" type="number" min={1} max={10080} value={f.sla} onChange={(e) => change({ sla: e.target.value })} className={inputCls} />
+      </Field>
+      <Field label="Tell the owner when a follow-up is this late, in hours" hint="The owner and administrators are told once, and the follow-up shows as Escalated. 0 switches it off.">
+        <input aria-label="Escalate overdue follow-ups after hours" type="number" min={0} max={720} value={f.escalate} onChange={(e) => change({ escalate: e.target.value })} className={inputCls} />
       </Field>
       {teams.length > 0 && (
         <fieldset className="space-y-3">

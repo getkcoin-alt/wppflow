@@ -23,7 +23,7 @@ const REPORT = {
   range: { from: "2026-09-26", to: "2026-10-25" },
   timeNote: "Times are wall-clock: a message sent at night counts until someone answers in the morning.",
   minSample: 5,
-  settings: { slaMinutes: 30, dailyInApp: true, dailyEmail: false, teams: {} },
+  settings: { slaMinutes: 30, taskEscalationHours: 24, dailyInApp: true, dailyEmail: false, teams: {} },
   teams: ["sales", "support"],
   totals: { answered: 11, enoughData: true, medianSeconds: 240, p90Seconds: 1800, meanSeconds: 400, withinSlaPercent: 91, waiting: 2 },
   agents: [agent(), agent({ rank: null, userId: 3, name: "Tina", team: "support", answered: 3, enoughData: false, medianSeconds: null, p90Seconds: null, meanSeconds: null, withinSlaPercent: null })],
@@ -162,7 +162,7 @@ describe("Reports", () => {
   });
 
   it("saves the reply target, a team's own target and the morning summary choices", async () => {
-    api.fetchReportSettings.mockResolvedValue({ slaMinutes: 30, dailyInApp: true, dailyEmail: false, teams: { support: 5 } });
+    api.fetchReportSettings.mockResolvedValue({ slaMinutes: 30, taskEscalationHours: 24, dailyInApp: true, dailyEmail: false, teams: { support: 5 } });
     api.saveReportSettings.mockResolvedValue({});
     wrap();
     fireEvent.click(await screen.findByRole("tab", { name: "Settings" }));
@@ -172,13 +172,15 @@ describe("Reports", () => {
     fireEvent.change(form.getByLabelText("support team target in minutes"), { target: { value: "" } });
     fireEvent.change(form.getByLabelText("sales team target in minutes"), { target: { value: "10" } });
     fireEvent.click(form.getByLabelText(/Also email the owner/));
+    expect((form.getByLabelText("Escalate overdue follow-ups after hours") as HTMLInputElement).value).toBe("24");
+    fireEvent.change(form.getByLabelText("Escalate overdue follow-ups after hours"), { target: { value: "48" } });
     fireEvent.click(form.getByRole("button", { name: "Save settings" }));
-    await waitFor(() => expect(api.saveReportSettings).toHaveBeenCalledWith({ slaMinutes: 15, dailyInApp: true, dailyEmail: true, teams: { sales: 10 } }));
+    await waitFor(() => expect(api.saveReportSettings).toHaveBeenCalledWith({ slaMinutes: 15, taskEscalationHours: 48, dailyInApp: true, dailyEmail: true, teams: { sales: 10 } }));
     expect(await form.findByText("Saved.")).toBeDefined();
   });
 
   it("shows why settings could not be saved", async () => {
-    api.fetchReportSettings.mockResolvedValue({ slaMinutes: 30, dailyInApp: true, dailyEmail: false, teams: {} });
+    api.fetchReportSettings.mockResolvedValue({ slaMinutes: 30, taskEscalationHours: 24, dailyInApp: true, dailyEmail: false, teams: {} });
     api.saveReportSettings.mockRejectedValue(new Error("The reply target must be a whole number of minutes from 1 to 10080"));
     wrap();
     fireEvent.click(await screen.findByRole("tab", { name: "Settings" }));

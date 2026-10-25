@@ -96,6 +96,9 @@ export function App() {
     labelMode: "any" as "any" | "all",
     assigned: "",
     activeDays: "",
+    team: "",
+    awaiting: "",
+    overdue: "",
   }),
     [newChat, setNewChat] = useState<{ person?: NewChatPerson } | null>(null),
     [optimistic, setOptimistic] = useState<Record<string, ChatMessage[]>>({});
@@ -273,9 +276,23 @@ export function App() {
           old.labels === labels &&
           old.labelMode === labelMode &&
           old.assigned === extra.assigned &&
-          old.activeDays === extra.activeDays
+          old.activeDays === extra.activeDays &&
+          old.team === extra.team &&
+          old.awaiting === (extra.waiting ? "1" : "") &&
+          old.overdue === (extra.waiting === "overdue" ? "1" : "")
           ? old
-          : { search, filter: filterTab, sessionName, labels, labelMode, assigned: extra.assigned, activeDays: extra.activeDays };
+          : {
+              search,
+              filter: filterTab,
+              sessionName,
+              labels,
+              labelMode,
+              assigned: extra.assigned,
+              activeDays: extra.activeDays,
+              team: extra.team,
+              awaiting: extra.waiting ? "1" : "",
+              overdue: extra.waiting === "overdue" ? "1" : "",
+            };
       }),
     [],
   );
@@ -318,11 +335,45 @@ export function App() {
     },
     [qc, tenant],
   );
+  // Who is writing a reply in which chat: a teammate's note that goes stale if they stop without saying so.
+  const [typers, setTypers] = useState<Record<string, { name: string; at: number }>>({});
+  const onCompose = useCallback(
+    (p: { conversationId: string; userId: number; name: string; typing: boolean }) => {
+      if (String(p.userId) === String(user?.id)) return;
+      const key = `${p.conversationId}|${p.userId}`;
+      setTypers((old) => {
+        if (!p.typing) {
+          if (!(key in old)) return old;
+          const { [key]: _gone, ...rest } = old;
+          return rest;
+        }
+        return { ...old, [key]: { name: p.name, at: Date.now() } };
+      });
+    },
+    [user?.id],
+  );
+  const anyTypers = Object.keys(typers).length > 0;
+  useEffect(() => {
+    if (!anyTypers) return;
+    const t = setInterval(() => {
+      setTypers((old) => {
+        const live = Object.entries(old).filter(([, v]) => Date.now() - v.at < 8000);
+        return live.length === Object.keys(old).length ? old : Object.fromEntries(live);
+      });
+    }, 2000);
+    return () => clearInterval(t);
+  }, [anyTypers]);
+  const typing = useMemo(() => {
+    const by: Record<string, string[]> = {};
+    for (const [key, v] of Object.entries(typers)) (by[key.split("|")[0]] ||= []).push(v.name);
+    return by;
+  }, [typers]);
   const sync = useInboxRealtime({
     enabled,
     qc,
     tenant,
     selected,
+    onCompose,
     onNotification: (n) => {
       playPing();
       setToasts((t) => [n, ...t].slice(0, 3));
@@ -845,6 +896,16 @@ export function App() {
               hasOlderMessages={Boolean(history.hasNextPage)}
               onLoadOlder={() => void history.fetchNextPage()}
               onFilterChange={changeFilter}
+              replyTargetMinutes={capabilities.data?.replyTargetMinutes}
+              teams={capabilities.data?.teams}
+              typing={typing}
+              onCompose={(conversationId, isTyping) => getSocket().emit("compose", { conversationId, typing: isTyping })}
+              onTogglePin={(id, pinned) => {
+                void run(async () => {
+                  await api.patchChat(id, { isPinned: pinned });
+                  await refresh("conversations");
+                }).catch(() => {});
+              }}
               labels={labelList.data ?? []}
               onNewChat={() => setNewChat({})}
               onRenameContact={async (contactId, patch) => {

@@ -266,6 +266,10 @@ export function fetchConversations(
     assigned?: string;
     /** Only chats active in the last N days */
     activeDays?: string | number;
+    /** A team (the label a teammate has), "1" for chats nobody has answered, "1" for those past the reply target */
+    team?: string;
+    awaiting?: string;
+    overdue?: string;
   } = {},
 ) {
   const q = new URLSearchParams();
@@ -643,7 +647,11 @@ export interface Board {
 }
 export interface LeadTask {
   id: string;
-  leadId: string;
+  /** Null for a follow-up made from a chat that has no lead */
+  leadId: string | null;
+  chatId?: string | null;
+  /** The owner and administrators were told it is overdue */
+  escalated?: boolean;
   title: string;
   dueAt: string;
   assignedUserId: number | null;
@@ -719,8 +727,12 @@ export const moveLead = (id: string, data: { stageId: string; beforeLeadId?: str
 export const deleteLead = (id: string) => apiDelete(`/api/leads/${encodeURIComponent(id)}`);
 export const addLeadTask = (id: string, data: { title: string; dueAt: string; assignedUserId?: number }): Promise<{ tasks: LeadTask[] }> =>
   apiPost(`/api/leads/${encodeURIComponent(id)}/tasks`, data);
-export const updateLeadTask = (id: string, data: { done?: boolean; title?: string; dueAt?: string }): Promise<{ task: LeadTask }> =>
+export const updateLeadTask = (id: string, data: { done?: boolean; title?: string; dueAt?: string; assignedUserId?: number }): Promise<{ task: LeadTask }> =>
   apiRequest(`/api/leads/tasks/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) });
+/** Follow-ups on one chat: its own, and those of the lead of the person it is with. */
+export const fetchChatTasks = async (conversationId: string): Promise<LeadTask[]> => (await apiGet(`/api/leads/chat/${encodeURIComponent(conversationId)}/tasks`)).tasks ?? [];
+export const addChatTask = async (conversationId: string, data: { title: string; dueAt: string; assignedUserId?: number }): Promise<LeadTask[]> =>
+  (await apiPost(`/api/leads/chat/${encodeURIComponent(conversationId)}/tasks`, data)).tasks;
 export const deleteLeadTask = (id: string) => apiDelete(`/api/leads/tasks/${encodeURIComponent(id)}`);
 /** The open lead for whoever a chat is with, if there is one. */
 export const fetchChatLead = (conversationId: string): Promise<{ lead: Lead | null }> =>
@@ -969,6 +981,8 @@ export interface WaitingChat {
 }
 export interface ReportSettings {
   slaMinutes: number;
+  /** Hours a follow-up may stay overdue before the owner and administrators are told; 0 switches it off */
+  taskEscalationHours: number;
   dailyInApp: boolean;
   dailyEmail: boolean;
   teams: Record<string, number>;

@@ -300,10 +300,10 @@ describe("the Inbox", () => {
     fireEvent.click(panel.getByRole("button", { name: "All of these" }));
     fireEvent.click(panel.getByRole("button", { name: "Assigned to me" }));
     fireEvent.click(panel.getByRole("button", { name: "7 days" }));
-    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "", { labels: ["l1", "l2"], labelMode: "all", assigned: "me", activeDays: "7" }));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "", { labels: ["l1", "l2"], labelMode: "all", assigned: "me", activeDays: "7", waiting: "", team: "" }));
     expect(screen.getByRole("button", { name: /Filters/ }).textContent).toContain("3");
     fireEvent.click(panel.getByRole("button", { name: "Clear all filters" }));
-    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "", { labels: [], labelMode: "any", assigned: "", activeDays: "" }));
+    await waitFor(() => expect(onFilterChange).toHaveBeenLastCalledWith("", "all", "", { labels: [], labelMode: "any", assigned: "", activeDays: "", waiting: "", team: "" }));
   });
 
   it("renames the contact from the details panel and can hand the name back to WhatsApp's", async () => {

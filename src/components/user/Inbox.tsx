@@ -23,8 +23,11 @@ import {
   ChevronLeft,
   Plus,
   MessageSquarePlus,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
+import { formatDuration } from "../../utils/duration";
 import { MediaBlock } from "./MediaBlock";
 import { MediaViewer } from "./MediaViewer";
 import { NumberSwitch } from "./NumberSwitch";
@@ -73,6 +76,16 @@ interface InboxProps {
   onFilterChange?: (search: string, filter: string, sessionName: string, extra: InboxExtraFilters) => void;
   /** The company's labels, for the label filter */
   labels?: Label[];
+  /** Minutes a customer may wait for a reply before the chat is flagged */
+  replyTargetMinutes?: number;
+  /** The teams people are in, for the team filter */
+  teams?: string[];
+  /** Teammates writing a reply right now, by chat id */
+  typing?: Record<string, string[]>;
+  /** Tells the others this person has started or stopped writing a reply in a chat */
+  onCompose?: (chatId: string, typing: boolean) => void;
+  /** Pin a chat to the top of the list, or take it off */
+  onTogglePin?: (chatId: string, pinned: boolean) => void;
   /** Opens the New chat dialog */
   onNewChat?: () => void;
   /** Renames the contact in the details panel, or hands the name back to WhatsApp's */
@@ -183,6 +196,11 @@ export const Inbox: React.FC<InboxProps> = ({
   onRefreshMedia,
   onSyncInbox,
   labels = [],
+  replyTargetMinutes = 30,
+  teams = [],
+  typing = {},
+  onCompose,
+  onTogglePin,
   onNewChat,
   onRenameContact,
   onSetContactLabels,
@@ -244,6 +262,33 @@ export const Inbox: React.FC<InboxProps> = ({
   const [isNoteMode, setIsNoteMode] = useState(false);
   const composerInput = useRef<HTMLInputElement>(null);
   const [showCannedMenu, setShowCannedMenu] = useState(false);
+
+  // How long chats have waited moves on while the screen is open.
+  const [now, setNow] = useState(() => Date.now());
+  const anyWaiting = chats.some((c) => c.awaitingSince);
+  useEffect(() => {
+    if (!anyWaiting) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, [anyWaiting]);
+
+  // Tell teammates who can open this chat that a reply is being written, so two people don't answer the same customer.
+  const composing = useRef<{ chatId: string | null; at: number }>({ chatId: null, at: 0 });
+  const composingChatId = activeChatId;
+  useEffect(() => {
+    if (!onCompose) return;
+    const writing = Boolean(composingChatId) && !isNoteMode && inputText.trim().length > 0;
+    const prev = composing.current;
+    if (prev.chatId && (prev.chatId !== composingChatId || !writing)) {
+      onCompose(prev.chatId, false);
+      composing.current = { chatId: null, at: 0 };
+    }
+    if (writing && composingChatId && (composing.current.chatId !== composingChatId || Date.now() - composing.current.at > 3000)) {
+      onCompose(composingChatId, true);
+      composing.current = { chatId: composingChatId, at: Date.now() };
+    }
+  }, [inputText, isNoteMode, composingChatId, onCompose]);
 
   // Sync & Media state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -555,7 +600,7 @@ export const Inbox: React.FC<InboxProps> = ({
             currentUserId={currentUserId}
           />
           <FiltersToggle open={showFilters} count={countExtra(extra)} onToggle={() => setShowFilters((o) => !o)} />
-          {showFilters && <InboxFilters labels={labels} value={extra} onChange={setExtra} />}
+          {showFilters && <InboxFilters labels={labels} teams={teams} value={extra} onChange={setExtra} />}
         </div>
 
         {/* Conversation list */}
@@ -674,9 +719,10 @@ export const Inbox: React.FC<InboxProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-2">
                         <span
-                          className={`text-[15px] truncate ${chat.unreadCount > 0 ? "font-semibold text-fg" : "font-medium text-fg"}`}
+                          className={`text-[15px] truncate flex items-center gap-1.5 min-w-0 ${chat.unreadCount > 0 ? "font-semibold text-fg" : "font-medium text-fg"}`}
                         >
-                          {chat.contactName}
+                          {chat.isPinned && <Pin className="w-3.5 h-3.5 shrink-0 text-gold" aria-label="Pinned" />}
+                          <span className="truncate">{chat.contactName}</span>
                         </span>
                         <span
                           className={`text-[12px] shrink-0 num ${chat.unreadCount > 0 ? "text-brand font-medium" : "text-fg-3"}`}
@@ -723,6 +769,22 @@ export const Inbox: React.FC<InboxProps> = ({
                           )}
                         </div>
                       </div>
+                      {chat.awaitingSince && !chat.isClosed && !chat.isGroup && (() => {
+                        const waited = Math.max(0, now / 1000 - chat.awaitingSince);
+                        if (waited < 60) return null;
+                        const late = waited > replyTargetMinutes * 60;
+                        return (
+                          <div className="mt-1">
+                            <span
+                              className={`inline-flex items-center gap-1 h-5 px-2 rounded-full text-[11.5px] font-medium ${late ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}
+                              title={late ? `Past the ${replyTargetMinutes}-minute reply target` : "The customer is waiting for a reply"}
+                            >
+                              <Clock className="w-3 h-3" aria-hidden />
+                              Waiting {formatDuration(waited)}
+                            </span>
+                          </div>
+                        );
+                      })()}
                       {(chat.labels?.length ?? 0) > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1" aria-label="Labels">
                           {chat.labels!.slice(0, 3).map((l) => (
@@ -855,6 +917,17 @@ export const Inbox: React.FC<InboxProps> = ({
                   className={`w-[18px] h-[18px] ${isSyncingChat ? "animate-spin" : ""}`}
                 />
               </button>
+
+              {onTogglePin && (
+                <button
+                  onClick={() => onTogglePin(activeChat.id, !activeChat.isPinned)}
+                  title={activeChat.isPinned ? "Unpin from the top of the list" : "Pin to the top of the list"}
+                  aria-label={activeChat.isPinned ? "Unpin chat" : "Pin chat"}
+                  className={`h-10 w-10 grid place-items-center rounded-full transition ${activeChat.isPinned ? "text-gold bg-gold/10" : "text-fg-2 hover:text-fg hover:bg-surface-2"}`}
+                >
+                  {activeChat.isPinned ? <PinOff className="w-[18px] h-[18px]" /> : <Pin className="w-[18px] h-[18px]" />}
+                </button>
+              )}
 
               <button
                 onClick={() => onToggleResolve(activeChat.id)}
@@ -1257,6 +1330,12 @@ export const Inbox: React.FC<InboxProps> = ({
         {/* ── Composer ── */}
         {activeChat && (
           <div className="px-3 sm:px-6 pt-2 pb-3 sm:pb-4 shrink-0 relative z-30 bg-app">
+            {(typing[activeChat.id]?.length ?? 0) > 0 && (
+              <p role="status" className="mb-2 px-3 py-1.5 rounded-full bg-warn/10 text-warn text-[13px] font-medium flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" aria-hidden />
+                {typing[activeChat.id].join(" and ")} {typing[activeChat.id].length > 1 ? "are" : "is"} writing a reply to this customer
+              </p>
+            )}
             <div
               className={`rounded-[26px] border bg-surface shadow-card transition-colors ${
                 isNoteMode ? "border-warn/50" : "border-line"

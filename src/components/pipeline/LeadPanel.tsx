@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CalendarClock, Funnel, Plus } from "lucide-react";
+import { AlertCircle, BellPlus, CalendarClock, Funnel, Plus } from "lucide-react";
 import { fetchChatLead, getStoredTenantId } from "../../services/api";
 import { dueLabel, formatMoney } from "../../utils/pipeline";
 import { btn } from "../ui/styles";
+import { ChatTasksSheet } from "./ChatTasksSheet";
 import { LeadSheet } from "./LeadSheet";
 import { NewLeadSheet } from "./NewLeadSheet";
 import { useLeadMover } from "./useLeadMover";
@@ -31,6 +32,7 @@ export function LeadPanel({
   const chat = useQuery({ queryKey: ["leads", tenant, "chat", conversationId], queryFn: () => fetchChatLead(conversationId) });
   const [open, setOpen] = useState(false),
     [adding, setAdding] = useState(false),
+    [reminding, setReminding] = useState(false),
     [error, setError] = useState("");
   const mover = useLeadMover(setError);
   const lead = chat.data?.lead;
@@ -77,7 +79,10 @@ export function LeadPanel({
       ) : (
         <>
           <span className="text-fg-2 truncate">Not in your pipeline yet</span>
-          <button type="button" onClick={() => setAdding(true)} className={`${btn("secondary", "sm")} ml-auto shrink-0`}>
+          <button type="button" onClick={() => setReminding(true)} className={`${btn("ghost", "sm")} ml-auto shrink-0`}>
+            <BellPlus className="w-4 h-4" /> Follow-up
+          </button>
+          <button type="button" onClick={() => setAdding(true)} className={`${btn("secondary", "sm")} shrink-0`}>
             <Plus className="w-4 h-4" /> Add to pipeline
           </button>
         </>
@@ -89,6 +94,7 @@ export function LeadPanel({
       )}
       <LeadSheet leadId={open && lead ? lead.id : null} currency={currency} stages={stages} teammates={teammates} isManager={isManager} onClose={() => setOpen(false)} onOpenChat={onOpenChat} />
       <NewLeadSheet open={adding} from={{ conversationId, name: contactName }} stages={stages} teammates={teammates} aiAvailable={aiAvailable} onClose={() => setAdding(false)} onCreated={() => setAdding(false)} />
+      <ChatTasksSheet conversationId={reminding ? conversationId : null} contactName={contactName} teammates={teammates} isManager={isManager} onClose={() => setReminding(false)} />
       {mover.dialog}
     </div>
   );

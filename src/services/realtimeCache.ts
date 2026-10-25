@@ -13,13 +13,13 @@ type ConversationPage = {
   [key: string]: unknown;
 };
 type MessagePage = { messages: ChatMessage[]; [key: string]: unknown };
-type ListFilter = { search?: string; filter?: string; sessionName?: string; labels?: string; assigned?: string; activeDays?: string | number };
+type ListFilter = { search?: string; filter?: string; sessionName?: string; labels?: string; assigned?: string; activeDays?: string | number; team?: string; awaiting?: string; overdue?: string };
 
 const epochOf = (c: Partial<ChatThread> & { lastActiveEpoch?: number }) =>
   Number(c.lastActiveEpoch || 0);
 
 // Filters the browser cannot check from a pushed event (a search, labels, who has it, how recent).
-const narrowed = (f: ListFilter) => Boolean(f.search?.trim() || f.labels || f.assigned || f.activeDays);
+const narrowed = (f: ListFilter) => Boolean(f.search?.trim() || f.labels || f.assigned || f.activeDays || f.team || f.awaiting || f.overdue);
 
 // Would this conversation appear in a list loaded with these filters?
 function belongsIn(conv: ChatThread, f: ListFilter) {
@@ -69,12 +69,15 @@ export function upsertConversation(
       qc.setQueryData(key, { ...data, pages: rebuilt });
       return;
     }
-    let at = first.conversations.findIndex((c) => epochOf(c) < epochOf(conv));
+    // Pinned chats sit at the top of the first page; a chat takes its place among its own kind.
+    const pinned = first.conversations.filter((c) => c.isPinned).length;
+    const [from, to] = next.isPinned ? [0, pinned] : [pinned, first.conversations.length];
+    let at = first.conversations.findIndex((c, i) => i >= from && i < to && epochOf(c) < epochOf(conv));
     if (at === -1) {
-      // Older than everything on the first page: only place it if that page is the whole list.
-      if (first.hasMore && !previous)
+      // Older than everything of its kind on the first page: only place it if that page is the whole list.
+      if (!next.isPinned && first.hasMore && !previous)
         return qc.setQueryData(key, { ...data, pages });
-      at = first.conversations.length;
+      at = to;
     }
     first.conversations.splice(at, 0, next);
     qc.setQueryData(key, { ...data, pages });

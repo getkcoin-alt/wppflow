@@ -175,6 +175,9 @@ export interface ChatThread {
   assignedAvatar?: string;
   isSnoozed?: boolean;
   isClosed?: boolean;
+  isPinned?: boolean;
+  /** Epoch seconds of the customer's first message nobody on the team has answered yet */
+  awaitingSince?: number | null;
   tags: string[];
   /** The labels on the person this chat is with. Updates pushed over the socket leave this out. */
   labels?: { id: string; name: string; color: string }[];

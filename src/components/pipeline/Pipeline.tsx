@@ -107,6 +107,14 @@ export function Pipeline({
       setError(e.message);
     }
   };
+  const reassign = async (t: LeadTask, userId: number) => {
+    try {
+      await updateLeadTask(t.id, { assignedUserId: userId });
+      await refresh();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
   const showAll = (c: { id: string; name: string }) => {
     setStage({ id: c.id, name: c.name });
     setLimit(50);
@@ -243,7 +251,7 @@ export function Pipeline({
       {view === "board" && board.data && !empty && <Board board={board.data} onOpen={(l: Lead) => setOpenId(l.id)} onMove={(l, s, before) => void mover.move(l, s, before)} onShowAll={showAll} />}
       {view === "list" && list.data && <LeadList leads={list.data.leads} total={list.data.total} currency={currency} onOpen={(l) => setOpenId(l.id)} onMore={() => setLimit((n) => n + 50)} />}
       {view === "list" && list.error && <Notice tone="error">{(list.error as Error).message}</Notice>}
-      {view === "today" && <TodayList tasks={tasks} onDone={(t) => void doneTask(t)} onSnooze={(t) => void snooze(t)} onOpenLead={setOpenId} onOpenChat={onOpenChat} />}
+      {view === "today" && <TodayList tasks={tasks} onDone={(t) => void doneTask(t)} onSnooze={(t) => void snooze(t)} onOpenLead={setOpenId} onOpenChat={onOpenChat} teammates={teammates} onReassign={isManager ? (t, id) => void reassign(t, id) : undefined} />}
 
       <LeadSheet leadId={openId} currency={currency} stages={stages} teammates={teammates} isManager={isManager} onClose={() => setOpenId(null)} onOpenChat={(id) => { setOpenId(null); onOpenChat(id); }} />
       <NewLeadSheet

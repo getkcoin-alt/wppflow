@@ -24,6 +24,7 @@ export function useInboxRealtime({
   selected,
   onNotification,
   onIncoming,
+  onCompose,
 }: {
   enabled: boolean;
   qc: QueryClient;
@@ -31,6 +32,8 @@ export function useInboxRealtime({
   selected: string | null;
   onNotification?: (n: AppNotification) => void;
   onIncoming?: (p: { conversation?: any; message: any }) => void;
+  /** A teammate started or stopped writing a reply in a chat */
+  onCompose?: (p: { conversationId: string; userId: number; name: string; typing: boolean }) => void;
 }) {
   const [sync, setSync] = useState<SyncState>(null);
   const selectedRef = useRef(selected);
@@ -41,9 +44,11 @@ export function useInboxRealtime({
   // subscription below is not torn down and rebuilt each time.
   const onNotificationRef = useRef(onNotification);
   const onIncomingRef = useRef(onIncoming);
+  const onComposeRef = useRef(onCompose);
   useEffect(() => {
     onNotificationRef.current = onNotification;
     onIncomingRef.current = onIncoming;
+    onComposeRef.current = onCompose;
   });
 
   useEffect(() => {
@@ -152,6 +157,7 @@ export function useInboxRealtime({
       "campaign:status": onCampaign,
       "campaign:progress": onCampaign,
       "lead:changed": onLead,
+      "compose:update": (p) => onComposeRef.current?.(p),
     };
     for (const [event, fn] of Object.entries(handlers)) socket.on(event, fn);
     document.addEventListener("visibilitychange", onWake);
