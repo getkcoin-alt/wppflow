@@ -19,7 +19,7 @@ export type UserSubTab =
   | "contacts"
   | "pipeline"
   | "automations";
-export type AdminSubTab = "users" | "cluster" | "audit";
+export type AdminSubTab = "users" | "billing" | "cluster" | "audit";
 export type DevSubTab = "docs" | "webhooks" | "sdks" | "keys";
 export type View = "user" | "admin" | "developer";
 
@@ -94,6 +94,7 @@ export const NAV_SECONDARY: NavItem[] = [
 
 export const ADMIN_TABS: { key: AdminSubTab; label: string }[] = [
   { key: "users", label: "People" },
+  { key: "billing", label: "Plans & Billing" },
   { key: "cluster", label: "System" },
   { key: "audit", label: "Activity" },
 ];

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sheet } from "../ui/Sheet";
 import { Field, Notice } from "../ui/Page";
 import { btn, inputCls, selectCls } from "../ui/styles";
-import { listPayments, type PlanChoice, type SubscriptionPayment } from "../../services/api";
+import { issueCompanyInvoice, listPayments, type PlanChoice, type SubscriptionPayment } from "../../services/api";
 import { addCycle, defaultPeriodStart, formatDate } from "../../utils/subscription";
 import type { Company } from "./types";
 
@@ -66,6 +66,8 @@ export function PaymentSheet({
   const recompute = (nextStart: string, nextCycle: Cycle) => {
     if (!endTyped.current && /^\d{4}-\d{2}-\d{2}$/.test(nextStart)) setEnd(addCycle(nextStart, nextCycle));
   };
+  const qc = useQueryClient();
+  const [invoiceError, setInvoiceError] = useState("");
   const history = useQuery({
     queryKey: ["payments", id],
     queryFn: () => listPayments(id as string),
@@ -168,7 +170,7 @@ export function PaymentSheet({
           </Field>
         </div>
         <div className="grid grid-cols-[1fr_6.5rem] gap-3">
-          <Field label="Amount received" hint="Optional.">
+          <Field label="Amount received" hint="Optional. In rupees, enter what was received including GST: the invoice is worked out from it.">
             <input aria-label="Amount received" type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
           </Field>
           <Field label="Currency">
@@ -185,6 +187,7 @@ export function PaymentSheet({
       <div className="mt-6">
         <h3 className="text-[13.5px] font-semibold text-fg">Payments recorded</h3>
         {history.error && <Notice tone="error">{(history.error as Error).message}</Notice>}
+        {invoiceError && <Notice tone="error">{invoiceError}</Notice>}
         {history.data?.length === 0 && <p className="mt-1.5 text-[13.5px] text-fg-3">None yet.</p>}
         <ul className="mt-2 space-y-1.5 text-[13.5px]">
           {history.data?.slice(0, 5).map((p) => (
@@ -192,8 +195,28 @@ export function PaymentSheet({
               <span>
                 {p.plan}, {formatDate(p.periodStart)} to {formatDate(p.periodEnd)}
                 {p.reference ? ` · ${p.reference}` : ""}
+                {p.source && p.source !== "manual" ? ` · paid online` : ""}
+                {p.invoice ? ` · invoice ${p.invoice.number}` : ""}
               </span>
-              <span className="num text-fg">{money(p)}</span>
+              <span className="num text-fg">
+                {money(p)}
+                {!p.invoice && p.currency === "INR" && p.amount && company && (
+                  <button
+                    type="button"
+                    className="ml-3 text-[13px] underline text-fg-2 hover:text-fg"
+                    onClick={() =>
+                      void issueCompanyInvoice(company.id, p.id)
+                        .then(() => {
+                          setInvoiceError("");
+                          return qc.invalidateQueries({ queryKey: ["payments", id] });
+                        })
+                        .catch((e) => setInvoiceError(e.message))
+                    }
+                  >
+                    Issue invoice
+                  </button>
+                )}
+              </span>
             </li>
           ))}
         </ul>

@@ -46,7 +46,7 @@ export function describeSubscription(sub: Subscription | undefined, audience: "c
         tone: "gold",
         detail:
           audience === "company"
-            ? `Renews on ${end}, ${when(sub.daysLeft)}. The Scriwo team sends the invoice or payment link before then.`
+            ? `Renews on ${end}, ${when(sub.daysLeft)}. Renew from Plans & Billing, or wait for the invoice from the Scriwo team.`
             : `Renewal ${when(sub.daysLeft)}, on ${end}.`,
       };
     case "overdue":

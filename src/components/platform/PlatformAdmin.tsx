@@ -21,6 +21,7 @@ import {
 import type { Company } from "./types";
 import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
 import { PlansEditor } from "./PlansEditor";
+import { OnlinePayments, useOnlinePayments } from "./OnlinePayments";
 import { describeSubscription, needsAttention, type Attention } from "../../utils/subscription";
 
 
@@ -131,7 +132,9 @@ export function PlatformAdmin({
   const qc = useQueryClient();
   const theme = useTheme();
   const [adding, setAdding] = useState(false),
-    [editingPlans, setEditingPlans] = useState(false);
+    [editingPlans, setEditingPlans] = useState(false),
+    [viewingPayments, setViewingPayments] = useState(false);
+  const online = useOnlinePayments();
   const { data, error, isPending } = useQuery<Company[]>({
     queryKey: ["companies"],
     queryFn: listCompanies,
@@ -231,6 +234,14 @@ export function PlatformAdmin({
           <div className="flex flex-wrap gap-2">
             <button className={btn("secondary")} onClick={() => setEditingPlans(true)}>
               Plans &amp; prices
+            </button>
+            <button className={btn("secondary")} onClick={() => setViewingPayments(true)}>
+              Online payments
+              {(online.data?.counts.mismatch ?? 0) > 0 && (
+                <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-white text-[11px] font-semibold grid place-items-center num" aria-label={`${online.data!.counts.mismatch} need a look`}>
+                  {online.data!.counts.mismatch}
+                </span>
+              )}
             </button>
             <button className={btn("primary")} onClick={() => setAdding(true)}>
               <Plus className="w-4 h-4" /> Add company
@@ -411,6 +422,7 @@ export function PlatformAdmin({
         </Sheet>
 
         <PlansEditor open={editingPlans} onClose={() => setEditingPlans(false)} />
+        <OnlinePayments open={viewingPayments} onClose={() => setViewingPayments(false)} />
         <PaymentSheet
           company={payFor}
           plans={plans.data}
@@ -422,8 +434,11 @@ export function PlatformAdmin({
               (r) =>
                 [
                   `Payment recorded for ${company.name}: ${r.company.plan} until ${r.company.subscription?.periodEnd}.`,
+                  r.invoice ? `Invoice ${r.invoice.number} issued.` : r.invoiceSkipped ? `No invoice yet: ${r.invoiceSkipped}` : "",
                   ...(r.warnings || []),
-                ].join(" "),
+                ]
+                  .filter(Boolean)
+                  .join(" "),
             ).then((r) => r && setPayFor(null))
           }
         />

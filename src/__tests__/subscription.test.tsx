@@ -104,7 +104,7 @@ describe("the company's plan card shows the subscription", () => {
     const box = within(screen.getByTestId("subscription"));
     expect(box.getByText(/Billing: monthly, paid in advance/)).toBeDefined();
     expect(box.getByText(/Renews in 5 days/)).toBeDefined();
-    expect(box.getByText(/sends the invoice or payment link/)).toBeDefined();
+    expect(box.getByText(/Renew from Plans & Billing/)).toBeDefined();
   });
   it("is silent on the Free plan and for staff, who are not sent a subscription", () => {
     const { rerender } = render(<PlanCard plan={plan} subscription={sub({ status: "free" })} />);

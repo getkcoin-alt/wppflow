@@ -118,6 +118,8 @@ export async function apiRequest(
 export const apiGet = (path: string) => apiRequest(path);
 export const apiPost = (path: string, body: any) =>
   apiRequest(path, { method: "POST", body: JSON.stringify(body) });
+export const apiPut = (path: string, body: any) =>
+  apiRequest(path, { method: "PUT", body: JSON.stringify(body) });
 export const apiPatch = (path: string, body: any) =>
   apiRequest(path, { method: "PATCH", body: JSON.stringify(body) });
 export const apiDelete = (path: string) =>
@@ -535,7 +537,32 @@ export interface SubscriptionPayment {
   reference: string;
   recordedBy: string | null;
   recordedAt: string;
+  /** "manual" when the Scriwo team recorded it; "razorpay" or "autopay" when the company paid online */
+  source?: "manual" | "razorpay" | "autopay";
+  invoice?: { id: string; number: string } | null;
 }
+export interface AdminPaymentOrder {
+  id: string;
+  company: string;
+  companyId: string;
+  plan: string;
+  interval: "monthly" | "annual";
+  status: "created" | "attempted" | "paid" | "failed" | "expired" | "mismatch";
+  source: "checkout" | "autopay";
+  totalMinor: number;
+  failureReason: string | null;
+  paymentId: string | null;
+  createdAt: string;
+}
+export interface AdminPayments {
+  payments: { configured: boolean; mode: "test" | "live" | null };
+  counts: Record<string, number>;
+  orders: AdminPaymentOrder[];
+  refunds: { id: string; company: string | null; paymentId: string | null; amountMinor: number; currency: string; status: string; at: string }[];
+}
+export const fetchAdminPayments = (status = ""): Promise<AdminPayments> => apiGet(`/api/admin/billing/payments${status ? `?status=${encodeURIComponent(status)}` : ""}`);
+export const issueCompanyInvoice = (companyId: string, paymentId: string) =>
+  apiPost(`/api/admin/companies/${encodeURIComponent(companyId)}/payments/${encodeURIComponent(paymentId)}/invoice`, {});
 const subscriptionUrl = (id: string, rest: string) => `/api/admin/companies/${encodeURIComponent(id)}${rest}`;
 export const listPayments = async (id: string): Promise<SubscriptionPayment[]> =>
   (await apiGet(subscriptionUrl(id, "/payments"))).payments;
@@ -789,3 +816,123 @@ export const aiTranslate = (
   target: string,
 ): Promise<{ text: string; target: string }> =>
   apiPost("/api/ai/translate", { text, target });
+
+
+// ── Plans & Billing: paying online, billing details, invoices, autopay ──────────────────────────────
+export interface BillingProfile {
+  legalName: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  stateCode: string;
+  state?: string;
+  postalCode: string;
+  gstin: string | null;
+  billingEmail: string;
+}
+export interface BillingQuote {
+  plan: { id: string; name: string };
+  interval: "monthly" | "annual";
+  kind: "new" | "renewal" | "change";
+  baseMinor: number;
+  creditMinor: number;
+  taxableMinor: number;
+  taxMinor: number;
+  cgstMinor: number;
+  sgstMinor: number;
+  igstMinor: number;
+  totalMinor: number;
+  gstRate: number;
+  intraState: boolean;
+  periodStart: string;
+  periodEnd: string;
+  requiresConfirm: boolean;
+  paidUntil: string | null;
+  previousPlan: string | null;
+}
+export interface BillingOrder {
+  id: string;
+  plan: string;
+  planId: string;
+  interval: "monthly" | "annual";
+  status: "created" | "attempted" | "paid" | "failed" | "expired" | "mismatch";
+  source: "checkout" | "autopay";
+  totalMinor: number;
+  periodStart: string | null;
+  periodEnd: string | null;
+  failureReason: string | null;
+  invoiceId: string | null;
+  createdAt: string;
+  paidAt: string | null;
+}
+export interface BillingInvoice {
+  id: string;
+  number: string;
+  issueDate: string;
+  plan: string;
+  interval: "monthly" | "annual";
+  periodStart: string;
+  periodEnd: string;
+  totalMinor: number;
+}
+export interface BillingAutopay {
+  id: string;
+  plan: string;
+  planId: string;
+  interval: "monthly";
+  amountMinor: number;
+  status: "created" | "authenticated" | "active" | "pending" | "halted" | "cancelled" | "completed";
+  needsAttention: boolean;
+}
+export interface BillingOverview {
+  payments: { configured: boolean; mode: "test" | "live" | null };
+  gstRate: number;
+  prorateUpgrades: boolean;
+  subscription: any;
+  profile: BillingProfile | null;
+  states: { code: string; name: string }[];
+  orders: BillingOrder[];
+  invoices: BillingInvoice[];
+  history: { id: number; type: string; plan: string | null; details: Record<string, any>; at: string }[];
+  autopay: BillingAutopay | null;
+}
+export interface CheckoutOptions {
+  key: string;
+  orderId?: string;
+  subscriptionId?: string;
+  amount?: number;
+  currency?: string;
+  name: string;
+  description: string;
+  prefill: { name: string; email: string };
+}
+export const fetchBilling = (): Promise<BillingOverview> => apiGet("/api/billing");
+export const saveBillingProfile = async (data: Partial<BillingProfile>): Promise<BillingProfile> => (await apiPut("/api/billing/profile", data)).profile;
+export const fetchBillingQuote = (plan: string, interval: string): Promise<{ quote: BillingQuote; profileMissing: boolean; autopayActive: boolean }> =>
+  apiGet(`/api/billing/quote?plan=${encodeURIComponent(plan)}&interval=${encodeURIComponent(interval)}`);
+export const startCheckout = (data: { plan: string; interval: string; confirm?: boolean }): Promise<{ order: BillingOrder; quote: BillingQuote; checkout: CheckoutOptions }> =>
+  apiPost("/api/billing/checkout", data);
+export const verifyCheckoutPayment = (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): Promise<{ status: "paid" | "processing" | "pending" | "failed" | "mismatch"; order: BillingOrder }> =>
+  apiPost("/api/billing/verify", data);
+export const startAutopaySetup = (plan: string): Promise<{ autopay: BillingAutopay; checkout: CheckoutOptions }> => apiPost("/api/billing/autopay", { plan });
+export const verifyAutopaySetup = (data: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }): Promise<{ autopay: BillingAutopay }> =>
+  apiPost("/api/billing/autopay/verify", data);
+export const stopAutopay = () => apiDelete("/api/billing/autopay");
+export const scheduleBillingChange = (plan: string) => apiPost("/api/billing/downgrade", { plan });
+export const keepBillingPlan = () => apiDelete("/api/billing/downgrade");
+// The invoice is a PDF behind the login, so it is fetched with the token and saved from memory.
+export async function downloadInvoice(id: string, number: string) {
+  const headers: Record<string, string> = {};
+  const token = getStoredToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const tenant = getStoredTenantId();
+  if (tenant) headers["X-Tenant-Id"] = tenant;
+  const res = await fetch(resolveEndpoint(`/api/billing/invoices/${encodeURIComponent(id)}/pdf`), { headers, credentials: "include", cache: "no-store" });
+  if (!res.ok) throw new Error("The invoice could not be downloaded. Please try again.");
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `Scriwo-invoice-${number.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}

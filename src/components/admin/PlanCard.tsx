@@ -14,6 +14,7 @@ const FEATURES: [string, string][] = [
 ];
 
 export interface PlanInfo {
+  id?: string | null;
   name: string;
   restricted: boolean;
   seats?: number | null;

@@ -41,8 +41,7 @@ import { FeatureLocked } from "./components/ui/FeatureLocked";
 import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
-import { PlanCard } from "./components/admin/PlanCard";
-import { PlanCompare } from "./components/admin/PlanCompare";
+import { BillingPage } from "./components/billing/BillingPage";
 import { NewChatSheet, type NewChatPerson } from "./components/user/NewChatSheet";
 import { NO_EXTRA, type InboxExtraFilters } from "./components/user/InboxFilters";
 import { useLabels } from "./components/labels/useLabels";
@@ -305,9 +304,9 @@ export function App() {
         setView("user");
         setTab("pipeline");
       } else if (n.type === "subscription") {
-        // the renewal is on the plan card, under Team, System
+        // the renewal, the invoices and the pay buttons are under Team, Plans & Billing
         setView("admin");
-        setAdminTab("cluster");
+        setAdminTab("billing");
       } else {
         setView("user");
         setTab("sessions");
@@ -568,7 +567,7 @@ export function App() {
   const lapsed = Boolean(capabilities.data?.plan?.lapsed);
   const openPlan = () => {
     setView("admin");
-    setAdminTab("cluster");
+    setAdminTab("billing");
   };
   // owners and administrators can open the plan screen; everyone else is told to ask them
   const planAction = manager ? openPlan : undefined;
@@ -1026,19 +1025,16 @@ export function App() {
                 ) : (
                   <AuditLogs />
                 ))}
-              {adminTab === "cluster" && (
-                <div className="space-y-4">
-                  <PlanCard
-                    plan={capabilities.data?.plan}
-                    numbersLimit={capabilities.data?.numbersLimit}
-                    numbersUsed={sessionsQuery.data?.length}
-                    ai={capabilities.data?.ai}
-                    subscription={capabilities.data?.subscription}
-                  />
-                  <PlanCompare currentPlanId={capabilities.data?.plan?.id} />
-                  <ClusterHealth />
-                </div>
+              {adminTab === "billing" && (
+                <BillingPage
+                  plan={capabilities.data?.plan}
+                  numbersLimit={capabilities.data?.numbersLimit}
+                  numbersUsed={sessionsQuery.data?.length}
+                  ai={capabilities.data?.ai}
+                  subscription={capabilities.data?.subscription}
+                />
               )}
+              {adminTab === "cluster" && <ClusterHealth />}
             </Page>
           )}
           {view === "developer" && (
