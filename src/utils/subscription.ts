@@ -1,5 +1,5 @@
 // How a company's subscription is described on screen, for the company's own "Your plan" card and the platform list.
-export type SubscriptionStatus = "free" | "legacy" | "unrecorded" | "active" | "due_soon" | "overdue" | "changing" | "cancelling";
+export type SubscriptionStatus = "free" | "legacy" | "unrecorded" | "active" | "due_soon" | "overdue" | "expired" | "changing" | "cancelling";
 export interface Subscription {
   status: SubscriptionStatus;
   plan: string;
@@ -10,6 +10,10 @@ export interface Subscription {
   /** Days until the renewal; negative once it has passed */
   daysLeft: number | null;
   scheduledPlan: { id: string; name: string } | null;
+  /** The last day everything still works when the payment is late */
+  graceEndsOn?: string | null;
+  /** The paid features are off because the payment is more than the grace period late */
+  lapsed?: boolean;
 }
 
 export const formatDate = (iso: string | null | undefined) =>
@@ -51,8 +55,17 @@ export function describeSubscription(sub: Subscription | undefined, audience: "c
         tone: "danger",
         detail:
           audience === "company"
-            ? `Payment was due on ${end} (${when(sub.daysLeft)}). Please pay the invoice or message the Scriwo team.`
-            : `Was due on ${end} (${when(sub.daysLeft)}). Nothing has been switched off.`,
+            ? `Payment was due on ${end} (${when(sub.daysLeft)}). Everything keeps working until ${formatDate(sub.graceEndsOn)}; after that the paid features switch off (nothing is deleted). Please pay the invoice or message the Scriwo team.`
+            : `Was due on ${end} (${when(sub.daysLeft)}). The paid features switch off after ${formatDate(sub.graceEndsOn)}.`,
+      };
+    case "expired":
+      return {
+        label: "Paid features off",
+        tone: "danger",
+        detail:
+          audience === "company"
+            ? `Payment was due on ${end}. Broadcasts, automations, the pipeline and the other paid features are off until it is received. Your numbers, conversations and contacts are untouched. Pay the invoice or message the Scriwo team and everything comes back at once.`
+            : `Was due on ${end} (${when(sub.daysLeft)}). The grace period is over, so the paid features are off. A recorded payment switches them back on at once.`,
       };
     case "changing":
       return { label: `Moves to ${sub.scheduledPlan?.name}`, tone: "info", detail: `On ${end} (${when(sub.daysLeft)}) the plan moves from ${sub.plan} to ${sub.scheduledPlan?.name}. Nothing is deleted.` };
@@ -82,7 +95,7 @@ export const defaultPeriodStart = (lastEnd: string | null, today = todayIso()) =
 export type Attention = "all" | "overdue" | "soon" | "unrecorded";
 export function needsAttention(sub: Subscription | undefined, filter: Attention) {
   if (!sub || filter === "all") return true;
-  if (filter === "overdue") return sub.status === "overdue";
+  if (filter === "overdue") return sub.status === "overdue" || sub.status === "expired";
   if (filter === "unrecorded") return sub.status === "unrecorded";
   return ["due_soon", "changing", "cancelling"].includes(sub.status) && sub.daysLeft !== null && sub.daysLeft <= 14;
 }

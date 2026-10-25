@@ -56,11 +56,18 @@ describe("how a subscription is described", () => {
     expect(describeSubscription(sub({ status: "due_soon", daysLeft: 0 }), "platform")?.label).toBe("Renews today");
     expect(describeSubscription(sub({ status: "due_soon", daysLeft: 1 }), "platform")?.label).toBe("Renews in 1 day");
   });
-  it("is plain about being overdue, and that nothing was switched off", () => {
-    const overdue = sub({ status: "overdue", daysLeft: -3 });
+  it("is plain about being overdue: everything works until the grace period ends", () => {
+    const overdue = sub({ status: "overdue", daysLeft: -3, periodEnd: day(-3), graceEndsOn: day(4) });
     expect(describeSubscription(overdue, "company")).toMatchObject({ label: "Payment overdue", tone: "danger" });
     expect(describeSubscription(overdue, "company")?.detail).toContain("3 days ago");
-    expect(describeSubscription(overdue, "platform")?.detail).toContain("Nothing has been switched off");
+    expect(describeSubscription(overdue, "company")?.detail).toContain("Everything keeps working");
+    expect(describeSubscription(overdue, "platform")?.detail).toContain("switch off after");
+  });
+  it("says the paid features are off once the grace period is over, and that nothing was deleted", () => {
+    const expired = sub({ status: "expired", daysLeft: -9, periodEnd: day(-9), graceEndsOn: day(-2), lapsed: true });
+    expect(describeSubscription(expired, "company")).toMatchObject({ label: "Paid features off", tone: "danger" });
+    expect(describeSubscription(expired, "company")?.detail).toContain("untouched");
+    expect(describeSubscription(expired, "platform")?.detail).toContain("grace period is over");
   });
   it("explains a change at the end of the period", () => {
     const moving = describeSubscription(sub({ status: "changing", scheduledPlan: { id: "starter", name: "Starter" } }), "company");
@@ -81,6 +88,7 @@ describe("how a subscription is described", () => {
   });
   it("picks out who needs attention", () => {
     expect(needsAttention(sub({ status: "overdue", daysLeft: -1 }), "overdue")).toBe(true);
+    expect(needsAttention(sub({ status: "expired", daysLeft: -9 }), "overdue")).toBe(true);
     expect(needsAttention(sub(), "overdue")).toBe(false);
     expect(needsAttention(sub({ status: "due_soon", daysLeft: 9 }), "soon")).toBe(true);
     expect(needsAttention(sub({ status: "cancelling", daysLeft: 20 }), "soon")).toBe(false);

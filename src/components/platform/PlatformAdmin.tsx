@@ -20,6 +20,7 @@ import {
 } from "../../services/api";
 import type { Company } from "./types";
 import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
+import { PlansEditor } from "./PlansEditor";
 import { describeSubscription, needsAttention, type Attention } from "../../utils/subscription";
 
 
@@ -129,7 +130,8 @@ export function PlatformAdmin({
 }) {
   const qc = useQueryClient();
   const theme = useTheme();
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(false),
+    [editingPlans, setEditingPlans] = useState(false);
   const { data, error, isPending } = useQuery<Company[]>({
     queryKey: ["companies"],
     queryFn: listCompanies,
@@ -226,9 +228,14 @@ export function PlatformAdmin({
               password.
             </p>
           </div>
-          <button className={btn("primary")} onClick={() => setAdding(true)}>
-            <Plus className="w-4 h-4" /> Add company
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button className={btn("secondary")} onClick={() => setEditingPlans(true)}>
+              Plans &amp; prices
+            </button>
+            <button className={btn("primary")} onClick={() => setAdding(true)}>
+              <Plus className="w-4 h-4" /> Add company
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -403,6 +410,7 @@ export function PlatformAdmin({
           </form>
         </Sheet>
 
+        <PlansEditor open={editingPlans} onClose={() => setEditingPlans(false)} />
         <PaymentSheet
           company={payFor}
           plans={plans.data}

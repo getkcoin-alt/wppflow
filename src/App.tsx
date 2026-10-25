@@ -42,6 +42,7 @@ import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
 import { PlanCard } from "./components/admin/PlanCard";
+import { PlanCompare } from "./components/admin/PlanCompare";
 import { DeveloperGuide } from "./components/developer/DeveloperGuide";
 import type {
   AuthUser,
@@ -544,6 +545,13 @@ export function App() {
   const planName: string = capabilities.data?.plan?.name || "current";
   const locked = (feature: string) =>
     capabilities.data?.plan?.features?.[feature] === false;
+  const lapsed = Boolean(capabilities.data?.plan?.lapsed);
+  const openPlan = () => {
+    setView("admin");
+    setAdminTab("cluster");
+  };
+  // owners and administrators can open the plan screen; everyone else is told to ask them
+  const planAction = manager ? openPlan : undefined;
   const connected = sessions.filter((x) => x.status === "CONNECTED").length;
   const unreadChats = chats.filter((c) => c.unreadCount > 0).length;
   const go = (item: NavItem) => {
@@ -830,7 +838,7 @@ export function App() {
           )}
           {view === "user" && tab === "pipeline" &&
             (locked("leads") ? (
-              <FeatureLocked feature="The sales pipeline" plan={planName} needs="Growth" />
+              <FeatureLocked feature="The sales pipeline" plan={planName} needs="Growth" lapsed={lapsed} onOpenPlan={planAction} />
             ) : (
               <Pipeline
                 teammates={team.data?.members || []}
@@ -917,7 +925,7 @@ export function App() {
                 Campaigns require workspace administrator access.
               </p>
             ) : locked("broadcasts") ? (
-              <FeatureLocked feature="Broadcasts" plan={planName} needs="Growth" />
+              <FeatureLocked feature="Broadcasts" plan={planName} needs="Growth" lapsed={lapsed} onOpenPlan={planAction} />
             ) : (
               <Campaigns
                 campaigns={campaigns.data?.campaigns || []}
@@ -950,7 +958,7 @@ export function App() {
                 Automations require workspace administrator access.
               </p>
             ) : locked("automations") ? (
-              <FeatureLocked feature="Automations" plan={planName} needs="Growth" />
+              <FeatureLocked feature="Automations" plan={planName} needs="Growth" lapsed={lapsed} onOpenPlan={planAction} />
             ) : (
               <Automations
                 automations={automations.data?.automations || []}
@@ -983,7 +991,7 @@ export function App() {
               )}
               {adminTab === "audit" &&
                 (locked("audit") ? (
-                  <FeatureLocked feature="The audit log" plan={planName} needs="Growth" />
+                  <FeatureLocked feature="The audit log" plan={planName} needs="Growth" lapsed={lapsed} onOpenPlan={planAction} />
                 ) : (
                   <AuditLogs />
                 ))}
@@ -996,6 +1004,7 @@ export function App() {
                     ai={capabilities.data?.ai}
                     subscription={capabilities.data?.subscription}
                   />
+                  <PlanCompare currentPlanId={capabilities.data?.plan?.id} />
                   <ClusterHealth />
                 </div>
               )}

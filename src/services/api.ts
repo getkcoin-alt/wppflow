@@ -428,7 +428,43 @@ export interface PlanChoice {
   features: { key: string; label: string; included: boolean }[];
   /** Riwo requests a day a company on this plan may make unless another number is agreed; null: not in the plan */
   aiDaily: number | null;
+  /** Whether the plan is for sale; plans off sale stay on the companies that have them */
+  isActive: boolean;
+  trialDays: number;
+  maxContacts: number | null;
+  taxMode: "exclusive" | "inclusive";
+  /** Price per billing interval and currency, in paise or fils */
+  prices: PlanPrice[];
 }
+export interface PlanPrice {
+  interval: "monthly" | "annual";
+  currency: "INR" | "AED";
+  amountMinor: number;
+}
+/** The plans for sale, as anyone may read them */
+export interface PublicPlan {
+  id: PlanChoice["id"];
+  name: string;
+  numbers: number | null;
+  seats: number | null;
+  taxMode: "exclusive" | "inclusive";
+  prices: PlanPrice[];
+  features: { key: string; label: string; included: boolean }[];
+}
+export const fetchPublicPlans = async (): Promise<PublicPlan[]> => (await apiGet("/api/public/plans")).plans;
+export const updatePlan = (
+  code: string,
+  data: Partial<{
+    name: string;
+    numbers: number | null;
+    seats: number | null;
+    maxContacts: number | null;
+    trialDays: number;
+    isActive: boolean;
+    features: string[];
+    prices: PlanPrice[];
+  }>,
+) => apiRequest(`/api/admin/plans/${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(data) });
 export const listPlans = async (): Promise<PlanChoice[]> =>
   (await apiGet("/api/admin/plans")).plans;
 export const createCompany = (data: {

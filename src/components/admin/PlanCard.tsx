@@ -17,6 +17,8 @@ export interface PlanInfo {
   name: string;
   restricted: boolean;
   seats?: number | null;
+  /** Paid features are off because the payment is more than the grace period late */
+  lapsed?: boolean;
   features: Record<string, boolean>;
 }
 
@@ -108,6 +110,11 @@ export function PlanCard({
           <p className="mt-1.5 text-[14px] text-fg">{billing.detail}</p>
         </div>
       )}
+      {plan.lapsed && (
+        <p className="mt-3 rounded-2xl bg-danger/10 text-danger px-4 py-3 text-[14px]" role="alert">
+          The paid features of {plan.name} are off until the payment is received. Pay below or message the Scriwo team and they come back at once.
+        </p>
+      )}
       {plan.seats === 1 && <p className="mt-3 text-[14px] text-fg-2">This plan is for one person.</p>}
       <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-[14px]">
         {FEATURES.map(([key, label]) => {
@@ -127,10 +134,7 @@ export function PlanCard({
       {ai && plan.features.ai !== false && <AiUsage ai={ai} />}
       {plan.restricted && Object.values(plan.features).some((v) => !v) && (
         <p className="mt-4 text-[13px] text-fg-3">
-          To add what's not included, ask the Scriwo team to move your company to a bigger plan. It switches on straight away.{" "}
-          <a href="https://www.scriwo.com/pricing" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
-            See the plans
-          </a>
+          To add what's not included, choose a bigger plan below. It switches on straight away.
         </p>
       )}
     </section>

@@ -273,8 +273,12 @@ describe("the company's own view of its plan", () => {
     expect(screen.getByText("Starter")).toBeDefined();
     expect(screen.getByText("WhatsApp numbers").parentElement?.textContent).toContain("2 of 3");
     expect(screen.getAllByLabelText("Not included").length).toBe(6);
-    expect(screen.getByText(/ask the Scriwo team to move your company to a bigger plan/)).toBeDefined();
-    expect(screen.getByRole("link", { name: "See the plans" }).getAttribute("href")).toBe("https://www.scriwo.com/pricing");
+    expect(screen.getByText(/choose a bigger plan below/)).toBeDefined();
+  });
+
+  it("says plainly that the paid features are off when the payment is late", () => {
+    render(<PlanCard plan={{ ...plan("Growth", { broadcasts: false, automations: false, leads: false, audit: false, api: false, ai: false }), lapsed: true }} numbersLimit={1} numbersUsed={1} />);
+    expect(screen.getByRole("alert").textContent).toContain("off until the payment is received");
   });
 
   it("shows a business plan as including everything", () => {
