@@ -48,6 +48,27 @@ Reworked on 22 October 2026. Every line below is covered by an automated test.
 
 **Not yet proven live.** STOP and SUBSCRIBE work on messages that arrive. Nothing here sends to WhatsApp in tests: delivery is the existing, separately tested path.
 
+## Sales pipeline
+
+Added on 25 October 2026 (Growth and above). The website calls Scriwo a "WhatsApp CRM"; this is the part of that
+claim that is about selling. Every line is covered by an automated test.
+
+| Behaviour | Evidence |
+|---|---|
+| A lead is one sales opportunity for one contact; a contact has only one open lead at a time, and the lead keeps the name, number and value if the contact is deleted | `leads.test.js` |
+| Leads are added from a chat in one tap, from a contact (one or many), by a rule for new customers or for people who ask for a quote, and never from a group chat | `leads.test.js`, `contacts_pipeline.test.tsx`, `lead_sheets.test.tsx` |
+| A board with a step per column (with counts and values), a list, and a Today list of follow-ups; steps can be renamed, reordered and added, and templates for real estate, car dealers and clinics rename them without moving a lead | `leads.test.js`, `pipeline_screen.test.tsx`, `lead_sheets.test.tsx` |
+| Moving a lead is recorded; a lost lead asks why; winning, losing and reopening work; reopening is refused if the contact has another open lead | `leads.test.js`, `pipeline_screen.test.tsx` |
+| Visibility matches the inbox: managers see every lead; staff see leads they own and leads on their own numbers | `leads.test.js` (including a check that the tests fail if this rule is removed) |
+| The lead's owner and the chat's assignee are the same person, whichever is changed, and the new owner is told | `leads.test.js` |
+| A follow-up reminds its person once when due; moving the time reminds again; won, lost and deleted leads send no reminders | `leads.test.js` |
+| Riwo can suggest a title, value, next step and follow-up for a new lead; nothing is saved until a person confirms, and the customer's number is never sent | `ai-assistant.test.js`, `lead_sheets.test.tsx` |
+| Part of the Growth plan and above; locked screens and server both enforce it | `ai-assistant.test.js`, `plans-admin.test.js` |
+
+**Not built yet** (phase 2): reports for managers (win rate, first-reply time, leaderboard), round-robin assignment,
+"no reply in two days" alerts, broadcasts to a step, lead webhooks and an API key scope for leads, custom fields,
+more than one pipeline. The pricing page does not mention the pipeline yet.
+
 ## Plans
 
 Checked again on 22 October 2026, after the platform admin was given the choice of plan.

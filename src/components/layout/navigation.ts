@@ -2,6 +2,7 @@ import {
   Bot,
   Code2,
   Contact,
+  Funnel,
   LayoutDashboard,
   Megaphone,
   MessageSquare,
@@ -16,6 +17,7 @@ export type UserSubTab =
   | "sessions"
   | "campaigns"
   | "contacts"
+  | "pipeline"
   | "automations";
 export type AdminSubTab = "users" | "cluster" | "audit";
 export type DevSubTab = "docs" | "webhooks" | "sdks" | "keys";
@@ -53,6 +55,13 @@ export const NAV: NavItem[] = [
     icon: Contact,
     view: "user",
     tab: "contacts",
+  },
+  {
+    key: "pipeline",
+    label: "Pipeline",
+    icon: Funnel,
+    view: "user",
+    tab: "pipeline",
   },
   {
     key: "campaigns",

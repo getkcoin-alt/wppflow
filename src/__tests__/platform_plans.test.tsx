@@ -193,32 +193,32 @@ describe("the company's own view of its plan", () => {
   it("lists what is included and what is not, with the numbers used", () => {
     render(
       <PlanCard
-        plan={plan("Starter", { broadcasts: false, automations: false, audit: false, api: false, ai: false })}
+        plan={plan("Starter", { broadcasts: false, automations: false, leads: false, audit: false, api: false, ai: false })}
         numbersLimit={3}
         numbersUsed={2}
       />,
     );
     expect(screen.getByText("Starter")).toBeDefined();
     expect(screen.getByText("WhatsApp numbers").parentElement?.textContent).toContain("2 of 3");
-    expect(screen.getAllByLabelText("Not included").length).toBe(5);
+    expect(screen.getAllByLabelText("Not included").length).toBe(6);
     expect(screen.getByText(/ask the Scriwo team to move your company to a bigger plan/)).toBeDefined();
     expect(screen.getByRole("link", { name: "See the plans" }).getAttribute("href")).toBe("https://www.scriwo.com/pricing");
   });
 
   it("shows a business plan as including everything", () => {
-    render(<PlanCard plan={plan("Business", { broadcasts: true, automations: true, audit: true, api: true, ai: true })} numbersLimit={25} numbersUsed={4} />);
-    expect(screen.getAllByLabelText("Included").length).toBe(5);
+    render(<PlanCard plan={plan("Business", { broadcasts: true, automations: true, leads: true, audit: true, api: true, ai: true })} numbersLimit={25} numbersUsed={4} />);
+    expect(screen.getAllByLabelText("Included").length).toBe(6);
     expect(screen.queryByLabelText("Not included")).toBeNull();
     expect(screen.queryByText(/bigger plan/)).toBeNull();
   });
 
   it("says the Free plan is for one person", () => {
-    render(<PlanCard plan={plan("Free", { broadcasts: false, automations: false, audit: false, api: false, ai: false }, 1)} numbersLimit={1} numbersUsed={1} />);
+    render(<PlanCard plan={plan("Free", { broadcasts: false, automations: false, leads: false, audit: false, api: false, ai: false }, 1)} numbersLimit={1} numbersUsed={1} />);
     expect(screen.getByText("This plan is for one person.")).toBeDefined();
   });
 
   it("an older workspace plan has everything and says so", () => {
-    render(<PlanCard plan={{ name: "Workspace", restricted: false, features: { broadcasts: true, automations: true, audit: true, api: true, ai: true } }} numbersLimit={5} />);
+    render(<PlanCard plan={{ name: "Workspace", restricted: false, features: { broadcasts: true, automations: true, leads: true, audit: true, api: true, ai: true } }} numbersLimit={5} />);
     expect(screen.getByText("Everything included")).toBeDefined();
   });
 });

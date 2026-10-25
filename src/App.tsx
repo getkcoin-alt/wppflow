@@ -34,6 +34,8 @@ import { SessionManager } from "./components/user/SessionManager";
 import { Contacts } from "./components/user/Contacts";
 import { Campaigns } from "./components/user/Campaigns";
 import { Automations } from "./components/user/Automations";
+import { Pipeline } from "./components/pipeline/Pipeline";
+import { LeadPanel } from "./components/pipeline/LeadPanel";
 import { Dashboard } from "./components/user/Dashboard";
 import { FeatureLocked } from "./components/ui/FeatureLocked";
 import { UserManagement } from "./components/admin/UserManagement";
@@ -278,7 +280,10 @@ export function App() {
       markNotificationsRead(qc, tenant, n.id);
       void api.markNotificationRead(n.id).catch(() => {});
       if (n.conversationId) openConversationRef.current(n.conversationId);
-      else {
+      else if (n.type === "lead_task") {
+        setView("user");
+        setTab("pipeline");
+      } else {
         setView("user");
         setTab("sessions");
       }
@@ -803,8 +808,35 @@ export function App() {
                 await refresh("replies");
               }}
               canManage={manager}
+              renderLeadPanel={
+                locked("leads")
+                  ? undefined
+                  : (chat) => (
+                      <LeadPanel
+                        conversationId={chat.id}
+                        contactName={chat.contactName}
+                        teammates={team.data?.members || []}
+                        aiAvailable={Boolean(capabilities.data?.ai?.available)}
+                        isManager={manager}
+                        onOpenChat={(id) => openConversationRef.current(id)}
+                      />
+                    )
+              }
             />
           )}
+          {view === "user" && tab === "pipeline" &&
+            (locked("leads") ? (
+              <FeatureLocked feature="The sales pipeline" plan={planName} needs="Growth" />
+            ) : (
+              <Pipeline
+                teammates={team.data?.members || []}
+                sessions={sessions}
+                currentUserId={Number(user?.id)}
+                isManager={manager}
+                aiAvailable={Boolean(capabilities.data?.ai?.available)}
+                onOpenChat={(id) => openConversationRef.current(id)}
+              />
+            ))}
           {view === "user" && tab === "sessions" && (
             <SessionManager
               canManage={manager}
@@ -840,6 +872,7 @@ export function App() {
           )}
           {view === "user" && tab === "contacts" && (
             <Contacts
+              pipeline={locked("leads") ? undefined : { teammates: team.data?.members || [], isManager: manager, aiAvailable: false }}
               onSelectChat={(id) => {
                 void run(async () => {
                   const session = sessions.find(

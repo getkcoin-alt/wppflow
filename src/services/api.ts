@@ -327,7 +327,8 @@ export type RuleAction =
   | "assign_agent"
   | "add_tag"
   | "opt_in"
-  | "opt_out";
+  | "opt_out"
+  | "create_lead";
 export interface OpeningHours {
   timezone: string;
   /** 1 is Monday, 7 is Sunday */
@@ -444,6 +445,156 @@ export const resendOwnerCredentials = (id: string) =>
 export const assignSessionOwner = (name: string, userId: number) =>
   apiPatch(`/api/sessions/${encodeURIComponent(name)}/owner`, { userId });
 
+// ── Sales pipeline ───────────────────────────────────────────────────────────────────────────────
+export type StageKind = "open" | "won" | "lost";
+export interface PipelineStage {
+  id: string;
+  name: string;
+  kind: StageKind;
+  position: number;
+}
+export interface Lead {
+  id: string;
+  title: string;
+  contactId: string | null;
+  contactName: string;
+  phone: string;
+  email: string;
+  tags: string[];
+  sessionName: string | null;
+  conversationId: string | null;
+  stageId: string;
+  stageName: string;
+  stageKind: StageKind;
+  status: StageKind;
+  value: number;
+  source: string;
+  ownerUserId: number | null;
+  ownerName: string;
+  lostReason: string;
+  expectedClose: string | null;
+  stageChangedAt: string;
+  closedAt: string | null;
+  createdAt: string;
+  lastMessage: { text: string; fromMe: boolean; at: number | null } | null;
+  unread: number;
+  openTasks: number;
+  nextTask: { id: string; title: string; dueAt: string } | null;
+}
+export interface BoardColumn extends PipelineStage {
+  count: number;
+  value: number;
+  leads: Lead[];
+}
+export interface Board {
+  pipeline: { id: string; name: string; preset: string };
+  currency: "AED" | "INR";
+  stages: BoardColumn[];
+  totals: { open: number; openValue: number; won: number };
+  perColumn: number;
+}
+export interface LeadTask {
+  id: string;
+  leadId: string;
+  title: string;
+  dueAt: string;
+  assignedUserId: number | null;
+  assignedName: string;
+  done: boolean;
+  doneAt: string | null;
+  leadTitle?: string;
+  contactName?: string;
+  stageName?: string;
+  conversationId?: string | null;
+}
+export interface LeadEvent {
+  id: number;
+  actorName: string;
+  type: "created" | "stage" | "won" | "lost" | "reopened" | "owner" | "value";
+  detail: Record<string, any>;
+  createdAt: string;
+}
+export interface PipelineSettings {
+  pipeline: { id: string; name: string; preset: string };
+  currency: "AED" | "INR";
+  stages: (PipelineStage & { leads: number })[];
+  presets: { id: string; name: string; stages: string[] }[];
+  autoCreate: { exists: boolean; enabled: boolean };
+}
+export interface LeadFilters {
+  mine?: boolean;
+  owner?: string;
+  number?: string;
+  q?: string;
+  overdue?: boolean;
+  source?: string;
+  stage?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+const leadQuery = (f: LeadFilters = {}) => {
+  const p = new URLSearchParams();
+  if (f.mine) p.set("mine", "1");
+  if (f.owner) p.set("owner", f.owner);
+  if (f.number) p.set("number", f.number);
+  if (f.q) p.set("q", f.q);
+  if (f.overdue) p.set("overdue", "1");
+  if (f.source) p.set("source", f.source);
+  if (f.stage) p.set("stage", f.stage);
+  if (f.status) p.set("status", f.status);
+  if (f.limit) p.set("limit", String(f.limit));
+  if (f.offset) p.set("offset", String(f.offset));
+  const text = p.toString();
+  return text ? `?${text}` : "";
+};
+export const fetchLeadBoard = (f?: LeadFilters): Promise<Board> => apiGet(`/api/leads/board${leadQuery(f)}`);
+export const fetchLeads = (f?: LeadFilters): Promise<{ leads: Lead[]; total: number; limit: number; offset: number }> =>
+  apiGet(`/api/leads${leadQuery(f)}`);
+export const fetchLead = (id: string): Promise<{ lead: Lead; tasks: LeadTask[]; timeline: LeadEvent[] }> =>
+  apiGet(`/api/leads/${encodeURIComponent(id)}`);
+export const createLead = (data: {
+  conversationId?: string;
+  contactId?: string;
+  title?: string;
+  value?: number;
+  stageId?: string;
+  ownerUserId?: number | null;
+  expectedClose?: string;
+}): Promise<{ lead: Lead; existing: boolean }> => apiPost("/api/leads", data);
+export const bulkCreateLeads = (contactIds: string[]): Promise<{ created: number; skipped: number }> =>
+  apiPost("/api/leads/bulk", { contactIds });
+export const updateLead = (id: string, data: { title?: string; value?: number; expectedClose?: string | null; ownerUserId?: number | null }): Promise<{ lead: Lead }> =>
+  apiRequest(`/api/leads/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) });
+export const moveLead = (id: string, data: { stageId: string; beforeLeadId?: string; lostReason?: string }): Promise<{ lead: Lead }> =>
+  apiPost(`/api/leads/${encodeURIComponent(id)}/move`, data);
+export const deleteLead = (id: string) => apiDelete(`/api/leads/${encodeURIComponent(id)}`);
+export const addLeadTask = (id: string, data: { title: string; dueAt: string; assignedUserId?: number }): Promise<{ tasks: LeadTask[] }> =>
+  apiPost(`/api/leads/${encodeURIComponent(id)}/tasks`, data);
+export const updateLeadTask = (id: string, data: { done?: boolean; title?: string; dueAt?: string }): Promise<{ task: LeadTask }> =>
+  apiRequest(`/api/leads/tasks/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) });
+export const deleteLeadTask = (id: string) => apiDelete(`/api/leads/tasks/${encodeURIComponent(id)}`);
+/** The open lead for whoever a chat is with, if there is one. */
+export const fetchChatLead = (conversationId: string): Promise<{ lead: Lead | null }> =>
+  apiGet(`/api/leads/chat/${encodeURIComponent(conversationId)}`);
+export const fetchLeadTasks = (opts: { when?: "today" | "overdue" | "all"; everyone?: boolean; until?: string } = {}): Promise<{ tasks: LeadTask[] }> => {
+  const p = new URLSearchParams({ when: opts.when || "today" });
+  if (opts.everyone) p.set("everyone", "1");
+  if (opts.until) p.set("until", opts.until);
+  return apiGet(`/api/leads/tasks?${p}`);
+};
+export const fetchPipelineSettings = (): Promise<PipelineSettings> => apiGet("/api/leads/settings");
+export const savePipelineStages = (data: {
+  open: { id?: string; name: string }[];
+  wonName: string;
+  lostName: string;
+}): Promise<PipelineSettings> => apiRequest("/api/leads/settings/stages", { method: "PUT", body: JSON.stringify(data) });
+export const applyPipelinePreset = (preset: string): Promise<PipelineSettings> => apiPost("/api/leads/settings/preset", { preset });
+export const setPipelineCurrency = (currency: "AED" | "INR"): Promise<PipelineSettings> =>
+  apiRequest("/api/leads/settings/currency", { method: "PUT", body: JSON.stringify({ currency }) });
+export const setPipelineAutoCreate = (enabled: boolean): Promise<PipelineSettings> =>
+  apiRequest("/api/leads/settings/auto-create", { method: "PUT", body: JSON.stringify({ enabled }) });
+
 // ── AI assistant (Riwo) ──────────────────────────────────────────────────────────────────────────
 export type AiTone = "friendly" | "professional" | "brief";
 export type AiStyle = "polish" | "shorter" | "friendlier" | "formal";
@@ -493,6 +644,10 @@ export const aiSuggestReply = (
     `/api/ai/conversations/${encodeURIComponent(conversationId)}/suggest-reply`,
     { tone },
   );
+export const aiLeadSuggestion = (
+  conversationId: string,
+): Promise<{ title: string; value: number; nextStep: string; followUpDays: number }> =>
+  apiPost(`/api/ai/conversations/${encodeURIComponent(conversationId)}/lead-suggestion`, {});
 export const aiSummary = (conversationId: string): Promise<AiSummary> =>
   apiPost(
     `/api/ai/conversations/${encodeURIComponent(conversationId)}/summary`,

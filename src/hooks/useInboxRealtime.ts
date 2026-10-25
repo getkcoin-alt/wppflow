@@ -126,6 +126,7 @@ export function useInboxRealtime({
       invalidate("contact");
     };
     const onCampaign = () => invalidate("campaigns");
+    const onLead = () => invalidate("leads", "lead", "lead-tasks");
     const onWake = () => {
       if (document.visibilityState === "visible") void catchUp();
     };
@@ -147,6 +148,7 @@ export function useInboxRealtime({
       "contact:changed": onContacts,
       "campaign:status": onCampaign,
       "campaign:progress": onCampaign,
+      "lead:changed": onLead,
     };
     for (const [event, fn] of Object.entries(handlers)) socket.on(event, fn);
     document.addEventListener("visibilitychange", onWake);

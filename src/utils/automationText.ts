@@ -13,6 +13,7 @@ export const ACTION_LABELS: Record<RuleAction, string> = {
   add_tag: "Add a tag to the customer",
   opt_in: "Record permission for broadcasts",
   opt_out: "Take them off broadcasts",
+  create_lead: "Add them to the sales pipeline",
 };
 export const MATCH_LABELS = {
   contains: "Contains the words",
@@ -74,7 +75,9 @@ export function describeRule(rule: Pick<RuleDraft, "triggerType" | "triggerCondi
           ? `tags the customer “${rule.actionSummary || "…"}”${reply}`
           : rule.actionType === "opt_in"
             ? `records their permission for broadcasts${reply}`
-            : `takes them off broadcasts${reply}`;
+            : rule.actionType === "create_lead"
+              ? `adds them to the sales pipeline${reply}`
+              : `takes them off broadcasts${reply}`;
   return { when, then };
 }
 

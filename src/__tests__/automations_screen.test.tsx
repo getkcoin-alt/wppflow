@@ -178,6 +178,20 @@ describe("your own rules", () => {
     await waitFor(() => expect(api.removeAutomation).toHaveBeenCalledWith("r1"));
   });
 
+  it("can add the customer to the sales pipeline, and says so in plain words", async () => {
+    wrap();
+    fireEvent.click(screen.getByRole("button", { name: "New rule" }));
+    const form = await editor("New rule");
+    fireEvent.change(form.getByLabelText("Rule name"), { target: { value: "Quotes" } });
+    fireEvent.change(form.getByLabelText("Words or phrases"), { target: { value: "quote, demo" } });
+    fireEvent.change(form.getByLabelText("Then"), { target: { value: "create_lead" } });
+    expect(Array.from((form.getByLabelText("Then") as HTMLSelectElement).options).map((o) => o.textContent)).toContain("Add them to the sales pipeline");
+    expect(form.getByLabelText("What this rule does").textContent).toBe("When a message contains “quote”, “demo”, adds them to the sales pipeline.");
+    fireEvent.click(form.getByRole("button", { name: "Save paused rule" }));
+    await waitFor(() => expect(api.addAutomation).toHaveBeenCalled());
+    expect(api.addAutomation.mock.calls[0][0]).toMatchObject({ actionType: "create_lead", actionSummary: "", triggerCondition: "quote, demo" });
+  });
+
   it("edits a saved rule in place", async () => {
     wrap([saved({ triggerType: "keyword", triggerCondition: "price", name: "Price", actionSummary: "AED 50", config: { match: "contains" } })]);
     fireEvent.click(await screen.findByRole("button", { name: "Edit Price" }));

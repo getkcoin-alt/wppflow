@@ -7,17 +7,23 @@ import {
   apiPost,
   removeContact,
   getStoredTenantId,
+  bulkCreateLeads,
 } from "../../services/api";
 import { parseContactsCsv, contactsCsv } from "../../utils/csv";
-import { Download, Plus, Search, Upload, Users } from "lucide-react";
+import { Download, Funnel, Plus, Search, Upload, Users } from "lucide-react";
+import { NewLeadSheet } from "../pipeline/NewLeadSheet";
+import { usePipelineSettings } from "../pipeline/usePipelineSettings";
 import { safeAvatarFallback } from "../../utils/avatar";
 import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import { Sheet } from "../ui/Sheet";
 export function Contacts({
   onSelectChat,
+  pipeline,
 }: {
   onSelectChat: (id: string) => void;
+  /** Set when the company's plan has the sales pipeline: adds the "Add to pipeline" actions */
+  pipeline?: { teammates: { id: number; name: string }[]; isManager: boolean; aiAvailable: boolean };
 }) {
   const tenant = getStoredTenantId(),
     qc = useQueryClient(),
@@ -27,7 +33,11 @@ export function Contacts({
     [open, setOpen] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [leadFor, setLeadFor] = useState<any | null>(null),
+    [picked, setPicked] = useState<Set<string>>(new Set());
+  const pipelineSettings = usePipelineSettings(Boolean(pipeline));
+  const stages = (pipelineSettings.data?.stages || []).map(({ id, name, kind, position }) => ({ id, name, kind, position }));
   const query = useInfiniteQuery({
     queryKey: ["contacts", tenant, search],
     initialPageParam: null as string | null,
@@ -270,6 +280,22 @@ export function Contacts({
               key={c.id}
               className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 py-4 hover:bg-surface-2/50 transition lg:grid lg:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,1fr)_130px_auto]"
             >
+              {pipeline?.isManager && (
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${c.name}`}
+                  checked={picked.has(c.id)}
+                  onChange={(e) =>
+                    setPicked((p) => {
+                      const next = new Set(p);
+                      if (e.target.checked) next.add(c.id);
+                      else next.delete(c.id);
+                      return next;
+                    })
+                  }
+                  className="h-4 w-4 accent-brand-solid"
+                />
+              )}
               <img
                 src={safeAvatarFallback(c.name)}
                 alt=""
@@ -305,6 +331,11 @@ export function Contacts({
                 >
                   Message
                 </button>
+                {pipeline && (
+                  <button className={btn("ghost", "sm")} onClick={() => setLeadFor(c)} aria-label={`Add ${c.name} to the pipeline`}>
+                    <Funnel className="w-4 h-4" /> Pipeline
+                  </button>
+                )}
                 <button
                   className={btn("ghost", "sm")}
                   onClick={() => {
@@ -335,6 +366,27 @@ export function Contacts({
           ))}
         </ul>
       )}
+      {pipeline && picked.size > 0 && (
+        <div className="sticky bottom-4 mt-4 mx-auto w-fit card px-5 py-3 flex items-center gap-4 shadow-card" role="status">
+          <span className="text-[14px]">{picked.size} selected</span>
+          <button
+            className={btn("primary", "sm")}
+            disabled={busy}
+            onClick={() =>
+              void run(async () => {
+                const r = await bulkCreateLeads([...picked]);
+                setPicked(new Set());
+                setNotice(`${r.created} added to the pipeline${r.skipped ? `. ${r.skipped} already had a lead.` : "."}`);
+              })
+            }
+          >
+            <Funnel className="w-4 h-4" /> Add to pipeline
+          </button>
+          <button className={btn("ghost", "sm")} onClick={() => setPicked(new Set())}>
+            Clear
+          </button>
+        </div>
+      )}
       {query.hasNextPage && (
         <div className="mt-4 flex justify-center">
           <button
@@ -344,6 +396,20 @@ export function Contacts({
             Load more contacts
           </button>
         </div>
+      )}
+      {pipeline && (
+        <NewLeadSheet
+          open={!!leadFor}
+          contact={leadFor ? { id: leadFor.id, name: leadFor.name, phone: leadFor.phone } : undefined}
+          stages={stages}
+          teammates={pipeline.teammates}
+          aiAvailable={false}
+          onClose={() => setLeadFor(null)}
+          onCreated={(lead, existing) => {
+            setLeadFor(null);
+            setNotice(existing ? `${lead.contactName} already has an open lead.` : `${lead.contactName} is in your pipeline.`);
+          }}
+        />
       )}
     </Page>
   );

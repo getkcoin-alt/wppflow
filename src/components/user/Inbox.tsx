@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, type ReactNode } from "react";
 import {
   Search,
   Send,
@@ -76,6 +76,8 @@ interface InboxProps {
     text: string;
   }) => Promise<void>;
   canManage?: boolean;
+  /** A bar under the chat's header, such as where this customer is in the sales pipeline */
+  renderLeadPanel?: (chat: ChatThread) => ReactNode;
   onOpenSessions?: () => void;
   /** Whether WhatsApp history for the open chat is loading, or why it could not be loaded */
   historyStatus?: { loading: boolean; note?: string } | null;
@@ -180,6 +182,7 @@ export const Inbox: React.FC<InboxProps> = ({
   aiClient,
   onSaveReply,
   canManage = false,
+  renderLeadPanel,
   onOpenSessions,
 }) => {
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "groups">(
@@ -849,6 +852,8 @@ export const Inbox: React.FC<InboxProps> = ({
         ) : (
           <div className="h-[68px] border-b border-line shrink-0" />
         )}
+
+        {activeChat && !activeChat.isGroup && renderLeadPanel?.(activeChat)}
 
         {/* ── Messages ── */}
         <div

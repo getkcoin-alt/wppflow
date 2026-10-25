@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import {
   AtSign,
   Bell,
+  CalendarClock,
+  Funnel,
   NotebookPen,
   Smartphone,
   UserCheck,
@@ -16,6 +18,8 @@ const ICON: Record<string, typeof Bell> = {
   mention: AtSign,
   assignment: UserCheck,
   session: Smartphone,
+  lead: Funnel,
+  lead_task: CalendarClock,
 };
 
 export function NotificationBell({

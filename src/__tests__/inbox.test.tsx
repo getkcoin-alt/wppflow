@@ -455,3 +455,39 @@ describe("the AI assistant in the inbox", () => {
     expect(screen.queryByRole("button", { name: /Translate to/ })).toBeNull();
   });
 });
+
+describe("the sales bar under a chat's header", () => {
+  const open = (selectedChatId: string, renderLeadPanel?: (chat: ChatThread) => React.ReactNode) =>
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={mockMessages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId={selectedChatId}
+        onSendMessage={vi.fn()}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+        renderLeadPanel={renderLeadPanel}
+      />,
+    );
+
+  it("shows what the app puts there, for the chat that is open", () => {
+    open("conv_1", (chat) => <div>Pipeline bar for {chat.contactName}</div>);
+    expect(screen.getByText("Pipeline bar for Alice Johnson")).toBeDefined();
+  });
+
+  it("is not shown for a group, which is never a lead", () => {
+    open("conv_2", () => <div>Pipeline bar</div>);
+    expect(screen.queryByText("Pipeline bar")).toBeNull();
+  });
+
+  it("is simply absent on a plan without the pipeline", () => {
+    open("conv_1", undefined);
+    expect(screen.queryByText(/Pipeline bar/)).toBeNull();
+  });
+});

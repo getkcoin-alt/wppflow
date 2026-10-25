@@ -5,6 +5,7 @@ import { Pill } from "../ui/Page";
 const FEATURES: [string, string][] = [
   ["broadcasts", "Broadcasts to opted-in contacts"],
   ["automations", "Keyword automations"],
+  ["leads", "Sales pipeline and follow-ups"],
   ["audit", "Audit log"],
   ["api", "API keys and webhooks"],
   ["ai", "Riwo, the AI assistant"],
