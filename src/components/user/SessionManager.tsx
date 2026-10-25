@@ -22,6 +22,7 @@ import { friendlyPairingError } from "../../utils/pairingError";
 import { EmptyState, Field, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import { Sheet } from "../ui/Sheet";
+import { nameInUse, nextFreeLabel, sessionKeyFor } from "../../utils/sessionNames";
 
 interface SessionManagerProps {
   sessions: WhatsAppSession[];
@@ -179,6 +180,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
   useEffect(() => {
     if (isPairModalOpen) {
+      setSessionName(nextFreeLabel(sessions));
       setPairingPhase("idle");
       setLiveQrImage(null);
       setErrorMessage(null);
@@ -194,8 +196,15 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   }, [isPairModalOpen]);
 
   const handleStartPairing = async () => {
-    const rawKey = sessionName.trim() || "whatsapp-line";
-    let cleanKey = rawKey.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    let cleanKey = sessionKeyFor(sessionName);
+    // A name that is already a linked number would start that number again, not link a new one.
+    if (canManage && nameInUse(sessions, cleanKey)) {
+      setPairingPhase("error");
+      setErrorMessage(
+        `You already have a number called "${sessionName.trim()}". Choose another name for the new one, or use Reconnect on that one.`,
+      );
+      return;
+    }
 
     activeSessionKey.current = cleanKey;
     startingAttemptsRef.current = 0;
@@ -208,7 +217,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
     try {
       // Staff always pair their own session; the server decides its name.
-      const started = await startLiveSession(cleanKey);
+      const started = await startLiveSession(cleanKey, true);
       cleanKey = started?.sessionName || cleanKey;
       activeSessionKey.current = cleanKey;
       setStatusMessage("Connecting to WhatsApp…");
@@ -452,6 +461,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                       onChange={(e) => setSessionName(e.target.value)}
                       className={inputCls}
                     />
+                    {nameInUse(sessions, sessionKeyFor(sessionName)) && (
+                      <p className="mt-1.5 text-[13px] text-danger" role="alert">
+                        You already have a number with this name. Choose another name for the new one.
+                      </p>
+                    )}
                   </Field>
                   <Field label="Channel">
                     <select

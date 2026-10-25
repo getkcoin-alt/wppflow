@@ -190,8 +190,10 @@ export async function checkBackendHealth(): Promise<BackendHealth | null> {
 }
 export const getLiveSessions = async () =>
   (await apiGet("/api/sessions")).sessions;
-export const startLiveSession = (sessionName: string) =>
-  apiPost("/api/sessions/start", { sessionName });
+// newNumber: linking a number that is not linked yet. The server then refuses a name that is already in
+// use, instead of starting that number from its saved login (which connects without any QR code).
+export const startLiveSession = (sessionName: string, newNumber = false) =>
+  apiPost("/api/sessions/start", newNumber ? { sessionName, newNumber } : { sessionName });
 export const getLiveSessionQr = (name: string) =>
   apiGet(`/api/sessions/${encodeURIComponent(name)}/qr`);
 export const getLiveSessionStatus = (name: string) =>
