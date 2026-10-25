@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scriza WhatsApp CRM SaaS - Developer Task Board v1.1</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif; font-size: 9.6pt; line-height: 1.45; color: #1a2433; margin: 0; }
+  .kicker { color: #6b7a90; font-size: 10pt; letter-spacing: .02em; }
+  h1 { font-size: 24pt; line-height: 1.12; color: #14233b; margin: 8px 0 10px; }
+  .sub { color: #6b7a90; font-size: 12pt; margin: 0 0 12px; }
+  h2 { font-size: 14.5pt; color: #14233b; margin: 22px 0 8px; break-after: avoid; }
+  h3 { font-size: 11.5pt; color: #0e7c61; margin: 16px 0 5px; break-after: avoid; }
+  h4 { font-size: 9.8pt; color: #14233b; margin: 10px 0 3px; break-after: avoid; }
+  p { margin: 4px 0 6px; }
+  ul { margin: 3px 0 7px; padding-left: 17px; }
+  li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 10px; font-size: 8.6pt; break-inside: auto; }
+  th { background: #14233b; color: #fff; text-align: left; padding: 6px 7px; font-weight: 700; }
+  td { padding: 6px 7px; vertical-align: top; border-bottom: 1px solid #e3e8ef; }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: #f1f4f9; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 7.8pt; font-weight: 700; white-space: nowrap; }
+  .done { background: #d9f2e8; color: #0b6b52; }
+  .part { background: #fdeccc; color: #8a5a00; }
+  .none { background: #e5e9f0; color: #4a5a70; }
+  .new { background: #dde7fb; color: #234a9a; }
+  .box { background: #f1f4f9; border-left: 4px solid #0e7c61; padding: 8px 12px; margin: 10px 0; border-radius: 3px; }
+  .box.warn { border-left-color: #c47b00; background: #fff7e6; }
+  .meta { color: #6b7a90; font-size: 8.4pt; }
+  .task { break-inside: avoid-page; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; background: #eef1f6; padding: 0 3px; border-radius: 3px; }
+  .pb { break-before: page; }
+  ol { margin: 3px 0 7px; padding-left: 19px; }
+</style>
+</head>
+<body>
+
+<div class="kicker">SCRIZA | PRODUCT DEVELOPMENT HANDOFF</div>
+<h1>WhatsApp CRM - SaaS Launch &amp; Feature Development</h1>
+<p class="sub">Developer-ready backlog | Version 1.1 | 25 October 2026 | Supersedes version 1.0 of the same day</p>
+
+<p>Goal: convert the existing multi-number, multi-agent WhatsApp CRM into a paid multi-tenant SaaS product, then improve contact management, direct messaging, tagging/filtering, and team response analytics.</p>
+
+<div class="box">
+<strong>What changed in 1.1</strong>
+<ul>
+  <li><strong>Every task now has a status, checked against the code and the automated tests</strong>, not against screenshots. Version 1.0 said the screens were "not backend-verified"; this version replaces that with what was read in the repositories.</li>
+  <li><strong>Several tasks were already partly or fully built</strong> (subscription periods and renewals, the AI assistant, follow-ups, contact rename, start-chat from Contacts). Their remaining scope is smaller than the 1.0 effort suggests.</li>
+  <li><strong>CRM-002 is rewritten for Razorpay</strong> (orders, verified checkout, signed webhooks, idempotency, reconciliation). Recurring autopay is split out as <strong>CRM-016</strong> and GST invoices as <strong>CRM-017</strong>.</li>
+  <li><strong>Decisions the owner must make before CRM-002 starts</strong> are listed at the end of this document (annual price, UAE/AED, GST, autopay, who may pay).</li>
+</ul>
+</div>
+
+<p class="meta">Status key: <span class="pill done">Done</span> built, tested and live &nbsp; <span class="pill part">Partly</span> some of the scope is built &nbsp; <span class="pill none">Not started</span> &nbsp; <span class="pill new">New</span> added in 1.1.</p>
+
+<h2>Product today (read from the code, 25 October 2026)</h2>
+<ul>
+  <li><strong>Inbox and numbers:</strong> shared live inbox over several linked WhatsApp numbers; staff see their own number's chats and chats assigned to them, owners see all, enforced on the server; assign, resolve, private notes with @mentions; saved replies; alerts when a phone goes offline.</li>
+  <li><strong>Plans:</strong> Free, Starter, Growth, Business, Enterprise are enforced on the server (numbers, people on Free, broadcasts, automations, sales pipeline, audit log, API, AI). The platform admin chooses a plan when creating a company and can change it.</li>
+  <li><strong>Subscriptions (new since 1.0 was drafted):</strong> each company has a billing cycle, a period and a renewal date; the platform admin records each payment; a smaller plan or Free can be scheduled for the end of the period and is applied by a daily job; owners are reminded once before renewal and once when overdue; nothing is switched off automatically for non-payment.</li>
+  <li><strong>Sales pipeline:</strong> board, list and Today list, follow-ups with reminders, a bar in every chat, lead rules, Growth plan and above.</li>
+  <li><strong>Broadcasts and automations:</strong> three-step broadcast wizard with consent checks, ten ready-made messages, 14 ready-made rules, keyword / first-message / after-hours triggers.</li>
+  <li><strong>Riwo (AI assistant):</strong> reply drafts, improve, translate, chat summaries; company switch, daily allowance, usage shown in Your plan and on the platform list.</li>
+  <li><strong>Not present:</strong> any online payment, invoices, reply-time analytics, colour labels, Inbox filters beyond All / Unread / Groups, round-robin assignment.</li>
+</ul>
+
+<h2>Implementation order / delivery gates</h2>
+<table>
+<thead><tr><th style="width:12%">Gate</th><th style="width:30%">Must ship</th><th style="width:34%">Exit condition</th><th style="width:24%">Status 25 Oct</th></tr></thead>
+<tbody>
+<tr><td>G1 / P0</td><td>Plans + paid checkout + subscriptions + usage enforcement</td><td>Real test payment correctly creates/renews one tenant subscription; no cross-tenant access.</td><td><span class="pill part">Partly</span> Subscriptions, renewals and limits are built. Paid checkout (CRM-002) is not.</td></tr>
+<tr><td>G2 / P0</td><td>Contact names + direct chat + labels and filters</td><td>Agent can create/edit/contact, initiate allowed outbound messaging and find contacts by label.</td><td><span class="pill part">Partly</span> Rename on Contacts and Message from Contacts exist; labels and filters do not.</td></tr>
+<tr><td>G3 / P1</td><td>Response-time reporting + inbox productivity</td><td>Owner sees accurate agent stats including unanswered chats and SLA performance.</td><td><span class="pill none">Not started</span></td></tr>
+<tr><td>G4 / P1-P2</td><td>Renewal UX + reports + automation + optional AI</td><td>Production readiness sign-off and pilot customer acceptance.</td><td><span class="pill part">Partly</span> Renewal reminders, AI and automation are built; reports are not.</td></tr>
+</tbody>
+</table>
+
+<h2>Master task register</h2>
+<table>
+<thead><tr><th style="width:10%">Task ID</th><th style="width:7%">Priority</th><th style="width:34%">Scope</th><th style="width:15%">Status</th><th style="width:34%">Remaining (indicative effort)</th></tr></thead>
+<tbody>
+<tr><td>CRM-001</td><td>P0</td><td>Plan catalog &amp; pricing</td><td><span class="pill part">Partly</span></td><td>Prices and plans into the database, yearly price, trial policy, Plans &amp; Billing menu (1.5-2d)</td></tr>
+<tr><td>CRM-002</td><td>P0</td><td>Checkout, gateway &amp; verified webhook (Razorpay)</td><td><span class="pill none">Not started</span></td><td>Orders checkout, signed webhook, idempotency, reconciliation (4-6d)</td></tr>
+<tr><td>CRM-003</td><td>P0</td><td>Subscription lifecycle &amp; access limits</td><td><span class="pill part">Partly</span></td><td>Trial, grace, expired, pending payment; limits on contacts and broadcasts; usage counters (2-3d)</td></tr>
+<tr><td>CRM-004</td><td>P0</td><td>Contact name save/edit</td><td><span class="pill part">Partly</span></td><td>Edit from the Inbox panel, separate CRM name from WhatsApp name, change audit (0.5d)</td></tr>
+<tr><td>CRM-005</td><td>P0</td><td>Direct message / start chat</td><td><span class="pill part">Partly</span></td><td>New chat in Inbox with a typed number, sender choice, number validation (1d)</td></tr>
+<tr><td>CRM-006</td><td>P0</td><td>Labels, contact &amp; inbox filters</td><td><span class="pill part">Partly</span></td><td>Coloured, company-managed labels; bulk tagging; label filters in Contacts and Inbox (1.5-2d)</td></tr>
+<tr><td>CRM-007</td><td>P1</td><td>Reply-time metrics and leaderboard</td><td><span class="pill none">Not started</span></td><td>3-5d</td></tr>
+<tr><td>CRM-008</td><td>P1</td><td>Inbox filters + quick actions</td><td><span class="pill part">Partly</span></td><td>Mine / team / unassigned / labelled / overdue filters, pinned, reply-collision warning (1-1.5d)</td></tr>
+<tr><td>CRM-009</td><td>P1</td><td>Follow-up and escalation</td><td><span class="pill part">Partly</span></td><td>Tasks without a lead, escalation of overdue tasks (1d)</td></tr>
+<tr><td>CRM-010</td><td>P1</td><td>Billing self-service + invoices</td><td><span class="pill part">Partly</span></td><td>Invoices, payment history, pay / renew / cancel / retry, finance role (2-3d, after CRM-002)</td></tr>
+<tr><td>CRM-011</td><td>P1</td><td>Owner daily reporting</td><td><span class="pill none">Not started</span></td><td>2-3d, after CRM-007</td></tr>
+<tr><td>CRM-012</td><td>P1</td><td>Operational observability / number health</td><td><span class="pill part">Partly</span></td><td>Heartbeat, failed sends per number, queue per number (1-2d)</td></tr>
+<tr><td>CRM-013</td><td>P2</td><td>Lead assignment rules</td><td><span class="pill none">Not started</span></td><td>2-4d</td></tr>
+<tr><td>CRM-014</td><td>P2</td><td>AI chat summaries (opt-in)</td><td><span class="pill done">Done</span></td><td>Sentiment is not included (0.5d if wanted)</td></tr>
+<tr><td>CRM-015</td><td>P2</td><td>SaaS super-admin console</td><td><span class="pill part">Partly</span></td><td>Platform usage totals, per-company number health, billing audit view (2-3d)</td></tr>
+<tr><td>CRM-016</td><td>P1</td><td>Razorpay autopay (recurring subscriptions)</td><td><span class="pill new">New</span></td><td>3-4d, after CRM-002 and the owner decisions at the end</td></tr>
+<tr><td>CRM-017</td><td>P1</td><td>GST invoices and receipts</td><td><span class="pill new">New</span></td><td>2-3d, with CRM-010</td></tr>
+</tbody>
+</table>
+<p class="meta">Estimates are illustrative developer-days for what remains, not committed timelines. The 1.0 efforts were for the whole task; the sales pipeline, broadcast wizard, automation rules and AI assistant were built outside this list.</p>
+
+<h2>Task detail</h2>
+
+<div class="task"><h3>CRM-001 | SaaS plan catalog (P0) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> five plans enforced on the server (<code>plans.js</code>): number limit, people (Free is one person), and which features each includes. The platform admin picks a plan when creating a company and can move it later; owners see their plan, what it includes and what it does not. Prices are shown in AED and INR on the public pricing page.</p>
+<p><strong>Remaining:</strong> prices exist only on the website, so checkout cannot trust them. Move plan code, name, interval, <code>price_minor</code>, currency, tax mode, limits and feature flags into a <code>plans</code> table that the server reads and the platform admin edits without a deploy. Add the yearly price (the pricing page says "monthly or annual" but shows only monthly), the trial policy, and a Plans &amp; Billing menu for owners.</p>
+<p><strong>Acceptance (unchanged):</strong> owner can compare plans; admins can change plans without deploying code; no frontend price manipulation; limit and billing interval shown clearly. <span class="meta">Dependencies: CRM-002.</span></p></div>
+
+<div class="task"><h3>CRM-003 | Subscription lifecycle + limits (P0) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> the state of a company is worked out from its dates each time: free, legacy, no payment recorded, active, due soon, overdue, changing, cancelling. Period start and renewal date, a scheduled downgrade or cancellation applied by a daily job, in-app reminders, number / people / feature limits enforced in the API (not the screen only). A smaller plan removes nothing the company already has.</p>
+<p><strong>Remaining:</strong> trial, grace and expired states; a pending state while a payment is in progress; limits on contacts and broadcasts (<code>max_contacts</code>, monthly broadcast count) with soft-limit warnings; usage counters (<code>tenant_usage_counters</code>). Overdue deliberately restricts nothing today: whether and when it should (grace days, then paid features off) is one of the owner decisions at the end of this document.</p>
+<p><strong>Acceptance:</strong> trial / purchase / upgrade / expiry flows tested; tenant cannot exceed hard limits; existing records remain recoverable after expiry. <span class="meta">Dependencies: CRM-001, CRM-002.</span></p></div>
+
+<div class="task"><h3>CRM-004 | Save/edit contact name (P0) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> a contact's name is edited on the Contacts page (<code>PATCH /api/contacts/:id</code>) and shows in the Inbox, Contacts and Pipeline.</p>
+<p><strong>Remaining:</strong> edit from the Inbox right panel; keep the WhatsApp profile name apart from the CRM name (<code>contacts.name</code> is one field today); normalise numbers to E.164 where possible; write an audit entry for each change; define duplicate handling (a number is unique per company today).</p>
+<p><strong>Acceptance:</strong> rename reflects in Inbox, Contacts and Pipeline without losing history; duplicate contact handling specified.</p></div>
+
+<div class="task"><h3>CRM-005 | Direct WhatsApp message (P0) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> "Message" on a contact opens or creates the chat on a connected number (<code>POST /api/conversations</code>); sending uses the normal send path with rate limits, delivery states and sender identity.</p>
+<p><strong>Remaining:</strong> New chat in the Inbox for a typed number (validate format, choose the sending number from the ones the agent may use); show a warning when the contact has not agreed to messages. Numbers are linked like WhatsApp Web, so approved-template rules do not apply here; they would only apply if an official API connection is ever added.</p>
+<p><strong>Acceptance:</strong> send only when channel rules allow; message appears in the matching thread; failure has an actionable state. <span class="meta">Dependencies: CRM-004.</span></p></div>
+
+<div class="task"><h3>CRM-006 | Labels &amp; filtering (P0) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> free-text tags on a contact, shown in the Inbox panel and used to pick a broadcast audience.</p>
+<p><strong>Remaining:</strong> company-owned, coloured labels (<code>labels</code> and <code>contact_labels</code>, unique per company); many labels per contact; bulk tagging after selection; label filter in Contacts and Inbox; filter combinations (label, assigned agent, number, unread, last activity). Move existing tags into labels without losing any.</p>
+<p><strong>Acceptance:</strong> add/remove shows at once; filtering works with several labels; labels never leak between companies. <span class="meta">Dependencies: CRM-004.</span></p></div>
+
+<div class="task"><h3>CRM-007 | Employee reply analytics (P1) <span class="pill none">Not started</span></h3>
+<p>Unchanged from 1.0. Inputs exist (message timestamps, assignment, who sent each reply, notes kept apart from replies); nothing computes first or average response time yet. Compute from the customer's message to the next human reply, exclude automatic replies and team notes, report median and p90 with a minimum sample, and let the owner filter by date, team and number and export CSV.</p></div>
+
+<div class="task"><h3>CRM-008 | Inbox quick actions (P1) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> All / Unread / Groups tabs, search, switching between numbers, saved replies, assign and resolve, private notes.</p>
+<p><strong>Remaining:</strong> Mine / team / unassigned / labelled / overdue filters on the server with paging, pinned or priority chats, a warning when two people type a reply at once. <span class="meta">Dependencies: CRM-006.</span></p></div>
+
+<div class="task"><h3>CRM-009 | Follow-up reminders (P1) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> follow-ups on a lead with a due time, owner, notes and a done state; a Today list; one reminder when due (moving the time reminds again); overdue shown on the board, list and in the chat bar.</p>
+<p><strong>Remaining:</strong> a task from a conversation that has no lead; escalate an overdue task to the team lead or owner; an audit entry for reassignment.</p></div>
+
+<div class="task"><h3>CRM-010 | Customer billing self-service (P1) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> "Your plan" shows plan, billing cycle, renewal date and state, numbers used, and Riwo use today and this month, for owners and administrators only.</p>
+<p><strong>Remaining:</strong> invoices and payment history for the owner, pay now / renew / upgrade / cancel / retry a failed payment, a Finance role (today only owner and admin; a "billing" label exists but gives no permission). Proration and downgrade policy configurable. <span class="meta">Dependencies: CRM-001 to CRM-003, CRM-017.</span></p></div>
+
+<div class="task"><h3>CRM-011 | Owner daily activity report (P1) <span class="pill none">Not started</span></h3>
+<p>Unchanged. The Overview screen shows basic counts today; the number / team / date-wise report with drill-down, agent scorecards and export is still to build. <span class="meta">Dependencies: CRM-007, CRM-009.</span></p></div>
+
+<div class="task"><h3>CRM-012 | WhatsApp number health (P1) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> connected / disconnected / failed status with the reason, an alert to the owner when a phone drops, queue status on the System screen, a read-only server report (<code>scripts/diagnose-numbers.mjs</code>) and a log line for every pairing step.</p>
+<p><strong>Remaining:</strong> last heartbeat, reconnect state, failed sends and queued messages per number on screen; alerts on persistent errors.</p></div>
+
+<div class="task"><h3>CRM-013 | Automatic lead assignment (P2) <span class="pill none">Not started</span></h3>
+<p>Unchanged. A rule can assign a chat to a named teammate; round-robin, team ownership, workload routing and working hours are not built. <span class="meta">Dependencies: CRM-008.</span></p></div>
+
+<div class="task"><h3>CRM-014 | AI conversation summaries (P2) <span class="pill done">Done</span></h3>
+<p><strong>Built:</strong> Riwo summarises a chat, drafts and improves replies and translates; a person always reads and sends. Companies can switch it off, each has a daily allowance, usage is metered and shown, customer messages are treated as data (prompt-injection tests), phone numbers and media are not sent, and nothing is sent automatically. <strong>Not included:</strong> sentiment.</p></div>
+
+<div class="task"><h3>CRM-015 | SaaS super-admin console (P2) <span class="pill part">Partly</span></h3>
+<p><strong>Built:</strong> company directory with plan, number limit, people, live numbers, subscription state with overdue / renewing / unrecorded filters, record a payment, schedule a change, suspend and reactivate, AI use and allowance, an audit entry for each change. The platform admin cannot read a company's chats.</p>
+<p><strong>Remaining:</strong> platform-wide usage totals, number health per company, a billing audit view, support access that is logged.</p></div>
+
+<h2 class="pb">CRM-002 | Razorpay checkout + webhook (P0) <span class="pill none">Not started</span></h2>
+<p>Build the first paid path with Razorpay <strong>Orders + Standard Checkout</strong>: one payment pays for one period (a month or a year), which is exactly what the subscription record already models. It reuses the existing <code>recordPayment()</code> so a Razorpay payment and a payment recorded by hand end up in the same place. Autopay is CRM-016.</p>
+
+<h4>Flow</h4>
+<ol>
+  <li>The owner opens Plans &amp; Billing, picks a plan and monthly or yearly, and gives billing details if none are saved (CRM-017).</li>
+  <li><code>POST /api/billing/checkout</code> (owner only): the server finds the company from the login, reads the price from the plans table, adds tax, writes a <code>payment_orders</code> row (status <em>created</em>) and creates a Razorpay Order: amount in paise, currency, <code>receipt</code> = our order id, <code>notes</code> = company id, plan, cycle. It returns only the public key id and the order id.</li>
+  <li>The browser opens Razorpay Checkout with that order. Card and bank details never touch Scriwo.</li>
+  <li>On success the browser posts <code>razorpay_order_id</code>, <code>razorpay_payment_id</code>, <code>razorpay_signature</code> to <code>POST /api/billing/verify</code>. The server recomputes <code>HMAC-SHA256(order_id + "|" + payment_id, key_secret)</code> using the order id <strong>from its own record, not from the browser</strong>, and compares in constant time. A valid signature shows "payment received, activating" but is not by itself the activation.</li>
+  <li><strong>Activation</strong> happens in one function, <code>settleOrder()</code>, called by the signed webhook (<code>payment.captured</code> / <code>order.paid</code>) or by the reconciliation job. It locks the order row, checks status, amount, currency and company, then calls <code>recordPayment()</code> and moves the order to <em>paid</em>. Whichever runs first wins; the second finds the order already paid and does nothing.</li>
+  <li>The owner and administrators get an in-app "payment received" notice; an invoice is issued (CRM-017).</li>
+</ol>
+
+<h4>Webhook rules</h4>
+<table>
+<thead><tr><th style="width:26%">Rule</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td>Endpoint</td><td><code>POST /api/billing/razorpay/webhook</code>, public, mounted <strong>before</strong> the global JSON parser with <code>express.raw</code>, because the signature covers the exact bytes received.</td></tr>
+<tr><td>Signature</td><td><code>X-Razorpay-Signature</code> = HMAC-SHA256 of the raw body with the <strong>webhook secret</strong> (not the API key secret), compared in constant time. Invalid: 400, nothing stored except a log line without the body.</td></tr>
+<tr><td>Idempotency</td><td>The event id (<code>X-Razorpay-Event-Id</code>) is inserted into <code>gateway_webhook_receipts</code> with a unique constraint first; a duplicate returns 200 and does nothing. Events can arrive more than once and out of order, so every handler checks the order's current state.</td></tr>
+<tr><td>Replay safety</td><td>Unique event id plus the order state check; a replayed old event cannot extend a period twice.</td></tr>
+<tr><td>Checks before activating</td><td>Order exists and belongs to the company in its own notes; payment amount and currency equal the order's; payment status is captured. Any mismatch marks the order <em>mismatch</em>, activates nothing and raises an alert for the platform admin.</td></tr>
+<tr><td>Failed / pending</td><td><code>payment.failed</code> records the reason and leaves the company unchanged; the screen offers retry with a new order.</td></tr>
+<tr><td>Refunds</td><td>A refund event is stored and shown to the platform admin; it does not remove access by itself (P1).</td></tr>
+<tr><td>Response</td><td>200 within a few seconds after the receipt is stored; heavy work after responding or by the job.</td></tr>
+<tr><td>Audit</td><td>Every order, receipt and settlement writes an audit entry; secrets and full card data are never logged.</td></tr>
+</tbody>
+</table>
+
+<h4>Reconciliation and recovery</h4>
+<p>A job every few minutes looks at orders still <em>created</em> or <em>attempted</em> after 10 minutes and asks Razorpay for the order's payments; a captured payment is settled the same way a webhook would. This covers lost webhooks and a customer who closed the tab. Orders with no payment expire after 24 hours.</p>
+
+<h4>Configuration (server only)</h4>
+<p><code>RAZORPAY_KEY_ID</code>, <code>RAZORPAY_KEY_SECRET</code>, <code>RAZORPAY_WEBHOOK_SECRET</code> in the server's environment file, never in the repository or the browser. The mode (test or live) follows the key prefix <code>rzp_test_</code> / <code>rzp_live_</code>; <code>/health</code> reports whether payments are configured and in which mode. Checkout is switched off when any of the three is missing.</p>
+
+<h4>Acceptance</h4>
+<ul>
+  <li>Successful verified payment activates exactly one company, once; a duplicate webhook creates no duplicate payment, period or invoice.</li>
+  <li>A failed or pending payment does not activate; a payment for the wrong amount, currency or company does not activate.</li>
+  <li>The company cannot be chosen by the browser: another company's order id returns 404.</li>
+  <li>Activation works when only the webhook arrives, when only the browser verify arrives, and when both arrive together.</li>
+  <li>Paying early never shortens a period; paying for a period already paid up shows a warning first.</li>
+</ul>
+<p class="meta">Dependencies: CRM-001. Verified from public documentation: webhook signature, checkout signature and the <code>X-Razorpay-Event-Id</code> header (confirm the header in the test-mode delivery log). Everything else is to be proven in Razorpay test mode before live keys are used.</p>
+
+<div class="task"><h3>CRM-016 | Razorpay autopay (P1) <span class="pill new">New</span></h3>
+<p>Recurring charge through Razorpay Subscriptions: a Razorpay plan per Scriwo plan and cycle, a first authenticated payment that registers the mandate (card, UPI autopay or e-mandate), then <code>subscription.charged</code> events that each call <code>recordPayment()</code>. Map <code>halted</code> to payment overdue and <code>cancelled</code> to a scheduled end of period; let the owner cancel autopay; keep the manual "pay now" path.</p>
+<p><strong>Why it is separate:</strong> amounts are fixed on the Razorpay plan, so a price change needs a new plan; and with 18% GST the Business monthly amount (about 17,699 rupees) is above the 15,000-rupee level up to which recurring debits are usually processed without the customer approving each one. Confirm the current limits with Razorpay before building. Yearly plans are not suited to autopay.</p>
+<p><strong>Acceptance:</strong> one charge, one period, however many times Razorpay repeats the event; a failed charge shows overdue and the retry state; cancelling stops the next charge and keeps the paid period.</p></div>
+
+<div class="task"><h3>CRM-017 | GST invoices and receipts (P1) <span class="pill new">New</span></h3>
+<p>Billing details per company (legal name, address, state, GSTIN if any), an invoice number series, tax shown separately (18% GST for India), a PDF the owner can download, and a receipt for every settled payment. The invoice must match the paid transaction exactly; manual payments get an invoice the same way. The accountant confirms the invoice fields and service code before the first live invoice.</p>
+<p><strong>Acceptance:</strong> downloadable invoice matches the paid transaction; numbers never repeat or skip silently; only owner and finance roles can see invoices.</p></div>
+
+<h2>Required database / API contract</h2>
+<table>
+<thead><tr><th style="width:24%">Entity</th><th style="width:18%">Status</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Company plan, number limit, status</td><td><span class="pill done">Exists</span></td><td><code>tenants</code>: plan name, <code>sessions_limit</code>, status, AI allowance.</td></tr>
+<tr><td>Subscription period</td><td><span class="pill done">Exists</span></td><td><code>tenants</code>: <code>billing_cycle</code>, <code>period_start</code>, <code>period_end</code>, <code>scheduled_plan</code>, reminder markers (migration 017).</td></tr>
+<tr><td>Payments recorded</td><td><span class="pill done">Exists</span></td><td><code>subscription_payments</code>: plan, cycle, period, amount, currency, reference, who recorded it.</td></tr>
+<tr><td>Audit</td><td><span class="pill done">Exists</span></td><td><code>audit_events</code>; subscription and plan changes write to it.</td></tr>
+<tr><td>Plan catalogue with prices</td><td><span class="pill none">To add</span></td><td><code>plans</code> and entitlements (CRM-001): code, interval, <code>price_minor</code>, currency, tax mode, limits, features, sort order.</td></tr>
+<tr><td>Orders and payments</td><td><span class="pill none">To add</span></td><td><code>payment_orders</code> (company, plan, cycle, amount, tax, currency, gateway order id, status, expiry) and <code>payments</code> (gateway payment id unique, status, method, raw reference, timestamps).</td></tr>
+<tr><td>Webhook receipts</td><td><span class="pill none">To add</span></td><td><code>gateway_webhook_receipts</code>: event id unique, event, payload hash, received, processed, result.</td></tr>
+<tr><td>Subscription events</td><td><span class="pill none">To add</span></td><td><code>subscription_events</code>: a readable history (created, renewed, changed, cancelled, overdue).</td></tr>
+<tr><td>Invoices, billing details</td><td><span class="pill none">To add</span></td><td><code>invoices</code>, <code>billing_profiles</code> (CRM-017).</td></tr>
+<tr><td>Usage counters</td><td><span class="pill none">To add</span></td><td><code>tenant_usage_counters</code> (CRM-003).</td></tr>
+<tr><td>Labels</td><td><span class="pill none">To add</span></td><td><code>labels</code>, <code>contact_labels</code> (CRM-006); tags move into labels.</td></tr>
+<tr><td>Response measurements</td><td><span class="pill none">To add</span></td><td>Event stream or table for CRM-007 and a per-team SLA setting.</td></tr>
+<tr><td>Endpoints</td><td><span class="pill part">Partly</span></td><td>Exist: <code>/api/admin/companies/:id/subscription/*</code>, <code>/api/contacts/:id</code>, <code>/api/conversations</code>, <code>/api/leads</code>. To add: <code>/api/plans</code>, <code>/api/billing/checkout</code>, <code>/verify</code>, <code>/subscription</code>, <code>/invoices</code>, <code>/api/billing/razorpay/webhook</code>, <code>/api/labels</code>, <code>/api/reports/team-response</code>.</td></tr>
+<tr><td>Roles</td><td><span class="pill part">Partly</span></td><td>Owner, Admin, Agent exist. Team Lead and Finance do not; "billing" is a label on a person, not a permission.</td></tr>
+</tbody>
+</table>
+
+<h2>Mandatory release acceptance / QA checklist</h2>
+<table>
+<thead><tr><th style="width:62%">Check</th><th style="width:38%">Status</th></tr></thead>
+<tbody>
+<tr><td>No chat history, contacts, numbers, pipeline cards or automation rules lost during migration (migrations are additive; a smaller plan removes nothing)</td><td><span class="pill done">Covered</span> migration and plan tests</td></tr>
+<tr><td>Production checkout uses an authenticated company, verified server-side events, idempotent processing and tax-compliant receipts</td><td><span class="pill none">Open</span> CRM-002, CRM-017</td></tr>
+<tr><td>Limit checks cannot be bypassed by direct API calls; upgrades and expiry stay consistent when a webhook is late</td><td><span class="pill part">Partly</span> numbers, people and features enforced; late-webhook case with CRM-002</td></tr>
+<tr><td>Cross-tenant tests for contacts, chats, users, numbers, exports, billing, reports and webhooks</td><td><span class="pill part">Partly</span> contacts, chats, numbers, leads covered; billing and reports with their tasks</td></tr>
+<tr><td>Owner overview vs agent-only access; employee performance excludes team notes and automatic messages</td><td><span class="pill part">Partly</span> access covered; performance with CRM-007</td></tr>
+<tr><td>Message sending follows the actual WhatsApp connection method, consent requirements and platform rules</td><td><span class="pill part">Partly</span> broadcasts need permission and use delays; direct-message rules with CRM-005</td></tr>
+<tr><td>Observability: logs, failed jobs, payment reconciliation, backup/restore, rollback migration, staging smoke tests</td><td><span class="pill part">Partly</span> deploy health check and rollback exist; reconciliation and a staging smoke test are new work</td></tr>
+<tr><td><strong>Razorpay (new):</strong> test-mode run covering a good payment, a failed payment, a tampered signature, a wrong amount, a wrong company, a duplicate webhook, a webhook before the browser verify, the browser verify before the webhook, a lost webhook recovered by reconciliation</td><td><span class="pill none">Open</span> CRM-002</td></tr>
+<tr><td><strong>Razorpay (new):</strong> webhook delivery from Razorpay's servers to the production address confirmed in the dashboard's delivery log; live keys only after the test run is signed off</td><td><span class="pill none">Open</span> CRM-002</td></tr>
+<tr><td>Sign-off from the product owner: sample checkout, one direct message, contact rename, label filter and 5 manually verified reply-time records</td><td><span class="pill none">Open</span></td></tr>
+</tbody>
+</table>
+
+<h2>Decisions needed from the owner before CRM-002</h2>
+<table>
+<thead><tr><th style="width:4%">#</th><th style="width:30%">Decision</th><th style="width:40%">Why it matters</th><th style="width:26%">Recommendation</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Yearly price</td><td>The pricing page and the terms offer annual billing but show no yearly price. The checkout needs one number per plan.</td><td>Set it per plan, for example twelve months for the price of ten, and publish it.</td></tr>
+<tr><td>2</td><td>UAE customers and AED</td><td>Razorpay takes AED from international cards only if International Payments is activated on the account, and settles in rupees. Without it, UAE customers can only be invoiced and recorded by hand.</td><td>Ask Razorpay to activate it; until then keep AED companies on invoice.</td></tr>
+<tr><td>3</td><td>GST invoicing</td><td>Indian prices exclude 18% GST. The order must include tax and an invoice must follow.</td><td>Give the GSTIN, invoice series and service code from your accountant; build CRM-017 with CRM-002.</td></tr>
+<tr><td>4</td><td>Autopay now or later</td><td>Autopay adds setup, mandate limits and a second set of events.</td><td>Later (CRM-016). Launch with "pay for the next period", which matches the current terms.</td></tr>
+<tr><td>5</td><td>Trial and late payment</td><td>A trial needs a start and end; overdue today restricts nothing.</td><td>Free plan stays the trial. Decide the grace days after which paid features switch off.</td></tr>
+<tr><td>6</td><td>Who may pay and see invoices</td><td>Owner only, or also an administrator or a new Finance role.</td><td>Owner first; add Finance with CRM-010.</td></tr>
+<tr><td>7</td><td>Razorpay account</td><td>Test keys and a webhook secret are needed to build; live KYC and activation of the methods to go live.</td><td>Create test keys and the webhook now; put them in the server's environment file, never in chat or in the repository.</td></tr>
+</tbody>
+</table>
+
+<h2>Dev workflow / definition of done (unchanged)</h2>
+<p>For every task: (1) inspect existing implementation, (2) agree schema + permissions, (3) implement migration/API/UI, (4) add unit/integration tests, (5) validate in staging against actual WhatsApp channel constraints, (6) attach screenshots/test cases to PR, (7) deploy with backup and rollback plan, (8) mark task Done only after owner acceptance.</p>
+
+<h2>Version history</h2>
+<table>
+<thead><tr><th style="width:12%">Version</th><th style="width:18%">Date</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>1.0</td><td>25 October 2026</td><td>First developer backlog: 15 tasks, gates, contract and QA checklist.</td></tr>
+<tr><td>1.1</td><td>25 October 2026</td><td>Status of every task checked against the code; Razorpay specification for CRM-002; CRM-016 (autopay) and CRM-017 (GST invoices) added; contract and QA checklist updated; owner decisions listed.</td></tr>
+</tbody>
+</table>
+
+</body>
+</html>
