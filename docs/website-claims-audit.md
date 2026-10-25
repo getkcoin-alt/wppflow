@@ -71,7 +71,7 @@ more than one pipeline. The pricing page does not mention the pipeline yet.
 
 ## Plans
 
-Checked again on 22 October 2026, after the platform admin was given the choice of plan.
+Checked again on 25 October 2026 (first on 22 October, after the platform admin was given the choice of plan).
 
 | Website says | Status | Evidence |
 |---|---|---|
@@ -87,7 +87,46 @@ Checked again on 22 October 2026, after the platform admin was given the choice 
 | The platform admin chooses the plan when creating a company, and can change it later | Test | Required, one of the five, with the plan's number limit filled in and editable; changing it takes effect at once, removes nothing, and says what a smaller plan leaves the company with (`plans-admin.test.js`, `platform_plans.test.tsx`) |
 | Companies see their own plan and what it includes | Test | "Your plan" card in Team, System (`platform_plans.test.tsx`) |
 | Companies on the original "Workspace" plan | Kept | Any plan name that is not one of the five keeps every feature, so nothing already working stops. They can be moved to a plan from the platform screen |
+| Growth: Riwo, the AI reply assistant (with a daily allowance per company) | Test | Locked below Growth by the server and the screens. Each company has a daily allowance (server default 300, or the number the platform admin agrees); `ai-assistant.test.js`, `plans-admin.test.js` |
+| Riwo translates into 15 languages | Code | The list in `src/services/ai.ts` has 15; the page says the same |
+| Growth: sales pipeline | Test | Enforced (Growth and above) but **not mentioned on the pricing page, the features pages or the FAQ**. See "What to build next" |
+| AI usage is part of the subscription | Test | The company's "Your plan" card shows today's Riwo use against its allowance, when it resets, and the month so far; the platform admin sees each company's use and can agree a different daily allowance when adding a company or changing its plan, with the change in the audit log (`ai-assistant.test.js`, `plans-admin.test.js`, `platform_plans.test.tsx`) |
 | Self-service sign-up | Fixed | It used to create a "Workspace" company with every feature and 5 numbers, which skipped the pricing page entirely. It now creates a Free company: one person, one number. Set `ALLOW_PUBLIC_SIGNUP=false` on the server to turn sign-up off |
+
+## Subscription terms: what the legal pages promise, and what the product does
+
+The terms of service, the refund and cancellation policy and the pricing page describe a subscription. The product
+has a plan name, a number limit and active/suspended, and nothing else: there is no billing period, renewal date,
+payment status or scheduled change. All of it is done by hand by the onboarding team, through the platform screen.
+
+| The pages say | Status | What exists |
+|---|---|---|
+| Paid plans are billed monthly or annually, in advance | Manual | No billing cycle is recorded for a company |
+| The plan renews at the end of each period, or we send an invoice or payment link before each period | Not built | No renewal date, no reminder to the team, no "due soon" list |
+| If a payment fails or is overdue we may suspend paid features after notice | Manual | The admin can suspend a whole company or move it to another plan; there is no "payment overdue" state and no grace period |
+| Cancel at any time; the plan stays active until the end of the period paid for | Not built | Nothing stores "cancels on"; someone has to remember to change the plan on the day |
+| Upgrades take effect straight away | Test | Changing the plan applies at once (`plans-admin.test.js`). The pro-rated difference is invoiced by hand |
+| Downgrades take effect from the next billing period | Not built | A downgrade applies at once; nothing schedules it for the end of the period |
+| Accounts are activated within one working day | Service | Not software |
+| 30 days' notice before a price change | Service | Not software |
+
+## What to build next
+
+In the order that closes the biggest gaps between what is promised and what happens:
+
+1. **Subscription record per company** (billing cycle, current period start and end, status: active, payment due,
+   cancelling), set by the platform admin when a payment is recorded. Owners see "Renews on" in Your plan; the
+   platform list shows who is due in the next 14 days and who is overdue. No automatic lock-out at first: an overdue
+   company is flagged, not switched off by a clock.
+2. **Scheduled plan change**: "moves to Starter on 24 Nov" (downgrade at the end of the period; cancellation).
+3. **Plan allowances for Riwo** in the plan table (for example Growth, Business and Enterprise each with their own
+   daily number) and shown on the pricing page. Today every plan with Riwo shares one server default, and the free
+   OpenRouter models cap the whole account (50 requests a day without credit, 1,000 with $10), far below the sum of
+   what companies may ask.
+4. **Pricing page and features pages**: add the sales pipeline to Growth, and a pipeline feature page.
+5. **Move saved replies and desktop alerts to Growth**, or keep them open on every plan and say so: the page lists
+   them under Growth, but they work on every plan.
+6. **Online payment** (`PAYMENTS_LIVE` is false). The records in (1) are what a payment provider would update.
 
 ## Not software
 

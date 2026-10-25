@@ -23,12 +23,13 @@ const features = (on: string[]) => [
   feature("ai", "The AI assistant", on.includes("ai")),
 ];
 const PLANS = [
-  { id: "free", name: "Free", numbers: 1, seats: 1, features: features([]) },
-  { id: "starter", name: "Starter", numbers: 3, seats: null, features: features([]) },
-  { id: "growth", name: "Growth", numbers: 10, seats: null, features: features(["broadcasts", "automations", "audit", "ai"]) },
-  { id: "business", name: "Business", numbers: 25, seats: null, features: features(["broadcasts", "automations", "audit", "ai", "api"]) },
-  { id: "enterprise", name: "Enterprise", numbers: null, seats: null, features: features(["broadcasts", "automations", "audit", "ai", "api"]) },
+  { id: "free", name: "Free", numbers: 1, seats: 1, features: features([]), aiDaily: null },
+  { id: "starter", name: "Starter", numbers: 3, seats: null, features: features([]), aiDaily: null },
+  { id: "growth", name: "Growth", numbers: 10, seats: null, features: features(["broadcasts", "automations", "audit", "ai"]), aiDaily: 300 },
+  { id: "business", name: "Business", numbers: 25, seats: null, features: features(["broadcasts", "automations", "audit", "ai", "api"]), aiDaily: 300 },
+  { id: "enterprise", name: "Enterprise", numbers: null, seats: null, features: features(["broadcasts", "automations", "audit", "ai", "api"]), aiDaily: 300 },
 ];
+const noAi = { included: false, enabled: true, dailyLimit: 300, customLimit: false, usedToday: 0, requestsThisMonth: 0, tokensThisMonth: 0 };
 const company = (over = {}) => ({
   id: "t1",
   name: "Acme Retail",
@@ -39,6 +40,7 @@ const company = (over = {}) => ({
   staffCount: 2,
   sessionsCount: 1,
   connectedSessions: 1,
+  ai: noAi,
   createdAt: "2026-10-01",
   owner: { name: "Olivia", email: "olivia@acme.test", activated: true },
   ...over,
@@ -188,6 +190,76 @@ describe("each company shows its plan and can be moved to another", () => {
   });
 });
 
+describe("the AI assistant as part of the subscription (platform admin)", () => {
+  const growth = (ai = {}) =>
+    company({ id: "g1", name: "Globex", plan: "Growth", planId: "growth", sessionsLimit: 10, ai: { ...noAi, included: true, usedToday: 12, requestsThisMonth: 340, tokensThisMonth: 90000, ...ai } });
+
+  it("shows each company's Riwo use, its agreed limit, and that Starter has none", async () => {
+    api.listCompanies.mockResolvedValue([growth({ dailyLimit: 40, customLimit: true }), company()]);
+    wrap();
+    const tile = within(await screen.findByTestId("ai-g1"));
+    expect(tile.getByText("12")).toBeDefined();
+    expect(tile.getByText(/\/ 40/)).toBeDefined();
+    expect(tile.getByText(/340 this month · agreed limit/)).toBeDefined();
+    expect(within(screen.getByTestId("ai-t1")).getByText("Not in this plan")).toBeDefined();
+  });
+
+  it("says when Riwo is switched off for a company", async () => {
+    api.listCompanies.mockResolvedValue([growth({ enabled: false })]);
+    wrap();
+    expect(await screen.findByText(/switched off/)).toBeDefined();
+  });
+
+  it("lets the admin agree a daily allowance when changing the plan, and clear it again", async () => {
+    api.listCompanies.mockResolvedValue([growth({ dailyLimit: 40, customLimit: true })]);
+    api.updateCompany.mockResolvedValue({ company: growth(), warnings: [] });
+    wrap();
+    await screen.findByText("Globex");
+    fireEvent.click(screen.getByRole("button", { name: "Change plan" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Change plan for Globex" }));
+    const field = dialog.getByLabelText("Riwo requests a day") as HTMLInputElement;
+    expect(field.value).toBe("40");
+    expect(field.placeholder).toBe("Default: 300");
+    fireEvent.change(field, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save plan" }));
+    await waitFor(() => expect(api.updateCompany).toHaveBeenCalledWith("g1", { plan: "growth", sessionsLimit: 10, aiDailyLimit: null }));
+  });
+
+  it("sends a typed allowance, and hides the field for a plan without Riwo", async () => {
+    api.listCompanies.mockResolvedValue([growth()]);
+    api.updateCompany.mockResolvedValue({ company: growth(), warnings: [] });
+    wrap();
+    await screen.findByText("Globex");
+    fireEvent.click(screen.getByRole("button", { name: "Change plan" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Change plan for Globex" }));
+    fireEvent.change(dialog.getByLabelText("Riwo requests a day"), { target: { value: "75" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save plan" }));
+    await waitFor(() => expect(api.updateCompany).toHaveBeenCalledWith("g1", { plan: "growth", sessionsLimit: 10, aiDailyLimit: 75 }));
+
+    api.updateCompany.mockClear();
+    fireEvent.click(await screen.findByRole("button", { name: "Change plan" }));
+    const again = within(await screen.findByRole("dialog", { name: "Change plan for Globex" }));
+    fireEvent.change(again.getByLabelText("Plan"), { target: { value: "starter" } });
+    expect(again.queryByLabelText("Riwo requests a day")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save plan" }));
+    await waitFor(() => expect(api.updateCompany).toHaveBeenCalledWith("g1", { plan: "starter", sessionsLimit: 3 }));
+  });
+
+  it("offers the allowance when a company is added on a plan with Riwo", async () => {
+    api.createCompany.mockResolvedValue({ message: "ok" });
+    const dialog = await openAdd();
+    const select = await dialog.findByLabelText("Plan");
+    await waitFor(() => expect((select as HTMLSelectElement).options.length).toBe(6));
+    fillOwner(dialog);
+    fireEvent.change(select, { target: { value: "starter" } });
+    expect(dialog.queryByLabelText("Riwo requests a day")).toBeNull();
+    fireEvent.change(select, { target: { value: "growth" } });
+    fireEvent.change(dialog.getByLabelText("Riwo requests a day"), { target: { value: "120" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add company & email setup link/ }));
+    await waitFor(() => expect(api.createCompany).toHaveBeenCalledWith(expect.objectContaining({ plan: "growth", sessionsLimit: 10, aiDailyLimit: 120 })));
+  });
+});
+
 describe("the company's own view of its plan", () => {
   const plan = (name: string, features: Record<string, boolean>, seats: number | null = null) => ({ name, restricted: true, seats, features });
   it("lists what is included and what is not, with the numbers used", () => {
@@ -215,6 +287,37 @@ describe("the company's own view of its plan", () => {
   it("says the Free plan is for one person", () => {
     render(<PlanCard plan={plan("Free", { broadcasts: false, automations: false, leads: false, audit: false, api: false, ai: false }, 1)} numbersLimit={1} numbersUsed={1} />);
     expect(screen.getByText("This plan is for one person.")).toBeDefined();
+  });
+
+  const ai = (over = {}) => ({
+    available: true, reason: null, enabled: true, used: 12, limit: 300, remaining: 288, custom: false,
+    resetsAt: "2026-10-26T00:00:00.000Z", month: { requests: 340, inputTokens: 1, outputTokens: 1 }, ...over,
+  });
+  const growthPlan = plan("Growth", { broadcasts: true, automations: true, leads: true, audit: true, api: false, ai: true });
+
+  it("shows how much of Riwo has been used today and this month", () => {
+    render(<PlanCard plan={growthPlan} numbersLimit={10} numbersUsed={4} ai={ai() as any} />);
+    const usage = within(screen.getByTestId("ai-usage"));
+    expect(usage.getByText("Riwo requests today")).toBeDefined();
+    expect(usage.getByText("12").parentElement?.textContent).toContain("12 of 300");
+    expect(usage.getByText(/Your plan's allowance/)).toBeDefined();
+    expect(usage.getByText("340").parentElement?.textContent).toContain("340 requests this month");
+    expect(usage.getByRole("img", { name: "4% of today's Riwo allowance used" })).toBeDefined();
+  });
+
+  it("says when the allowance was agreed for the company, and when Riwo is switched off", () => {
+    render(<PlanCard plan={growthPlan} ai={ai({ custom: true, limit: 40, used: 40, enabled: false, available: false, reason: "disabled" }) as any} />);
+    const usage = within(screen.getByTestId("ai-usage"));
+    expect(usage.getByText(/An allowance agreed for your company/)).toBeDefined();
+    expect(usage.getByRole("img", { name: "100% of today's Riwo allowance used" })).toBeDefined();
+    expect(usage.getByText(/switched off for your company/)).toBeDefined();
+  });
+
+  it("shows no usage on a plan without Riwo, and explains a server without the AI key", () => {
+    const { rerender } = render(<PlanCard plan={plan("Starter", { ai: false })} ai={ai({ reason: "plan", available: false }) as any} />);
+    expect(screen.queryByTestId("ai-usage")).toBeNull();
+    rerender(<PlanCard plan={growthPlan} ai={ai({ reason: "not_configured", available: false }) as any} />);
+    expect(screen.getByText(/isn't switched on for this server yet/)).toBeDefined();
   });
 
   it("an older workspace plan has everything and says so", () => {

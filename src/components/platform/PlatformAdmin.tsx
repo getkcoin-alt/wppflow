@@ -27,6 +27,16 @@ interface Company {
   staffCount: number;
   sessionsCount: number;
   connectedSessions: number;
+  /** The AI assistant as part of the subscription: what the company may use and has used */
+  ai?: {
+    included: boolean;
+    enabled: boolean;
+    dailyLimit: number;
+    customLimit: boolean;
+    usedToday: number;
+    requestsThisMonth: number;
+    tokensThisMonth: number;
+  };
   createdAt: string;
   owner: { name: string; email: string; activated: boolean } | null;
 }
@@ -51,12 +61,16 @@ function PlanFields({
   limit,
   onPlan,
   onLimit,
+  aiLimit,
+  onAiLimit,
 }: {
   plans: PlanChoice[] | undefined;
   planId: string;
   limit: string;
   onPlan: (id: string) => void;
   onLimit: (value: string) => void;
+  aiLimit: string;
+  onAiLimit: (value: string) => void;
 }) {
   const chosen = plans?.find((p) => p.id === planId);
   return (
@@ -102,6 +116,24 @@ function PlanFields({
           className={inputCls}
         />
       </Field>
+      {chosen?.aiDaily != null && (
+        <Field
+          label="Riwo requests a day"
+          hint={`How many times the whole company may ask Riwo each day. Leave blank for the default of ${chosen.aiDaily}; type a number only for a special agreement.`}
+        >
+          <input
+            aria-label="Riwo requests a day"
+            name="aiDailyLimit"
+            type="number"
+            min={1}
+            max={100000}
+            placeholder={`Default: ${chosen.aiDaily}`}
+            value={aiLimit}
+            onChange={(e) => onAiLimit(e.target.value)}
+            className={inputCls}
+          />
+        </Field>
+      )}
     </>
   );
 }
@@ -122,7 +154,8 @@ export function PlatformAdmin({
   });
   const plans = useQuery<PlanChoice[]>({ queryKey: ["plans"], queryFn: listPlans });
   const [newPlan, setNewPlan] = useState(""),
-    [newLimit, setNewLimit] = useState("");
+    [newLimit, setNewLimit] = useState(""),
+    [newAi, setNewAi] = useState("");
   const pickNew = (id: string) => {
     setNewPlan(id);
     setNewLimit(String(plans.data?.find((p) => p.id === id)?.numbers ?? ""));
@@ -130,11 +163,13 @@ export function PlatformAdmin({
   // Changing the plan of an existing company
   const [moving, setMoving] = useState<Company | null>(null);
   const [movePlan, setMovePlan] = useState(""),
-    [moveLimit, setMoveLimit] = useState("");
+    [moveLimit, setMoveLimit] = useState(""),
+    [moveAi, setMoveAi] = useState("");
   const startMove = (c: Company) => {
     setMoving(c);
     setMovePlan(c.planId || "");
     setMoveLimit(String(c.sessionsLimit));
+    setMoveAi(c.ai?.customLimit ? String(c.ai.dailyLimit) : "");
   };
   const pickMove = (id: string) => {
     setMovePlan(id);
@@ -266,12 +301,14 @@ export function PlatformAdmin({
                   ownerEmail: String(f.get("ownerEmail")),
                   plan: newPlan,
                   sessionsLimit: Number(newLimit),
+                  ...(newAi.trim() ? { aiDailyLimit: Number(newAi) } : {}),
                 }),
               ).then((r) => {
                 if (r) {
                   form.reset();
                   setNewPlan("");
                   setNewLimit("");
+                  setNewAi("");
                   setAdding(false);
                 }
               });
@@ -305,7 +342,7 @@ export function PlatformAdmin({
                 className={inputCls}
               />
             </Field>
-            <PlanFields plans={plans.data} planId={newPlan} limit={newLimit} onPlan={pickNew} onLimit={setNewLimit} />
+            <PlanFields plans={plans.data} planId={newPlan} limit={newLimit} onPlan={pickNew} onLimit={setNewLimit} aiLimit={newAi} onAiLimit={setNewAi} />
             {plans.error && <Notice tone="error">{(plans.error as Error).message}</Notice>}
           </form>
         </Sheet>
@@ -334,7 +371,15 @@ export function PlatformAdmin({
               if (!moving) return;
               const company = moving;
               void run(
-                () => updateCompany(company.id, { plan: movePlan, sessionsLimit: Number(moveLimit) }),
+                () =>
+                  updateCompany(company.id, {
+                    plan: movePlan,
+                    sessionsLimit: Number(moveLimit),
+                    // blank goes back to the default; a plan without Riwo has no allowance to change
+                    ...(plans.data?.find((p) => p.id === movePlan)?.aiDaily != null
+                      ? { aiDailyLimit: moveAi.trim() ? Number(moveAi) : null }
+                      : {}),
+                  }),
                 (r) => [`${company.name} is now on the ${r.company.plan} plan.`, ...(r.warnings || [])].join(" "),
               ).then((r) => r && setMoving(null));
             }}
@@ -342,7 +387,7 @@ export function PlatformAdmin({
             <p className="text-[14px] text-fg-2">
               Now on <span className="font-medium text-fg">{moving?.plan}</span> with {moving?.sessionsLimit} WhatsApp numbers.
             </p>
-            <PlanFields plans={plans.data} planId={movePlan} limit={moveLimit} onPlan={pickMove} onLimit={setMoveLimit} />
+            <PlanFields plans={plans.data} planId={movePlan} limit={moveLimit} onPlan={pickMove} onLimit={setMoveLimit} aiLimit={moveAi} onAiLimit={setMoveAi} />
           </form>
         </Sheet>
 
@@ -450,7 +495,7 @@ export function PlatformAdmin({
                   )}
                 </div>
               </div>
-              <dl className="mt-5 grid grid-cols-3 gap-4">
+              <dl className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <dt className="text-[12.5px] text-fg-3">People</dt>
                   <dd className="text-[24px] font-semibold num">
@@ -472,6 +517,22 @@ export function PlatformAdmin({
                   <dd className="text-[24px] font-semibold num">
                     {c.sessionsLimit}
                   </dd>
+                </div>
+                <div data-testid={`ai-${c.id}`}>
+                  <dt className="text-[12.5px] text-fg-3">Riwo today</dt>
+                  {c.ai?.included ? (
+                    <dd className="num">
+                      <span className="text-[24px] font-semibold">{c.ai.usedToday.toLocaleString()}</span>
+                      <span className="text-fg-3 text-[16px]"> / {c.ai.dailyLimit.toLocaleString()}</span>
+                      <span className="block text-[12.5px] text-fg-3">
+                        {c.ai.requestsThisMonth.toLocaleString()} this month
+                        {c.ai.customLimit ? " · agreed limit" : ""}
+                        {!c.ai.enabled ? " · switched off" : ""}
+                      </span>
+                    </dd>
+                  ) : (
+                    <dd className="text-[15px] text-fg-3 pt-2">Not in this plan</dd>
+                  )}
                 </div>
               </dl>
             </li>

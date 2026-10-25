@@ -426,6 +426,8 @@ export interface PlanChoice {
   /** People it is for; null when there is no limit */
   seats: number | null;
   features: { key: string; label: string; included: boolean }[];
+  /** Riwo requests a day a company on this plan may make unless another number is agreed; null: not in the plan */
+  aiDaily: number | null;
 }
 export const listPlans = async (): Promise<PlanChoice[]> =>
   (await apiGet("/api/admin/plans")).plans;
@@ -436,6 +438,8 @@ export const createCompany = (data: {
   plan: string;
   /** Leave out to give the company what the plan includes */
   sessionsLimit?: number;
+  /** Riwo requests a day agreed with the company; leave out for the default */
+  aiDailyLimit?: number;
 }) => apiPost("/api/admin/companies", data);
 export const updateCompany = (id: string, data: Record<string, unknown>) =>
   apiPatch(`/api/admin/companies/${encodeURIComponent(id)}`, data);
@@ -608,6 +612,12 @@ export interface AiStatus {
   used: number;
   limit: number;
   remaining: number;
+  /** The allowance was agreed for this company, rather than being the server's default */
+  custom?: boolean;
+  /** When today's allowance starts again (midnight UTC) */
+  resetsAt?: string;
+  /** What the company has asked of Riwo so far this month */
+  month?: { requests: number; inputTokens: number; outputTokens: number };
   /** Which AI service writes the answers */
   provider?: "openrouter" | "anthropic" | null;
   /** Running on free models, whose providers may keep what they receive */

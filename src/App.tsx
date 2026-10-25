@@ -989,6 +989,7 @@ export function App() {
                     plan={capabilities.data?.plan}
                     numbersLimit={capabilities.data?.numbersLimit}
                     numbersUsed={sessionsQuery.data?.length}
+                    ai={capabilities.data?.ai}
                   />
                   <ClusterHealth />
                 </div>
