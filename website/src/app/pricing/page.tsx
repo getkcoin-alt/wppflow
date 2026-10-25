@@ -19,6 +19,8 @@ const FAQS = [
   { q: "Are there per-message fees?", a: "No. Scriwo works with the WhatsApp numbers your team already uses, so there are no per-conversation charges on top of your plan. API-based platforms usually bill WhatsApp's message fees separately." },
   { q: "Do prices include tax?", a: "No. UAE prices exclude 5% VAT and Indian prices exclude 18% GST, which are added to the invoice." },
   { q: "What counts as a number?", a: "Each WhatsApp number linked to your company. Every teammate usually links their own." },
+  { q: "Is there a discount for paying yearly?", a: "Yes. Pay for a year in advance and you pay for ten months: two months free. Switch the price list above to Yearly to see each plan's yearly price." },
+  { q: "Can I pay online?", a: "Online payment is being added for India first. For the UAE, online payment in AED is coming soon; until then our team sends you an AED invoice." },
   { q: "Can I change plans later?", a: "Yes. Tell us and we will change your company's number limit." },
   { q: "Is there a setup fee?", a: "No. Setup and a walkthrough for your team are included in every plan." },
 ];

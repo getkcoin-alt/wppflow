@@ -5,7 +5,7 @@ import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
 import { COMPARISONS } from "@/content/compare";
 import { GENERAL_FAQS } from "@/content/faqs";
-import { PLANS, TAX_NOTE } from "@/content/plans";
+import { PLANS, TAX_NOTE, YEARLY_MONTHS, yearlyPrice } from "@/content/plans";
 import { RIWO, RIWO_ACTIONS, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
 
 export const dynamic = "force-static";
@@ -21,7 +21,7 @@ export function GET() {
     "Scriwo is independent and not affiliated with WhatsApp or Meta. It links WhatsApp numbers as linked devices (like WhatsApp Web); it is not the WhatsApp Business API.",
     "",
     "## Pricing",
-    ...PLANS.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")} a month` : "custom quote"}. ${p.for}.`),
+    ...PLANS.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")} a month, or AED ${yearlyPrice(p.price.AED).toLocaleString("en-US")} / ₹${yearlyPrice(p.price.INR ?? 0).toLocaleString("en-IN")} a year (${YEARLY_MONTHS} months for 12)` : "custom quote"}. ${p.for}.`),
     `- ${TAX_NOTE.AED} ${TAX_NOTE.INR}`,
     "- No per-message fees. Every account is set up by the onboarding team.",
     "",

@@ -6,7 +6,7 @@ import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
-import { PLANS } from "@/content/plans";
+import { PLANS, YEARLY_MONTHS, yearlyPrice } from "@/content/plans";
 import { allRoutes } from "@/lib/routes";
 import { validateContact } from "@/lib/contact";
 
@@ -59,6 +59,13 @@ describe("pricing", () => {
       expect(prices.every((n) => typeof n === "number" && n > 0)).toBe(true);
       expect([...prices].sort((a, b) => a! - b!)).toEqual(prices);
     }
+  });
+
+  it("a year costs ten months in both currencies, which the app and billing also use", () => {
+    expect(YEARLY_MONTHS).toBe(10);
+    const growth = PLANS.find((p) => p.id === "growth")!;
+    expect(yearlyPrice(growth.price.INR!)).toBe(69990);
+    expect(yearlyPrice(growth.price.AED!)).toBe(7990);
   });
 
   it("one number is free and the FAQ says so", async () => {

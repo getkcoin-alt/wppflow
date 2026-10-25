@@ -17,6 +17,14 @@ export const PAYMENTS_LIVE = false;
 // Set against the market in October 2026: API inbox platforms list roughly ₹2,500–18,500 or
 // AED 180–440 a month before per-message fees, and linked-number team inboxes charge about
 // USD 20–60 per seat. Scriwo charges per company with a number limit and no per-message fees.
+// Paying for a year in advance costs ten months: two months free. The app and billing use the same rule.
+export const YEARLY_MONTHS = 10;
+export const yearlyPrice = (monthly: number) => monthly * YEARLY_MONTHS;
+export type Interval = "monthly" | "yearly";
+
+// Online payment is being added for India first. Until a gateway for the UAE is live, AED invoices are sent by the team.
+export const AED_PAYMENT_NOTE = "Online payment in AED is coming soon. Until then our team sends you an AED invoice and sets you up.";
+
 export const TAX_NOTE = { AED: "Prices exclude 5% VAT.", INR: "Prices exclude 18% GST." } as const;
 
 export const PLANS: Plan[] = [
