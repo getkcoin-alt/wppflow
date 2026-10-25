@@ -1,6 +1,7 @@
 import { Check, Minus } from "lucide-react";
 import { Pill } from "../ui/Page";
 import type { AiStatus } from "../../services/api";
+import { describeSubscription, type Subscription } from "../../utils/subscription";
 
 // What the company's plan includes, so owners can see it instead of finding out from a locked screen.
 const FEATURES: [string, string][] = [
@@ -64,13 +65,16 @@ export function PlanCard({
   numbersLimit,
   numbersUsed,
   ai,
+  subscription,
 }: {
   plan?: PlanInfo;
   numbersLimit?: number | null;
   numbersUsed?: number;
   ai?: AiStatus;
+  subscription?: Subscription;
 }) {
   if (!plan) return null;
+  const billing = describeSubscription(subscription, "company");
   return (
     <section className="card p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -91,6 +95,19 @@ export function PlanCard({
           </div>
         )}
       </div>
+      {billing && subscription && (
+        <div className="mt-4 rounded-2xl bg-surface-2 px-4 py-3" data-testid="subscription">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-[13.5px] text-fg-2">
+              Billing{subscription.cycle ? `: ${subscription.cycle === "annual" ? "yearly" : "monthly"}, paid in advance` : ""}
+            </p>
+            <Pill tone={billing.tone} dot>
+              {billing.label}
+            </Pill>
+          </div>
+          <p className="mt-1.5 text-[14px] text-fg">{billing.detail}</p>
+        </div>
+      )}
       {plan.seats === 1 && <p className="mt-3 text-[14px] text-fg-2">This plan is for one person.</p>}
       <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-[14px]">
         {FEATURES.map(([key, label]) => {

@@ -441,6 +441,39 @@ export const createCompany = (data: {
   /** Riwo requests a day agreed with the company; leave out for the default */
   aiDailyLimit?: number;
 }) => apiPost("/api/admin/companies", data);
+/** A payment the platform admin recorded for a company */
+export interface SubscriptionPayment {
+  id: string;
+  plan: string;
+  cycle: "monthly" | "annual";
+  periodStart: string;
+  periodEnd: string;
+  amount: number | null;
+  currency: "AED" | "INR" | null;
+  reference: string;
+  recordedBy: string | null;
+  recordedAt: string;
+}
+const subscriptionUrl = (id: string, rest: string) => `/api/admin/companies/${encodeURIComponent(id)}${rest}`;
+export const listPayments = async (id: string): Promise<SubscriptionPayment[]> =>
+  (await apiGet(subscriptionUrl(id, "/payments"))).payments;
+export const recordPayment = (
+  id: string,
+  data: {
+    plan?: string;
+    cycle: "monthly" | "annual";
+    periodStart?: string;
+    periodEnd?: string;
+    amount?: number;
+    currency?: "AED" | "INR";
+    reference?: string;
+    sessionsLimit?: number;
+  },
+) => apiPost(subscriptionUrl(id, "/subscription/payment"), data);
+export const scheduleSubscriptionChange = (id: string, plan: string) =>
+  apiPost(subscriptionUrl(id, "/subscription/schedule"), { plan });
+export const clearSubscriptionChange = (id: string) =>
+  apiDelete(subscriptionUrl(id, "/subscription/schedule"));
 export const updateCompany = (id: string, data: Record<string, unknown>) =>
   apiPatch(`/api/admin/companies/${encodeURIComponent(id)}`, data);
 export const resendOwnerCredentials = (id: string) =>

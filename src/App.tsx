@@ -283,6 +283,10 @@ export function App() {
       else if (n.type === "lead_task") {
         setView("user");
         setTab("pipeline");
+      } else if (n.type === "subscription") {
+        // the renewal is on the plan card, under Team, System
+        setView("admin");
+        setAdminTab("cluster");
       } else {
         setView("user");
         setTab("sessions");
@@ -990,6 +994,7 @@ export function App() {
                     numbersLimit={capabilities.data?.numbersLimit}
                     numbersUsed={sessionsQuery.data?.length}
                     ai={capabilities.data?.ai}
+                    subscription={capabilities.data?.subscription}
                   />
                   <ClusterHealth />
                 </div>

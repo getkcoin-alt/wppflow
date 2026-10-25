@@ -95,38 +95,45 @@ Checked again on 25 October 2026 (first on 22 October, after the platform admin 
 
 ## Subscription terms: what the legal pages promise, and what the product does
 
-The terms of service, the refund and cancellation policy and the pricing page describe a subscription. The product
-has a plan name, a number limit and active/suspended, and nothing else: there is no billing period, renewal date,
-payment status or scheduled change. All of it is done by hand by the onboarding team, through the platform screen.
+The terms of service, the refund and cancellation policy and the pricing page describe a subscription. Payments are
+taken outside the product (an invoice or a payment link), so the platform admin records each one, and the period it
+covers gives the company its renewal date. Built on 25 October 2026 (`subscriptionService.js`, migration 017).
 
-| The pages say | Status | What exists |
+| The pages say | Status | What the product does |
 |---|---|---|
-| Paid plans are billed monthly or annually, in advance | Manual | No billing cycle is recorded for a company |
-| The plan renews at the end of each period, or we send an invoice or payment link before each period | Not built | No renewal date, no reminder to the team, no "due soon" list |
-| If a payment fails or is overdue we may suspend paid features after notice | Manual | The admin can suspend a whole company or move it to another plan; there is no "payment overdue" state and no grace period |
-| Cancel at any time; the plan stays active until the end of the period paid for | Not built | Nothing stores "cancels on"; someone has to remember to change the plan on the day |
+| Paid plans are billed monthly or annually, in advance | Test | Each company has a billing cycle and a period (start and renewal date), set by recording a payment; the payments are kept with plan, amount and reference (`subscription.test.js`) |
+| The plan renews at the end of each period, or we send an invoice or payment link before each period | Test, partly | Owners see "Renews on" in Your plan; owners and administrators get an in-app notice once, 14 days before; the platform list shows who renews in 14 days. The invoice or payment link itself is still sent by hand |
+| If a payment fails or is overdue we may suspend paid features after notice | Test, by design not automatic | An overdue company is flagged on the platform list, and told once in the app. Nothing is switched off by a clock: suspending stays a person's decision |
+| Cancel at any time; the plan stays active until the end of the period paid for | Test | "Change at period end" to Free: the plan stays until the renewal date, then the company is on Free; its conversations and numbers are kept |
 | Upgrades take effect straight away | Test | Changing the plan applies at once (`plans-admin.test.js`). The pro-rated difference is invoiced by hand |
-| Downgrades take effect from the next billing period | Not built | A downgrade applies at once; nothing schedules it for the end of the period |
+| Downgrades take effect from the next billing period | Test | A smaller plan can be scheduled for the end of the period; paying for the next period names the plan it is for |
 | Accounts are activated within one working day | Service | Not software |
 | 30 days' notice before a price change | Service | Not software |
 
+Staff never see billing. The company sees its plan, cycle and dates, not what was paid.
+
+## AI usage in the subscription
+
+| Behaviour | Evidence |
+|---|---|
+| Your plan shows Riwo requests today against the allowance, whether it is the plan's or agreed for the company, when it starts again, and the month so far | `ai-assistant.test.js`, `platform_plans.test.tsx` |
+| The platform list shows each company's Riwo use (today, this month) and its allowance, or that Riwo is not in its plan | `plans-admin.test.js`, `platform_plans.test.tsx` |
+| The platform admin can agree a daily allowance when adding a company or changing its plan, with the old value in the audit log | `plans-admin.test.js` |
+
 ## What to build next
 
-In the order that closes the biggest gaps between what is promised and what happens:
-
-1. **Subscription record per company** (billing cycle, current period start and end, status: active, payment due,
-   cancelling), set by the platform admin when a payment is recorded. Owners see "Renews on" in Your plan; the
-   platform list shows who is due in the next 14 days and who is overdue. No automatic lock-out at first: an overdue
-   company is flagged, not switched off by a clock.
-2. **Scheduled plan change**: "moves to Starter on 24 Nov" (downgrade at the end of the period; cancellation).
-3. **Plan allowances for Riwo** in the plan table (for example Growth, Business and Enterprise each with their own
+1. **Plan allowances for Riwo** in the plan table (for example Growth, Business and Enterprise each with their own
    daily number) and shown on the pricing page. Today every plan with Riwo shares one server default, and the free
    OpenRouter models cap the whole account (50 requests a day without credit, 1,000 with $10), far below the sum of
    what companies may ask.
-4. **Pricing page and features pages**: add the sales pipeline to Growth, and a pipeline feature page.
-5. **Move saved replies and desktop alerts to Growth**, or keep them open on every plan and say so: the page lists
+2. **Pricing page and features pages**: add the sales pipeline to Growth, and a pipeline feature page.
+3. **Move saved replies and desktop alerts to Growth**, or keep them open on every plan and say so: the page lists
    them under Growth, but they work on every plan.
-6. **Online payment** (`PAYMENTS_LIVE` is false). The records in (1) are what a payment provider would update.
+4. **Reminders by email** to owners, and a weekly list of renewals and overdue companies to the sales inbox. Today
+   the reminders are in the app only.
+5. **A choice on late payment**: grace days, then a flag that switches paid features off. Left out on purpose until
+   there is a payment record to trust.
+6. **Online payment** (`PAYMENTS_LIVE` is false). The records above are what a payment provider would update.
 
 ## Not software
 

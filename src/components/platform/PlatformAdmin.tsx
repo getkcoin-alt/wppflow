@@ -14,32 +14,14 @@ import {
   updateCompany,
   resendOwnerCredentials,
   type PlanChoice,
+  recordPayment,
+  scheduleSubscriptionChange,
+  clearSubscriptionChange,
 } from "../../services/api";
+import type { Company } from "./types";
+import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
+import { describeSubscription, needsAttention, type Attention } from "../../utils/subscription";
 
-interface Company {
-  id: string;
-  name: string;
-  /** The plan's name, or the original "Workspace" for companies from before plans */
-  plan: string;
-  planId: PlanChoice["id"] | null;
-  status: "active" | "suspended";
-  sessionsLimit: number;
-  staffCount: number;
-  sessionsCount: number;
-  connectedSessions: number;
-  /** The AI assistant as part of the subscription: what the company may use and has used */
-  ai?: {
-    included: boolean;
-    enabled: boolean;
-    dailyLimit: number;
-    customLimit: boolean;
-    usedToday: number;
-    requestsThisMonth: number;
-    tokensThisMonth: number;
-  };
-  createdAt: string;
-  owner: { name: string; email: string; activated: boolean } | null;
-}
 
 // What a plan gives, in one sentence, so the choice is clear before it is made.
 const featureName = (label: string) => {
@@ -176,6 +158,10 @@ export function PlatformAdmin({
     const included = plans.data?.find((p) => p.id === id)?.numbers;
     setMoveLimit(String(included ?? (id === moving?.planId ? moving.sessionsLimit : "")));
   };
+  // Recording a payment, and scheduling a change for the end of the period
+  const [payFor, setPayFor] = useState<Company | null>(null),
+    [scheduleFor, setScheduleFor] = useState<Company | null>(null),
+    [attention, setAttention] = useState<Attention>("all");
   const [notice, setNotice] = useState(""),
     [failure, setFailure] = useState(""),
     [busy, setBusy] = useState(false);
@@ -200,6 +186,11 @@ export function PlatformAdmin({
     live: data?.reduce((n, c) => n + c.connectedSessions, 0) || 0,
     people: data?.reduce((n, c) => n + c.staffCount, 0) || 0,
   };
+  const count = (filter: Attention) => data?.filter((c) => needsAttention(c.subscription, filter)).length || 0;
+  const visible = (data || [])
+    .filter((c) => needsAttention(c.subscription, attention))
+    // the ones that need doing first are the ones nearest their date
+    .sort((a, b) => (attention === "all" ? 0 : (a.subscription?.daysLeft ?? 0) - (b.subscription?.daysLeft ?? 0)));
   return (
     <div className="min-h-dvh bg-app text-fg">
       <header className="glass sticky top-0 z-30 border-b border-line">
@@ -253,6 +244,27 @@ export function PlatformAdmin({
                 {v}
               </p>
             </div>
+          ))}
+        </div>
+
+        <div role="group" aria-label="Show companies" className="flex flex-wrap gap-2 mb-6">
+          {(
+            [
+              ["all", "All"],
+              ["overdue", "Payment overdue"],
+              ["soon", "Renewing in 14 days"],
+              ["unrecorded", "No payment recorded"],
+            ] as [Attention, string][]
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={attention === key}
+              onClick={() => setAttention(key)}
+              className={`h-9 px-4 rounded-full text-[13.5px] font-medium transition-colors ${attention === key ? "bg-brand-solid text-white" : "bg-surface-2 text-fg-2 hover:text-fg"}`}
+            >
+              {label} <span className="num opacity-80">{count(key)}</span>
+            </button>
           ))}
         </div>
 
@@ -391,6 +403,36 @@ export function PlatformAdmin({
           </form>
         </Sheet>
 
+        <PaymentSheet
+          company={payFor}
+          plans={plans.data}
+          busy={busy}
+          onClose={() => setPayFor(null)}
+          onSubmit={(company, form) =>
+            void run(
+              () => recordPayment(company.id, form),
+              (r) =>
+                [
+                  `Payment recorded for ${company.name}: ${r.company.plan} until ${r.company.subscription?.periodEnd}.`,
+                  ...(r.warnings || []),
+                ].join(" "),
+            ).then((r) => r && setPayFor(null))
+          }
+        />
+        <ScheduleSheet
+          company={scheduleFor}
+          plans={plans.data}
+          busy={busy}
+          onClose={() => setScheduleFor(null)}
+          onSubmit={(company, plan) =>
+            void run(
+              () => scheduleSubscriptionChange(company.id, plan),
+              (r) =>
+                `${company.name} will ${plan === "free" ? "move to Free" : `move to ${r.company.subscription?.scheduledPlan?.name}`} when the period ends.`,
+            ).then((r) => r && setScheduleFor(null))
+          }
+        />
+
         {isPending && (
           <div className="space-y-3" aria-busy>
             {[0, 1, 2].map((i) => (
@@ -414,8 +456,11 @@ export function PlatformAdmin({
             }
           />
         )}
+        {data && data.length > 0 && visible.length === 0 && (
+          <p className="text-[15px] text-fg-2">No company needs attention here.</p>
+        )}
         <ul className="space-y-3">
-          {data?.map((c) => (
+          {visible.map((c) => (
             <li key={c.id} className="card p-5 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
@@ -438,6 +483,17 @@ export function PlatformAdmin({
                       </span>
                     ) : null}
                   </p>
+                  {(() => {
+                    const billing = describeSubscription(c.subscription, "platform");
+                    return billing ? (
+                      <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-fg-2" data-testid={`sub-${c.id}`}>
+                        <Pill tone={billing.tone} dot>
+                          {billing.label}
+                        </Pill>
+                        <span>{billing.detail}</span>
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
                   <button
@@ -482,6 +538,30 @@ export function PlatformAdmin({
                   >
                     Change plan
                   </button>
+                  {c.planId !== "free" && (
+                    <button disabled={busy} className={btn("secondary", "sm")} onClick={() => setPayFor(c)}>
+                      Record payment
+                    </button>
+                  )}
+                  {c.subscription?.scheduledPlan ? (
+                    <button
+                      disabled={busy}
+                      className={btn("ghost", "sm")}
+                      onClick={() =>
+                        void run(() => clearSubscriptionChange(c.id), () => `The scheduled change for ${c.name} was cancelled.`)
+                      }
+                    >
+                      Cancel scheduled change
+                    </button>
+                  ) : (
+                    c.subscription?.periodEnd &&
+                    c.planId &&
+                    c.planId !== "free" && (
+                      <button disabled={busy} className={btn("ghost", "sm")} onClick={() => setScheduleFor(c)}>
+                        Change at period end
+                      </button>
+                    )
+                  )}
                   {c.owner && (
                     <button
                       disabled={busy}
