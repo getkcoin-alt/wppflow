@@ -7,13 +7,14 @@ const api = vi.hoisted(() => ({
   getStoredTenantId: () => "t1",
   listPlans: vi.fn(),
   updatePlan: vi.fn(),
+  fetchBillingSettings: vi.fn(),
   fetchContacts: vi.fn(),
   fetchPipelineSettings: vi.fn(),
   fetchLabels: vi.fn(),
 }));
 vi.mock("../services/api", async (original) => ({ ...(await original<typeof import("../services/api")>()), ...api }));
 import { PlanUsageBlock } from "../components/admin/PlanCard";
-import { PlansEditor } from "../components/platform/PlansEditor";
+import { SubscriptionsModule } from "../components/platform/SubscriptionsModule";
 import { Contacts } from "../components/user/Contacts";
 import type { PlanUsage } from "../services/api";
 
@@ -58,7 +59,13 @@ describe("what the plan allows", () => {
   });
 });
 
-describe("the plans editor", () => {
+describe("the services and limits of a plan", () => {
+  const settings = { settings: { sacCode: "998314", gstRate: 18, invoicePrefix: "SCZ" }, history: [] };
+  const open = async () => {
+    wrap(<SubscriptionsModule />);
+    fireEvent.click(await screen.findByRole("tab", { name: "Services & limits" }));
+  };
+  beforeEach(() => api.fetchBillingSettings.mockResolvedValue(settings));
   const plan = (over = {}) => ({
     id: "growth", name: "Growth", numbers: 10, seats: null, maxContacts: null, maxBroadcasts: null, trialDays: 0, isActive: true, taxMode: "exclusive", aiDaily: 300,
     features: [{ key: "broadcasts", label: "Broadcasts", included: true }], prices: [], ...over,
@@ -67,7 +74,7 @@ describe("the plans editor", () => {
   it("sets the contacts and broadcasts a plan includes, and blank means no limit", async () => {
     api.listPlans.mockResolvedValue([plan()]);
     api.updatePlan.mockResolvedValue({});
-    wrap(<PlansEditor open onClose={vi.fn()} />);
+    await open();
     const section = within(await screen.findByRole("region", { name: "Growth plan" }));
     fireEvent.change(section.getByLabelText("growth contacts"), { target: { value: "5000" } });
     fireEvent.change(section.getByLabelText("growth broadcasts a month"), { target: { value: "20" } });
@@ -76,7 +83,7 @@ describe("the plans editor", () => {
     cleanup();
     api.updatePlan.mockClear();
     api.listPlans.mockResolvedValue([plan({ maxContacts: 5000, maxBroadcasts: 20 })]);
-    wrap(<PlansEditor open onClose={vi.fn()} />);
+    await open();
     const again = within(await screen.findByRole("region", { name: "Growth plan" }));
     expect((again.getByLabelText("growth contacts") as HTMLInputElement).value).toBe("5000");
     fireEvent.change(again.getByLabelText("growth contacts"), { target: { value: "" } });
@@ -88,7 +95,7 @@ describe("the plans editor", () => {
   it("shows the server's reason when a limit is refused", async () => {
     api.listPlans.mockResolvedValue([plan()]);
     api.updatePlan.mockRejectedValue(new Error("Contacts must be a whole number from 1 to 100000000, or blank"));
-    wrap(<PlansEditor open onClose={vi.fn()} />);
+    await open();
     const section = within(await screen.findByRole("region", { name: "Growth plan" }));
     fireEvent.change(section.getByLabelText("growth contacts"), { target: { value: "0" } });
     fireEvent.click(section.getByRole("button", { name: /Save/ }));

@@ -8,6 +8,8 @@ const api = vi.hoisted(() => ({
   listPlans: vi.fn(),
   fetchPublicPlans: vi.fn(),
   updatePlan: vi.fn(),
+  fetchBillingSettings: vi.fn(),
+  fetchPlanChanges: vi.fn(),
   createCompany: vi.fn(),
   updateCompany: vi.fn(),
   resendOwnerCredentials: vi.fn(),
@@ -48,6 +50,8 @@ beforeEach(() => {
   api.listPlans.mockResolvedValue(ADMIN_PLANS);
   api.listCompanies.mockResolvedValue([]);
   api.updatePlan.mockResolvedValue(ADMIN_PLANS[1]);
+  api.fetchBillingSettings.mockResolvedValue({ settings: { sacCode: "998314", gstRate: 18, invoicePrefix: "SCZ" }, history: [] });
+  api.fetchPlanChanges.mockResolvedValue([]);
 });
 afterEach(cleanup);
 
@@ -91,30 +95,29 @@ describe("comparing plans", () => {
 describe("the platform plan editor", () => {
   it("saves a changed price in the smallest unit and says it applies at once", async () => {
     wrap(<PlatformAdmin adminName="Root" onLogout={() => {}} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Plans & prices/ }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Subscriptions" }));
     const price = await screen.findByLabelText("growth monthly INR");
     expect((price as HTMLInputElement).value).toBe("4999");
     fireEvent.change(price, { target: { value: "5499.50" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: "growth includes The AI assistant" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save Growth" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save Growth rates" }));
     await waitFor(() => expect(api.updatePlan).toHaveBeenCalled());
     const [code, body] = api.updatePlan.mock.calls[0];
     expect(code).toBe("growth");
-    expect(body.features).toEqual(["broadcasts"]);
+    expect(body.features).toBeUndefined();
     expect(body.prices).toContainEqual({ interval: "monthly", currency: "INR", amountMinor: 549950 });
     expect(body.prices).toContainEqual({ interval: "annual", currency: "AED", amountMinor: 249000 });
-    expect((await screen.findByRole("status")).textContent).toContain("applies to every company");
+    expect((await screen.findByRole("status")).textContent).toContain("applies to every new order");
   });
   it("shows the server's reason when a change is refused", async () => {
     api.updatePlan.mockRejectedValue(new Error("There are two monthly INR prices"));
     wrap(<PlatformAdmin adminName="Root" onLogout={() => {}} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Plans & prices/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "Save Growth" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Subscriptions" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Save Growth rates" }));
     expect(await screen.findByText(/two monthly INR prices/)).toBeDefined();
   });
   it("has no price fields for the Free plan", async () => {
     wrap(<PlatformAdmin adminName="Root" onLogout={() => {}} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Plans & prices/ }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Subscriptions" }));
     await screen.findByLabelText("growth monthly INR");
     expect(screen.queryByLabelText("free monthly INR")).toBeNull();
   });

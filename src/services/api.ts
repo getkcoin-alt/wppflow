@@ -515,12 +515,71 @@ export const updatePlan = (
     maxBroadcasts: number | null;
     trialDays: number;
     isActive: boolean;
+    taxMode: "exclusive" | "inclusive";
     features: string[];
     prices: PlanPrice[];
   }>,
 ) => apiRequest(`/api/admin/plans/${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(data) });
 export const listPlans = async (): Promise<PlanChoice[]> =>
   (await apiGet("/api/admin/plans")).plans;
+/** One thing that changed, in words: what it was and what it is now */
+export interface ChangeLine {
+  field: string;
+  from: string;
+  to: string;
+}
+export interface PlanChange {
+  id: number;
+  plan: string;
+  name: string;
+  actor: string | null;
+  at: string;
+  changes: ChangeLine[];
+}
+/** Who changed which plan and when, newest first */
+export const fetchPlanChanges = async (): Promise<PlanChange[]> => (await apiGet("/api/admin/plans/changes")).changes;
+/** Who sells, and how tax is worked out on an invoice. Invoices already issued keep what they were issued with. */
+export interface BillingSettings {
+  seller: {
+    legalName: string;
+    tradeName: string;
+    gstin: string;
+    state: string;
+    stateCode: string;
+    addressLines: string[];
+    city: string;
+    postalCode: string;
+    email: string;
+  };
+  sacCode: string;
+  gstRate: number;
+  invoicePrefix: string;
+  prorateUpgrades: boolean;
+  /** What the next invoice number would look like, and the longest one the law allows */
+  nextInvoiceExample: string;
+  invoiceNumberLimit: number;
+}
+export interface BillingSettingsChange {
+  id: number;
+  actor: string | null;
+  at: string;
+  changes: ChangeLine[];
+}
+export interface BillingSettingsReply {
+  settings: BillingSettings;
+  history: BillingSettingsChange[];
+}
+export const fetchBillingSettings = async (): Promise<BillingSettingsReply> => {
+  const r = await apiGet("/api/admin/billing/settings");
+  return { settings: r.settings, history: r.history };
+};
+export type BillingSettingsPatch = Partial<Pick<BillingSettings, "sacCode" | "gstRate" | "invoicePrefix" | "prorateUpgrades">> & {
+  seller?: Partial<Pick<BillingSettings["seller"], "legalName" | "tradeName" | "gstin" | "addressLines" | "city" | "postalCode" | "email">>;
+};
+export const saveBillingSettings = async (patch: BillingSettingsPatch): Promise<BillingSettingsReply> => {
+  const r = await apiRequest("/api/admin/billing/settings", { method: "PUT", body: JSON.stringify(patch) });
+  return { settings: r.settings, history: r.history };
+};
 export const createCompany = (data: {
   companyName: string;
   ownerName: string;

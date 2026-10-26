@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, LogOut, Plus } from "lucide-react";
 import { ScriwoMark, Wordmark } from "../brand/Logo";
 import { Sheet } from "../ui/Sheet";
-import { EmptyState, Field, Notice, Pill } from "../ui/Page";
+import { EmptyState, Field, Notice, Pill, Segmented } from "../ui/Page";
 import { btn, inputCls, selectCls } from "../ui/styles";
 import { ThemeSwitch } from "../layout/ProfileMenu";
 import { useTheme } from "../../hooks/useTheme";
@@ -20,7 +20,7 @@ import {
 } from "../../services/api";
 import type { Company } from "./types";
 import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
-import { PlansEditor } from "./PlansEditor";
+import { SubscriptionsModule } from "./SubscriptionsModule";
 import { OnlinePayments, useOnlinePayments } from "./OnlinePayments";
 import { BillingAuditSheet, NumberHealthSheet, OverviewSheet, SupportSheet } from "./PlatformConsole";
 import { describeSubscription, needsAttention, type Attention } from "../../utils/subscription";
@@ -133,7 +133,7 @@ export function PlatformAdmin({
   const qc = useQueryClient();
   const theme = useTheme();
   const [adding, setAdding] = useState(false),
-    [editingPlans, setEditingPlans] = useState(false),
+    [view, setView] = useState<"companies" | "subscriptions">("companies"),
     [viewingPayments, setViewingPayments] = useState(false),
     [console_, setConsole] = useState<"overview" | "numbers" | "audit" | null>(null),
     [supportFor, setSupportFor] = useState<Company | null>(null);
@@ -223,6 +223,20 @@ export function PlatformAdmin({
       </header>
 
       <main className="mx-auto max-w-6xl px-4 sm:px-8 pt-8 sm:pt-12 pb-16 animate-rise">
+        <div className="mb-6">
+          <Segmented
+            label="Platform sections"
+            items={[
+              { key: "companies", label: "Companies" },
+              { key: "subscriptions", label: "Subscriptions" },
+            ]}
+            value={view}
+            onChange={setView}
+          />
+        </div>
+        {view === "subscriptions" && <SubscriptionsModule />}
+        {view === "companies" && (
+        <>
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
             <div className="eyebrow mb-2">Platform</div>
@@ -243,9 +257,6 @@ export function PlatformAdmin({
             </button>
             <button className={btn("secondary")} onClick={() => setConsole("audit")}>
               Billing audit
-            </button>
-            <button className={btn("secondary")} onClick={() => setEditingPlans(true)}>
-              Plans &amp; prices
             </button>
             <button className={btn("secondary")} onClick={() => setViewingPayments(true)}>
               Online payments
@@ -304,6 +315,9 @@ export function PlatformAdmin({
           )}
           {notice && <Notice tone="success">{notice}</Notice>}
         </div>
+
+        </>
+        )}
 
         <Sheet
           open={adding}
@@ -433,7 +447,6 @@ export function PlatformAdmin({
           </form>
         </Sheet>
 
-        <PlansEditor open={editingPlans} onClose={() => setEditingPlans(false)} />
         <OnlinePayments open={viewingPayments} onClose={() => setViewingPayments(false)} />
         <PaymentSheet
           company={payFor}
@@ -468,6 +481,8 @@ export function PlatformAdmin({
           }
         />
 
+        {view === "companies" && (
+        <>
         {isPending && (
           <div className="space-y-3" aria-busy>
             {[0, 1, 2].map((i) => (
@@ -656,6 +671,8 @@ export function PlatformAdmin({
             </li>
           ))}
         </ul>
+        </>
+        )}
       </main>
       <OverviewSheet open={console_ === "overview"} onClose={() => setConsole(null)} />
       <NumberHealthSheet open={console_ === "numbers"} onClose={() => setConsole(null)} />
