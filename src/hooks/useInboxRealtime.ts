@@ -135,12 +135,22 @@ export function useInboxRealtime({
     };
     const onCampaign = () => invalidate("campaigns");
     const onLead = () => invalidate("leads", "lead", "lead-tasks");
+    // The platform admin switched a module on or off for this company's plan: the screens lock or unlock now
+    const onPlan = () => invalidate("capabilities", "billing");
     const onWake = () => {
       if (document.visibilityState === "visible") void catchUp();
     };
+    // After a gap (a closed laptop, a lost connection) a plan change may have been missed: look at the plan again too
+    const onBack = () => {
+      onWake();
+      if (document.visibilityState === "visible") invalidate("capabilities");
+    };
 
     const handlers: Record<string, (p: any) => void> = {
-      connect: () => void catchUp(),
+      connect: () => {
+        void catchUp();
+        invalidate("capabilities");
+      },
       "message:received": onMessage,
       "message:created": onMessage,
       "notification:new": onNotify,
@@ -157,17 +167,18 @@ export function useInboxRealtime({
       "campaign:status": onCampaign,
       "campaign:progress": onCampaign,
       "lead:changed": onLead,
+      "plan:changed": onPlan,
       "compose:update": (p) => onComposeRef.current?.(p),
     };
     for (const [event, fn] of Object.entries(handlers)) socket.on(event, fn);
-    document.addEventListener("visibilitychange", onWake);
-    window.addEventListener("online", onWake);
+    document.addEventListener("visibilitychange", onBack);
+    window.addEventListener("online", onBack);
     const poll = setInterval(onWake, 60000);
 
     return () => {
       for (const [event, fn] of Object.entries(handlers)) socket.off(event, fn);
-      document.removeEventListener("visibilitychange", onWake);
-      window.removeEventListener("online", onWake);
+      document.removeEventListener("visibilitychange", onBack);
+      window.removeEventListener("online", onBack);
       clearInterval(poll);
       clearTimeout(clearTimer);
     };

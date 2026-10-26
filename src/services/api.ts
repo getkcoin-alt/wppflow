@@ -519,7 +519,15 @@ export const updatePlan = (
     features: string[];
     prices: PlanPrice[];
   }>,
-) => apiRequest(`/api/admin/plans/${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(data) });
+): Promise<{ plan: PlanChoice; notified?: PlanNotified }> =>
+  apiRequest(`/api/admin/plans/${encodeURIComponent(code)}`, { method: "PUT", body: JSON.stringify(data) });
+/** Who was told when modules were switched on or off for a plan: the companies paying for it, the people told, and what changed */
+export interface PlanNotified {
+  companies: number;
+  told: number;
+  added: string[];
+  removed: string[];
+}
 export const listPlans = async (): Promise<PlanChoice[]> =>
   (await apiGet("/api/admin/plans")).plans;
 /** One thing that changed, in words: what it was and what it is now */

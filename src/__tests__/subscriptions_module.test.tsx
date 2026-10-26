@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   fetchBillingSettings: vi.fn(),
   saveBillingSettings: vi.fn(),
   fetchPlanChanges: vi.fn(),
+  listCompanies: vi.fn(),
 }));
 vi.mock("../services/api", async (original) => ({ ...(await original<typeof import("../services/api")>()), ...api }));
 import { SubscriptionsModule } from "../components/platform/SubscriptionsModule";
@@ -63,6 +64,7 @@ beforeEach(() => {
   api.fetchBillingSettings.mockResolvedValue(reply());
   api.fetchPlanChanges.mockResolvedValue([]);
   api.updatePlan.mockResolvedValue({});
+  api.listCompanies.mockResolvedValue([]);
 });
 afterEach(cleanup);
 
@@ -168,6 +170,79 @@ describe("the subscriptions module", () => {
     fireEvent.click(section.getByRole("button", { name: "Save Growth" }));
     expect(await section.findByText(/must be a number/)).toBeDefined();
     expect(api.updatePlan).not.toHaveBeenCalled();
+  });
+});
+
+const co = (id: string, planId: string, over: Record<string, unknown> = {}) => ({ id, name: id, planId, status: "active", subscription: { lapsed: false }, ...over });
+
+describe("switching modules on and off for a plan", () => {
+  const open = async () => {
+    wrap();
+    await goTo("Services & limits");
+    return within(await screen.findByRole("region", { name: "Growth plan" }));
+  };
+  const tick = (section: ReturnType<typeof within>, name: string) => fireEvent.click(section.getByRole("checkbox", { name }));
+
+  it("says that ticking unlocks and unticking locks, for every company on the plan, and names the modules as people see them", async () => {
+    api.listPlans.mockResolvedValue([plan({ features: [feat("broadcasts", "Broadcasts", true), feat("api", "API keys and webhooks", false), feat("ai", "The AI assistant", true)] })]);
+    const section = await open();
+    expect(section.getByText(/Ticking one unlocks it, unticking one locks it, for every company on the plan/)).toBeDefined();
+    expect(section.getByText("Developers (API keys, webhooks, API tester)")).toBeDefined();
+    expect(section.getByText("Riwo, the AI assistant")).toBeDefined();
+  });
+
+  it("before saving, says what will be locked or switched on, for how many companies, and that their owners are told", async () => {
+    api.listCompanies.mockResolvedValue([co("a", "growth"), co("b", "growth"), co("late", "growth", { subscription: { lapsed: true } }), co("off", "growth", { status: "suspended" }), co("s", "starter")]);
+    api.listPlans.mockResolvedValue([plan({ features: [feat("broadcasts", "Broadcasts", true), feat("api", "API keys and webhooks", false)] })]);
+    const section = await open();
+    expect(section.queryByTestId("growth-modules-preview")).toBeNull();
+    tick(section, "growth includes Broadcasts");
+    await waitFor(() => expect(section.getByTestId("growth-modules-preview").textContent).toContain("the 2 companies paying for Growth"));
+    expect(section.getByTestId("growth-modules-preview").textContent).toBe("Saving will lock Broadcasts for the 2 companies paying for Growth, and tell their owners and administrators. Nothing a company already has is deleted.");
+    tick(section, "growth includes API keys and webhooks");
+    expect(section.getByTestId("growth-modules-preview").textContent).toContain("Saving will switch on Developers (API keys, webhooks, API tester) and lock Broadcasts for");
+    // putting both back leaves nothing to say
+    tick(section, "growth includes Broadcasts");
+    tick(section, "growth includes API keys and webhooks");
+    expect(section.queryByTestId("growth-modules-preview")).toBeNull();
+  });
+
+  it("says when nobody is on the plan, so nobody will be told", async () => {
+    api.listPlans.mockResolvedValue([plan({ features: [feat("broadcasts", "Broadcasts", true)] })]);
+    const section = await open();
+    tick(section, "growth includes Broadcasts");
+    await waitFor(() => expect(section.getByTestId("growth-modules-preview").textContent).toContain("None is on it now, so nobody will be told."));
+    expect(section.getByTestId("growth-modules-preview").textContent).not.toContain("tell their owners");
+  });
+
+  it("a change to limits or the name alone says nothing about telling anyone", async () => {
+    const section = await open();
+    fireEvent.change(section.getByLabelText("growth contacts"), { target: { value: "9000" } });
+    expect(section.queryByTestId("growth-modules-preview")).toBeNull();
+  });
+
+  it("after saving, says who was told and about what", async () => {
+    api.listPlans.mockResolvedValue([plan({ features: [feat("broadcasts", "Broadcasts", true), feat("automations", "Automations", false)] })]);
+    api.updatePlan.mockResolvedValue({ plan: {}, notified: { companies: 3, told: 5, added: ["Automations"], removed: ["Broadcasts"] } });
+    const section = await open();
+    tick(section, "growth includes Broadcasts");
+    tick(section, "growth includes Automations");
+    fireEvent.click(section.getByRole("button", { name: "Save Growth" }));
+    expect((await section.findByRole("status")).textContent).toBe(
+      "Saved. It applies to every company on this plan now. Nothing a company already has is deleted. 5 owners and administrators in 3 companies were told: Automations switched on, Broadcasts locked.",
+    );
+    cleanup();
+    api.updatePlan.mockResolvedValue({ plan: {}, notified: { companies: 1, told: 1, added: [], removed: ["Broadcasts"] } });
+    const again = await open();
+    tick(again, "growth includes Broadcasts");
+    fireEvent.click(again.getByRole("button", { name: "Save Growth" }));
+    expect((await again.findByRole("status")).textContent).toContain("1 owner or administrator in 1 company was told: Broadcasts locked.");
+    cleanup();
+    api.updatePlan.mockResolvedValue({ plan: {}, notified: { companies: 0, told: 0, added: [], removed: ["Broadcasts"] } });
+    const none = await open();
+    tick(none, "growth includes Broadcasts");
+    fireEvent.click(none.getByRole("button", { name: "Save Growth" }));
+    expect((await none.findByRole("status")).textContent).toContain("No company is paying for this plan right now, so nobody needed telling (Broadcasts locked).");
   });
 });
 

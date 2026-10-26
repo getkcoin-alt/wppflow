@@ -110,7 +110,7 @@ export function NotificationBell({
                     {n.title}
                   </span>
                   {n.body && (
-                    <span className="block text-[13px] text-fg-2 truncate">
+                    <span className="block text-[13px] text-fg-2 line-clamp-3">
                       {n.body}
                     </span>
                   )}

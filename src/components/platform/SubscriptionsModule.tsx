@@ -5,6 +5,7 @@ import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
 import {
   fetchBillingSettings,
   fetchPlanChanges,
+  listCompanies,
   listPlans,
   saveBillingSettings,
   updatePlan,
@@ -12,8 +13,10 @@ import {
   type BillingSettingsPatch,
   type ChangeLine,
   type PlanChoice,
+  type PlanNotified,
   type PlanPrice,
 } from "../../services/api";
+import type { Company } from "./types";
 import { formatMinor, gstSplit } from "../../utils/money";
 
 type Tab = "rates" | "services" | "invoice" | "history";
@@ -35,6 +38,19 @@ const limit = (v: number | null | undefined) => (v == null ? "" : String(v));
 const limitValue = (v: string) => (v.trim() === "" ? null : Number(v));
 const hasUnreadableNumber = (root: HTMLElement | null) => Array.from(root?.querySelectorAll("input") ?? []).some((i) => i.validity.badInput);
 const when = (iso: string) => new Date(iso).toLocaleString("en", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+
+// How a module is named to people: the screens they see in the app. The server uses the same names in its notices.
+const MODULE_NAMES: Record<string, string> = {
+  broadcasts: "Broadcasts",
+  automations: "Automations",
+  leads: "Sales pipeline",
+  audit: "Audit log",
+  api: "Developers (API keys, webhooks, API tester)",
+  ai: "Riwo, the AI assistant",
+};
+const moduleName = (f: { key: string; label: string }) => MODULE_NAMES[f.key] || f.label.replace(/^The /, "");
+const listOf = (items: string[]) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 // After a plan changes, everything that shows plans or what a company may do has to look again.
 const refreshPlans = (qc: ReturnType<typeof useQueryClient>) =>
@@ -186,7 +202,7 @@ function RatesCard({ plan, gstRate }: { plan: PlanChoice; gstRate: number }) {
 }
 
 // ── Services & limits: what each plan includes ──────────────────────────────────────────────────────────────
-function ServicesCard({ plan }: { plan: PlanChoice }) {
+function ServicesCard({ plan, companies }: { plan: PlanChoice; companies?: number }) {
   const qc = useQueryClient();
   const initial = () => ({
     name: plan.name,
@@ -199,16 +215,20 @@ function ServicesCard({ plan }: { plan: PlanChoice }) {
   const [form, setForm] = useState(initial);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [saved, setSaved] = useState(false);
+    [saved, setSaved] = useState("");
   const card = useRef<HTMLElement>(null);
   useEffect(() => setForm(initial()), [plan]); // eslint-disable-line react-hooks/exhaustive-deps
+  // What ticking and unticking would do to the companies paying for this plan, said before it is saved
+  const switchedOn = plan.features.filter((f) => !f.included && form.features.includes(f.key)).map(moduleName);
+  const locked = plan.features.filter((f) => f.included && !form.features.includes(f.key)).map(moduleName);
+  const doing = [switchedOn.length ? `switch on ${listOf(switchedOn)}` : "", locked.length ? `lock ${listOf(locked)}` : ""].filter(Boolean).join(" and ");
   const save = async () => {
     setBusy(true);
     setError("");
-    setSaved(false);
+    setSaved("");
     try {
       if (hasUnreadableNumber(card.current)) throw new Error("A limit must be a number, or blank for no limit.");
-      await updatePlan(plan.id, {
+      const reply = await updatePlan(plan.id, {
         name: form.name,
         numbers: limitValue(form.numbers),
         seats: limitValue(form.seats),
@@ -217,7 +237,7 @@ function ServicesCard({ plan }: { plan: PlanChoice }) {
         features: form.features,
       });
       await refreshPlans(qc);
-      setSaved(true);
+      setSaved(toldMessage(reply?.notified));
     } catch (e: any) {
       setError(e.message || "Could not save the plan.");
     } finally {
@@ -248,7 +268,7 @@ function ServicesCard({ plan }: { plan: PlanChoice }) {
         </Field>
       </div>
       <fieldset className="mt-4">
-        <legend className="text-[13px] text-fg-2 mb-1.5">Includes</legend>
+        <legend className="text-[13px] text-fg-2 mb-1.5">Modules in this plan. Ticking one unlocks it, unticking one locks it, for every company on the plan.</legend>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {plan.features.map((f) => (
             <label key={f.key} className="flex items-center gap-2 text-[13.5px]">
@@ -258,11 +278,22 @@ function ServicesCard({ plan }: { plan: PlanChoice }) {
                 onChange={(e) => setForm({ ...form, features: e.target.checked ? [...form.features, f.key] : form.features.filter((k) => k !== f.key) })}
                 aria-label={`${plan.id} includes ${f.label}`}
               />
-              {f.label.replace(/^The /, "")}
+              {moduleName(f)}
             </label>
           ))}
         </div>
       </fieldset>
+      {doing && (
+        <p className="mt-3 rounded-2xl bg-warn/10 px-4 py-3 text-[13.5px] text-fg" data-testid={`${plan.id}-modules-preview`}>
+          Saving will {doing} for{" "}
+          {companies === undefined
+            ? `the companies paying for ${plan.name}`
+            : companies === 0
+              ? `the companies paying for ${plan.name}. None is on it now, so nobody will be told`
+              : `the ${plural(companies, "company", "companies")} paying for ${plan.name}`}
+          {companies === 0 ? "." : ", and tell their owners and administrators."} Nothing a company already has is deleted.
+        </p>
+      )}
       {error && (
         <div className="mt-3">
           <Notice tone="error">{error}</Notice>
@@ -272,10 +303,19 @@ function ServicesCard({ plan }: { plan: PlanChoice }) {
         <button type="button" disabled={busy} className={btn("primary", "sm")} onClick={() => void save()} aria-label={`Save ${plan.name}`}>
           Save {plan.name}
         </button>
-        {saved && <Saved>Saved. It applies to every company on this plan now. Nothing a company already has is deleted.</Saved>}
+        {saved && <Saved>{saved}</Saved>}
       </div>
     </section>
   );
+}
+
+// What the platform admin is told after saving: who was told, and about which modules.
+function toldMessage(n?: PlanNotified) {
+  const base = "Saved. It applies to every company on this plan now. Nothing a company already has is deleted.";
+  if (!n || (!n.added.length && !n.removed.length)) return base;
+  const what = [...n.added.map((m) => `${m} switched on`), ...n.removed.map((m) => `${m} locked`)].join(", ");
+  if (n.companies === 0) return `${base} No company is paying for this plan right now, so nobody needed telling (${what}).`;
+  return `${base} ${plural(n.told, "owner or administrator", "owners and administrators")} in ${plural(n.companies, "company", "companies")} ${n.told === 1 ? "was" : "were"} told: ${what}.`;
 }
 
 // ── Invoice & tax: who sells, the service code, the GST rate and the invoice number ─────────────────────────
@@ -504,7 +544,10 @@ export function SubscriptionsModule() {
   const [tab, setTab] = useState<Tab>("rates");
   const plans = useQuery({ queryKey: ["plans"], queryFn: listPlans });
   const settings = useQuery({ queryKey: ["billing-settings"], queryFn: fetchBillingSettings });
+  const companies = useQuery<Company[]>({ queryKey: ["companies"], queryFn: listCompanies });
   const gstRate = settings.data?.settings.gstRate ?? 18;
+  // The companies a module change reaches: active, paying for the plan, and not switched to Free by a late payment
+  const onPlan = (id: string) => companies.data?.filter((c) => c.status === "active" && c.planId === id && !c.subscription?.lapsed).length;
   return (
     <div data-testid="subscriptions-module">
       <div className="mb-6">
@@ -536,7 +579,7 @@ export function SubscriptionsModule() {
           <p className="text-[13.5px] text-fg-2">
             This sets what the app allows and unlocks. The wording of each plan&apos;s feature list on the website&apos;s pricing page is written by hand and does not change when you edit it here.
           </p>
-          {plans.data?.map((p) => <ServicesCard key={p.id} plan={p} />)}
+          {plans.data?.map((p) => <ServicesCard key={p.id} plan={p} companies={onPlan(p.id)} />)}
         </div>
       )}
       {tab === "invoice" && settings.data && <InvoiceTax settings={settings.data.settings} />}

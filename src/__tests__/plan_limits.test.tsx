@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   listPlans: vi.fn(),
   updatePlan: vi.fn(),
   fetchBillingSettings: vi.fn(),
+  listCompanies: vi.fn(),
   fetchContacts: vi.fn(),
   fetchPipelineSettings: vi.fn(),
   fetchLabels: vi.fn(),
@@ -65,7 +66,10 @@ describe("the services and limits of a plan", () => {
     wrap(<SubscriptionsModule />);
     fireEvent.click(await screen.findByRole("tab", { name: "Services & limits" }));
   };
-  beforeEach(() => api.fetchBillingSettings.mockResolvedValue(settings));
+  beforeEach(() => {
+    api.fetchBillingSettings.mockResolvedValue(settings);
+    api.listCompanies.mockResolvedValue([]);
+  });
   const plan = (over = {}) => ({
     id: "growth", name: "Growth", numbers: 10, seats: null, maxContacts: null, maxBroadcasts: null, trialDays: 0, isActive: true, taxMode: "exclusive", aiDaily: 300,
     features: [{ key: "broadcasts", label: "Broadcasts", included: true }], prices: [], ...over,
