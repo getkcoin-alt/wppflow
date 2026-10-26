@@ -2,13 +2,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckList } from "./ui";
-import { AED_PAYMENT_NOTE, PLANS, TAX_NOTE, YEARLY_MONTHS, yearlyPrice, type Interval } from "@/content/plans";
+import { AED_PAYMENT_NOTE, yearlyOf, type Interval } from "@/content/plans";
+import { taxNote, type Catalogue } from "@/lib/catalogue";
 import { currencyForZone, formatMoney, type Currency } from "@/lib/money";
 import { trackAttrs } from "@/lib/analytics";
 
 const KEY = "scriwo_currency";
 
-export function PricingGrid() {
+export function PricingGrid({ catalogue }: { catalogue: Catalogue }) {
+  const { plans, yearlyMonths } = catalogue;
   const [cur, setCur] = useState<Currency>("AED");
   const [interval, setInterval] = useState<Interval>("monthly");
 
@@ -41,7 +43,7 @@ export function PricingGrid() {
               onClick={() => setInterval(i)}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${interval === i ? "bg-brand-solid text-white" : "text-fg-2 hover:text-fg"}`}
             >
-              {i === "monthly" ? "Monthly" : `Yearly · ${12 - YEARLY_MONTHS} months free`}
+              {i === "monthly" ? "Monthly" : yearlyMonths && yearlyMonths < 12 ? `Yearly · ${Math.round((12 - yearlyMonths) * 10) / 10} months free` : "Yearly"}
             </button>
           ))}
         </div>
@@ -60,12 +62,12 @@ export function PricingGrid() {
           ))}
         </div>
         </div>
-        <p className="text-sm text-fg-3">Paid plans are paid in advance, for a month or for a year. {TAX_NOTE[cur]} No per-message fees. <Link href="/refund-policy" className="underline">Cancel anytime</Link>.</p>
+        <p className="text-sm text-fg-3">Paid plans are paid in advance, for a month or for a year. {taxNote(catalogue, cur)} No per-message fees. <Link href="/refund-policy" className="underline">Cancel anytime</Link>.</p>
       </div>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {PLANS.map((p) => {
+        {plans.map((p) => {
           const monthly = p.price[cur];
-          const price = monthly && interval === "yearly" ? yearlyPrice(monthly) : monthly;
+          const price = monthly === 0 ? 0 : interval === "yearly" ? yearlyOf(p, cur) : monthly;
           return (
             <section key={p.id} aria-labelledby={`plan-${p.id}`} className={`card flex flex-col p-6 ${p.highlight ? "ring-2 ring-gold/60" : ""}`}>
               {p.highlight && <span className="mb-3 self-start rounded-full bg-gold/15 px-3 py-1 text-xs font-medium text-gold">Most popular</span>}
@@ -79,13 +81,13 @@ export function PricingGrid() {
                 ) : price ? (
                   <>
                     <span className="text-4xl font-semibold tracking-tight">{formatMoney(price, cur)}</span>
-                    <span className="text-sm text-fg-3"> / {interval === "yearly" ? "year" : "month"}</span>
+                    <span className="text-sm text-fg-3"> / {interval === "yearly" ? "year" : "month"}{cur === "INR" && p.taxMode === "inclusive" ? ", GST included" : ""}</span>
                   </>
                 ) : (
                   <span className="text-3xl font-semibold tracking-tight">Custom</span>
                 )}
               </p>
-              {price && interval === "yearly" && monthly ? (
+              {price && interval === "yearly" && monthly && monthly * 12 > price ? (
                 <p className="mt-1 text-sm text-fg-3">That is {formatMoney(Math.round(price / 12), cur)} a month. You save {formatMoney(monthly * 12 - price, cur)}.</p>
               ) : null}
               <p className="mt-1 text-sm font-medium text-brand">{p.numbers}</p>

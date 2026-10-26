@@ -11,13 +11,15 @@ import { industryBySlug } from "@/content/industries";
 import { FEATURES } from "@/content/features";
 import { absolute } from "@/lib/site";
 import { faqPage, speakable } from "@/lib/jsonld";
-import { PLANS, TAX_NOTE } from "@/content/plans";
+import { cheapestPaid, getCatalogue, taxNote } from "@/lib/catalogue";
 import { formatMoney } from "@/lib/money";
 import { trackAttrs } from "@/lib/analytics";
 
 type Props = { params: Promise<{ city: string }> };
 
 export const dynamicParams = false;
+// Prices are read from the product and looked at again every five minutes.
+export const revalidate = 300;
 export const generateStaticParams = () => CITIES.map((c) => ({ city: c.slug }));
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -37,10 +39,11 @@ export default async function CityPage({ params }: Props) {
   const path = `/whatsapp-crm/${c.slug}`;
   const currency = c.country === "UAE" ? "AED" : "INR";
   // Cheapest paid plan; the free plan is mentioned separately.
-  const from = formatMoney(PLANS.find((p) => (p.price[currency] ?? 0) > 0)?.price[currency] ?? 0, currency);
+  const catalogue = await getCatalogue();
+  const from = formatMoney(cheapestPaid(catalogue, currency) ?? 0, currency);
   const faqs = [
     { q: `Is there a WhatsApp CRM for teams in ${c.name}?`, a: `Yes. Scriwo is a shared WhatsApp inbox and CRM used by teams in ${c.name}. Each staff member links their own number, owners see every chat, and chats can be assigned, noted and resolved.` },
-    { q: `How much does Scriwo cost in ${c.name}?`, a: `One account with one WhatsApp number is free. Team plans start at ${from} a month for up to 3 numbers, billed in ${currency} with no per-message fees. ${TAX_NOTE[currency]}` },
+    { q: `How much does Scriwo cost in ${c.name}?`, a: `One account with one WhatsApp number is free. Team plans start at ${from} a month for up to 3 numbers, billed in ${currency} with no per-message fees. ${taxNote(catalogue, currency)}` },
     { q: `Do I need an office in ${c.name} to use Scriwo?`, a: "No. Scriwo runs in the browser. Your team signs in from anywhere and links their WhatsApp by scanning a QR code." },
   ];
   const nearby = CITIES.filter((o) => o.country === c.country && o.slug !== c.slug).slice(0, 6);

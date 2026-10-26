@@ -1,6 +1,6 @@
 import { SITE, absolute } from "./site";
 import type { Faq } from "@/content/faqs";
-import { PLANS } from "@/content/plans";
+import { PLANS, type Plan } from "@/content/plans";
 import { LEGAL } from "./legal";
 
 export const organization = () => ({
@@ -43,7 +43,7 @@ export const website = () => ({
   inLanguage: ["en", "ar", "hi"],
 });
 
-export const softwareApplication = () => ({
+export const softwareApplication = (plans: Plan[] = PLANS) => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: SITE.name,
@@ -54,7 +54,7 @@ export const softwareApplication = () => ({
   description: SITE.description,
   publisher: { "@id": absolute("/#organization") },
   offers: (["AED", "INR"] as const).map((cur) => {
-    const prices = PLANS.map((p) => p.price[cur]).filter((n): n is number => n !== null);
+    const prices = plans.map((p) => p.price[cur]).filter((n): n is number => n !== null);
     return {
       "@type": "AggregateOffer",
       priceCurrency: cur,

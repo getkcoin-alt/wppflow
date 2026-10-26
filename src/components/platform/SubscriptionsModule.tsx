@@ -511,7 +511,7 @@ export function SubscriptionsModule() {
         <div className="eyebrow mb-2">Platform</div>
         <h1 className="text-[32px] sm:text-[40px] leading-[1.1] font-semibold">Subscriptions</h1>
         <p className="text-[16px] text-fg-2 mt-1.5 max-w-2xl">
-          What is sold, what it costs and how it is invoiced. The app, the checkout and the pricing page read these, so a change applies at once. Nothing a company already has is deleted, and invoices already issued are never altered.
+          What is sold, what it costs and how it is invoiced. A change applies at once in the app and at checkout, and reaches the prices on the website within five minutes. Nothing a company already has is deleted, and invoices already issued are never altered.
         </p>
       </div>
       <div className="mb-5">
@@ -531,7 +531,14 @@ export function SubscriptionsModule() {
           {plans.data?.map((p) => <RatesCard key={p.id} plan={p} gstRate={gstRate} />)}
         </div>
       )}
-      {tab === "services" && <div className="space-y-4">{plans.data?.map((p) => <ServicesCard key={p.id} plan={p} />)}</div>}
+      {tab === "services" && (
+        <div className="space-y-4">
+          <p className="text-[13.5px] text-fg-2">
+            This sets what the app allows and unlocks. The wording of each plan&apos;s feature list on the website&apos;s pricing page is written by hand and does not change when you edit it here.
+          </p>
+          {plans.data?.map((p) => <ServicesCard key={p.id} plan={p} />)}
+        </div>
+      )}
       {tab === "invoice" && settings.data && <InvoiceTax settings={settings.data.settings} />}
       {tab === "history" && <History />}
     </div>

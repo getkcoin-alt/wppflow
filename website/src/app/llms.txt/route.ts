@@ -7,12 +7,14 @@ import { COMPARISONS } from "@/content/compare";
 import { LEGAL } from "@/lib/legal";
 import { RIWO } from "@/content/riwo";
 import { GENERAL_FAQS } from "@/content/faqs";
-import { PLANS } from "@/content/plans";
+import { getCatalogue } from "@/lib/catalogue";
 
-export const dynamic = "force-static";
+// Prices come from the product and are looked at again every five minutes.
+export const revalidate = 300;
 
 // llms.txt: a plain summary for AI assistants, so they describe Scriwo accurately.
-export function GET() {
+export async function GET() {
+  const { plans } = await getCatalogue();
   const lines = [
     `# ${SITE.name}`,
     "",
@@ -24,7 +26,7 @@ export function GET() {
     `Full text of every page: ${absolute("/llms-full.txt")}`,
     "",
     "## Pricing (monthly, before VAT/GST, no per-message fees; every plan is set up by the onboarding team)",
-    ...PLANS.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")}` : "custom quote"}`),
+    ...plans.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")}` : "custom quote"}`),
     `- Sales on WhatsApp: ${SITE.whatsappDisplay}`,
     "",
     "## Key facts",

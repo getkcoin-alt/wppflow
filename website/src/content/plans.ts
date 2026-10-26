@@ -6,6 +6,10 @@ export type Plan = {
   highlight?: boolean;
   /** Monthly price before tax. null means a custom quote. */
   price: { AED: number | null; INR: number | null };
+  /** Price for a year paid in advance, when the catalogue sets one; otherwise YEARLY_MONTHS months of the monthly price. */
+  yearly?: { AED: number | null; INR: number | null };
+  /** Whether the rupee price already includes GST. Plans from the static list exclude it. */
+  taxMode?: "exclusive" | "inclusive";
   includes: string[];
 };
 
@@ -20,6 +24,13 @@ export const PAYMENTS_LIVE = false;
 // Paying for a year in advance costs ten months: two months free. The app and billing use the same rule.
 export const YEARLY_MONTHS = 10;
 export const yearlyPrice = (monthly: number) => monthly * YEARLY_MONTHS;
+/** What a plan costs for a year in one currency: its own yearly price if the catalogue gives one. */
+export const yearlyOf = (plan: Plan, cur: "AED" | "INR"): number | null => {
+  const own = plan.yearly?.[cur];
+  if (own !== undefined) return own;
+  const monthly = plan.price[cur];
+  return monthly === null ? null : yearlyPrice(monthly);
+};
 export type Interval = "monthly" | "yearly";
 
 // Online payment is being added for India first. Until a gateway for the UAE is live, AED invoices are sent by the team.

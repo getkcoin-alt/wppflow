@@ -136,11 +136,29 @@ Razorpay**. Nothing has been run against Razorpay itself: online payment stays o
 | A payment activates a plan once, however many times the browser and the webhook report it, in either order; a wrong amount, currency or company, a tampered signature and a failed payment activate nothing | Test | `billing.test.js` (the checks were broken on purpose to confirm the tests fail) |
 | A webhook with a bad signature is refused; the same event twice does nothing the second time | Test | `billing.test.js` |
 | A lost webhook is recovered by a job that asks Razorpay | Test | `billing.test.js` |
-| GST invoices: gapless numbers, CGST + SGST for Uttar Pradesh buyers and IGST elsewhere, PDF, only the company's own invoices | Test | `billing.test.js`. The accountant still has to confirm the fields and the service code |
+| GST invoices: gapless numbers, CGST + SGST when the buyer is in the seller's state and IGST elsewhere, PDF, only the company's own invoices | Test | `billing.test.js`. The accountant still has to confirm the fields and the service code |
+| An invoice number is at most 16 characters (CGST Rule 46): `SCZ/26-27/00001`, a new series each April. It was 17 characters (`SCZ/2026-27/00001`) until 26 October 2026, which Rule 46 does not allow; no invoice had been issued | Test | `billing-settings.test.js` |
+| An invoice states "Tax payable on reverse charge: No." and the GST rate it was issued at | Test | `billing-settings.test.js` |
 | Autopay is opt-in and for monthly plans only; one charge is one period | Test | `billing.test.js` |
 | AED: "Online payment in AED is coming soon" on the pricing page and in the plan comparison | Code | `website/src/content/plans.ts`, `PlanCompare.tsx` |
 | A plan can limit contacts and broadcasts started in a month; the limit is enforced on the server and warned about from 80%; a customer's message is never refused | Test | `plan-limits.test.js`, `plan_limits.test.tsx`. No plan has a limit set today and the pricing page advertises none |
 | The pricing page's FAQ "Can I pay online?" | Needs a change | It still says online payment is "being added for India first". Change it when the keys are live |
+
+## Subscriptions module (platform admin)
+
+Built on 26 October 2026. Platform admin, **Subscriptions** tab.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| Rates: monthly and yearly prices in INR and AED, whether GST is added to or included in the price, whether a plan is for sale; a preview of what a customer pays at the current GST rate | Test | `subscriptions_module.test.tsx`, `plan-catalogue.test.js` |
+| Services & limits: name, WhatsApp numbers, people, contacts, broadcasts a month and the included features. Rates and services save separately, so one cannot overwrite the other | Test | `subscriptions_module.test.tsx`, `plans-admin.test.js` |
+| Invoice & tax: service code (SAC), GST rate, invoice prefix, whether an upgrade credits unused days, and the seller's name, GSTIN (checksum checked), address and billing email. The seller's state is read from the GSTIN | Test | `billing-settings.test.js`, `subscriptions_module.test.tsx` |
+| Changing the service code, the GST rate, the GSTIN or the prefix asks for confirmation first | Test | `subscriptions_module.test.tsx` |
+| An invoice that has already been issued keeps the seller details, the service code and the GST rate it was issued with; the next one uses the new settings, and the numbering carries on across a new prefix | Test | `billing-settings.test.js` |
+| Change history lists every plan change and every invoice-setting change, newest first, with who changed it and from what to what | Test | `billing-settings.test.js`, `subscriptions_module.test.tsx` |
+| The website's pricing page, home page starting price, city pages, `llms.txt`, `llms-full.txt` and the price data for search engines read the prices, number limits, tax mode and GST rate from the product, looking again every five minutes. If the product cannot be reached they fall back to the list in `website/src/content/plans.ts` | Test | `website/src/__tests__/catalogue.test.ts`. The fallback prices must be kept equal to the product's by hand |
+| Still written by hand on the website: each plan's feature list, "who it is for", and every sentence elsewhere that quotes a price ("from AED 299 / ₹2,499" in the comparison pages, the general FAQ, the blog, the free-CRM page, the Arabic and Hindi pages and the terms). They do not change when a rate is edited | Known gap | `website/src/content/` |
+| Not built: adding a brand-new plan. The five plans are fixed; their prices, limits and features are editable | Known gap | |
 
 ## Built since the pipeline
 

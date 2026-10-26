@@ -12,6 +12,8 @@ import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { faqPage, softwareApplication, speakable } from "@/lib/jsonld";
+import { cheapestPaid, getCatalogue } from "@/lib/catalogue";
+import { formatMoney } from "@/lib/money";
 import { SITE } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
 
@@ -28,10 +30,16 @@ export const metadata: Metadata = {
   alternates: { canonical: "/", languages: LANGUAGE_ALTERNATES },
 };
 
-export default function Home() {
+// The starting prices come from the product and are looked at again every five minutes.
+export const revalidate = 300;
+
+export default async function Home() {
+  const catalogue = await getCatalogue();
+  const plain = (s: string) => s.replace(/\s/g, " ");
+  const from = `${plain(formatMoney(cheapestPaid(catalogue, "AED") ?? 299, "AED"))} / ${plain(formatMoney(cheapestPaid(catalogue, "INR") ?? 2499, "INR"))}`;
   return (
     <>
-      <JsonLd data={[softwareApplication(), faqPage(GENERAL_FAQS), speakable("/", ["[data-speakable]"])]} />
+      <JsonLd data={[softwareApplication(catalogue.plans), faqPage(GENERAL_FAQS), speakable("/", ["[data-speakable]"])]} />
 
       <section className="hero-glow overflow-hidden">
         <PlaneTrail />
@@ -53,7 +61,7 @@ export default function Home() {
             <ul className="rise-3 mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-fg-3">
               <li>Works with the numbers you already use</li>
               <li>No training needed</li>
-              <li>Free for 1 number · teams from AED 299 / ₹2,499</li>
+              <li>Free for 1 number · teams from {from}</li>
             </ul>
           </div>
           <div className="relative">

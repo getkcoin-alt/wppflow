@@ -5,13 +5,16 @@ import { CITIES } from "@/content/cities";
 import { POSTS } from "@/content/blog";
 import { COMPARISONS } from "@/content/compare";
 import { GENERAL_FAQS } from "@/content/faqs";
-import { PLANS, TAX_NOTE, YEARLY_MONTHS, yearlyPrice } from "@/content/plans";
+import { yearlyOf } from "@/content/plans";
+import { getCatalogue, taxNote } from "@/lib/catalogue";
 import { RIWO, RIWO_ACTIONS, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
 
-export const dynamic = "force-static";
+// Prices come from the product and are looked at again every five minutes.
+export const revalidate = 300;
 
 // llms-full.txt: the whole site as plain text, so AI assistants can read every page in one fetch.
-export function GET() {
+export async function GET() {
+  const catalogue = await getCatalogue();
   const out: string[] = [
     `# ${SITE.name}: full site content`,
     "",
@@ -21,8 +24,13 @@ export function GET() {
     "Scriwo is independent and not affiliated with WhatsApp or Meta. It links WhatsApp numbers as linked devices (like WhatsApp Web); it is not the WhatsApp Business API.",
     "",
     "## Pricing",
-    ...PLANS.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")} a month, or AED ${yearlyPrice(p.price.AED).toLocaleString("en-US")} / ₹${yearlyPrice(p.price.INR ?? 0).toLocaleString("en-IN")} a year (${YEARLY_MONTHS} months for 12)` : "custom quote"}. ${p.for}.`),
-    `- ${TAX_NOTE.AED} ${TAX_NOTE.INR}`,
+    ...catalogue.plans.map((p) => {
+      const aedYear = yearlyOf(p, "AED"),
+        inrYear = yearlyOf(p, "INR");
+      const year = aedYear && inrYear ? `, or AED ${aedYear.toLocaleString("en-US")} / ₹${inrYear.toLocaleString("en-IN")} a year${catalogue.yearlyMonths && catalogue.yearlyMonths < 12 ? ` (${catalogue.yearlyMonths} months for 12)` : ""}` : "";
+      return `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")} a month${year}` : "custom quote"}. ${p.for}.`;
+    }),
+    `- ${taxNote(catalogue, "AED")} ${taxNote(catalogue, "INR")}`,
     "- No per-message fees. Every account is set up by the onboarding team.",
     "",
     "## Frequently asked questions",
