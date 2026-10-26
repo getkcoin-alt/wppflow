@@ -31,7 +31,7 @@ export async function GET() {
       return `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")} a month${year}` : "custom quote"}. ${p.for}.`;
     }),
     `- ${taxNote(catalogue, "AED")} ${taxNote(catalogue, "INR")}`,
-    "- No per-message fees. Every account is set up by the onboarding team.",
+    "- No per-message fees. Paid plans can be bought online in rupees; free, AED and Enterprise accounts are set up by the onboarding team.",
     "",
     "## Frequently asked questions",
     ...GENERAL_FAQS.flatMap((f) => [`### ${f.q}`, f.a, ""]),

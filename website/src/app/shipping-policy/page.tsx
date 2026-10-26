@@ -5,7 +5,7 @@ import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Shipping and Delivery Policy",
-  description: "Scriwo is software delivered online. Nothing is shipped: accounts are activated by email, usually within one working day of sign-up or payment.",
+  description: "Scriwo is software delivered online. Nothing is shipped: accounts bought online are created within minutes of payment, and others are activated by email, usually within one working day.",
   alternates: { canonical: "/shipping-policy" },
 };
 
@@ -19,13 +19,13 @@ export default function ShippingPolicyPage() {
     >
       <H2>How Scriwo is delivered</H2>
       <List items={[
-        "After you sign up or pay, our onboarding team sets up your company account.",
+        "When you buy a plan online, your company account is created automatically as soon as the payment is confirmed. For plans we invoice (for example in AED), our onboarding team sets up your company account after you sign up or pay.",
         "The account owner receives an email with a single-use link to set a password and sign in at app.scriwo.com.",
         "Staff are invited from inside the app and link their WhatsApp numbers by scanning a QR code.",
       ]} />
 
       <H2>Delivery time</H2>
-      <p>Accounts are usually activated within one working day of sign-up or payment, and always within 3 working days. Plan upgrades take effect as soon as payment is confirmed. If you have not received your sign-in email within that time, check your spam folder and then contact us.</p>
+      <p>Accounts bought online are normally ready within minutes of the payment being confirmed. Accounts set up by our team are usually activated within one working day of sign-up or payment, and always within 3 working days. Plan upgrades take effect as soon as payment is confirmed. If you have not received your sign-in email within that time, check your spam folder and then contact us.</p>
 
       <H2>Where we deliver</H2>
       <p>Scriwo is available online to businesses in India, the United Arab Emirates and other countries where we can lawfully provide it.</p>

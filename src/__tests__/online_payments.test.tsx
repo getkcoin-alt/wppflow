@@ -34,6 +34,24 @@ describe("online payments, for the platform admin", () => {
     expect(within(screen.getByRole("region", { name: "Refunds" })).getByText(/does not remove a company's access/)).toBeDefined();
   });
 
+  it("shows a purchase from the website under the buyer's name, and says when no workspace was made", async () => {
+    api.fetchAdminPayments.mockResolvedValue({
+      payments: { configured: true, mode: "live" },
+      counts: { mismatch: 1, paid: 1 },
+      orders: [
+        { id: "w1", company: "Race Co", companyId: null, plan: "Growth", interval: "monthly", status: "mismatch", source: "website", totalMinor: 825882, failureReason: "Payment pay_9 was received but race@web.test has a Scriwo account already, so the workspace was not created by itself. Refund it or create the workspace by hand.", paymentId: "pay_9", createdAt: "2026-10-26T10:00:00Z" },
+        { id: "w2", company: "Web Co", companyId: "t9", plan: "Starter", interval: "annual", status: "paid", source: "website", totalMinor: 294882, failureReason: null, paymentId: "pay_8", createdAt: "2026-10-26T09:00:00Z" },
+      ],
+      refunds: [],
+    });
+    wrap(<OnlinePayments open onClose={() => {}} />);
+    const first = (await screen.findByText(/Race Co · Growth, monthly \(bought on the website\)/)).closest("li")!;
+    expect(first.textContent).toContain("No workspace has been made for this purchase.");
+    expect(first.textContent).toContain("Refund it or create the workspace by hand.");
+    const paid = screen.getByText(/Web Co · Starter, yearly \(bought on the website\)/).closest("li")!;
+    expect(paid.textContent).not.toContain("No workspace has been made");
+  });
+
   it("says online payment is off when the keys are not set", async () => {
     api.fetchAdminPayments.mockResolvedValue({ payments: { configured: false, mode: null }, counts: {}, orders: [], refunds: [] });
     wrap(<OnlinePayments open onClose={() => {}} />);

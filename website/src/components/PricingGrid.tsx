@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import { CheckList } from "./ui";
 import { AED_PAYMENT_NOTE, yearlyOf, type Interval } from "@/content/plans";
 import { taxNote, type Catalogue } from "@/lib/catalogue";
+import type { CheckoutOptions } from "@/lib/checkout";
 import { currencyForZone, formatMoney, type Currency } from "@/lib/money";
 import { trackAttrs } from "@/lib/analytics";
 
 const KEY = "scriwo_currency";
 
-export function PricingGrid({ catalogue }: { catalogue: Catalogue }) {
+export function PricingGrid({ catalogue, checkout = null }: { catalogue: Catalogue; checkout?: CheckoutOptions | null }) {
   const { plans, yearlyMonths } = catalogue;
+  // plans that can be bought online, in rupees
+  const buyable = new Set(checkout?.enabled ? checkout.plans.map((p) => p.id) : []);
   const [cur, setCur] = useState<Currency>("AED");
   const [interval, setInterval] = useState<Interval>("monthly");
 
@@ -92,13 +95,24 @@ export function PricingGrid({ catalogue }: { catalogue: Catalogue }) {
               ) : null}
               <p className="mt-1 text-sm font-medium text-brand">{p.numbers}</p>
               <div className="mt-6 flex-1 text-sm"><CheckList items={p.includes} /></div>
-              <Link
-                href={`/contact?interest=${p.id}&plan=${encodeURIComponent(`${p.name} (${cur}, ${interval})`)}`}
-                {...trackAttrs("plan_choose", { plan: p.id, currency: cur, interval })}
-                className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}
-              >
-                {p.id === "enterprise" ? "Talk to sales" : p.id === "free" ? "Get started free" : `Choose ${p.name}`}
-              </Link>
+              {/* In rupees a paid plan can be bought here and now; in dirhams, or for Free and Enterprise, the team sets it up. */}
+              {cur === "INR" && buyable.has(p.id) ? (
+                <Link
+                  href={`/checkout?plan=${p.id}&interval=${interval === "yearly" ? "yearly" : "monthly"}`}
+                  {...trackAttrs("plan_choose", { plan: p.id, currency: cur, interval, checkout: "yes" })}
+                  className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}
+                >
+                  Buy {p.name}
+                </Link>
+              ) : (
+                <Link
+                  href={`/contact?interest=${p.id}&plan=${encodeURIComponent(`${p.name} (${cur}, ${interval})`)}`}
+                  {...trackAttrs("plan_choose", { plan: p.id, currency: cur, interval })}
+                  className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}
+                >
+                  {p.id === "enterprise" ? "Talk to sales" : p.id === "free" ? "Get started free" : `Choose ${p.name}`}
+                </Link>
+              )}
             </section>
           );
         })}
@@ -106,6 +120,11 @@ export function PricingGrid({ catalogue }: { catalogue: Catalogue }) {
       {cur === "AED" && (
         <p className="mt-6 text-sm text-fg-3" data-testid="aed-note">
           {AED_PAYMENT_NOTE}
+        </p>
+      )}
+      {cur === "INR" && buyable.size > 0 && (
+        <p className="mt-6 text-sm text-fg-3" data-testid="inr-note">
+          Buy online in rupees by card, UPI or net banking: your workspace is created as soon as the payment is confirmed, and your GST invoice is in the app.
         </p>
       )}
     </>

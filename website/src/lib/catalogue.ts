@@ -1,5 +1,6 @@
 import { PLANS, TAX_NOTE, YEARLY_MONTHS, type Plan } from "@/content/plans";
 import type { Currency } from "@/lib/money";
+import type { CheckoutOptions } from "@/lib/checkout";
 
 // The plans, prices and tax rate the product itself holds (the platform admin edits them in the app), so a price
 // changed there is the price shown here. The words on each plan card (who it is for, what it includes) are written
@@ -93,3 +94,15 @@ export const cheapestPaid = (cat: Catalogue, cur: Currency): number | null => {
   const prices = cat.plans.map((p) => p.price[cur]).filter((n): n is number => typeof n === "number" && n > 0);
   return prices.length ? Math.min(...prices) : null;
 };
+
+/** What buying online offers right now: null when the product cannot be reached, which the pages treat as "not available". */
+export async function getCheckoutOptions(): Promise<CheckoutOptions | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/public/checkout/options`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return Array.isArray(body?.plans) && Array.isArray(body?.states) && typeof body.enabled === "boolean" ? (body as CheckoutOptions) : null;
+  } catch {
+    return null;
+  }
+}

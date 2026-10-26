@@ -616,12 +616,14 @@ export interface SubscriptionPayment {
 }
 export interface AdminPaymentOrder {
   id: string;
+  /** The company's name, or the name the buyer gave on the website when no company exists yet */
   company: string;
-  companyId: string;
+  /** null for a purchase from the website whose payment has not made a company yet */
+  companyId: string | null;
   plan: string;
   interval: "monthly" | "annual";
   status: "created" | "attempted" | "paid" | "failed" | "expired" | "mismatch";
-  source: "checkout" | "autopay";
+  source: "checkout" | "autopay" | "website";
   totalMinor: number;
   failureReason: string | null;
   paymentId: string | null;
@@ -939,7 +941,7 @@ export interface BillingOrder {
   planId: string;
   interval: "monthly" | "annual";
   status: "created" | "attempted" | "paid" | "failed" | "expired" | "mismatch";
-  source: "checkout" | "autopay";
+  source: "checkout" | "autopay" | "website";
   totalMinor: number;
   periodStart: string | null;
   periodEnd: string | null;

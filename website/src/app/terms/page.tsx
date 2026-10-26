@@ -26,7 +26,7 @@ export default function TermsPage() {
       <H2>2. Eligibility and accounts</H2>
       <List items={[
         "Scriwo is for businesses. You must be at least 18 and able to enter a binding contract for your business.",
-        "Accounts are set up by our onboarding team. The account owner receives a single-use link to set a password, then invites staff.",
+        "Accounts are created when you buy a plan online and the payment is confirmed, or are set up by our onboarding team. Either way, the account owner receives a single-use link to set a password, then invites staff.",
         "You are responsible for everything done under your company's account, for keeping passwords private and for removing staff who should no longer have access.",
         "The information you give us, including billing and tax details, must be accurate and kept up to date.",
       ]} />

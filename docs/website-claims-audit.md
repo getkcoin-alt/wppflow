@@ -142,7 +142,30 @@ Razorpay**. Nothing has been run against Razorpay itself: online payment stays o
 | Autopay is opt-in and for monthly plans only; one charge is one period | Test | `billing.test.js` |
 | AED: "Online payment in AED is coming soon" on the pricing page and in the plan comparison | Code | `website/src/content/plans.ts`, `PlanCompare.tsx` |
 | A plan can limit contacts and broadcasts started in a month; the limit is enforced on the server and warned about from 80%; a customer's message is never refused | Test | `plan-limits.test.js`, `plan_limits.test.tsx`. No plan has a limit set today and the pricing page advertises none |
-| The pricing page's FAQ "Can I pay online?" | Needs a change | It still says online payment is "being added for India first". Change it when the keys are live |
+| The pricing page's FAQ "Can I pay online?" and "How do I buy a plan?" | Code | They say online purchase works in India when the server reports it is switched on, and say it is being added when it is not (`website/src/app/pricing/page.tsx`) |
+
+## Buying from the website (rupees, India)
+
+Built on 26 October 2026. A visitor chooses a paid plan on the pricing page, fills in the company and invoice details,
+pays through Razorpay and gets a workspace, with no account made beforehand. Everything below is covered by automated
+tests **against a simulated Razorpay**, and by a browser run through the real website and backend with the same
+simulation. Nothing has been run against Razorpay itself.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| Starter, Growth and Business can be bought online in rupees. Free, Enterprise and anything in AED are still set up by the team | Test | `website-checkout.test.js`, `PricingGrid` |
+| The price, the CGST + SGST or IGST split and the period are worked out on the server from the plan prices and the billing settings; the browser cannot name a price | Test | `website-checkout.test.js` |
+| Nothing is created for a buyer until Razorpay has confirmed the payment: no company, no user, no invoice, no email | Test | `website-checkout.test.js` |
+| A confirmed payment makes the company, its owner, the billing details, the tax invoice, the setup email and a receipt in one transaction, once, whether the browser check, the signed webhook or the reconciliation job gets there first | Test | `website-checkout.test.js` |
+| A wrong signature, a payment for another amount or order, and a failed payment set nothing up | Test | `website-checkout.test.js` |
+| An email that already has an account is turned away before any money is taken; if one appears while the buyer is paying, no company is attached to it, the order is flagged for a person and shown under the buyer's company name in Online payments and the billing audit | Test | `website-checkout.test.js`, `online_payments.test.tsx` |
+| The terms and the refund policy must be ticked, and when is recorded on the order | Test | `website-checkout.test.js` |
+| A visitor can start 12 orders per 30 minutes; there is a ceiling on orders for the whole site; a hidden field turns bots away | Test | `website-checkout.test.js` |
+| The success page asks for the order's status with a token only the buyer's browser was given | Test | `website-checkout.test.js` |
+| A plan renamed in Subscriptions is still the plan a company has (companies keep their plan by name; plans are now found by code or current name, and two plans cannot share a name). Before this, a company that paid after a rename was treated as unrestricted | Test | `website-checkout.test.js` |
+| Terms, shipping policy, FAQs and `llms.txt` say accounts are made on payment when bought online | Code | `website/src/app/terms`, `shipping-policy`, `content/faqs.ts` |
+| Known gap: a refund or a chargeback does not remove access by itself (as in the app); a ₹1 or test purchase still uses a number in the real invoice series | Known gap | |
+| Known gap: no UAE (AED) online payment, and no Free plan sign-up from the website; both still go through the contact form | Known gap | |
 
 ## Subscriptions module (platform admin)
 
@@ -194,5 +217,6 @@ Built on 26 October 2026. Platform admin, **Subscriptions** tab.
 ## Not software
 
 "Onboarding call for your team", "Dedicated onboarding" and "Help connecting your systems" are services, not
-features. Online payment is built but off until the Razorpay keys are set (the website flag `PAYMENTS_LIVE` is still
-false); until then every plan is set up by the onboarding team and payments are recorded by hand.
+features. Online payment in rupees works when the Razorpay keys are set on the server (the website flag `PAYMENTS_LIVE` is still
+false and only controls the older banner; whether Buy buttons show is decided by the server); AED, Free and Enterprise are
+set up by the onboarding team and payments are recorded by hand.

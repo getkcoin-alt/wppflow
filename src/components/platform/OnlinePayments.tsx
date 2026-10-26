@@ -51,8 +51,11 @@ export function OnlinePayments({ open, onClose }: { open: boolean; onClose: () =
               <div className="min-w-0">
                 <p className="text-[14.5px] text-fg">
                   {o.company} · {o.plan}, {o.interval === "annual" ? "yearly" : "monthly"}
-                  {o.source === "autopay" ? " (autopay)" : ""}
+                  {o.source === "autopay" ? " (autopay)" : o.source === "website" ? " (bought on the website)" : ""}
                 </p>
+                {o.source === "website" && !o.companyId && o.status !== "created" && (
+                  <p className="text-[13px] text-fg-2">No workspace has been made for this purchase.</p>
+                )}
                 <p className="text-[13px] text-fg-2">
                   {formatDate(o.createdAt.slice(0, 10))}
                   {o.paymentId ? ` · ${o.paymentId}` : ""}

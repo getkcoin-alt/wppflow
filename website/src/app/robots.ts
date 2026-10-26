@@ -12,8 +12,8 @@ const CRAWLERS = [
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: CRAWLERS, allow: "/", disallow: ["/api/"] },
-      { userAgent: "*", allow: "/", disallow: ["/api/"] },
+      { userAgent: CRAWLERS, allow: "/", disallow: ["/api/", "/checkout"] },
+      { userAgent: "*", allow: "/", disallow: ["/api/", "/checkout"] },
     ],
     sitemap: absolute("/sitemap.xml"),
     host: SITE.url,
