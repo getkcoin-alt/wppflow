@@ -4,10 +4,14 @@ import { btn } from "./styles";
 
 // Shown where a screen belongs to a plan the company isn't on, or is switched off because the payment is late,
 // instead of a screen that fails.
+// "Broadcasts" reads as "broadcasts" in the middle of a sentence; "API access" keeps its capitals.
+const inSentence = (s: string) => (/^[A-Z]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
+
 export function FeatureLocked({
   feature,
   plan,
   needs,
+  includes,
   lapsed = false,
   onOpenPlan,
 }: {
@@ -15,6 +19,8 @@ export function FeatureLocked({
   plan: string;
   /** The plan that includes it */
   needs: string;
+  /** One sentence on what the plan adds, so the lock says what is behind it */
+  includes?: string;
   /** The plan includes it, but the payment is more than the grace period late */
   lapsed?: boolean;
   /** Takes an owner to the plan and billing screen */
@@ -27,8 +33,8 @@ export function FeatureLocked({
         title={lapsed ? `${feature} is off until the payment is received` : `${feature} is part of the ${needs} plan`}
         body={
           lapsed
-            ? `Payment for your ${plan} plan is overdue, so ${feature.toLowerCase()} is switched off. Nothing has been deleted: pay the invoice or message the Scriwo team and it comes back at once.`
-            : `Your company is on the ${plan} plan. Choose ${needs} or above and ${feature.toLowerCase()} will switch on straight away.`
+            ? `Payment for your ${plan} plan is overdue, so ${inSentence(feature)} is switched off. Nothing has been deleted: pay the invoice or message the Scriwo team and it comes back at once.`
+            : `Your company is on the ${plan} plan. Choose ${needs} or above and ${inSentence(feature)} will switch on straight away.${includes ? ` ${includes}` : ""}${onOpenPlan ? "" : " Ask your company's owner or an administrator to change the plan."}`
         }
         action={
           onOpenPlan ? (

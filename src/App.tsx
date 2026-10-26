@@ -642,6 +642,8 @@ export function App() {
   const locked = (feature: string) =>
     capabilities.data?.plan?.features?.[feature] === false;
   const lapsed = Boolean(capabilities.data?.plan?.lapsed);
+  // A nav item whose screen the plan doesn't include stays in the list, marked with a lock
+  const isLocked = (item: NavItem) => Boolean(item.needs && locked(item.needs.feature));
   const openPlan = () => {
     setView("admin");
     setAdminTab("billing");
@@ -692,7 +694,7 @@ export function App() {
       .map((i) => ({
         id: `go-${i.key}`,
         label: i.label,
-        hint: "Go to",
+        hint: isLocked(i) ? `Needs the ${i.needs!.plan} plan` : "Go to",
         icon: i.icon,
         run: () => go(i),
       })),
@@ -772,6 +774,7 @@ export function App() {
         onNavigate={go}
         unreadChats={unreadChats}
         manager={manager}
+        isLocked={isLocked}
         onSearch={() => setPaletteOpen(true)}
         bell={bell("dock")}
         profile={
@@ -1146,6 +1149,8 @@ export function App() {
             <DeveloperGuide
               canManage={manager}
               apiPlan={locked("api") ? planName : undefined}
+              lapsed={lapsed}
+              onOpenPlan={planAction}
               activeDevTab={
                 !manager && (devTab === "keys" || devTab === "webhooks")
                   ? "docs"
@@ -1162,6 +1167,7 @@ export function App() {
         onNavigate={go}
         unreadChats={unreadChats}
         manager={manager}
+        isLocked={isLocked}
         bell={bell("tab")}
         sheetExtras={
           <div className="space-y-3">

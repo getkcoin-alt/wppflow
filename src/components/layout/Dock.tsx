@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Search } from "lucide-react";
+import { Lock, Search } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
 import {
   NAV,
   NAV_SECONDARY,
   isActive,
+  lockedHint,
   type NavItem,
   type UserSubTab,
   type View,
@@ -14,11 +15,14 @@ function DockButton({
   item,
   active,
   badge,
+  locked = false,
   onClick,
 }: {
   item: NavItem;
   active: boolean;
   badge?: number;
+  /** The company's plan doesn't include this screen: it stays in the list, marked, and opens an explanation */
+  locked?: boolean;
   onClick: () => void;
 }) {
   const Icon = item.icon;
@@ -26,6 +30,7 @@ function DockButton({
     <button
       onClick={onClick}
       aria-label={item.label}
+      title={locked ? lockedHint(item) : undefined}
       aria-current={active ? "page" : undefined}
       className={`group relative w-[68px] py-2.5 rounded-2xl flex flex-col items-center gap-1 transition-colors ${
         active
@@ -38,6 +43,11 @@ function DockButton({
       )}
       <span className="relative">
         <Icon className="w-[22px] h-[22px]" strokeWidth={active ? 2.1 : 1.8} />
+        {locked && (
+          <span data-testid={`locked-${item.key}`} aria-hidden="true" className="absolute -top-1.5 -right-2.5 h-[17px] w-[17px] rounded-full bg-surface-2 text-fg-3 grid place-items-center ring-2 ring-surface">
+            <Lock className="w-2.5 h-2.5" strokeWidth={2.4} />
+          </span>
+        )}
         {!!badge && (
           <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-solid text-white text-[10px] font-semibold grid place-items-center ring-2 ring-surface num">
             {badge > 99 ? "99+" : badge}
@@ -59,6 +69,7 @@ export function Dock({
   bell,
   profile,
   onSearch,
+  isLocked,
 }: {
   view: View;
   tab: UserSubTab;
@@ -68,6 +79,8 @@ export function Dock({
   bell: ReactNode;
   profile: ReactNode;
   onSearch: () => void;
+  /** True for a screen the company's plan doesn't include */
+  isLocked?: (item: NavItem) => boolean;
 }) {
   const visible = (i: NavItem) => !i.manager || manager;
   return (
@@ -82,6 +95,7 @@ export function Dock({
             item={item}
             active={isActive(item, view, tab)}
             badge={item.key === "inbox" ? unreadChats : undefined}
+            locked={isLocked?.(item)}
             onClick={() => onNavigate(item)}
           />
         ))}
@@ -93,6 +107,7 @@ export function Dock({
             key={item.key}
             item={item}
             active={isActive(item, view, tab)}
+            locked={isLocked?.(item)}
             onClick={() => onNavigate(item)}
           />
         ))}

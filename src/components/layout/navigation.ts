@@ -33,6 +33,8 @@ export interface NavItem {
   tab?: UserSubTab;
   /** Only shown to workspace owners and admins */
   manager?: boolean;
+  /** The plan feature this screen belongs to, and the plan that first includes it: a company without it sees the item locked */
+  needs?: { feature: "leads" | "broadcasts" | "automations" | "api"; plan: string };
 }
 
 // One definition feeds the desktop dock, the phone tab bar and the command palette.
@@ -64,6 +66,7 @@ export const NAV: NavItem[] = [
     icon: Funnel,
     view: "user",
     tab: "pipeline",
+    needs: { feature: "leads", plan: "Growth" },
   },
   {
     key: "campaigns",
@@ -72,6 +75,7 @@ export const NAV: NavItem[] = [
     view: "user",
     tab: "campaigns",
     manager: true,
+    needs: { feature: "broadcasts", plan: "Growth" },
   },
   {
     key: "automations",
@@ -80,6 +84,7 @@ export const NAV: NavItem[] = [
     view: "user",
     tab: "automations",
     manager: true,
+    needs: { feature: "automations", plan: "Growth" },
   },
   {
     key: "dashboard",
@@ -99,7 +104,13 @@ export const NAV: NavItem[] = [
 ];
 export const NAV_SECONDARY: NavItem[] = [
   { key: "team", label: "Team", icon: Users2, view: "admin", manager: true },
-  { key: "developers", label: "Developers", icon: Code2, view: "developer" },
+  {
+    key: "developers",
+    label: "Developers",
+    icon: Code2,
+    view: "developer",
+    needs: { feature: "api", plan: "Business" },
+  },
 ];
 
 export const ADMIN_TABS: { key: AdminSubTab; label: string }[] = [
@@ -115,6 +126,9 @@ export const DEV_TABS: { key: DevSubTab; label: string; manager?: boolean }[] =
     { key: "webhooks", label: "Webhooks", manager: true },
     { key: "keys", label: "API keys", manager: true },
   ];
+
+// The hover text on a locked item: which plan has it.
+export const lockedHint = (item: NavItem) => (item.needs ? `${item.label} is part of the ${item.needs.plan} plan` : undefined);
 
 export const isActive = (item: NavItem, view: View, tab: UserSubTab) =>
   item.view === view && (item.view !== "user" || item.tab === tab);

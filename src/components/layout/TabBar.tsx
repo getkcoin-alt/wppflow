@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { MoreHorizontal, X } from "lucide-react";
+import { Lock, MoreHorizontal, X } from "lucide-react";
 import {
   NAV,
   NAV_SECONDARY,
   isActive,
+  lockedHint,
   type NavItem,
   type UserSubTab,
   type View,
@@ -20,6 +21,7 @@ export function TabBar({
   manager,
   bell,
   sheetExtras,
+  isLocked,
 }: {
   view: View;
   tab: UserSubTab;
@@ -28,6 +30,8 @@ export function TabBar({
   manager: boolean;
   bell: ReactNode;
   sheetExtras: ReactNode;
+  /** True for a screen the company's plan doesn't include */
+  isLocked?: (item: NavItem) => boolean;
 }) {
   const [more, setMore] = useState(false);
   const visible = (i: NavItem) => !i.manager || manager;
@@ -105,16 +109,19 @@ export function TabBar({
             <div className="grid grid-cols-3 gap-2 mb-4">
               {rest.map((item) => {
                 const Icon = item.icon;
+                const locked = isLocked?.(item);
                 return (
                   <button
                     key={item.key}
+                    title={locked ? lockedHint(item) : undefined}
                     onClick={() => {
                       setMore(false);
                       onNavigate(item);
                     }}
-                    className="rounded-2xl bg-surface-2 py-4 flex flex-col items-center gap-2 text-fg"
+                    className="relative rounded-2xl bg-surface-2 py-4 flex flex-col items-center gap-2 text-fg"
                   >
-                    <Icon className="w-6 h-6" />
+                    {locked && <Lock data-testid={`locked-${item.key}`} aria-hidden="true" className="absolute top-2 right-2 w-3.5 h-3.5 text-fg-3" strokeWidth={2.2} />}
+                    <Icon className={`w-6 h-6 ${locked ? "text-fg-3" : ""}`} />
                     <span className="text-[12.5px] font-medium">
                       {item.label}
                     </span>
