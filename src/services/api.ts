@@ -391,14 +391,15 @@ export const updateAutomation = (id: string, data: any) =>
     method: "PUT",
     body: JSON.stringify(data),
   });
-export type RuleTrigger = "keyword" | "first_message" | "after_hours";
+export type RuleTrigger = "keyword" | "first_message" | "after_hours" | "foreign_number";
 export type RuleAction =
   | "reply_text"
   | "assign_agent"
   | "add_tag"
   | "opt_in"
   | "opt_out"
-  | "create_lead";
+  | "create_lead"
+  | "ai_chat";
 export interface OpeningHours {
   timezone: string;
   /** 1 is Monday, 7 is Sunday */
@@ -419,6 +420,14 @@ export interface RuleDraft {
     hours?: OpeningHours;
     reply?: string;
     cooldownHours?: number;
+    /** "Other countries": calling codes of the company's own countries, and whether only a first message counts */
+    homeCodes?: string[];
+    onlyNew?: boolean;
+    /** "Let Riwo chat": what Riwo may talk about, what it says when it cannot help, how often, and the answers it recognises */
+    knowledge?: string;
+    handoff?: string;
+    maxReplies?: number;
+    sourceOptions?: string[];
   };
 }
 export interface AutomationTemplate {
@@ -431,8 +440,19 @@ export interface AutomationTemplate {
   recommended?: boolean;
   rule: Omit<RuleDraft, "name">;
   /** What must be filled in before it can be saved */
-  needs: ("reply" | "teammate" | "hours")[];
+  needs: ("reply" | "teammate" | "hours" | "country" | "about")[];
 }
+/** What the "other countries" recipe needs to be easy to fill in */
+export interface AutomationContext {
+  countries: { code: string; name: string }[];
+  /** A guess at the company's own country, from the WhatsApp number it linked */
+  homeCodes: string[];
+  homeFrom: string;
+  riwo: { available: boolean; reason: "not_configured" | "plan" | "disabled" | null };
+  chat: { defaultReplies: number; maxReplies: number; sources: string[]; handoff: string };
+}
+export const fetchAutomationContext = (): Promise<AutomationContext> =>
+  apiGet("/api/automations/context");
 export const fetchAutomationTemplates = (): Promise<{
   templates: AutomationTemplate[];
 }> => apiGet("/api/automations/templates");

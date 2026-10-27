@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Pencil, Plus, Trash2 } from "lucide-react";
+import { Bot, Globe2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   addAutomation,
+  fetchAutomationContext,
   fetchAutomationTemplates,
   removeAutomation,
   toggleAutomationApi,
@@ -13,10 +14,22 @@ import {
 import { Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
 import { RuleEditor } from "./RuleEditor";
+import { AbroadRecipe } from "./AbroadRecipe";
 import { AssignmentRule } from "./AssignmentRule";
 import { blankRule, describeRule, endSentence, withOwnTimezone } from "../../utils/automationText";
 
 type Editing = { rule: RuleDraft; id?: string; hint?: string };
+
+// What the "welcome people from other countries" recipe starts from when it is not taken from the gallery
+const abroadStart = (): RuleDraft => ({
+  name: "Welcome people from other countries",
+  triggerType: "foreign_number",
+  triggerCondition: "",
+  actionType: "ai_chat",
+  actionSummary: "",
+  templateId: "foreign-welcome-riwo",
+  config: {},
+});
 
 const ruleOf = (a: any): RuleDraft => ({
   name: a.name,
@@ -38,6 +51,7 @@ export function Automations({
   onChanged: () => void;
 }) {
   const [editing, setEditing] = useState<Editing | null>(null),
+    [recipe, setRecipe] = useState<Editing | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const templates = useQuery({
@@ -57,8 +71,14 @@ export function Automations({
       setBusy(false);
     }
   };
+  // used to say "United Arab Emirates" instead of "+971" in the sentences below
+  const context = useQuery({ queryKey: ["automation-context"], queryFn: fetchAutomationContext, staleTime: 60_000 });
+  const countryName = (code: string) => context.data?.countries.find((c) => c.code === code)?.name || `+${code}`;
+  const edit = (a: any) => (a.triggerType === "foreign_number" ? setRecipe({ rule: ruleOf(a), id: a.id }) : setEditing({ rule: ruleOf(a), id: a.id }));
   const fromTemplate = (t: AutomationTemplate) =>
-    setEditing({
+    t.rule.triggerType === "foreign_number"
+      ? setRecipe({ rule: { name: t.name, templateId: t.id, ...t.rule, config: { ...t.rule.config } }, hint: t.hint })
+      : setEditing({
       rule: withOwnTimezone({ name: t.name, templateId: t.id, ...t.rule, config: { ...t.rule.config } }),
       hint: t.hint,
     });
@@ -134,6 +154,48 @@ export function Automations({
         }}
       />
 
+      <AbroadRecipe
+        open={!!recipe}
+        initial={recipe?.rule || abroadStart()}
+        editing={!!recipe?.id}
+        onClose={() => setRecipe(null)}
+        onSave={async (rule, turnOn) => {
+          if (recipe?.id) await updateAutomation(recipe.id, rule);
+          else {
+            const created = await addAutomation(rule);
+            // a failed switch-on leaves the rule saved and paused; say so instead of pretending it is live
+            if (turnOn)
+              try {
+                await toggleAutomationApi(created.automation.id);
+              } catch (e: any) {
+                setRecipe(null);
+                onChanged();
+                setError(`Saved, but it is still paused: ${e.message}`);
+                return;
+              }
+          }
+          setRecipe(null);
+          onChanged();
+        }}
+      />
+
+      {!automations.some((a) => a.triggerType === "foreign_number") && (
+        <section aria-label="Welcome people from other countries" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
+          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
+            <Globe2 className="w-5 h-5" aria-hidden />
+          </div>
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[17px] font-semibold">Welcome people from other countries</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              When a number from abroad writes to you for the first time, send a warm welcome, ask where they found you, and let Riwo answer their short questions until your team replies.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setRecipe({ rule: abroadStart() })}>
+            <Plus className="w-4 h-4" aria-hidden /> Set it up
+          </button>
+        </section>
+      )}
+
       <AssignmentRule />
 
       {!automations.length ? (
@@ -151,7 +213,7 @@ export function Automations({
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {automations.map((a) => {
-            const sentence = describeRule(ruleOf(a));
+            const sentence = describeRule(ruleOf(a), countryName);
             return (
               <article key={a.id} className="card p-6 flex flex-col">
                 <div className="flex items-start justify-between gap-3">
@@ -171,7 +233,7 @@ export function Automations({
                     <button disabled={busy} onClick={() => void run(() => toggleAutomationApi(a.id))} className={btn("secondary", "sm")}>
                       {a.isEnabled ? "Pause" : "Enable"}
                     </button>
-                    <button disabled={busy} onClick={() => setEditing({ rule: ruleOf(a), id: a.id })} className={btn("ghost", "sm")} aria-label={`Edit ${a.name}`}>
+                    <button disabled={busy} onClick={() => edit(a)} className={btn("ghost", "sm")} aria-label={`Edit ${a.name}`}>
                       <Pencil className="w-4 h-4" /> Edit
                     </button>
                   </div>

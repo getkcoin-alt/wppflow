@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 
 const api = vi.hoisted(() => ({
+  fetchAutomationContext: vi.fn(),
   fetchAutomationTemplates: vi.fn(),
   addAutomation: vi.fn(),
   updateAutomation: vi.fn(),
@@ -60,6 +61,7 @@ beforeEach(() => {
   onChanged.mockReset();
   api.getStoredTenantId.mockReturnValue("t1");
   api.fetchAssignment.mockResolvedValue({ enabled: false, mode: "round_robin", team: "", sessionNames: [], keepOwner: true, maxOpen: null, useHours: false, timezone: "Asia/Kolkata", workDays: [1, 2, 3, 4, 5], workStart: "09:00", workEnd: "18:00", members: [], teams: [], numbers: [] });
+  api.fetchAutomationContext.mockResolvedValue({ countries: [{ code: "971", name: "United Arab Emirates" }], homeCodes: ["971"], homeFrom: "", riwo: { available: true, reason: null }, chat: { defaultReplies: 5, maxReplies: 10, sources: [], handoff: "" } });
   api.fetchAutomationTemplates.mockResolvedValue({ templates: TEMPLATES });
   api.addAutomation.mockResolvedValue({ automation: saved() });
   api.updateAutomation.mockResolvedValue({ automation: saved() });

@@ -95,6 +95,32 @@ limits: `docs/industry-solutions-progress.md`.
 Property Finder or Bayut, Arabic or right-to-left screens, a second pipeline, white-label or reseller features (design only:
 `docs/white-label-foundation.md`).
 
+## Welcoming people from other countries (automation)
+
+Added on 28 October 2026 (Growth and above for the automation; "Let Riwo chat" also needs Riwo, which is Growth and above).
+**Not on the website yet.** Every line is covered by an automated test and a browser run on a disposable database; none has
+been seen with a real WhatsApp number.
+
+| Behaviour | Evidence |
+|---|---|
+| A rule can start on "a number from another country writes", with the company's own country (or several) chosen once; numbers from there are left alone. The country is read from the number's calling code | `auto-chat.test.js`, `abroad_recipe.test.tsx` |
+| A number that cannot be placed (too short or long, a local number, a WhatsApp linked id or a group id) is never taken for a foreigner | `auto-chat.test.js` |
+| By default only a first message counts, so someone who has been chatting for months is not welcomed as a stranger | `auto-chat.test.js` |
+| The welcome (hello, "how did you find us: AI, website, social media or word of mouth?", a person will be in touch) is the company's own text, sent word for word, once, before any AI is involved | `auto-chat.test.js` |
+| "Let Riwo chat": until a teammate replies, Riwo answers short questions in a sentence or two, **only** from text the company wrote about itself. It never sees private notes. A reply that contains a figure, link or address that is not in the company's text, is too long, or is not in the expected form is **not sent**: the company's own hand-over words go instead, once, and the team is told | `auto-chat.test.js` |
+| It stops for good when a teammate (or the phone's owner) writes in the chat, when the chat is closed, after a day of quiet, or after the number of replies the rule allows; a private note does not count as a reply | `auto-chat.test.js` |
+| If Riwo is switched off, not in the plan, or the day's allowance is used up, nothing is sent, the rule records that it chose not to speak, and the team is told. Each answer is one request from the daily Riwo allowance | `auto-chat.test.js` |
+| When a customer says how they found the company, the answer is checked against the company's list and saved on their contact as a tag such as "Found us: Website" | `auto-chat.test.js`, browser run |
+| Repeating or retrying a message never repeats the welcome or the answer | `auto-chat.test.js` (with the retry paths broken on purpose to prove it) |
+| The screen: one card and one form, with the country worked out from the linked number, the welcome already written, and one thing left for the company to write | `abroad_recipe.test.tsx`, browser run on desktop, phone and dark |
+
+**Limits to state honestly.** Riwo's answers are checked, not guaranteed: on a free model the wording can still be clumsy,
+and Riwo can only be as right as the text the company gave it. The company's text and the customer's messages are sent to
+the AI provider (free models may keep them; the app already says so). Replies go out through the same unofficial WhatsApp Web
+link as everything else, and only to people who wrote first. The welcome tells people they can ask "me" questions; Riwo says
+it is an automated assistant if asked, but a company that must disclose automation up front should say so in its welcome.
+Not built: a different rule per country, answers from a document or a website, hand-over to a named teammate.
+
 ## Plans
 
 Checked again on 25 October 2026 (first on 22 October, after the platform admin was given the choice of plan).

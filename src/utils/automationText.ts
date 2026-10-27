@@ -6,6 +6,7 @@ export const TRIGGER_LABELS: Record<RuleTrigger, string> = {
   keyword: "A message contains certain words",
   first_message: "Someone writes for the first time",
   after_hours: "Someone writes outside opening hours",
+  foreign_number: "A number from another country writes",
 };
 export const ACTION_LABELS: Record<RuleAction, string> = {
   reply_text: "Send a reply",
@@ -14,6 +15,7 @@ export const ACTION_LABELS: Record<RuleAction, string> = {
   opt_in: "Record permission for broadcasts",
   opt_out: "Take them off broadcasts",
   create_lead: "Add them to the sales pipeline",
+  ai_chat: "Let Riwo chat until your team replies",
 };
 export const MATCH_LABELS = {
   contains: "Contains the words",
@@ -47,14 +49,21 @@ const quote = (words: string[], limit = 4) => {
 const clip = (text: string, n = 120) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
 
 /** A rule in a sentence a customer-service person can check at a glance. */
-export function describeRule(rule: Pick<RuleDraft, "triggerType" | "triggerCondition" | "actionType" | "actionSummary" | "config">): {
+export function describeRule(
+  rule: Pick<RuleDraft, "triggerType" | "triggerCondition" | "actionType" | "actionSummary" | "config">,
+  /** How a calling code is shown ("United Arab Emirates"); the code itself when this is not given */
+  countryName: (code: string) => string = (code) => `+${code}`,
+): {
   when: string;
   then: string;
 } {
   const c = rule.config || {};
   const words = keywordList(rule.triggerCondition || "");
+  const home = (c.homeCodes || []).map((code) => countryName(code) || `+${code}`);
   const when =
-    rule.triggerType === "first_message"
+    rule.triggerType === "foreign_number"
+      ? `When a number from outside ${home.length ? home.join(" and ") : "your country"} writes${c.onlyNew === false ? "" : " for the first time"}`
+      : rule.triggerType === "first_message"
       ? "When someone writes for the first time"
       : rule.triggerType === "after_hours"
         ? `When someone writes outside ${c.hours ? describeHours(c.hours) : "opening hours"}`
@@ -65,7 +74,9 @@ export function describeRule(rule: Pick<RuleDraft, "triggerType" | "triggerCondi
             : `When a message contains ${quote(words) || "…"}`;
   const reply = c.reply ? ` and replies “${clip(c.reply, 70)}”` : "";
   const then =
-    rule.actionType === "reply_text"
+    rule.actionType === "ai_chat"
+      ? "sends your welcome message and lets Riwo answer their short questions, from what you wrote about your business, until your team replies"
+      : rule.actionType === "reply_text"
       ? rule.actionSummary
         ? `replies “${clip(rule.actionSummary)}”`
         : "replies with the answer you write below"

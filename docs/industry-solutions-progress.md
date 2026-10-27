@@ -71,8 +71,8 @@ Backend: `node scripts/test.mjs`, one disposable PostgreSQL database per file.
 
 | Check | Result |
 |---|---|
-| Backend full suite | 597 tests in 57 files: 597 pass, 0 fail, 0 skipped |
-| App unit tests (Vitest) | 503 tests in 45 files: 503 pass, 0 fail |
+| Backend full suite | 616 tests in 58 files: 616 pass, 0 fail, 0 skipped (the later 19 are the "other countries" automation, below) |
+| App unit tests (Vitest) | 517 tests in 46 files: 517 pass, 0 fail |
 | App typecheck (`tsc --noEmit`) and production build | Both clean. The production build succeeds (the existing chunk-size notice is unchanged). oxlint exits 0: 16 warnings, all in files that existed before this work, none in the new ones |
 | Website typecheck and tests | Typecheck clean; 38 tests in 3 files pass (the website was not changed in this work) |
 | Browser run, real backend, desktop | 10 of 10 steps pass: sign up and switch the solution on, nav item appears, leak check finds leaks, properties through the form, lead qualified, matches with reasons, viewing booked with message and nothing sent, a clash refused with the reason, viewing confirmed, funnel from real activity, snooze |
@@ -87,8 +87,8 @@ a different manager; assigning a lead counts as activity, so "no next step" test
 
 ## 6. What an operator must do before anyone can use it
 
-1. Review the three migrations (029 password resets, 030 solutions, 031 real estate). All are additive.
-2. Deploy backend first, wait for `/health` to report `031_real_estate`, then the app (the same order as before). **This
+1. Review the four migrations (029 password resets, 030 solutions, 031 real estate, 032 automation chats). All are additive.
+2. Deploy backend first, wait for `/health` to report `032_automation_chats`, then the app (the same order as before). **This
    needs the owner's go-ahead; it has not been done.**
 3. In the platform console, open the company, choose **Solutions**, switch Scriwo Real Estate on. The company's owners and
    admins get a notice and the navigation item appears live.
@@ -133,3 +133,21 @@ a different manager; assigning a lead counts as activity, so "no next step" test
 3. Staff time off, so a viewing is not booked on an agent's day off.
 4. A weekly owner summary of leaks and viewings through the existing daily-report mail.
 5. Only then: calendar sync, official WhatsApp, a second industry, or the first white-label stage.
+
+## 10. Added afterwards: welcome people from other countries (28 October 2026)
+
+A recipe in Automations, not an industry solution: when a number from another country writes for the first time it gets the
+company's own welcome (with "how did you find us: AI, website, social media or word of mouth?"), and Riwo can then answer
+short questions, only from text the company wrote, until a teammate replies. What it is and how it is checked is in
+`docs/website-claims-audit.md` ("Welcoming people from other countries").
+
+- Backend: `src/services/countries.js` (calling codes, who is foreign), `autoChat.js` (the held conversation, the answer
+  check, when it stops), `aiService.chatForBusiness`, trigger `foreign_number` and action `ai_chat` in `automationRules.js` /
+  `automationService.js`, `GET /api/automations/context`, migration `032_automation_chats.js` (one table, additive).
+- App: `components/user/AbroadRecipe.tsx`, a card and two ready-made rules in Automations.
+- Tests: backend `auto-chat.test.js` (19, with the critical lines broken on purpose to prove they fail); app
+  `abroad_recipe.test.tsx` (14). A real-browser run on desktop, phone and dark passes 11 of 11 steps: set it up, a
+  stranger from the UK is welcomed once, Riwo answers the price and records "Found us: Website", an unanswerable question is
+  handed over once, a teammate's reply silences Riwo.
+- Not done: nothing here has run with a real WhatsApp number or a real model; the browser run used a scripted stand-in
+  for the model. Riwo needs the Growth plan or above, the owner's AI switch, and a provider key on the server.
