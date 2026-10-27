@@ -20,6 +20,7 @@ import {
   type ReOverview,
 } from "../../services/realEstate";
 import { ALERT_LABEL, errorOf, reKey } from "./common";
+import { NameIn } from "./Isolate";
 
 const pct = (n: number | null) => (n === null ? "–" : `${n}%`);
 
@@ -244,8 +245,8 @@ function AlertCard({
     <li className="card p-4 space-y-2" data-testid={`alert-${a.kind}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-semibold text-[15px]" dir="auto">
-            {a.title}
+          <p className="font-semibold text-[15px]">
+            <NameIn text={a.title} name={a.leadName} />
           </p>
           <p className="text-[12.5px] text-fg-3">
             {a.stageName ? `${a.stageName} · ` : ""}

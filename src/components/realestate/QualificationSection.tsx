@@ -38,6 +38,7 @@ import {
   splitList,
   useReMeta,
 } from "./common";
+import { Dotted } from "./Isolate";
 import { VerificationPill } from "./VerificationPill";
 
 const SUPPLY = ["landlord", "seller"];
@@ -723,7 +724,7 @@ function Matches({
       ) : (
         <>
           <p className="text-[12.5px] text-fg-3">
-            {d.total} listing{d.total === 1 ? "" : "s"} meet every requirement
+            {d.total} listing{d.total === 1 ? " meets" : "s meet"} every requirement
             they stated ({d.requirements.join(", ")}). Only your own, available
             listings are shown.
           </p>
@@ -823,10 +824,10 @@ function MatchCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-[14.5px]">{p.reference}</p>
-          <p className="text-[13px] text-fg-2 truncate" dir="auto">
-            {[bedroomsText(p.bedrooms), p.propertyType, p.community]
-              .filter(Boolean)
-              .join(" · ")}
+          <p className="text-[13px] text-fg-2 break-words">
+            <Dotted
+              items={[bedroomsText(p.bedrooms), p.propertyType, p.community]}
+            />
           </p>
         </div>
         <div className="text-right shrink-0">

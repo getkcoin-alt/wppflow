@@ -12,6 +12,7 @@ import {
   type ReViewing,
 } from "../../services/realEstate";
 import { VIEWING_STATUS_LABEL, errorOf, reKey } from "./common";
+import { Dotted } from "./Isolate";
 
 type Filter = "upcoming" | "past" | "all";
 const day = (offset: number) =>
@@ -124,9 +125,14 @@ export function ViewingsView({ onBook }: { onBook: () => void }) {
                     <p className="font-semibold text-[15px]">
                       {v.local.time}–{v.local.endTime} · {v.propertyReference}
                     </p>
-                    <p className="text-[13px] text-fg-2 truncate" dir="auto">
-                      {v.leadName} · {v.community || v.propertyTitle} · with{" "}
-                      {v.agentName}
+                    <p className="text-[13px] text-fg-2 break-words">
+                      <Dotted
+                        items={[
+                          v.leadName,
+                          v.community || v.propertyTitle,
+                          v.agentName ? `with ${v.agentName}` : "",
+                        ]}
+                      />
                     </p>
                     {v.status === "cancelled" && v.cancelReason && (
                       <p className="text-[12.5px] text-fg-3">

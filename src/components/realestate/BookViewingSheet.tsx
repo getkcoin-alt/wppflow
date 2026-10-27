@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { Field, Notice } from "../ui/Page";
@@ -69,6 +69,11 @@ export function BookViewingSheet({
   const [copied, setCopied] = useState(false);
   // one key per opening of the sheet: pressing the button twice books once
   const key = useRef(crypto.randomUUID());
+  // the sheet scrolls and its buttons stay at the bottom: a refusal has to be brought into view or it hides behind them
+  const errorBox = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) errorBox.current?.scrollIntoView?.({ block: "nearest" });
+  }, [error]);
   const defaultZone = meta.data?.settings.timezone || "Asia/Dubai";
   const zoneValue = zone || defaultZone;
   const defaultMinutes = meta.data?.settings.viewingMinutes || 45;
@@ -321,19 +326,21 @@ export function BookViewingSheet({
             />
           </Field>
           {error && (
-            <Notice tone="error">
-              {error}
-              {conflicts.length > 1 && (
-                <span className="block mt-1">
-                  Also:{" "}
-                  {conflicts
-                    .slice(1)
-                    .map((c) => `${c.with} at ${c.local}`)
-                    .join("; ")}
-                  .
-                </span>
-              )}
-            </Notice>
+            <div ref={errorBox}>
+              <Notice tone="error">
+                {error}
+                {conflicts.length > 1 && (
+                  <span className="block mt-1">
+                    Also:{" "}
+                    {conflicts
+                      .slice(1)
+                      .map((c) => `${c.with} at ${c.local}`)
+                      .join("; ")}
+                    .
+                  </span>
+                )}
+              </Notice>
+            </div>
           )}
         </div>
       )}

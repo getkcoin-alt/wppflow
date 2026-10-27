@@ -20,6 +20,7 @@ import {
   reKey,
   useReMeta,
 } from "./common";
+import { Dotted } from "./Isolate";
 import { VerificationPill } from "./VerificationPill";
 
 const STATUS_TONE: Record<
@@ -151,15 +152,15 @@ export function PropertiesView({
                   {PROPERTY_STATUS_LABEL[p.status]}
                 </Pill>
               </p>
-              <p className="text-[13px] text-fg-2 truncate" dir="auto">
-                {[
-                  p.title,
-                  bedroomsText(p.bedrooms),
-                  p.propertyType,
-                  p.community,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+              <p className="text-[13px] text-fg-2 break-words">
+                <Dotted
+                  items={[
+                    p.title,
+                    bedroomsText(p.bedrooms),
+                    p.propertyType,
+                    p.community,
+                  ]}
+                />
               </p>
               <p className="text-[12.5px] text-fg-3">
                 For {p.purpose}

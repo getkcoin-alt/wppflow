@@ -185,6 +185,13 @@ describe("Riwo's proposal", () => {
 });
 
 describe("matching listings", () => {
+  it("says 'meets' for one listing and 'meet' for several", async () => {
+    re.reMatches.mockResolvedValue(matches({ total: 1, matches: [match()] }));
+    open();
+    const m = await section("Matching listings");
+    expect(await m.findByText(/1 listing meets every requirement they stated/)).toBeDefined();
+  });
+
   it("says why each listing matches, warns about what to check, and never shows more than the server returned", async () => {
     re.reMatches.mockResolvedValue(
       matches({

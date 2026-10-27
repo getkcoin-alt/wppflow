@@ -89,7 +89,7 @@ describe("the revenue screen", () => {
   it("each alert says why, what is at risk, and can be acted on", async () => {
     open();
     const card = within(await screen.findByTestId("alert-unassigned_lead"));
-    expect(card.getByText("No one owns Aisha Khan")).toBeDefined();
+    expect(card.getByText("Aisha Khan").closest("p")?.textContent).toBe("No one owns Aisha Khan");
     expect(card.getByText(/it came in 6 hours ago\. The target is 15 minutes\./)).toBeDefined();
     expect(card.getByText("Nobody owns it")).toBeDefined();
     expect(card.getByText("AED 900,000 at risk")).toBeDefined();
@@ -103,6 +103,23 @@ describe("the revenue screen", () => {
     await waitFor(() => expect(re.reAlertAction).toHaveBeenCalledWith("a1", "resolve", undefined));
     fireEvent.click(card.getByRole("button", { name: "Not a problem" }));
     await waitFor(() => expect(re.reAlertAction).toHaveBeenCalledWith("a1", "dismiss", undefined));
+  });
+
+  it("keeps an Arabic customer's name in its own run, so the sentence stays in order", async () => {
+    re.reAlerts.mockResolvedValue({ alerts: [alert({ id: "a3", kind: "response_overdue", title: "ليلى حسن has been waiting for a reply", leadName: "ليلى حسن" })] });
+    open();
+    const card = within(await screen.findByTestId("alert-response_overdue"));
+    const name = card.getByText("ليلى حسن");
+    expect(name.tagName).toBe("BDI");
+    const line = name.closest("p")!;
+    expect(line.textContent).toBe("ليلى حسن has been waiting for a reply");
+    expect(line.getAttribute("dir"), "direction is not guessed from the first word of the line").toBeNull();
+  });
+
+  it("shows a title unchanged when the server's wording does not contain the name", async () => {
+    re.reAlerts.mockResolvedValue({ alerts: [alert({ id: "a4", title: "Somebody needs an owner", leadName: "ليلى حسن" })] });
+    open();
+    expect(await screen.findByText("Somebody needs an owner")).toBeDefined();
   });
 
   it("an automation alert has no lead to open, and a clear title", async () => {
@@ -228,13 +245,23 @@ describe("viewings", () => {
     open();
     const first = within(await screen.findByTestId("viewing-v1"));
     expect(first.getByText("16:00–16:45 · DM-101")).toBeDefined();
-    expect(first.getByText(/Aisha Khan · Dubai Marina · with Sam Agent/)).toBeDefined();
+    expect(first.getByText("Aisha Khan").closest("p")?.textContent).toBe("Aisha Khan · Dubai Marina · with Sam Agent");
     expect(first.getByText("Scheduled")).toBeDefined();
     expect(first.getByRole("button", { name: "Confirm" })).toBeDefined();
     expect(first.queryByRole("button", { name: "Mark done" }), "it hasn't started").toBeNull();
     const second = within(screen.getByTestId("viewing-v2"));
     expect(second.queryByRole("button", { name: "Confirm" })).toBeNull();
     expect(screen.getAllByLabelText("2026-11-05")).toHaveLength(1);
+  });
+
+  it("keeps Arabic names and areas in their own runs on the viewing line", async () => {
+    re.reViewings.mockResolvedValue({ viewings: [viewing({ leadName: "ليلى حسن", community: "دبي مارينا", agentName: "سامي" })] });
+    open();
+    const card = within(await screen.findByTestId("viewing-v1"));
+    const line = card.getByText("ليلى حسن").closest("p")!;
+    expect(line.querySelectorAll("bdi")).toHaveLength(3);
+    expect(line.textContent).toBe("ليلى حسن · دبي مارينا · with سامي");
+    expect(line.getAttribute("dir")).toBeNull();
   });
 
   it("confirms, and offers done and no-show only once a viewing has started", async () => {
@@ -336,6 +363,26 @@ describe("booking a viewing", () => {
     fireEvent.click(screen.getByRole("button", { name: "Book the viewing" }));
     await screen.findByRole("dialog", { name: "Viewing booked" });
     expect(re.reBook.mock.calls[1][0].idempotencyKey).toBe(re.reBook.mock.calls[0][0].idempotencyKey);
+  });
+
+  it("brings a refusal into view, because the sheet scrolls and its buttons stay put", async () => {
+    const scroll = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      re.reBook.mockRejectedValueOnce(Object.assign(new Error("The agent already has a viewing at that time."), { status: 409 }));
+      sheet();
+      await screen.findByRole("dialog", { name: "Book a viewing" });
+      change("Date", "2026-11-05");
+      change("Time", "16:00");
+      expect(scroll).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Book the viewing" }));
+      await screen.findByRole("alert");
+      await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
+      expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 
   it("then offers a message to send, without sending it, and suggests (never makes) the pipeline move", async () => {
