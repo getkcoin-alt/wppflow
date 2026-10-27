@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scriwo: product overview, strengths and risks</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  @page :first { margin: 0; }
+  :root {
+    --ink: #1e2227; --mute: #5b6470; --faint: #8a929c; --line: #e3e6ea;
+    --brand: #16804a; --brand-d: #0f6b55; --brand-bg: #e7f3ec;
+    --gold: #96702c; --gold-bg: #f6efe0; --soft: #f7f5f0;
+    --red: #b3402f; --red-bg: #f9e9e6; --amber: #a86a12; --amber-bg: #fbf0dc; --blue: #2f5f9e; --blue-bg: #e8eef7;
+  }
+  * { box-sizing: border-box; }
+  html { font-family: "Inter", "DejaVu Sans", Arial, sans-serif; color: var(--ink); font-size: 9.6pt; line-height: 1.5; }
+  body { margin: 0; }
+  p { margin: 0 0 6pt; }
+  ul { margin: 0 0 6pt; padding-left: 13pt; }
+  li { margin: 0 0 2.5pt; }
+  b, strong { font-weight: 650; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.2pt; background: var(--soft); padding: 0 2pt; border-radius: 2pt; }
+
+  /* cover */
+  .cover { height: 297mm; width: 210mm; background: #0b0d0e; color: #fff; padding: 26mm 22mm; position: relative; break-after: page; overflow: hidden;
+    background-image: radial-gradient(ellipse at 15% 0%, rgba(22,128,74,.42), transparent 55%), radial-gradient(ellipse at 100% 100%, rgba(150,112,44,.35), transparent 50%); }
+  .cover .mark { font-size: 12pt; letter-spacing: .42em; font-weight: 600; color: #e3c98f; }
+  .cover h1 { font-family: "Instrument Serif", "DejaVu Serif", Georgia, serif; font-weight: 400; font-size: 50pt; line-height: 1.04; margin: 60mm 0 8mm; letter-spacing: -.01em; }
+  .cover h1 em { color: #d6b97b; }
+  .cover .sub { font-size: 14pt; color: #c9ced4; max-width: 140mm; line-height: 1.45; }
+  .cover .meta { position: absolute; left: 22mm; right: 22mm; bottom: 24mm; border-top: 1px solid rgba(255,255,255,.18); padding-top: 6mm; display: flex; justify-content: space-between; font-size: 9pt; color: #aab1b9; }
+  .cover .tag { display: inline-block; margin-top: 10mm; border: 1px solid rgba(214,185,123,.55); color: #e3c98f; padding: 2.2mm 4.5mm; border-radius: 99px; font-size: 9pt; letter-spacing: .06em; }
+
+  /* chapters */
+  .chapter { break-before: page; }
+  .chapter:first-of-type, .chapter.flow { break-before: auto; margin-top: 16pt; }
+  .eyebrow { font-size: 8pt; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); font-weight: 650; margin: 0 0 3pt; }
+  h1.ch { font-family: "Instrument Serif", "DejaVu Serif", Georgia, serif; font-weight: 400; font-size: 27pt; line-height: 1.1; margin: 0 0 7pt; color: var(--ink); }
+  h2 { font-size: 13pt; margin: 14pt 0 5pt; color: var(--ink); break-after: avoid; }
+  h3 { font-size: 10.4pt; margin: 9pt 0 3pt; break-after: avoid; }
+  .lead { font-size: 11pt; line-height: 1.55; color: #2c3238; margin: 0 0 9pt; }
+  .small { font-size: 8.4pt; color: var(--mute); }
+  .rule { height: 2.5pt; width: 38pt; background: linear-gradient(90deg, var(--brand), var(--gold)); border-radius: 3pt; margin: 0 0 9pt; }
+
+  /* blocks */
+  .grid { display: grid; gap: 7pt; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: 1fr 1fr 1fr; } .g4 { grid-template-columns: repeat(4, 1fr); }
+  .kpi { border: 1px solid var(--line); border-radius: 8pt; padding: 8pt 9pt; background: #fff; break-inside: avoid; }
+  .kpi .n { font-size: 17pt; font-weight: 650; color: var(--brand-d); line-height: 1.1; }
+  .kpi .l { font-size: 8pt; color: var(--mute); margin-top: 2pt; }
+  .card { border: 1px solid var(--line); border-radius: 8pt; padding: 9pt 11pt; background: #fff; break-inside: avoid; margin-bottom: 7pt; }
+  .card h3 { margin-top: 0; }
+  .callout { border-left: 3pt solid var(--gold); background: var(--gold-bg); padding: 7pt 10pt; border-radius: 0 6pt 6pt 0; margin: 8pt 0; break-inside: avoid; }
+  .callout.red { border-color: var(--red); background: var(--red-bg); }
+  .callout.green { border-color: var(--brand); background: var(--brand-bg); }
+  .callout.blue { border-color: var(--blue); background: var(--blue-bg); }
+  .callout b:first-child { display: block; margin-bottom: 1pt; }
+
+  .badge { display: inline-block; font-size: 7.2pt; font-weight: 650; letter-spacing: .04em; padding: 1pt 5pt; border-radius: 99px; vertical-align: 1pt; margin-left: 3pt; text-transform: uppercase; }
+  .b-live { background: var(--brand-bg); color: var(--brand-d); } .b-plan { background: var(--gold-bg); color: var(--gold); }
+  .b-new { background: var(--blue-bg); color: var(--blue); } .b-gap { background: var(--amber-bg); color: var(--amber); }
+  .b-hi { background: var(--red-bg); color: var(--red); } .b-md { background: var(--amber-bg); color: var(--amber); } .b-lo { background: var(--blue-bg); color: var(--blue); }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 8pt; font-size: 8.7pt; }
+  th { text-align: left; background: var(--soft); font-weight: 650; padding: 4.5pt 6pt; border-bottom: 1px solid var(--line); font-size: 8pt; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  td { padding: 4.5pt 6pt; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr { break-inside: avoid; }
+  td.c, th.c { text-align: center; } td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  .yes { color: var(--brand); font-weight: 700; } .no { color: var(--faint); }
+
+  /* module cards */
+  .mod { border: 1px solid var(--line); border-radius: 9pt; margin: 0 0 9pt; break-inside: avoid; overflow: hidden; }
+  .mod > header { background: var(--soft); padding: 6pt 11pt; border-bottom: 1px solid var(--line); display: flex; align-items: baseline; justify-content: space-between; gap: 8pt; }
+  .mod > header h3 { margin: 0; font-size: 11pt; } .mod > header .who { font-size: 8pt; color: var(--mute); text-align: right; }
+  .mod .body { display: grid; grid-template-columns: 1.55fr 1fr; }
+  .mod .body > div { padding: 7pt 10pt; }
+  .mod .body li { font-size: 9.1pt; line-height: 1.45; }
+  .mod .body > div + div { border-left: 1px solid var(--line); background: #fcfbf8; font-size: 8.6pt; }
+  .mod .body ul { padding-left: 11pt; margin-bottom: 0; }
+  .mod .kv { font-size: 7.4pt; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); font-weight: 650; margin: 0 0 2pt; }
+  .mod .kv + p, .mod .kv + ul { margin-bottom: 6pt; }
+
+  /* pros / cons */
+  .pc { display: grid; grid-template-columns: 1fr 1fr; gap: 9pt; }
+  .pc > div { border-radius: 9pt; padding: 9pt 11pt; }
+  .pc .pro { background: var(--brand-bg); } .pc .con { background: var(--red-bg); }
+  .pc h3 { margin-top: 0; }
+  .risk { border: 1px solid var(--line); border-left-width: 4pt; border-radius: 6pt; padding: 7pt 10pt; margin-bottom: 7pt; break-inside: avoid; }
+  .risk.hi { border-left-color: var(--red); } .risk.md { border-left-color: var(--amber); } .risk.lo { border-left-color: var(--blue); }
+  .risk h3 { margin: 0 0 2pt; font-size: 10pt; } .risk p { margin-bottom: 2pt; }
+  .risk .fix { color: var(--brand-d); }
+  .num { display: inline-block; width: 15pt; height: 15pt; line-height: 15pt; text-align: center; border-radius: 50%; background: var(--brand); color: #fff; font-size: 8pt; font-weight: 700; margin-right: 5pt; }
+  svg text { font-family: "Inter", "DejaVu Sans", Arial, sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ============================== COVER ============================== -->
+<div class="cover">
+  <div class="mark">SCRIWO</div>
+  <h1>Every conversation,<br><em>thoughtfully handled.</em></h1>
+  <div class="sub">Product overview: what Scriwo is, every feature it has today, where it is outstanding, and where it is weak.</div>
+  <div class="tag">Candid internal edition: for the team, not for customers</div>
+  <div class="meta"><span>Version 1.0 &middot; 27 October 2026</span><span>Facts read from the code, the tests and the live system on this date</span></div>
+</div>
+
+<!-- ============================== 1. AT A GLANCE ============================== -->
+<section class="chapter">
+  <p class="eyebrow">1 &middot; At a glance</p>
+  <h1 class="ch">What Scriwo is</h1>
+  <div class="rule"></div>
+  <p class="lead">Scriwo is a <b>shared WhatsApp inbox with a built-in CRM</b>, sold as a subscription to companies in India and the UAE. A company links its own WhatsApp numbers by scanning a QR code, and then its whole team answers customers from one calm screen: assigning chats, leaving private notes, running follow-ups, sending permission-based broadcasts, tracking leads through a sales pipeline and getting AI help with replies.</p>
+
+  <div class="grid g4" style="margin:8pt 0 10pt">
+    <div class="kpi"><div class="n">10</div><div class="l">screens in the app's sidebar, from Inbox to Developers</div></div>
+    <div class="kpi"><div class="n">5</div><div class="l">plans: Free, Starter, Growth, Business, Enterprise</div></div>
+    <div class="kpi"><div class="n">941</div><div class="l">automated tests (493 backend, 448 app) plus 38 for the website</div></div>
+    <div class="kpi"><div class="n">29</div><div class="l">database migrations, 56 tables, about 175 API handlers</div></div>
+  </div>
+
+  <h2>Three products in one system</h2>
+  <div class="grid g3">
+    <div class="card"><h3>1. The workspace app</h3><p class="small">app.scriwo.com. What a company's team uses every day: inbox, numbers, contacts, pipeline, broadcasts, automations, reports, team, plan and billing, developer tools. React 19 on Vercel.</p></div>
+    <div class="card"><h3>2. The platform console</h3><p class="small">Inside the same app, for the Scriwo team only (super admin). Create companies, set prices and limits, tick which modules each plan gets, record payments, watch number health and books, see website enquiries.</p></div>
+    <div class="card"><h3>3. The website and shop</h3><p class="small">www.scriwo.com. Marketing in English, Arabic and Hindi, live prices, and a checkout where a visitor pays with Razorpay and receives a workspace automatically. Next.js 15 on Vercel.</p></div>
+  </div>
+
+  <h2>Live state on 27 October 2026</h2>
+  <table>
+    <tr><th style="width:30%">Part</th><th>State read from the live system</th></tr>
+    <tr><td>API</td><td>Version 3.0.0, API contract 3, build <code>9f224ec</code>, database connected (PostgreSQL), schema <code>028_website_checkout</code>, 5 WhatsApp numbers connected and running.</td></tr>
+    <tr><td>Payments</td><td>Razorpay is configured in <b>live mode</b>: real money moves. The signed webhook, the reconciliation job, GST invoices and the website checkout are built and enabled.</td></tr>
+    <tr><td>Email, AI, media</td><td>Resend sends from <code>noreply@scriwo.com</code>; Riwo runs on OpenRouter free models; private S3-compatible media storage is configured.</td></tr>
+    <tr><td>Built, not yet deployed</td><td><b>Forgot password</b> (migration 029): finished and tested on 27 October, waiting for the release that follows this document.</td></tr>
+  </table>
+
+  <div class="callout">
+    <b>How to read this document</b>
+    Features listed exist in the code and are covered by named automated tests unless marked <span class="badge b-new">built, not deployed</span>. Where a promise on the website or in an old document does not match the product, this document says so.
+  </div>
+</section>
+
+<!-- ============================== 2. EXECUTIVE SUMMARY ============================== -->
+<section class="chapter">
+  <p class="eyebrow">2 &middot; Executive summary</p>
+  <h1 class="ch">The honest verdict</h1>
+  <div class="rule"></div>
+  <p class="lead">Scriwo is a <b>well-built, well-tested product</b> with a business layer (billing, GST, plan control, website checkout) that many young WhatsApp tools lack. Its biggest risks are not code quality: it runs on an <b>unofficial way of talking to WhatsApp</b>, from a <b>single server</b>, and the <b>live-money path has never been exercised with a real purchase</b>.</p>
+
+  <div class="pc">
+    <div class="pro">
+      <h3>What is strongest</h3>
+      <ul>
+        <li><b>A real team inbox with CRM depth</b>: assignment rules, private notes, follow-ups with escalation, reply-time reports, a lead pipeline, AI help.</li>
+        <li><b>India-first money handling</b>: Razorpay, gapless GST invoices (CGST + SGST or IGST), editable service code and tax rate, buy-from-website that creates the workspace.</li>
+        <li><b>Plans are data, not code</b>: the super admin changes prices, limits and module access without a release, and customers see the lock or unlock live, with a notification.</li>
+        <li><b>Server-side enforcement</b> of roles, plans and tenant isolation, proved by tests that were broken on purpose to confirm they fail.</li>
+        <li><b>Safe by design</b> broadcasts: opt-in only, STOP and SUBSCRIBE honoured, paced sending.</li>
+      </ul>
+    </div>
+    <div class="con">
+      <h3>What worries us most</h3>
+      <ul>
+        <li><b>WhatsApp can break or ban this approach.</b> There is no official WhatsApp Business Platform option today.</li>
+        <li><b>One server, one browser worker.</b> No staging environment, no monitoring or alerting, and a restore of the backup has never been rehearsed.</li>
+        <li><b>The first real purchase has not happened.</b> The accountant has not yet confirmed the invoice fields or the service code. Refunds do not remove access by themselves.</li>
+        <li><b>AI runs on shared free models</b> with a small daily ceiling for the whole account, and the key used was exposed in chat and must be replaced.</li>
+        <li><b>Promises have drifted</b>: live plan tick-boxes, the website's plan lists and older documents no longer agree in places.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>The five things to do next, in order</h2>
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:42%">Action</th><th>Why it comes first</th></tr>
+    <tr><td><span class="num">1</span></td><td><b>Run one real &#8377;1 purchase</b> end to end, then refund it and issue the credit note.</td><td>Payments are proven against a simulation only. This is the cheapest test of the live gateway.</td></tr>
+    <tr><td><span class="num">2</span></td><td><b>Have the accountant confirm</b> the invoice fields and service code (SAC 998314 is the default; 997331 is the one most often cited for SaaS).</td><td>Invoice numbering is gapless: a wrong field cannot be quietly fixed afterwards.</td></tr>
+    <tr><td><span class="num">3</span></td><td><b>Rotate secrets</b>: the AI provider key shared in chat, and the super-admin password created by migration 004.</td><td>Both are known to be exposed or guessable. Five minutes of work.</td></tr>
+    <tr><td><span class="num">4</span></td><td><b>Add a staging copy, uptime and error alerts, and rehearse a database restore.</b></td><td>All conversations live on one server. A restore nobody has tried is not a backup.</td></tr>
+    <tr><td><span class="num">5</span></td><td><b>Decide the WhatsApp strategy</b>: keep the linked-device engine, add the official Cloud API as a second option, or both.</td><td>The biggest business risk, and the only one code cannot fix in a day.</td></tr>
+  </table>
+</section>
+
+<!-- ============================== 3. ARCHITECTURE ============================== -->
+<section class="chapter">
+  <p class="eyebrow">3 &middot; How it is built</p>
+  <h1 class="ch">Architecture at a glance</h1>
+  <div class="rule"></div>
+  <p class="lead">Two front ends talk to one API. The API owns the database, the queue, the WhatsApp browsers and every outside service. Each company's data is separated by a tenant identifier on every company-owned row, enforced on the server.</p>
+
+  <svg viewBox="0 0 680 392" width="100%" role="img" aria-label="Architecture diagram">
+    <defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8a929c"/></marker></defs>
+    <!-- people -->
+    <rect x="6" y="8" width="150" height="46" rx="9" fill="#f7f5f0" stroke="#e3e6ea"/><text x="81" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#1e2227">Company teams</text><text x="81" y="43" text-anchor="middle" font-size="8.5" fill="#5b6470">owners, admins, agents</text>
+    <rect x="262" y="8" width="150" height="46" rx="9" fill="#f7f5f0" stroke="#e3e6ea"/><text x="337" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#1e2227">Visitors and buyers</text><text x="337" y="43" text-anchor="middle" font-size="8.5" fill="#5b6470">India and UAE</text>
+    <rect x="518" y="8" width="150" height="46" rx="9" fill="#f7f5f0" stroke="#e3e6ea"/><text x="593" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#1e2227">Scriwo staff</text><text x="593" y="43" text-anchor="middle" font-size="8.5" fill="#5b6470">super admin console</text>
+    <!-- front ends -->
+    <rect x="6" y="92" width="270" height="56" rx="9" fill="#e7f3ec" stroke="#16804a"/><text x="141" y="113" text-anchor="middle" font-size="11.5" font-weight="650" fill="#0f6b55">Workspace app (+ platform console)</text><text x="141" y="130" text-anchor="middle" font-size="8.5" fill="#2c3238">React 19, Vite, TanStack Query &middot; Vercel &middot; app.scriwo.com</text>
+    <rect x="404" y="92" width="270" height="56" rx="9" fill="#f6efe0" stroke="#96702c"/><text x="539" y="113" text-anchor="middle" font-size="11.5" font-weight="650" fill="#7a5a20">Website and checkout</text><text x="539" y="130" text-anchor="middle" font-size="8.5" fill="#2c3238">Next.js 15 &middot; Vercel &middot; www.scriwo.com &middot; EN / AR / HI</text>
+    <path d="M81 54 V92" stroke="#8a929c" marker-end="url(#ar)"/><path d="M337 54 V74 H539 V92" stroke="#8a929c" fill="none" marker-end="url(#ar)"/><path d="M593 54 V74 H220 V92" stroke="#8a929c" fill="none" marker-end="url(#ar)"/>
+    <!-- API -->
+    <rect x="130" y="200" width="420" height="74" rx="11" fill="#0b0d0e"/><text x="340" y="224" text-anchor="middle" font-size="13" font-weight="650" fill="#ffffff">Scriwo API</text><text x="340" y="242" text-anchor="middle" font-size="9" fill="#c9ced4">Node 22, Express, Socket.IO (live updates) &middot; PM2 on one VPS</text><text x="340" y="259" text-anchor="middle" font-size="8.5" fill="#d6b97b">roles &middot; plan enforcement &middot; tenant isolation &middot; billing &middot; jobs</text>
+    <path d="M141 148 V200" stroke="#8a929c" marker-end="url(#ar)"/><path d="M539 148 V200" stroke="#8a929c" marker-end="url(#ar)"/>
+    <!-- stores -->
+    <rect x="6" y="312" width="150" height="62" rx="9" fill="#fff" stroke="#c9ced4"/><text x="81" y="333" text-anchor="middle" font-size="10.5" font-weight="650" fill="#1e2227">PostgreSQL 16</text><text x="81" y="349" text-anchor="middle" font-size="8.3" fill="#5b6470">56 tables, 29 migrations</text><text x="81" y="362" text-anchor="middle" font-size="8.3" fill="#5b6470">company data tagged by tenant</text>
+    <rect x="172" y="312" width="150" height="62" rx="9" fill="#fff" stroke="#c9ced4"/><text x="247" y="333" text-anchor="middle" font-size="10.5" font-weight="650" fill="#1e2227">Redis + BullMQ</text><text x="247" y="349" text-anchor="middle" font-size="8.3" fill="#5b6470">outbox, retries, jobs</text><text x="247" y="362" text-anchor="middle" font-size="8.3" fill="#5b6470">no double sends</text>
+    <rect x="338" y="312" width="170" height="62" rx="9" fill="#fff" stroke="#c9ced4"/><text x="423" y="333" text-anchor="middle" font-size="10.5" font-weight="650" fill="#1e2227">WhatsApp engine</text><text x="423" y="349" text-anchor="middle" font-size="8.3" fill="#5b6470">WPPConnect + Chromium</text><text x="423" y="362" text-anchor="middle" font-size="8.3" fill="#5b6470">a linked device per number</text>
+    <rect x="524" y="312" width="150" height="62" rx="9" fill="#fff" stroke="#c9ced4"/><text x="599" y="333" text-anchor="middle" font-size="10.5" font-weight="650" fill="#1e2227">Media storage</text><text x="599" y="349" text-anchor="middle" font-size="8.3" fill="#5b6470">private S3-compatible</text><text x="599" y="362" text-anchor="middle" font-size="8.3" fill="#5b6470">signed, short-lived links</text>
+    <path d="M81 312 V292 H220 V274" stroke="#8a929c" fill="none" marker-end="url(#ar)"/><path d="M247 312 V292 H300 V274" stroke="#8a929c" fill="none" marker-end="url(#ar)"/><path d="M423 312 V274" stroke="#8a929c" marker-end="url(#ar)"/><path d="M599 312 V292 H500 V274" stroke="#8a929c" fill="none" marker-end="url(#ar)"/>
+    <!-- external -->
+    <rect x="560" y="188" width="116" height="26" rx="13" fill="#e8eef7" stroke="#2f5f9e"/><text x="618" y="205" text-anchor="middle" font-size="9" font-weight="600" fill="#2f5f9e">Razorpay (live)</text>
+    <rect x="560" y="220" width="116" height="26" rx="13" fill="#e8eef7" stroke="#2f5f9e"/><text x="618" y="237" text-anchor="middle" font-size="9" font-weight="600" fill="#2f5f9e">Resend (email)</text>
+    <rect x="560" y="252" width="116" height="26" rx="13" fill="#e8eef7" stroke="#2f5f9e"/><text x="618" y="269" text-anchor="middle" font-size="9" font-weight="600" fill="#2f5f9e">OpenRouter / Claude</text>
+    <path d="M550 201 H560" stroke="#8a929c"/><path d="M550 233 H560" stroke="#8a929c"/><path d="M550 265 H560" stroke="#8a929c"/>
+  </svg>
+
+  <h2>Why it is built this way</h2>
+  <table>
+    <tr><th style="width:24%">Choice</th><th>What it gives, and what it costs</th></tr>
+    <tr><td><b>Linked-device WhatsApp engine</b></td><td>A company can start in minutes with the number it already uses, no application to Meta, no per-message fee. The cost is dependence on how WhatsApp Web behaves (see the risks chapter).</td></tr>
+    <tr><td><b>Outbox with receipts</b></td><td>Every outgoing message is written to the database first, then sent by a worker. A provider ID is stored so the same message is never sent twice, and an uncertain send is never retried automatically.</td></tr>
+    <tr><td><b>One PostgreSQL, tenant on company data</b></td><td>Simple to run and to back up. Isolation depends on every query carrying the tenant, which a dedicated test file (<code>tenant-isolation.test.js</code>) checks across the API.</td></tr>
+    <tr><td><b>Plans stored in the database</b></td><td>Prices, limits and module ticks are edited in the console, not shipped as code. The server reads them on every request, so a change applies at once.</td></tr>
+    <tr><td><b>Frontend and backend released separately</b></td><td>The frontend release is held by a check that the backend is healthy and speaks the same API contract, so a half-deployed release cannot reach customers.</td></tr>
+  </table>
+</section>
+
+<!-- ============================== 4. FEATURE CATALOGUE ============================== -->
+<section class="chapter">
+  <p class="eyebrow">4 &middot; Every feature</p>
+  <h1 class="ch">The feature catalogue</h1>
+  <div class="rule"></div>
+  <p class="lead">One card per module, in the order a customer meets them. The right-hand column says who can use it, which plan unlocks it and the honest limits.</p>
+
+  <div class="mod">
+    <header><h3>Shared inbox and chat <span class="badge b-live">live</span></h3><span class="who">Every plan &middot; all roles</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>One live inbox across every linked number. New messages and delivery ticks (sent, delivered, read) appear with no refresh; a dropped connection is caught up and a periodic repair job fills any gap.</li>
+          <li>Opening a chat loads its earlier WhatsApp history. Groups appear as groups; status updates stay out of customer chats.</li>
+          <li>Photos, video, voice notes and documents (up to 16 MB for media and 64 MB for documents), stored privately and served by short-lived signed links.</li>
+          <li>Assign to a teammate, resolve, <b>private notes</b> that are never sent, and <b>@mentions</b> that notify the person.</li>
+          <li>Saved replies, pinned chats, coloured labels with filters, waiting and overdue filters, a warning when a teammate is already writing a reply, and <b>New chat</b> to any typed number.</li>
+          <li>Command palette for quick navigation; light and dark themes; desktop and offline alerts so a message is not missed.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Who sees what</p><p>Agents see chats on their own number plus chats assigned to them. Owners and admins see everything. Enforced on the server.</p>
+        <p class="kv">Good to know</p><p>"Delivered" means WhatsApp accepted it, not that a person read it. No calls, reactions, or editing and deleting of sent messages.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Numbers: connecting WhatsApp <span class="badge b-live">live</span></h3><span class="who">Owners and admins &middot; limit set by plan</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Link a number by scanning a QR code (manager-only). Each company has a number limit from its plan: 1, 3, 10, 25, or custom.</li>
+          <li>Sessions recover after a server restart. Each number has its own isolated browser profile.</li>
+          <li><b>Number health</b>: a heartbeat plus failed and waiting sends; owners and admins are alerted when a phone goes offline or sends are failing.</li>
+          <li>Removing a number unlinks it, deletes its saved login and cleans up leftover browser processes. A number can be given an owner, and an inbox re-sync can be forced.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>Free 1, Starter 3, Growth 10, Business 25, Enterprise custom (the super admin must type the number).</p>
+        <p class="kv">Good to know</p><p>The live heartbeat asks WhatsApp Web whether it is connected; its accuracy still has to be watched on the live server.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Team, roles and assignment <span class="badge b-live">live</span></h3><span class="who">Owners and admins manage</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Roles: <b>owner, admin, agent</b>, plus the Scriwo-side super admin. Team members can have a category (general, sales, support, billing, operations or marketing). Suspending a person drops their live sessions at once.</li>
+          <li>Invitations by email: a single-use link, 24 hours, resendable and revocable. Passwords are never emailed. A person who already has an account must prove their current password to join another company.</li>
+          <li><b>Automatic assignment</b> of new chats: in turn (round robin) or to the least busy person, with an away switch, working hours, per-person limits, and returning customers going back to the same person.</li>
+          <li><b>Audit log</b> of sensitive actions. Staff never see billing.</li>
+          <li><b>Forgot password</b> on the sign-in page: a one-hour, single-use emailed link; the same answer whether or not the address has an account; every device is signed out after a reset. <span class="badge b-new">built, not deployed</span></li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>Team and roles on every paid plan; Free is one person. Audit log from Growth (as ticked in the console).</p>
+        <p class="kv">Good to know</p><p>No two-factor sign-in and no single sign-on yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Contacts and consent <span class="badge b-live">live</span></h3><span class="who">Every plan</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Contacts built from conversations, CSV import and export, tags and custom traits. WhatsApp's own name is kept apart from the name your team gives a contact.</li>
+          <li><b>Recorded opt-in</b> with a confirmation step for contacts nobody has decided on. A customer's STOP is never overridden. A CSV <code>optin</code> column records permission and never undoes a STOP.</li>
+          <li>Customers manage themselves: <b>STOP</b> removes them from broadcasts (the chat stays open for staff); <b>SUBSCRIBE</b> puts them back.</li>
+          <li>Bulk "add to pipeline" from the contact list.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>A contact limit can be set per plan and is enforced with a warning from 80%. No plan has one today.</p>
+        <p class="kv">Good to know</p><p>A customer's message is never refused because of a limit.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Broadcasts <span class="badge b-plan">Starter and up (as ticked today)</span></h3><span class="who">Owners and admins</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>A <b>three-step wizard</b>: message, audience, review. Ten ready-made messages, a live preview and the audience counted before anything is sent.</li>
+          <li>A message with an unfilled <code>[blank]</code> or an unknown <code>{{field}}</code> is refused. <code>{{first_name}}</code>, <code>{{name}}</code> and <code>{{company}}</code> are filled per person; someone known only by phone number is greeted as "there".</li>
+          <li>Send now, schedule, save a draft, or copy an earlier broadcast. Sending first checks the number is connected and that someone would receive it.</li>
+          <li><b>Opt-in only</b>: consent is re-checked before every single send. A minimum of four seconds between messages; pause and stop at any time.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>The website says Growth and up. The live plan table ticks Broadcasts from Starter. See the drift note in chapter 5.</p>
+        <p class="kv">Good to know</p><p>Nothing in the tests sends to real WhatsApp; delivery uses the separately tested outbox path. A monthly broadcast limit exists but none is set.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Automations <span class="badge b-plan">Growth and up</span></h3><span class="who">Owners and admins</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li><b>14 ready-made rules</b> in four groups, with keywords in English, Arabic and Hindi. They start paused so nothing fires by surprise.</li>
+          <li>Triggers: a keyword (contains, whole word or exact), a customer's first message, or a message outside opening hours.</li>
+          <li>Actions: reply, assign, add a tag, record permission, or create a lead.</li>
+          <li>Safety rails: one automatic reply per message, a wait between repeats, at most six an hour per chat, and group chats are never answered. Each execution is recorded once.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>Growth and above.</p>
+        <p class="kv">Good to know</p><p>Rules are keyword-based, not conversational. There is no visual flow builder.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Sales pipeline (the CRM part) <span class="badge b-plan">Starter and up (as ticked today)</span></h3><span class="who">Agents see their own &middot; managers see all</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>A <b>lead</b> is one sales opportunity for one contact; a contact has one open lead at a time. Add from a chat in one tap, from contacts, in bulk, or automatically for new customers and people asking for a quote. Never from groups.</li>
+          <li>A <b>board</b> (a column per step, with counts and values), a <b>list</b> and a <b>Today</b> list of follow-ups. Steps can be renamed, reordered and added; templates for real estate, car dealers and clinics.</li>
+          <li>Moves are recorded; a lost lead asks why; winning, losing and reopening are handled. Value and currency per lead.</li>
+          <li><b>Follow-ups</b> remind the owner once when due, escalate when overdue, and follow the chat's assignee. Won, lost and deleted leads send no reminders.</li>
+          <li>Riwo can suggest a title, value, next step and follow-up; nothing is saved until a person confirms.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>The app labels it Growth; the live plan table ticks it from Starter.</p>
+        <p class="kv">Not built yet</p><p>Win-rate reports, "no reply in two days" alerts, broadcasts to a step, lead webhooks, custom fields, more than one pipeline. The pricing page does not mention the pipeline.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Riwo, the AI assistant <span class="badge b-plan">Growth and up (ticked on Free today)</span></h3><span class="who">Agents, admins, owners</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li><b>Suggest a reply</b> from the conversation, <b>improve a draft</b>, <b>translate into 15 languages</b>, and <b>summarise</b> a chat including how the customer sounds (mood).</li>
+          <li>Suggests a lead's title, value and next step. The customer's phone number is never sent to the model; nothing is saved until a person confirms.</li>
+          <li>Runs on OpenRouter's free models, ranked from the live catalogue with automatic fallback to the next model when one fails or is rate-limited; it can also run on Claude when a key is set.</li>
+          <li><b>Daily allowance per company</b> (server default 300, adjustable by the super admin), with usage shown to owners and admins and, per company, in the console.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Plan</p><p>Growth and above on the website; the live plan table also ticks it on Free.</p>
+        <p class="kv">Good to know</p><p>Free models cap the whole account (about 50 requests a day without credit, 1,000 with $10), far below the sum of what companies may use. Quality varies by model.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Reports and dashboard <span class="badge b-live">live</span></h3><span class="who">Owners and admins</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Workspace dashboard with measured aggregates (conversations, messages, activity).</li>
+          <li><b>Reply-time reports</b>: median and 90th percentile, the share answered inside a target, a team <b>leaderboard</b>, waiting chats, drill-down to individual episodes, and CSV export.</li>
+          <li>An <b>owner daily summary</b> with the chats that need attention; the response target is configurable.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Good to know</p><p>No revenue or win-rate reporting yet, because the CRM does not have those fields.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Notifications and live updates <span class="badge b-live">live</span></h3><span class="who">Everyone</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>In-app bell for assignments, @mentions, offline numbers, failing sends, renewals (14 days ahead) and module changes. Optional desktop notifications.</li>
+          <li>A live "plan changed" event so a lock or unlock appears in an open browser without a refresh, and again after a reconnect.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Good to know</p><p>Renewal and overdue reminders are in the app only; they are not emailed yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Developers: API, keys and webhooks <span class="badge b-plan">Business and up</span></h3><span class="who">Owners and admins</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li><b>Scoped API keys</b> (inbox, contacts, sessions), shown once, stored only as a hash, revocable one at a time.</li>
+          <li><b>Signed webhooks</b> to public HTTPS addresses: every delivery carries an <code>X-Scriwo-Signature</code>, with a delivery log and retries.</li>
+          <li>Documentation page, an API tester and SDK samples.</li>
+          <li>On Free, Starter and Growth the module stays in the navigation with a lock and an explanation of what the Business plan adds, and the server refuses its routes.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Good to know</p><p>Signed webhooks have no dedicated automated test yet. There is no lead scope for keys and no lead webhook.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Plan, payments and GST invoices <span class="badge b-live">live (real money)</span></h3><span class="who">Owners and admins</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Companies see their plan, billing cycle, renewal date, AI use, every payment and every invoice, and can <b>pay online with Razorpay</b>. An upgrade credits the unused days of the current plan.</li>
+          <li><b>Server-side pricing</b>: the price, credit and 18% GST are worked out on the server; the browser never states a price.</li>
+          <li><b>Exactly-once settlement</b>: a payment activates a plan once however many times the browser, the signed webhook and the reconciliation job report it, in any order. A wrong amount, currency, company or signature activates nothing.</li>
+          <li><b>GST tax invoices</b> as PDF: gapless numbers like <code>SCZ/26-27/00001</code> (16 characters, a new series each April), CGST + SGST in the seller's state and IGST elsewhere, reverse-charge statement, and the buyer's GSTIN.</li>
+          <li>Opt-in <b>autopay</b> for monthly plans; downgrade at period end; a <b>7-day grace</b> after the renewal date, then the company behaves as Free (nothing is deleted; paying restores everything at once).</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Good to know</p><p>All of this is tested against a simulated Razorpay; no real purchase has been made. A refund or chargeback does not remove access by itself. AED cannot be paid online yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Platform console (super admin) <span class="badge b-live">live</span></h3><span class="who">Scriwo staff only</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li><b>Companies</b>: create a company, choose its plan, number limit and AI allowance; the owner receives a 72-hour set-password link (resendable). Suspend or reactivate, change plan, schedule a change for the period end.</li>
+          <li><b>Subscriptions module</b>: <i>Rates</i> (monthly and yearly prices in INR and AED, tax added or included, on sale or not, with a preview), <i>Services &amp; limits</i> (name, numbers, people, contacts, broadcasts a month, and a tick-box per module), <i>Invoice &amp; tax</i> (service code, GST rate, prefix, seller name, GSTIN with checksum, address, upgrade credit), and <i>Change history</i>.</li>
+          <li>Ticking or unticking a module locks or unlocks it at once for every company on that plan, and the owners and admins are notified of what changed. Issued invoices keep the details they were issued with.</li>
+          <li>Totals and every company's number health; billing audit; online-payment view; manual payments with invoice; a logged <b>support access</b> that the company can read; and the inbox of website enquiries.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Good to know</p><p>The five plans are fixed; their contents are editable but a brand-new plan cannot be added without a release.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Website, shop and content <span class="badge b-live">live</span></h3><span class="who">Public</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li><b>Buy from the website</b>: choose a plan, enter company and invoice details with a live GST quote, pay with Razorpay, and the company, its owner, the tax invoice, a setup email and a receipt are created together once the payment is confirmed. An email that already has an account is turned away before any money is taken.</li>
+          <li>Prices, number limits, tax mode and GST rate are <b>read live from the product</b> (refreshed every five minutes), with a built-in fallback if the product cannot be reached.</li>
+          <li>About 80 pages: 13 blog posts, 18 city pages, 12 feature pages, 10 industry pages, 6 comparison pages, a Riwo page, a security page, legal pages, and Arabic and Hindi home pages.</li>
+          <li>Built for discovery: structured data, <code>llms.txt</code> for AI assistants, IndexNow pings, and analytics that wait for the visitor's consent.</li>
+          <li>A contact form that stores the enquiry and emails the team.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Good to know</p><p>Plan feature lists and any sentence quoting a price in blog, FAQ and comparison pages are written by hand and do not follow the live catalogue.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Security and sign-in <span class="badge b-live">live</span></h3><span class="who">Everyone</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Passwords hashed with bcrypt; 1-hour access tokens kept in memory; rotating refresh tokens in an HttpOnly cookie, stored only as hashes. Reusing a revoked refresh token signs the account out everywhere.</li>
+          <li>Sign-in and account endpoints are rate limited. Tenant isolation, roles and plan locks are enforced on the server and covered by tests.</li>
+          <li>Support access is written down and visible to the company. Webhook addresses must be public HTTPS. The website sends a content security policy.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Not there yet</p><p>Two-factor sign-in, single sign-on, IP allow-lists, and an independent security review.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <header><h3>Operations and delivery <span class="badge b-live">live</span></h3><span class="who">The team</span></header>
+    <div class="body">
+      <div>
+        <ul>
+          <li>Pushing to <code>main</code> triggers a deploy script on the server: one deploy at a time, exact dependencies, a database backup (best effort), migrations in a transaction with a lock timeout, restart, health check, and <b>automatic rollback</b> if any step fails.</li>
+          <li>GitHub Actions run the backend tests (against real PostgreSQL and Redis) and the app's lint, type check, tests and build on every change. Tests create and drop their own disposable databases.</li>
+          <li>The frontend release is held unless the backend is healthy and speaks the same API contract. <code>/health</code> reports build, schema version, payments, email, AI and active numbers.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kv">Not there yet</p><p>A staging environment, uptime and error alerting, a rehearsed restore, and branch protection on <code>main</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 5. PLANS ============================== -->
+<section class="chapter flow">
+  <p class="eyebrow">5 &middot; What customers pay</p>
+  <h1 class="ch">Plans, prices and modules</h1>
+  <div class="rule"></div>
+  <p class="lead">Scriwo charges <b>per company, with a number limit and no per-message fee</b>, not per seat. A year paid in advance costs ten months. Prices below are read from the live catalogue on 27 October 2026 and exclude tax (18% GST in India, 5% VAT in the UAE).</p>
+
+  <table>
+    <tr><th>Plan</th><th class="c">Numbers</th><th class="r">India, month</th><th class="r">India, year</th><th class="r">UAE, month</th><th class="r">UAE, year</th></tr>
+    <tr><td><b>Free</b></td><td class="c">1 (one person)</td><td class="r">&#8377;0</td><td class="r">&#8377;0</td><td class="r">AED 0</td><td class="r">AED 0</td></tr>
+    <tr><td><b>Starter</b></td><td class="c">3</td><td class="r">&#8377;2,499</td><td class="r">&#8377;24,990</td><td class="r">AED 299</td><td class="r">AED 2,990</td></tr>
+    <tr><td><b>Growth</b></td><td class="c">10</td><td class="r">&#8377;6,999</td><td class="r">&#8377;69,990</td><td class="r">AED 799</td><td class="r">AED 7,990</td></tr>
+    <tr><td><b>Business</b></td><td class="c">25</td><td class="r">&#8377;14,999</td><td class="r">&#8377;1,49,990</td><td class="r">AED 1,699</td><td class="r">AED 16,990</td></tr>
+    <tr><td><b>Enterprise</b></td><td class="c">Custom</td><td class="r" colspan="4">Quoted by the team; set up through onboarding</td></tr>
+  </table>
+  <p class="small">Example: Growth monthly in India is &#8377;6,999 + 18% GST (&#8377;1,259.82) = &#8377;8,258.82, split as CGST 9% + SGST 9% in the seller's state (Uttar Pradesh) or IGST 18% elsewhere. Buying from the website works in rupees for Starter, Growth and Business; Free, Enterprise and anything in AED are still set up by the team.</p>
+
+  <h2>Which modules each plan has, as the live catalogue stands today</h2>
+  <table>
+    <tr><th>Module</th><th class="c">Free</th><th class="c">Starter</th><th class="c">Growth</th><th class="c">Business</th><th class="c">Enterprise</th></tr>
+    <tr><td>Inbox, numbers, contacts, notes, assignment</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+    <tr><td>Broadcasts</td><td class="c no">&mdash;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+    <tr><td>Sales pipeline</td><td class="c no">&mdash;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+    <tr><td>Automations</td><td class="c no">&mdash;</td><td class="c no">&mdash;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+    <tr><td>Audit log</td><td class="c no">&mdash;</td><td class="c no">&mdash;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+    <tr><td>Riwo AI assistant</td><td class="c yes">&#10003;</td><td class="c no">&mdash;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+    <tr><td>API keys and webhooks (Developers)</td><td class="c no">&mdash;</td><td class="c no">&mdash;</td><td class="c no">&mdash;</td><td class="c yes">&#10003;</td><td class="c yes">&#10003;</td></tr>
+  </table>
+
+  <div class="callout red">
+    <b>Drift to fix: the live ticks and the public promises disagree</b>
+    The website's plan lists and the claims audit say Starter has no broadcasts, that the pipeline starts at Growth, and that Riwo starts at Growth. The live tick-boxes give Starter Broadcasts and the Pipeline, and give Free the AI assistant. Either the ticks or the website copy has to change. This matters twice over: customers are being promised less than they get on Starter, and Free users spend the shared free-model AI quota that is already tight.
+  </div>
+
+  <h2>How a subscription behaves</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Renewal</h3><p class="small">Each company has a billing cycle and period dates. Owners see "Renews on"; owners and admins get one in-app notice 14 days before. Upgrades apply at once with credit for unused days; downgrades can be scheduled for the end of the period.</p></div>
+    <div class="card"><h3>Late payment</h3><p class="small">The company is flagged and told. Seven days after the renewal date its paid modules switch off and it has what Free has. Nothing is deleted. Paying brings everything back immediately.</p></div>
+    <div class="card"><h3>Limits</h3><p class="small">A plan can cap contacts and broadcasts started in a month. The server enforces it and warns from 80%. A customer's incoming message is never refused. No plan has a cap today.</p></div>
+    <div class="card"><h3>Changing a plan's modules</h3><p class="small">The console shows what will lock or unlock and for how many companies before saving; afterwards the owners and admins of those companies are notified, and open browsers update without a refresh.</p></div>
+  </div>
+</section>
+
+<!-- ============================== 6. OUTSTANDING ============================== -->
+<section class="chapter">
+  <p class="eyebrow">6 &middot; Where Scriwo stands out</p>
+  <h1 class="ch">What is genuinely outstanding</h1>
+  <div class="rule"></div>
+  <p class="lead">These are the points that set Scriwo apart from a typical "WhatsApp inbox", each tied to something you can check in the code or the tests, not to marketing.</p>
+
+  <div class="card"><h3><span class="num">1</span>It sells itself, and bills like an Indian business</h3>
+    <p>A visitor can pay on the website and receive a working workspace, a GST invoice and a setup email without anyone on the team touching it. Invoice numbers are gapless and fit the 16-character legal limit, the tax split is correct for the buyer's state, and the service code, rate and seller details are editable but frozen on invoices already issued. Most small WhatsApp tools stop at "contact us".</p></div>
+
+  <div class="card"><h3><span class="num">2</span>Money moves exactly once</h3>
+    <p>The browser, the signed webhook and a reconciliation job can all report the same payment, in any order, and the company is still activated once. A tampered signature, wrong amount or failed payment changes nothing. These checks were deliberately broken during development to prove the tests fail when they should.</p></div>
+
+  <div class="card"><h3><span class="num">3</span>Plans are a control panel, not a release</h3>
+    <p>Prices, limits and module access are edited in the Subscriptions module. A tick or untick locks or unlocks the module for every paying company at once, tells their owners what changed and which plan to pick, updates open browsers live, and updates the website's prices within five minutes.</p></div>
+
+  <div class="card"><h3><span class="num">4</span>It behaves like a team tool, not a shared phone</h3>
+    <p>Private notes the customer can never see, @mentions, automatic assignment (round robin or least busy, with hours and an away switch), "someone is already writing" warnings, waiting and overdue filters, follow-ups that escalate, and reply-time reports with a leaderboard. Staff only see their own number's chats and what is assigned to them.</p></div>
+
+  <div class="card"><h3><span class="num">5</span>A CRM that lives inside the conversation</h3>
+    <p>A lead is created from a chat in one tap, shares an owner with the chat, reminds once when a follow-up is due, and can be pre-filled by AI that the person must confirm. Real estate, car dealer and clinic templates make the first setup a two-minute job.</p></div>
+
+  <div class="card"><h3><span class="num">6</span>Riwo is cautious by design</h3>
+    <p>It suggests, improves, translates (15 languages) and summarises with the customer's mood, but never sends anything itself, never sends the customer's phone number to the model, shows each company its daily use, and falls back across several free models when one fails. The cost to the business today is close to zero.</p></div>
+
+  <div class="card"><h3><span class="num">7</span>Consent is built in, not bolted on</h3>
+    <p>Broadcasts only reach opted-in people, consent is re-checked before every message, STOP and SUBSCRIBE are understood in three languages, messages are paced, and a broadcast cannot go out with an unfilled blank. This protects customers' numbers from the very thing that gets WhatsApp numbers banned.</p></div>
+
+  <div class="card"><h3><span class="num">8</span>Unusually strong engineering discipline for the size</h3>
+    <p>941 automated tests across backend and app, written against real PostgreSQL with throw-away databases; tenant isolation, plan locks and payment safety each have dedicated tests; migrations fail fast instead of freezing the app; every deploy backs up, health-checks and rolls itself back.</p></div>
+
+  <div class="card"><h3><span class="num">9</span>A website that works as a growth channel</h3>
+    <p>Around 80 pages including 18 city pages, 10 industries and 6 comparisons, Arabic and Hindi versions, structured data and an <code>llms.txt</code> so AI assistants can describe the product correctly, consent-aware analytics, and live prices that cannot go stale.</p></div>
+
+  <div class="card"><h3><span class="num">10</span>It admits what it is not</h3>
+    <p>There is a standing audit (<code>docs/website-claims-audit.md</code>) that checks every website promise against the code and says "Test", "Code", "Service" or "Known gap" for each. When the product did not match the copy, the copy was corrected, including the sign-in wording found while preparing this document.</p></div>
+</section>
+
+<!-- ============================== 7. PROS / CONS / RISKS ============================== -->
+<section class="chapter">
+  <p class="eyebrow">7 &middot; The other side</p>
+  <h1 class="ch">Pros, cons and risks</h1>
+  <div class="rule"></div>
+
+  <div class="pc">
+    <div class="pro">
+      <h3>Pros</h3>
+      <ul>
+        <li>Fast start: a company links the number it already has; no Meta approval.</li>
+        <li>No per-message fees, and pricing per company, not per seat.</li>
+        <li>Complete commercial layer: online payment, GST invoices, renewals, grace, plan control.</li>
+        <li>Deep team features and a lead pipeline in one product.</li>
+        <li>Consent and pacing built in.</li>
+        <li>Extensive tests and an automatic rollback on bad deploys.</li>
+        <li>Low running cost: free AI models and a single server.</li>
+        <li>Bilingual website and live prices; strong search and AI-discovery groundwork.</li>
+        <li>Open developer surface: scoped keys and signed webhooks.</li>
+        <li>Honest documentation habit.</li>
+      </ul>
+    </div>
+    <div class="con">
+      <h3>Cons</h3>
+      <ul>
+        <li>Unofficial WhatsApp engine: breakage and ban exposure.</li>
+        <li>No official templates, green tick or WhatsApp Business Platform option.</li>
+        <li>Single server and a single browser worker; no staging, alerts or rehearsed restore.</li>
+        <li>No two-factor sign-in or single sign-on.</li>
+        <li>AI limited by shared free quotas.</li>
+        <li>No native mobile apps (the web app is responsive).</li>
+        <li>The CRM is basic: one pipeline, no custom fields, no win-rate reports.</li>
+        <li>Rules are keyword-only; no visual flows or chatbot.</li>
+        <li>App interface is English only (only the website is in Arabic and Hindi).</li>
+        <li>Refunds and credit notes are manual.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>The risks, ranked</h2>
+
+  <div class="risk hi"><h3>1. WhatsApp dependence <span class="badge b-hi">High</span></h3>
+    <p>Scriwo drives WhatsApp Web through an unofficial library. A WhatsApp update can break sending or the QR login without warning, and WhatsApp's terms do not allow this kind of automation, so a customer's number can be restricted. Because customers' livelihoods run on those numbers, one wave of bans would damage trust faster than any bug.</p>
+    <p class="fix"><b>Reduce it:</b> keep the consent-first broadcast rules and pacing, tell customers plainly in the terms, watch the library's releases, and plan an official Cloud API channel as a second option.</p></div>
+
+  <div class="risk hi"><h3>2. One server holds everyone's conversations <span class="badge b-hi">High</span></h3>
+    <p>The API, the database and every WhatsApp browser run on one VPS, with one worker. The database backup is best effort (skipped if <code>pg_dump</code> is missing) and has never been restored as a test. There is no staging environment and no alerting. A disk failure, a memory spike from Chromium or a bad deploy at the wrong hour would be noticed by customers first.</p>
+    <p class="fix"><b>Reduce it:</b> an uptime monitor and error alert this week; a nightly off-server backup; one rehearsed restore; then a staging copy.</p></div>
+
+  <div class="risk hi"><h3>3. Live money without a live test <span class="badge b-hi">High</span></h3>
+    <p>Razorpay is in live mode, but every payment path has only been proven against a simulation. The accountant has not confirmed the invoice fields or the service code, and a wrong tax invoice cannot be quietly corrected because numbering is gapless. A refund or chargeback does not remove access by itself. A test purchase uses a number in the real invoice series.</p>
+    <p class="fix"><b>Reduce it:</b> one &#8377;1 purchase, refund and credit note; confirm the three Razorpay webhook events (<code>payment.captured</code>, <code>payment.failed</code>, <code>order.paid</code>) arrive; accountant sign-off first.</p></div>
+
+  <div class="risk md"><h3>4. Secrets and defaults <span class="badge b-md">Medium</span></h3>
+    <p>The AI provider key was shared in a chat and must be replaced. The super-admin password created by migration 004 is a known default. There is no branch protection on <code>main</code>, and pushes to <code>main</code> deploy straight to production.</p>
+    <p class="fix"><b>Reduce it:</b> rotate both secrets, require a pull request and the CI check before merging.</p></div>
+
+  <div class="risk md"><h3>5. AI capacity and quality <span class="badge b-md">Medium</span></h3>
+    <p>Free OpenRouter models cap the entire account, around 50 requests a day without credit, while each company is allowed 300 a day. A handful of busy companies would exhaust it, and Free-plan users currently have the assistant. Answer quality changes with whichever model is available.</p>
+    <p class="fix"><b>Reduce it:</b> add credit, set per-plan allowances (planned), or move Riwo to a paid model for the top plans.</p></div>
+
+  <div class="risk md"><h3>6. Promise drift <span class="badge b-md">Medium</span></h3>
+    <p>Live module ticks, the website's plan lists, older documents (the backend README still says billing and email are not implemented; <code>website-plan.md</code> is stale) and hand-written price sentences in blog, FAQ and comparison pages no longer agree everywhere. Terms and refund wording have not had a legal review. UAE VAT invoicing is not built, and AED cannot be paid online.</p>
+    <p class="fix"><b>Reduce it:</b> settle the module ticks, refresh the two stale documents, have the legal pages reviewed.</p></div>
+
+  <div class="risk lo"><h3>7. Key-person and scale <span class="badge b-lo">Low today, rising</span></h3>
+    <p>Almost everything is understood by one builder and one assistant. The tests make this safer than it sounds, but support, on-call and security review do not yet exist as roles. Performance beyond a few dozen numbers on one worker has not been measured.</p>
+    <p class="fix"><b>Reduce it:</b> a short runbook, a load test at 25 and 50 numbers, and a named second person who can deploy.</p></div>
+
+  <div class="callout green">
+    <b>Where the code is better than the risk list suggests</b>
+    Most of the risks above are about operations and strategy, not code quality. The code has the habits that make operational fixes cheap: migrations that fail safely, health checks that gate releases, tests that run on disposable databases, and a deploy that rolls itself back.
+  </div>
+</section>
+
+<!-- ============================== 8. NEXT STEPS ============================== -->
+<section class="chapter">
+  <p class="eyebrow">8 &middot; What to do about it</p>
+  <h1 class="ch">Open items and next steps</h1>
+  <div class="rule"></div>
+
+  <h2>Before the first paying customer</h2>
+  <table>
+    <tr><th style="width:4%"></th><th style="width:48%">Item</th><th>Detail</th></tr>
+    <tr><td>&#9744;</td><td><b>Live &#8377;1 purchase</b></td><td>Buy through the website, confirm the workspace, invoice, setup email and receipt arrive, then refund and issue the credit note. Confirm the Razorpay dashboard shows the webhook events.</td></tr>
+    <tr><td>&#9744;</td><td><b>Accountant review</b></td><td>Invoice fields, service code (default 998314), GST rate and seller details, including the 16-character number format.</td></tr>
+    <tr><td>&#9744;</td><td><b>Rotate secrets</b></td><td>The AI provider key shared in chat; the migration-004 super-admin password.</td></tr>
+    <tr><td>&#9744;</td><td><b>Settle the plan promises</b></td><td>Decide whether Starter really has Broadcasts and the Pipeline and whether Free should have Riwo; then make the ticks and the website lists say the same thing.</td></tr>
+    <tr><td>&#9744;</td><td><b>Legal review</b></td><td>Terms, refund and shipping policy wording, particularly cancellation, the 7-day grace and WhatsApp-related disclaimers.</td></tr>
+    <tr><td>&#9744;</td><td><b>Deploy Forgot password</b></td><td>Built and tested; ship backend first, wait for the health check to show schema 029, then the frontend.</td></tr>
+  </table>
+
+  <h2>Within the first month</h2>
+  <table>
+    <tr><th style="width:4%"></th><th style="width:48%">Item</th><th>Detail</th></tr>
+    <tr><td>&#9744;</td><td><b>Monitoring and backups</b></td><td>Uptime and error alerts; nightly off-server database backup; rehearse one restore on a separate machine.</td></tr>
+    <tr><td>&#9744;</td><td><b>Branch protection</b></td><td>Require a pull request and the CI check on <code>main</code> in both repositories.</td></tr>
+    <tr><td>&#9744;</td><td><b>Staging environment</b></td><td>A second small server and database, so a payment or migration change can be tried without customers.</td></tr>
+    <tr><td>&#9744;</td><td><b>Riwo capacity</b></td><td>Add credit to the AI provider or set per-plan daily allowances shown on the pricing page.</td></tr>
+    <tr><td>&#9744;</td><td><b>Refresh stale documents</b></td><td>Backend README (it predates billing and email), <code>docs/website-plan.md</code>, and the Railway file that no longer describes where the API runs.</td></tr>
+    <tr><td>&#9744;</td><td><b>Email the renewal reminders</b></td><td>Owners get reminders in the app only today; add email, and a weekly list of renewals and overdue companies for the sales inbox.</td></tr>
+  </table>
+
+  <h2>Product roadmap candidates (highest value first)</h2>
+  <ol style="padding-left:14pt;margin:0 0 8pt">
+    <li><b>Official WhatsApp Cloud API channel</b> alongside the linked-device engine, with approved templates.</li>
+    <li><b>Two-factor sign-in</b> for owners and admins.</li>
+    <li><b>CRM depth</b>: win-rate and revenue reports, "no reply in two days" alerts, custom fields, more than one pipeline, broadcasts to a pipeline step, lead webhooks and a key scope for leads.</li>
+    <li><b>Refund and chargeback handling</b> that removes access and issues credit notes automatically.</li>
+    <li><b>UAE</b>: an online payment gateway for AED and VAT invoices.</li>
+    <li><b>Pricing page and feature pages</b> for the pipeline, which today has no mention on the public site.</li>
+    <li><b>Arabic and Hindi in the app</b>, not only on the website.</li>
+  </ol>
+
+  <div class="callout blue">
+    <b>A note on how this document was prepared</b>
+    Counts (tests, tables, endpoints, pages) were taken from the repositories on 27 October 2026. Plans and prices were read from the live public catalogue, and the system status from the live health endpoint. Feature statements come from the code and the named tests in <code>docs/website-claims-audit.md</code>. Nothing in this document is based on a real WhatsApp send or a real payment, because neither has been exercised in tests or in a rehearsal.
+  </div>
+</section>
+
+<!-- ============================== APPENDIX ============================== -->
+<section class="chapter flow">
+  <p class="eyebrow">Appendix</p>
+  <h1 class="ch">The numbers and the stack</h1>
+  <div class="rule"></div>
+
+  <div class="grid g2">
+    <div>
+      <h2 style="margin-top:0">Size and tests</h2>
+      <table>
+        <tr><th>Measure</th><th class="r">Value</th></tr>
+        <tr><td>Backend source (JavaScript)</td><td class="r">16,425 lines</td></tr>
+        <tr><td>Backend tests</td><td class="r">10,335 lines, 51 files, 493 tests passing</td></tr>
+        <tr><td>App source (TypeScript)</td><td class="r">19,447 lines</td></tr>
+        <tr><td>App tests</td><td class="r">42 files, 448 tests passing</td></tr>
+        <tr><td>Website tests</td><td class="r">3 files, 38 tests passing</td></tr>
+        <tr><td>Database migrations / tables</td><td class="r">29 / 56</td></tr>
+        <tr><td>API route files / handlers</td><td class="r">19 / about 175</td></tr>
+        <tr><td>Website content</td><td class="r">13 posts, 18 cities, 12 features, 10 industries, 6 comparisons</td></tr>
+      </table>
+    </div>
+    <div>
+      <h2 style="margin-top:0">Technology</h2>
+      <table>
+        <tr><th>Layer</th><th>Used</th></tr>
+        <tr><td>API</td><td>Node 22, Express, Socket.IO, BullMQ, ioredis, pdfkit, sharp</td></tr>
+        <tr><td>Data</td><td>PostgreSQL 16, Redis, private S3-compatible storage</td></tr>
+        <tr><td>WhatsApp</td><td>WPPConnect 2.3.4 on Chromium</td></tr>
+        <tr><td>Auth</td><td>bcrypt, JWT, rotating hashed refresh tokens</td></tr>
+        <tr><td>Payments, email</td><td>Razorpay (orders, signed webhooks, autopay), Resend</td></tr>
+        <tr><td>AI</td><td>OpenRouter free models; Claude optional</td></tr>
+        <tr><td>App</td><td>React 19, Vite, Tailwind, TanStack Query, Vitest</td></tr>
+        <tr><td>Website</td><td>Next.js 15 (App Router), structured data, GA4 consent mode</td></tr>
+        <tr><td>Delivery</td><td>GitHub Actions, Vercel, PM2 and a deploy script on a VPS</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h2>Main data the system keeps</h2>
+  <table>
+    <tr><th style="width:22%">Area</th><th>Tables</th></tr>
+    <tr><td>Companies and people</td><td>tenants, users, memberships, invitations, password_resets, refresh_tokens, audit_events, support_access, support_access_log</td></tr>
+    <tr><td>Conversations</td><td>whatsapp_sessions, contacts, conversations, messages, message_receipts, attachments, outbox_events, labels, contact_labels, canned_replies, notifications</td></tr>
+    <tr><td>Growth tools</td><td>campaigns, campaign_recipients, consents, suppressions, automations, automation_executions, pipelines, pipeline_stages, leads, lead_tasks, lead_activities, assignment_settings, team_sla, report_settings, ai_usage</td></tr>
+    <tr><td>Money</td><td>plans, plan_prices, plan_changes, billing_settings, billing_settings_changes, billing_profiles, payment_orders, payments, payment_refunds, invoices, invoice_counters, subscription_payments, subscription_events, autopay_subscriptions, razorpay_plans, gateway_webhook_receipts, early_receipts</td></tr>
+    <tr><td>Developers and website</td><td>api_keys, webhook_endpoints, webhook_deliveries, website_leads</td></tr>
+  </table>
+
+  <h2>Roles and who can do what</h2>
+  <table>
+    <tr><th>Role</th><th>Can</th></tr>
+    <tr><td><b>Agent</b></td><td>Work chats on their own number and chats assigned to them; notes, replies, their own leads and follow-ups. No billing, no team, no broadcasts.</td></tr>
+    <tr><td><b>Admin</b></td><td>Everything an agent can, plus all chats, numbers, contacts, broadcasts, automations, reports, team invitations for agents, the audit log, plan and billing views.</td></tr>
+    <tr><td><b>Owner</b></td><td>Everything an admin can, plus inviting and managing administrators.</td></tr>
+    <tr><td><b>Super admin</b></td><td>Scriwo staff only: the platform console, across every company.</td></tr>
+  </table>
+</section>
+
+</body>
+</html>
