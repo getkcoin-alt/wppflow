@@ -81,14 +81,14 @@ Companion files: `docs/industry-solutions-progress.md` (what is done, what is ne
 
 | Slice | Acceptance criteria | Status |
 |---|---|---|
-| S1 Solution registry and entitlements | A registry names the available solutions; the platform admin can switch one on or off per company; the company is told; the server rejects calls when it is off; capabilities tell the app; default off; cross-tenant tested | see progress file |
-| S2 Real-estate qualification | A lead can carry a validated qualification profile; type, intent, budget and currency, areas, property types, bedrooms, timeline, source, status, next action; stage history stays in the core activity log | see progress file |
-| S3 Inventory and deterministic matching | Properties are company-owned records with a unique reference, status, price, currency, verification date, authorised URL and approved media; matching returns each property with the reasons it fits and warnings; nothing is invented | see progress file |
-| S4 Viewings | Booking with agent and property conflict checks, idempotent create, correct time zones, confirm, reschedule, cancel, complete, reminders and follow-ups through the existing task system | see progress file |
-| S5 Revenue Leak Detector | Six real conditions detected from real rows; one alert per condition while open; auto-resolved when fixed; managers notified once; value shown as *pipeline (hypothetical)* separate from *won (recorded)* | see progress file |
-| S6 Riwo for real estate | Qualification extraction validated against the chat; deterministic missing-information and next-action hints; drafts that can only cite approved listings | see progress file |
-| S7 App | Native-feeling screens behind the entitlement; platform admin switch | see progress file |
-| S8 White-label | Staged design only (`white-label-foundation.md`); nothing claimed as built | design |
+| S1 Solution registry and entitlements | A registry names the available solutions; the platform admin can switch one on or off per company; the company is told; the server rejects calls when it is off; capabilities tell the app; default off; cross-tenant tested | Built and tested; not deployed |
+| S2 Real-estate qualification | A lead can carry a validated qualification profile; type, intent, budget and currency, areas, property types, bedrooms, timeline, source, status, next action; stage history stays in the core activity log | Built and tested; not deployed |
+| S3 Inventory and deterministic matching | Properties are company-owned records with a unique reference, status, price, currency, verification date, authorised URL and approved media; matching returns each property with the reasons it fits and warnings; nothing is invented | Built and tested; not deployed |
+| S4 Viewings | Booking with agent and property conflict checks, idempotent create, correct time zones, confirm, reschedule, cancel, complete, reminders and follow-ups through the existing task system | Built and tested; not deployed (no calendar sync) |
+| S5 Revenue Leak Detector | Six real conditions detected from real rows; one alert per condition while open; auto-resolved when fixed; managers notified once; value shown as *pipeline (hypothetical)* separate from *won (recorded)* | Built and tested; not deployed |
+| S6 Riwo for real estate | Qualification extraction validated against the chat; deterministic missing-information and next-action hints; drafts that can only cite approved listings | Built and tested; not deployed |
+| S7 App | Native-feeling screens behind the entitlement; platform admin switch | Built; desktop, mobile and dark browser runs pass; not deployed |
+| S8 White-label | Staged design only (`white-label-foundation.md`); nothing claimed as built | Design only, not built |
 
 ## 7. Explicitly out of scope here
 

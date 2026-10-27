@@ -72,6 +72,29 @@ pipeline"). **Not built yet:** win-rate reports, "no reply in two days" alerts o
 webhooks and an API key scope for leads, custom fields, more than one pipeline. The pricing page does not mention the
 pipeline yet.
 
+## Scriwo Real Estate (industry solution)
+
+Added on 27 October 2026. **The website says nothing about it and should keep saying nothing until it is deployed and a pilot
+brokerage has used it.** Every line below is covered by an automated test; none has been seen in production. Details and
+limits: `docs/industry-solutions-progress.md`.
+
+| Behaviour | Evidence |
+|---|---|
+| Off for every company until the platform admin switches it on; the switch is audited, tells the company's owners and admins, and the navigation item appears live. The server refuses every route while it is off or when the plan lacks Leads | `solutions.test.js`, `real_estate_core.test.tsx` |
+| A company can never read or write another company's profiles, listings, viewings or alerts, whatever id it sends | `real-estate-leads.test.js`, `real-estate-viewings.test.js`, `real-estate-leaks.test.js` |
+| A lead carries one validated qualification (type, intent, budget and currency, areas, types, bedrooms, timeline, status, next action) | `real-estate-leads.test.js`, `real_estate_qualification.test.tsx` |
+| Matching is by rule, not by AI: a listing must be available and fit purpose, currency, budget maximum, bedrooms, type and area; every match says why, warns about what to check, and says how many were left out and why | `real-estate-pure.test.js`, `real-estate-leads.test.js` |
+| Arabic and English are matched without translation (alef, diacritics and Latin accents folded) | `real-estate-pure.test.js` |
+| A viewing cannot clash for the agent, the property or the client; pressing twice books once; the time is kept in the zone it was booked in, correct across daylight-saving changes; a reminder and a follow-up are created; an ICS file can be downloaded | `real-estate-viewings.test.js`, `real_estate_screens.test.tsx` |
+| The confirmation message is text for a person to send. Nothing is sent to WhatsApp automatically | `real-estate-viewings.test.js`, browser run |
+| Six revenue leaks are found from real rows; one alert per leak while open; fixed leaks close themselves; managers are told once; a batch above ten is one summary | `real-estate-leaks.test.js` |
+| Money is labelled: open pipeline and at-risk are **hypothetical** (what leads are marked at); only **won** is **recorded**. No figure is shown as revenue that is not | `real-estate-leaks.test.js`, `real_estate_screens.test.tsx` |
+| Riwo may propose a qualification, but every field needs a word-for-word quote found in the chat; drafts may mention only approved, fresh listings and the server rejects any price, figure or link of its own; the person edits and saves | `real-estate-ai.test.js`, `real_estate_qualification.test.tsx` |
+
+**Not built, so not to be claimed:** calendar sync (Google or Microsoft), automatic WhatsApp confirmations, import from
+Property Finder or Bayut, Arabic or right-to-left screens, a second pipeline, white-label or reseller features (design only:
+`docs/white-label-foundation.md`).
+
 ## Plans
 
 Checked again on 25 October 2026 (first on 22 October, after the platform admin was given the choice of plan).
