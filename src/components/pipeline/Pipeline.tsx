@@ -253,7 +253,7 @@ export function Pipeline({
       {view === "list" && list.error && <Notice tone="error">{(list.error as Error).message}</Notice>}
       {view === "today" && <TodayList tasks={tasks} onDone={(t) => void doneTask(t)} onSnooze={(t) => void snooze(t)} onOpenLead={setOpenId} onOpenChat={onOpenChat} teammates={teammates} onReassign={isManager ? (t, id) => void reassign(t, id) : undefined} />}
 
-      <LeadSheet leadId={openId} currency={currency} stages={stages} teammates={teammates} isManager={isManager} onClose={() => setOpenId(null)} onOpenChat={(id) => { setOpenId(null); onOpenChat(id); }} />
+      <LeadSheet leadId={openId} currency={currency} stages={stages} teammates={teammates} isManager={isManager} aiAvailable={aiAvailable} currentUserId={currentUserId} onClose={() => setOpenId(null)} onOpenChat={(id) => { setOpenId(null); onOpenChat(id); }} />
       <NewLeadSheet
         open={adding}
         stages={stages}

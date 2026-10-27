@@ -6,6 +6,7 @@ import {
   NAV_SECONDARY,
   isActive,
   lockedHint,
+  navVisible,
   type NavItem,
   type UserSubTab,
   type View,
@@ -70,6 +71,7 @@ export function Dock({
   profile,
   onSearch,
   isLocked,
+  solutions = [],
 }: {
   view: View;
   tab: UserSubTab;
@@ -81,8 +83,10 @@ export function Dock({
   onSearch: () => void;
   /** True for a screen the company's plan doesn't include */
   isLocked?: (item: NavItem) => boolean;
+  /** The industry solutions the company has */
+  solutions?: string[];
 }) {
-  const visible = (i: NavItem) => !i.manager || manager;
+  const visible = (i: NavItem) => navVisible(i, { manager, solutions });
   return (
     <aside className="hidden lg:flex w-[92px] shrink-0 flex-col items-center pt-5 pb-4 gap-1 border-r border-line bg-surface">
       <div className="mb-5">

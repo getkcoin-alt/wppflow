@@ -18,6 +18,7 @@ export function LeadPanel({
   teammates,
   aiAvailable,
   isManager,
+  currentUserId = 0,
   onOpenChat,
 }: {
   conversationId: string;
@@ -25,6 +26,7 @@ export function LeadPanel({
   teammates: { id: number; name: string }[];
   aiAvailable: boolean;
   isManager: boolean;
+  currentUserId?: number;
   onOpenChat: (conversationId: string) => void;
 }) {
   const tenant = getStoredTenantId();
@@ -92,7 +94,7 @@ export function LeadPanel({
           {error}
         </span>
       )}
-      <LeadSheet leadId={open && lead ? lead.id : null} currency={currency} stages={stages} teammates={teammates} isManager={isManager} onClose={() => setOpen(false)} onOpenChat={onOpenChat} />
+      <LeadSheet leadId={open && lead ? lead.id : null} currency={currency} stages={stages} teammates={teammates} isManager={isManager} aiAvailable={aiAvailable} currentUserId={currentUserId} onClose={() => setOpen(false)} onOpenChat={onOpenChat} />
       <NewLeadSheet open={adding} from={{ conversationId, name: contactName }} stages={stages} teammates={teammates} aiAvailable={aiAvailable} onClose={() => setAdding(false)} onCreated={() => setAdding(false)} />
       <ChatTasksSheet conversationId={reminding ? conversationId : null} contactName={contactName} teammates={teammates} isManager={isManager} onClose={() => setReminding(false)} />
       {mover.dialog}

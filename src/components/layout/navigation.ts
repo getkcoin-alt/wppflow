@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Bot,
+  Building2,
   Code2,
   Contact,
   Funnel,
@@ -20,7 +21,8 @@ export type UserSubTab =
   | "contacts"
   | "pipeline"
   | "automations"
-  | "reports";
+  | "reports"
+  | "realestate";
 export type AdminSubTab = "users" | "billing" | "cluster" | "audit";
 export type DevSubTab = "docs" | "webhooks" | "sdks" | "keys";
 export type View = "user" | "admin" | "developer";
@@ -33,6 +35,8 @@ export interface NavItem {
   tab?: UserSubTab;
   /** Only shown to workspace owners and admins */
   manager?: boolean;
+  /** An industry solution: shown only to companies that have been given it */
+  solution?: string;
   /** The plan feature this screen belongs to, and the plan that first includes it: a company without it sees the item locked */
   needs?: { feature: "leads" | "broadcasts" | "automations" | "api"; plan: string };
 }
@@ -67,6 +71,14 @@ export const NAV: NavItem[] = [
     view: "user",
     tab: "pipeline",
     needs: { feature: "leads", plan: "Growth" },
+  },
+  {
+    key: "realestate",
+    label: "Real estate",
+    icon: Building2,
+    view: "user",
+    tab: "realestate",
+    solution: "real_estate",
   },
   {
     key: "campaigns",
@@ -126,6 +138,10 @@ export const DEV_TABS: { key: DevSubTab; label: string; manager?: boolean }[] =
     { key: "webhooks", label: "Webhooks", manager: true },
     { key: "keys", label: "API keys", manager: true },
   ];
+
+// Whether a person gets to see an item at all: managers-only items need a manager, and a solution's items need the solution.
+export const navVisible = (item: NavItem, { manager, solutions = [] }: { manager: boolean; solutions?: string[] }) =>
+  (!item.manager || manager) && (!item.solution || solutions.includes(item.solution));
 
 // The hover text on a locked item: which plan has it.
 export const lockedHint = (item: NavItem) => (item.needs ? `${item.label} is part of the ${item.needs.plan} plan` : undefined);

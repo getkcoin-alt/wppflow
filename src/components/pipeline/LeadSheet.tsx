@@ -17,6 +17,9 @@ import { timeAgo } from "../../utils/timeAgo";
 import { describeEvent, formatMoney, SOURCE_LABELS } from "../../utils/pipeline";
 import { useLeadMover } from "./useLeadMover";
 import { FollowUps } from "./FollowUps";
+import { useHasSolution } from "../../hooks/useSolutions";
+import { QualificationSection } from "../realestate/QualificationSection";
+import { BookViewingSheet } from "../realestate/BookViewingSheet";
 
 // Everything about one lead: where it is, who has it, what it is worth, what to do next, and what has happened.
 export function LeadSheet({
@@ -25,6 +28,8 @@ export function LeadSheet({
   stages,
   teammates,
   isManager,
+  aiAvailable = false,
+  currentUserId = 0,
   onClose,
   onOpenChat,
 }: {
@@ -33,6 +38,8 @@ export function LeadSheet({
   stages: PipelineStage[];
   teammates: { id: number; name: string }[];
   isManager: boolean;
+  aiAvailable?: boolean;
+  currentUserId?: number;
   onClose: () => void;
   onOpenChat: (conversationId: string) => void;
 }) {
@@ -43,6 +50,9 @@ export function LeadSheet({
   const mover = useLeadMover(setError);
   const refresh = () => Promise.all(["leads", "lead", "lead-tasks"].map((k) => qc.invalidateQueries({ queryKey: [k, tenant] })));
   const lead = detail.data?.lead;
+  // For a company with the Real Estate solution, the lead also carries its qualification, matching listings and viewings
+  const realEstate = useHasSolution("real_estate");
+  const [booking, setBooking] = useState<{ propertyId?: string } | null>(null);
 
   return (
     <Sheet
@@ -96,6 +106,8 @@ export function LeadSheet({
 
           <Details key={lead.id + lead.title + lead.value + (lead.ownerUserId ?? "") + (lead.expectedClose ?? "")} lead={lead} teammates={teammates} onSaved={refresh} onError={setError} />
 
+          {realEstate && <QualificationSection leadId={lead.id} conversationId={lead.conversationId} currency={currency} aiAvailable={aiAvailable} onBook={(propertyId) => setBooking({ propertyId })} />}
+
           <FollowUps tasks={detail.data.tasks} onAdd={(data) => addLeadTask(lead.id, data)} onChanged={refresh} onError={setError} empty="Nothing planned. Set a follow-up so this lead isn't forgotten." teammates={teammates} canAssign={isManager} />
 
           <section aria-label="History">
@@ -114,6 +126,9 @@ export function LeadSheet({
         </div>
       )}
       {mover.dialog}
+      {realEstate && lead && booking && (
+        <BookViewingSheet open onClose={() => setBooking(null)} teammates={teammates} currentUserId={currentUserId} isManager={isManager} leadId={lead.id} propertyId={booking.propertyId} />
+      )}
     </Sheet>
   );
 }

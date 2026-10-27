@@ -115,6 +115,16 @@ export async function apiRequest(
   }
   return data;
 }
+// A file (a calendar entry, a PDF) fetched with the signed-in session, for a link that cannot carry a login on its own.
+export async function apiDownload(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const tenant = getStoredTenantId();
+  if (tenant) headers["X-Tenant-Id"] = tenant;
+  const res = await fetch(resolveEndpoint(path), { headers, credentials: "include", cache: "no-store" });
+  if (!res.ok) throw new Error(`Couldn't download the file (${res.status})`);
+  return res.blob();
+}
 export const apiGet = (path: string) => apiRequest(path);
 export const apiPost = (path: string, body: any) =>
   apiRequest(path, { method: "POST", body: JSON.stringify(body) });
@@ -1231,3 +1241,17 @@ export interface PlanUsage {
   contacts: UsageRow;
   broadcasts: UsageRow & { resets: string };
 }
+
+/** Industry solutions the platform admin can give a company, and what one company has */
+export interface SolutionChoice {
+  key: string;
+  name: string;
+  version: number;
+  summary: string;
+  requires: string[];
+  enabled: boolean;
+}
+export const listCompanySolutions = async (companyId: string): Promise<SolutionChoice[]> =>
+  (await apiGet(`/api/admin/companies/${encodeURIComponent(companyId)}/solutions`)).solutions;
+export const setCompanySolution = async (companyId: string, key: string, enabled: boolean): Promise<{ changed: boolean; solutions: SolutionChoice[] }> =>
+  apiPut(`/api/admin/companies/${encodeURIComponent(companyId)}/solutions/${encodeURIComponent(key)}`, { enabled });

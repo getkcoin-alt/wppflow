@@ -20,6 +20,7 @@ import {
 } from "../../services/api";
 import type { Company } from "./types";
 import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
+import { SolutionsSheet } from "./SolutionsSheet";
 import { SubscriptionsModule } from "./SubscriptionsModule";
 import { OnlinePayments, useOnlinePayments } from "./OnlinePayments";
 import { BillingAuditSheet, NumberHealthSheet, OverviewSheet, SupportSheet } from "./PlatformConsole";
@@ -136,7 +137,8 @@ export function PlatformAdmin({
     [view, setView] = useState<"companies" | "subscriptions">("companies"),
     [viewingPayments, setViewingPayments] = useState(false),
     [console_, setConsole] = useState<"overview" | "numbers" | "audit" | null>(null),
-    [supportFor, setSupportFor] = useState<Company | null>(null);
+    [supportFor, setSupportFor] = useState<Company | null>(null),
+    [solutionsFor, setSolutionsFor] = useState<Company | null>(null);
   const online = useOnlinePayments();
   const { data, error, isPending } = useQuery<Company[]>({
     queryKey: ["companies"],
@@ -522,6 +524,7 @@ export function PlatformAdmin({
                       {c.status}
                     </Pill>
                     <Pill tone="gold">{c.plan}</Pill>
+                    {(c.solutions || []).includes("real_estate") && <Pill tone="info">Real estate</Pill>}
                   </div>
                   <p className="text-[14px] text-fg-2 mt-1">
                     {c.owner
@@ -623,6 +626,9 @@ export function PlatformAdmin({
                       Resend setup link
                     </button>
                   )}
+                  <button disabled={busy} className={btn("ghost", "sm")} aria-label={`Industry solutions for ${c.name}`} onClick={() => setSolutionsFor(c)}>
+                    Industry solutions
+                  </button>
                   <button disabled={busy} className={btn("ghost", "sm")} aria-label={`Support access for ${c.name}`} onClick={() => setSupportFor(c)}>
                     Support access
                   </button>
@@ -678,6 +684,7 @@ export function PlatformAdmin({
       <NumberHealthSheet open={console_ === "numbers"} onClose={() => setConsole(null)} />
       <BillingAuditSheet open={console_ === "audit"} onClose={() => setConsole(null)} />
       <SupportSheet company={supportFor} onClose={() => setSupportFor(null)} />
+      <SolutionsSheet company={solutionsFor} plans={plans.data || []} onClose={() => setSolutionsFor(null)} />
     </div>
   );
 }

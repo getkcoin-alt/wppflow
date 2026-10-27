@@ -5,6 +5,7 @@ import {
   NAV_SECONDARY,
   isActive,
   lockedHint,
+  navVisible,
   type NavItem,
   type UserSubTab,
   type View,
@@ -22,6 +23,7 @@ export function TabBar({
   bell,
   sheetExtras,
   isLocked,
+  solutions = [],
 }: {
   view: View;
   tab: UserSubTab;
@@ -32,9 +34,11 @@ export function TabBar({
   sheetExtras: ReactNode;
   /** True for a screen the company's plan doesn't include */
   isLocked?: (item: NavItem) => boolean;
+  /** The industry solutions the company has */
+  solutions?: string[];
 }) {
   const [more, setMore] = useState(false);
-  const visible = (i: NavItem) => !i.manager || manager;
+  const visible = (i: NavItem) => navVisible(i, { manager, solutions });
   const primary = NAV.filter((i) => PRIMARY_KEYS.includes(i.key));
   const rest = [
     ...NAV.filter((i) => !PRIMARY_KEYS.includes(i.key)),

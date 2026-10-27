@@ -24,6 +24,8 @@ export interface Company {
   };
   /** Where the company stands on what it pays for: the period, the renewal date, what happens next */
   subscription?: Subscription;
+  /** Industry solutions switched on for this company (keys) */
+  solutions?: string[];
   createdAt: string;
   owner: { name: string; email: string; activated: boolean } | null;
 }

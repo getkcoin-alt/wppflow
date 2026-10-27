@@ -15,6 +15,7 @@ import {
   ADMIN_TABS,
   NAV,
   NAV_SECONDARY,
+  navVisible,
   type AdminSubTab,
   type DevSubTab,
   type NavItem,
@@ -39,6 +40,8 @@ import { LeadPanel } from "./components/pipeline/LeadPanel";
 import { SupportAccessCard } from "./components/admin/SupportAccessCard";
 import { Dashboard } from "./components/user/Dashboard";
 import { FeatureLocked } from "./components/ui/FeatureLocked";
+import { SolutionsContext } from "./hooks/useSolutions";
+import { RealEstateHub } from "./components/realestate/RealEstateHub";
 import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
@@ -642,6 +645,8 @@ export function App() {
   const locked = (feature: string) =>
     capabilities.data?.plan?.features?.[feature] === false;
   const lapsed = Boolean(capabilities.data?.plan?.lapsed);
+  // the industry solutions this company has been given (none, unless the platform admin switched one on)
+  const solutions: string[] = (capabilities.data?.solutions || []).map((s: { key: string }) => s.key);
   // A nav item whose screen the plan doesn't include stays in the list, marked with a lock
   const isLocked = (item: NavItem) => Boolean(item.needs && locked(item.needs.feature));
   const openPlan = () => {
@@ -690,7 +695,7 @@ export function App() {
   };
   const commands: Command[] = [
     ...[...NAV, ...NAV_SECONDARY]
-      .filter((i) => !i.manager || manager)
+      .filter((i) => navVisible(i, { manager, solutions }))
       .map((i) => ({
         id: `go-${i.key}`,
         label: i.label,
@@ -767,6 +772,7 @@ export function App() {
   const workspaceList = workspaces.data?.workspaces || [];
   const inbox = view === "user" && tab === "inbox";
   return (
+    <SolutionsContext.Provider value={solutions}>
     <div className="h-dvh flex flex-col lg:flex-row bg-app text-fg overflow-hidden">
       <Dock
         view={view}
@@ -774,6 +780,7 @@ export function App() {
         onNavigate={go}
         unreadChats={unreadChats}
         manager={manager}
+        solutions={solutions}
         isLocked={isLocked}
         onSearch={() => setPaletteOpen(true)}
         bell={bell("dock")}
@@ -965,6 +972,7 @@ export function App() {
                         teammates={team.data?.members || []}
                         aiAvailable={Boolean(capabilities.data?.ai?.available)}
                         isManager={manager}
+                        currentUserId={Number(user?.id)}
                         onOpenChat={(id) => openConversationRef.current(id)}
                       />
                     )
@@ -984,6 +992,15 @@ export function App() {
                 onOpenChat={(id) => openConversationRef.current(id)}
               />
             ))}
+          {view === "user" && tab === "realestate" && solutions.includes("real_estate") && (
+            <RealEstateHub
+              teammates={team.data?.members || []}
+              currentUserId={Number(user?.id)}
+              isManager={manager}
+              aiAvailable={Boolean(capabilities.data?.ai?.available)}
+              onOpenChat={(id) => openConversationRef.current(id)}
+            />
+          )}
           {view === "user" && tab === "sessions" && (
             <SessionManager
               canManage={manager}
@@ -1167,6 +1184,7 @@ export function App() {
         onNavigate={go}
         unreadChats={unreadChats}
         manager={manager}
+        solutions={solutions}
         isLocked={isLocked}
         bell={bell("tab")}
         sheetExtras={
@@ -1209,5 +1227,6 @@ export function App() {
         }}
       />
     </div>
+    </SolutionsContext.Provider>
   );
 }
