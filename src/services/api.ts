@@ -154,6 +154,12 @@ export const getInviteInfo = (token: string) =>
   apiGet(`/api/auth/invite-info?token=${encodeURIComponent(token)}`);
 export const acceptInvitation = (token: string, password: string) =>
   apiPost("/api/auth/accept-invite", { token, password });
+export const requestPasswordReset = (email: string) =>
+  apiPost("/api/auth/forgot-password", { email });
+export const getResetInfo = (token: string) =>
+  apiGet(`/api/auth/reset-info?token=${encodeURIComponent(token)}`);
+export const resetPassword = (token: string, password: string) =>
+  apiPost("/api/auth/reset-password", { token, password });
 export const switchWorkspace = (tenantId: string) =>
   auth("/api/auth/switch-tenant", { tenantId });
 export async function getCurrentUser(_token?: string) {

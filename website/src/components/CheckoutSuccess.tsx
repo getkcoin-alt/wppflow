@@ -65,7 +65,7 @@ export function CheckoutSuccess() {
       {view.tone === "done" && (
         <>
           <a href={SITE.appUrl} className="btn-primary mt-6">Open Scriwo</a>
-          <p className="mt-4 text-sm text-fg-3"><Clock className="mr-1 inline h-4 w-4" aria-hidden="true" />No email yet? Check your spam folder. The link works for 72 hours; after that, use &ldquo;Forgot password&rdquo; on the sign-in page with the same address.</p>
+          <p className="mt-4 text-sm text-fg-3"><Clock className="mr-1 inline h-4 w-4" aria-hidden="true" />No email yet? Check your spam folder. The link works for 72 hours; after that, choose &ldquo;Forgot password?&rdquo; on the sign-in page and enter the same address to get a new link.</p>
         </>
       )}
       {(view.tone === "problem" || slow) && (

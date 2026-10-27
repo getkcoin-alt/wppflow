@@ -6,6 +6,9 @@ import {
   setStoredToken,
   acceptInvitation,
   getInviteInfo,
+  requestPasswordReset,
+  getResetInfo,
+  resetPassword,
 } from "../../services/api";
 import { AuthUser } from "../../types";
 import { AuthNote, AuthShell } from "./AuthShell";
@@ -19,7 +22,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
   const [invite, setInvite] = useState(
     () => new URLSearchParams(window.location.search).get("invite") || "",
   );
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  // The link in the "reset your password" email: /?reset=<token>
+  const [reset, setReset] = useState(
+    () => new URLSearchParams(window.location.search).get("reset") || "",
+  );
+  const [resetEmail, setResetEmail] = useState<string | null>(null);
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -46,6 +54,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
       active = false;
     };
   }, [invite]);
+  useEffect(() => {
+    if (!reset) return;
+    let active = true;
+    getResetInfo(reset)
+      .then((info) => active && setResetEmail(info.email))
+      .catch((e: Error) => active && setError(e.message));
+    return () => {
+      active = false;
+    };
+  }, [reset]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +72,29 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     setLoading(true);
 
     try {
+      if (reset) {
+        if (password !== confirm) {
+          setError("The two passwords do not match.");
+          return;
+        }
+        await resetPassword(reset, password);
+        setReset("");
+        window.history.replaceState(null, "", window.location.pathname);
+        if (resetEmail) setEmail(resetEmail);
+        setMode("login");
+        setSuccessMsg("Password changed. Sign in with your new password.");
+        setPassword("");
+        setConfirm("");
+        return;
+      }
+      if (mode === "forgot") {
+        const res = await requestPasswordReset(email);
+        setSuccessMsg(
+          res.message ||
+            "If that address has an account, we have emailed a link to choose a new password.",
+        );
+        return;
+      }
       if (invite) {
         if (inviteInfo?.setPassword && password !== confirm) {
           setError("The two passwords do not match.");
@@ -106,6 +147,81 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
       {input}
     </label>
   );
+
+  if (reset)
+    return (
+      <AuthShell>
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <h1 className="text-[32px] leading-tight font-semibold">
+              {!resetEmail && error
+                ? "This link no longer works"
+                : "Choose a new password"}
+            </h1>
+            <p className="text-[15.5px] text-fg-2 mt-2 leading-relaxed">
+              {resetEmail
+                ? `Choose a password of at least 10 characters for ${resetEmail}. You will be signed out of every device.`
+                : error || "Checking your link…"}
+            </p>
+          </div>
+          {resetEmail && (
+            <>
+              <label className="block">
+                <span className="block text-[13px] font-medium text-fg-2 mb-1.5 ml-1">
+                  New password
+                </span>
+                <input
+                  required
+                  minLength={10}
+                  maxLength={128}
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-[13px] font-medium text-fg-2 mb-1.5 ml-1">
+                  Confirm new password
+                </span>
+                <input
+                  required
+                  minLength={10}
+                  maxLength={128}
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className={inputCls}
+                />
+              </label>
+              {error && <AuthNote tone="error">{error}</AuthNote>}
+              <button
+                disabled={loading}
+                className={`${btn("primary")} w-full !h-12 text-[15px]`}
+              >
+                Save password
+              </button>
+            </>
+          )}
+          {!resetEmail && error && (
+            <button
+              type="button"
+              onClick={() => {
+                setReset("");
+                setError(null);
+                setMode("forgot");
+                window.history.replaceState(null, "", window.location.pathname);
+              }}
+              className={`${btn("primary")} w-full !h-12 text-[15px]`}
+            >
+              Email me a new link
+            </button>
+          )}
+        </form>
+      </AuthShell>
+    );
 
   if (invite)
     return (
@@ -172,12 +288,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     <AuthShell>
       <div className="mb-8">
         <h2 className="text-[32px] leading-tight font-semibold">
-          {mode === "login" ? "Welcome back" : "Create your workspace"}
+          {mode === "login"
+            ? "Welcome back"
+            : mode === "forgot"
+              ? "Reset your password"
+              : "Create your workspace"}
         </h2>
         <p className="text-[15.5px] text-fg-2 mt-2">
           {mode === "login"
             ? "Sign in to continue to your inbox."
-            : "Set up your company and start inviting your team."}
+            : mode === "forgot"
+              ? "Enter the email you sign in with and we will send you a link to choose a new password."
+              : "Set up your company and start inviting your team."}
         </p>
       </div>
 
@@ -228,7 +350,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
             className={inputCls}
           />,
         )}
-        {field(
+        {mode !== "forgot" &&
+          field(
           "Password",
           <div className="relative">
             <input
@@ -258,6 +381,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           </div>,
         )}
 
+        {mode === "login" && (
+          <div className="-mt-1 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("forgot");
+                setError(null);
+                setSuccessMsg(null);
+                setPassword("");
+              }}
+              className="text-[13.5px] font-medium text-gold hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+        )}
+
         {mode === "signup" && (
           <p className="text-[13px] text-fg-3 -mt-1">
             A new workspace starts on the Free plan: one person and one WhatsApp number. For a team, write to us and we will move you to a bigger plan.
@@ -276,6 +416,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
             </span>
           ) : mode === "login" ? (
             "Sign in"
+          ) : mode === "forgot" ? (
+            "Send reset link"
           ) : (
             "Create workspace"
           )}
@@ -283,12 +425,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
       </form>
 
       <p className="mt-8 text-center text-[14.5px] text-fg-2">
-        {mode === "login" ? "New to Scriwo?" : "Already have an account?"}{" "}
+        {mode === "login"
+          ? "New to Scriwo?"
+          : mode === "forgot"
+            ? "Remembered it?"
+            : "Already have an account?"}{" "}
         <button
           type="button"
           onClick={() => {
             setMode(mode === "login" ? "signup" : "login");
             setError(null);
+            setSuccessMsg(null);
           }}
           className="font-medium text-gold hover:underline"
         >
