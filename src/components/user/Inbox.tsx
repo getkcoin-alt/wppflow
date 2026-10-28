@@ -296,9 +296,90 @@ export const Inbox: React.FC<InboxProps> = ({
   const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Mobile touch swipe & long-press state
+  const [swipeMsgId, setSwipeMsgId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
+  const longPressTimer = useRef<any>(null);
+
+  const handleMessageTouchStart = (msg: ChatMessage, e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+    setSwipeMsgId(msg.id);
+    setSwipeOffset(0);
+
+    // 500ms long-press to open action sheet on mobile
+    clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      if (!isSwiping.current) {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(25);
+        }
+        setDeleteTarget(msg);
+      }
+    }, 500);
+  };
+
+  const handleMessageTouchMove = (msgId: string, e: React.TouchEvent) => {
+    if (swipeMsgId !== msgId) return;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - touchStartX.current;
+    const diffY = currentY - touchStartY.current;
+
+    // If movement detected, cancel long-press
+    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+      clearTimeout(longPressTimer.current);
+    }
+
+    // If mostly scrolling vertically, don't swipe horizontally
+    if (!isSwiping.current && Math.abs(diffY) > Math.abs(diffX)) {
+      return;
+    }
+
+    // Allow swipe to the right (positive diffX)
+    if (diffX > 8) {
+      isSwiping.current = true;
+      // Damped spring offset up to 70px
+      const damped = Math.min(diffX * 0.45, 70);
+      setSwipeOffset(damped);
+    } else {
+      setSwipeOffset(0);
+    }
+  };
+
+  const handleMessageTouchEnd = (msg: ChatMessage) => {
+    clearTimeout(longPressTimer.current);
+    if (swipeOffset >= 38) {
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(15);
+      }
+      setReplyingTo({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.sender,
+        senderName:
+          msg.sender === "agent"
+            ? msg.agentName || "You"
+            : activeChat?.contactName || "Customer",
+        type: msg.type,
+      });
+      composerInput.current?.focus();
+    }
+    setSwipeOffset(0);
+    setSwipeMsgId(null);
+    isSwiping.current = false;
+  };
+
   useEffect(() => {
     setReplyingTo(null);
     setDeleteTarget(null);
+    setSwipeMsgId(null);
+    setSwipeOffset(0);
+    clearTimeout(longPressTimer.current);
   }, [activeChatId]);
 
   // How long chats have waited moves on while the screen is open.
@@ -1174,53 +1255,90 @@ export const Inbox: React.FC<InboxProps> = ({
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isOut ? "justify-end" : "justify-start"}`}
+                    className={`group relative flex items-center gap-1.5 my-0.5 ${
+                      isOut
+                        ? "justify-end flex-row"
+                        : "justify-start flex-row-reverse"
+                    }`}
                   >
+                    {/* Action buttons (Reply / Delete) beside bubble - desktop hover */}
+                    {msg.type !== "revoked" && msg.status !== "deleted" && (
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 p-1 bg-surface rounded-full border border-line shadow-card shrink-0 select-none z-10">
+                        <button
+                          type="button"
+                          title="Reply"
+                          aria-label="Reply"
+                          onClick={() => {
+                            setReplyingTo({
+                              id: msg.id,
+                              text: msg.text,
+                              sender: msg.sender,
+                              senderName: isOut
+                                ? msg.agentName || "You"
+                                : activeChat.contactName || "Customer",
+                              type: msg.type,
+                            });
+                            composerInput.current?.focus();
+                          }}
+                          className="p-1 rounded-full text-fg-3 hover:text-fg hover:bg-surface-2 transition"
+                        >
+                          <Reply className="w-3.5 h-3.5" />
+                        </button>
+                        {onDeleteMessage && (
+                          <button
+                            type="button"
+                            title="Delete"
+                            aria-label="Delete"
+                            onClick={() => setDeleteTarget(msg)}
+                            className="p-1 rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <div
-                      className={`relative group max-w-[82%] md:max-w-[68%] rounded-[20px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade ${
+                      onTouchStart={(e) => handleMessageTouchStart(msg, e)}
+                      onTouchMove={(e) => handleMessageTouchMove(msg.id, e)}
+                      onTouchEnd={() => handleMessageTouchEnd(msg)}
+                      style={{
+                        transform:
+                          swipeMsgId === msg.id && swipeOffset > 0
+                            ? `translateX(${swipeOffset}px)`
+                            : undefined,
+                        transition:
+                          swipeMsgId === msg.id && swipeOffset > 0
+                            ? "none"
+                            : "transform 0.2s cubic-bezier(0.2, 0, 0, 1)",
+                      }}
+                      className={`relative max-w-[82%] md:max-w-[68%] rounded-[20px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade touch-pan-y ${
                         isOut
                           ? "bg-bubble-out rounded-br-md"
                           : "bg-bubble-in ring-1 ring-line rounded-bl-md"
                       }`}
                     >
-                      {/* Action buttons (Reply / Delete) on hover */}
-                      {msg.type !== "revoked" && msg.status !== "deleted" && (
+                      {/* Swipe-to-reply icon indicator */}
+                      {swipeMsgId === msg.id && swipeOffset > 10 && (
                         <div
-                          className={`absolute -top-3.5 ${
-                            isOut ? "-left-16" : "-right-16"
-                          } hidden group-hover:flex items-center gap-0.5 p-0.5 bg-surface rounded-full border border-line shadow-card z-10 transition-all`}
+                          className="absolute -left-9 top-1/2 -translate-y-1/2 flex items-center justify-center transition-all pointer-events-none"
+                          style={{
+                            opacity: Math.min(swipeOffset / 35, 1),
+                            transform: `translateY(-50%) scale(${Math.min(
+                              0.6 + (swipeOffset / 40) * 0.5,
+                              1.1,
+                            )})`,
+                          }}
                         >
-                          <button
-                            type="button"
-                            title="Reply"
-                            aria-label="Reply"
-                            onClick={() => {
-                              setReplyingTo({
-                                id: msg.id,
-                                text: msg.text,
-                                sender: msg.sender,
-                                senderName: isOut
-                                  ? msg.agentName || "You"
-                                  : activeChat.contactName || "Customer",
-                                type: msg.type,
-                              });
-                              composerInput.current?.focus();
-                            }}
-                            className="p-1 rounded-full text-fg-3 hover:text-fg hover:bg-surface-2 transition"
+                          <div
+                            className={`p-1.5 rounded-full shadow-sm ${
+                              swipeOffset >= 38
+                                ? "bg-brand text-white"
+                                : "bg-surface text-fg-3 border border-line"
+                            }`}
                           >
                             <Reply className="w-3.5 h-3.5" />
-                          </button>
-                          {onDeleteMessage && (
-                            <button
-                              type="button"
-                              title="Delete"
-                              aria-label="Delete"
-                              onClick={() => setDeleteTarget(msg)}
-                              className="p-1 rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          </div>
                         </div>
                       )}
 
@@ -1824,14 +1942,41 @@ export const Inbox: React.FC<InboxProps> = ({
           <div className="bg-surface border border-line rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-4">
             <div className="space-y-1.5">
               <h3 className="font-semibold text-fg text-base">
-                Delete message?
+                Message options
               </h3>
               <p className="text-xs text-fg-2">
-                Choose how you want to delete this message.
+                Choose an action for this message.
               </p>
             </div>
 
             <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyingTo({
+                    id: deleteTarget.id,
+                    text: deleteTarget.text,
+                    sender: deleteTarget.sender,
+                    senderName:
+                      deleteTarget.sender === "agent"
+                        ? deleteTarget.agentName || "You"
+                        : activeChat?.contactName || "Customer",
+                    type: deleteTarget.type,
+                  });
+                  setDeleteTarget(null);
+                  composerInput.current?.focus();
+                }}
+                className="w-full py-2.5 px-4 rounded-2xl bg-surface-2 hover:bg-surface-3 text-fg font-medium text-sm transition text-left flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Reply className="w-4 h-4 text-brand" />
+                  <span>Reply</span>
+                </span>
+                <span className="text-[11px] text-fg-3">
+                  Quote in composer
+                </span>
+              </button>
+
               <button
                 type="button"
                 disabled={isDeleting}

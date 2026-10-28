@@ -563,4 +563,36 @@ describe("the sales bar under a chat's header", () => {
 
     expect(screen.getByText("This message was deleted")).toBeDefined();
   });
+
+  it("triggers reply when swiping a message horizontally on touch screens", () => {
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={mockMessages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId="conv_1"
+        onSendMessage={vi.fn()}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+      />,
+    );
+
+    const msgText = screen.getByText("Hello Alice! How can we assist you today?");
+    const msgBubble = msgText.closest(".touch-pan-y");
+    expect(msgBubble).toBeDefined();
+
+    if (msgBubble) {
+      fireEvent.touchStart(msgBubble, { touches: [{ clientX: 10, clientY: 50 }] });
+      fireEvent.touchMove(msgBubble, { touches: [{ clientX: 100, clientY: 50 }] });
+      fireEvent.touchEnd(msgBubble);
+
+      // Verify preview banner is displayed
+      expect(screen.getByText(/Replying to/i)).toBeDefined();
+    }
+  });
 });
