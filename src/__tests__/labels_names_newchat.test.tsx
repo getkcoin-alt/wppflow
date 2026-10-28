@@ -20,6 +20,8 @@ const api = vi.hoisted(() => ({
   applyLabels: vi.fn(),
   lookupNumber: vi.fn(),
   startChat: vi.fn(),
+  getContacts: vi.fn(),
+  createGroup: vi.fn(),
 }));
 vi.mock("../services/api", async (original) => ({ ...(await original<typeof import("../services/api")>()), ...api }));
 import { Contacts } from "../components/user/Contacts";
@@ -39,6 +41,7 @@ const wrap = (ui: React.ReactElement) => render(<QueryClientProvider client={new
 beforeEach(() => {
   for (const fn of Object.values(api)) if (typeof fn === "function" && "mockReset" in fn) (fn as any).mockReset();
   api.fetchContacts.mockResolvedValue({ contacts: people, nextCursor: null });
+  api.getContacts.mockResolvedValue({ status: "success", contacts: people });
   api.fetchLabels.mockResolvedValue([VIP, COLD]);
 });
 afterEach(cleanup);
@@ -252,6 +255,38 @@ describe("New chat", () => {
     open({ sessions: [line({ status: "DISCONNECTED" })] });
     expect(screen.getByText(/None of your WhatsApp numbers is connected/)).toBeDefined();
     expect((screen.getByRole("button", { name: "Start chat" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("switches to New group mode and creates a WhatsApp group with participants", async () => {
+    api.createGroup.mockResolvedValue({
+      status: "success",
+      conversation: { id: "conv_grp_1", contactName: "Founders Circle", isGroup: true, groupMembersCount: 2 },
+      groupId: "120363000000@g.us",
+    });
+    const onStarted = open();
+    fireEvent.click(screen.getByRole("button", { name: "New group" }));
+    const dialog = within(screen.getByRole("dialog", { name: "New group" }));
+    fireEvent.change(dialog.getByLabelText("Group subject"), { target: { value: "Founders Circle" } });
+
+    // Pick contact Aisha Khan from list
+    await dialog.findByText("Aisha Khan");
+    fireEvent.click(dialog.getByText("Aisha Khan"));
+
+    expect(dialog.getByText("1 selected")).toBeDefined();
+    fireEvent.click(dialog.getByRole("button", { name: "Create group" }));
+
+    await waitFor(() =>
+      expect(api.createGroup).toHaveBeenCalledWith({
+        sessionName: "line-1",
+        title: "Founders Circle",
+        participants: ["971500000001"],
+      }),
+    );
+    await waitFor(() =>
+      expect(onStarted).toHaveBeenCalledWith(
+        expect.objectContaining({ conversation: expect.objectContaining({ isGroup: true }) }),
+      ),
+    );
   });
 });
 

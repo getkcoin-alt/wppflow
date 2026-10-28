@@ -269,6 +269,19 @@ export interface StartedChat {
 }
 export const startChat = (data: { sessionName: string; phone?: string; name?: string; contactId?: string }): Promise<StartedChat> =>
   apiPost("/api/conversations", data);
+export interface CreateGroupPayload {
+  title: string;
+  participants: string[];
+  sessionName?: string;
+  channel?: string;
+}
+export interface CreatedGroupResponse {
+  status: "success";
+  conversation: any;
+  groupId: string;
+}
+export const createGroup = (data: CreateGroupPayload): Promise<CreatedGroupResponse> =>
+  apiPost("/api/conversations/group", data);
 export interface InboxSearchHit {
   messageId: string;
   conversationId: string;

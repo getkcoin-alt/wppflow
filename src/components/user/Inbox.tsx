@@ -107,8 +107,8 @@ interface InboxProps {
   /** Whether this person takes the chats the company hands out automatically, and their own switch for it */
   availability?: { available: boolean; inRotation: boolean };
   onSetAvailable?: (available: boolean) => void;
-  /** Opens the New chat dialog */
-  onNewChat?: () => void;
+  /** Opens the New chat or New group dialog */
+  onNewChat?: (mode?: "chat" | "group") => void;
   /** Renames the contact in the details panel, or hands the name back to WhatsApp's */
   onRenameContact?: (contactId: string, patch: { name?: string; resetName?: boolean }) => Promise<void>;
   onSetContactLabels?: (contactId: string, labelIds: string[]) => Promise<void>;
@@ -644,14 +644,24 @@ export const Inbox: React.FC<InboxProps> = ({
           </div>
           <div className="flex items-center gap-1">
           {onNewChat && (
-            <button
-              onClick={onNewChat}
-              title="New chat"
-              aria-label="New chat"
-              className="h-10 w-10 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition"
-            >
-              <MessageSquarePlus className="w-[18px] h-[18px]" />
-            </button>
+            <>
+              <button
+                onClick={() => onNewChat("chat")}
+                title="New chat"
+                aria-label="New chat"
+                className="h-10 w-10 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition"
+              >
+                <MessageSquarePlus className="w-[18px] h-[18px]" />
+              </button>
+              <button
+                onClick={() => onNewChat("group")}
+                title="New group"
+                aria-label="New group"
+                className="h-10 w-10 grid place-items-center rounded-full text-fg-2 hover:text-fg hover:bg-surface-2 transition"
+              >
+                <Users className="w-[18px] h-[18px]" />
+              </button>
+            </>
           )}
           <button
             onClick={handleSync}
@@ -774,15 +784,32 @@ export const Inbox: React.FC<InboxProps> = ({
           >
             {filteredChats.length === 0 ? (
               <div className={`${searching ? "px-3 py-3 text-left" : "p-8 text-center"} text-fg-2 text-sm space-y-2`}>
-                {!searching && <MessageSquare className="w-8 h-8 text-fg-3 mx-auto" />}
+                {!searching && (
+                  filterTab === "groups" ? (
+                    <Users className="w-8 h-8 text-fg-3 mx-auto" />
+                  ) : (
+                    <MessageSquare className="w-8 h-8 text-fg-3 mx-auto" />
+                  )
+                )}
                 <p>
                   {searchQuery
                     ? `No chats match "${searchQuery.trim()}"`
-                    : activeNumber
-                      ? "No conversations on this number yet"
-                      : "No conversations found"}
+                    : filterTab === "groups"
+                      ? "No group conversations yet"
+                      : activeNumber
+                        ? "No conversations on this number yet"
+                        : "No conversations found"}
                 </p>
-                {!searchQuery && (
+                {!searchQuery && filterTab === "groups" && onNewChat && (
+                  <button
+                    onClick={() => onNewChat("group")}
+                    className="mt-2 px-3.5 py-1.5 bg-brand-solid hover:bg-brand-solid/90 text-white text-xs font-bold rounded-xl transition-all inline-flex items-center gap-1.5 mx-auto"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    Create a Group
+                  </button>
+                )}
+                {!searchQuery && filterTab !== "groups" && (
                   <button
                     onClick={handleSync}
                     className="mt-2 px-3 py-1.5 bg-brand-solid hover:bg-brand-solid/90 text-white text-xs font-bold rounded-lg transition-all"

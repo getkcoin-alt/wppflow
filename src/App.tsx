@@ -105,7 +105,7 @@ export function App() {
     awaiting: "",
     overdue: "",
   }),
-    [newChat, setNewChat] = useState<{ person?: NewChatPerson } | null>(null),
+    [newChat, setNewChat] = useState<{ person?: NewChatPerson; mode?: "chat" | "group" } | null>(null),
     [optimistic, setOptimistic] = useState<Record<string, ChatMessage[]>>({});
   const tenant = api.getStoredTenantId(),
     platformAdmin = user?.role === "superadmin",
@@ -984,7 +984,7 @@ export function App() {
                 }).catch(() => {});
               }}
               labels={labelList.data ?? []}
-              onNewChat={() => setNewChat({})}
+              onNewChat={(mode = "chat") => setNewChat({ mode })}
               onRenameContact={async (contactId, patch) => {
                 await api.patchContact(contactId, patch);
                 await refresh("contacts", "conversations");
@@ -1256,6 +1256,7 @@ export function App() {
       <NewChatSheet
         open={newChat !== null}
         person={newChat?.person}
+        initialMode={newChat?.mode || "chat"}
         sessions={sessions}
         currentUserId={user?.id}
         preferredNumber={filter.sessionName}
