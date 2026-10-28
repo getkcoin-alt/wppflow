@@ -9,10 +9,23 @@ import {
   requestPasswordReset,
   getResetInfo,
   resetPassword,
+  fetchAuthProviders,
+  googleSignInUrl,
 } from "../../services/api";
+import { readIntent, startup } from "../../utils/signupIntent";
 import { AuthUser } from "../../types";
 import { AuthNote, AuthShell } from "./AuthShell";
 import { btn, inputCls } from "../ui/styles";
+
+const GOOGLE_PROBLEMS: Record<string, string> = {
+  unavailable: "Google sign-in isn't switched on yet. Please use your email and password.",
+  cancelled: "Google sign-in was cancelled.",
+  unverified: "Google says that email address isn't verified. Verify it with Google, or use your email and password.",
+  disabled: "This account has been switched off. Ask your administrator.",
+  closed: "New accounts can't be created on their own right now. Ask your administrator to add you.",
+  expired: "That sign-in took too long, or was started in another browser. Please try again.",
+};
+const googleProblem = (code: string) => (code ? GOOGLE_PROBLEMS[code] || "Google sign-in didn't work. Please try again, or use your email and password." : null);
 
 interface LoginPageProps {
   onAuthSuccess: (user: AuthUser, token: string) => void;
@@ -27,7 +40,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     () => new URLSearchParams(window.location.search).get("reset") || "",
   );
   const [resetEmail, setResetEmail] = useState<string | null>(null);
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(startup.signup ? "signup" : "login");
+  // the plan chosen on the website's pricing page, kept while the person signs up or goes to Google and back
+  const [intent] = useState(() => readIntent());
+  const [googleOn, setGoogleOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    Promise.resolve()
+      .then(fetchAuthProviders)
+      .then((p) => live && setGoogleOn(Boolean(p.google)))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -35,7 +61,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
   const role = "user";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => googleProblem(startup.googleError));
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [inviteInfo, setInviteInfo] = useState<{
     email: string;
@@ -302,6 +328,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
               : "Set up your company and start inviting your team."}
         </p>
       </div>
+
+      {intent && mode === "signup" && (
+        <div className="mb-5">
+          <AuthNote tone="success">
+            {intent.plan === "free"
+              ? "You chose the Free plan. Create your account and you are in."
+              : `You chose the ${intent.plan[0].toUpperCase()}${intent.plan.slice(1)} plan${intent.interval === "annual" ? ", paid yearly" : intent.interval === "monthly" ? ", paid monthly" : ""}. Create your account, then you will be taken to the payment.`}
+          </AuthNote>
+        </div>
+      )}
+      {googleOn && mode !== "forgot" && (
+        <div className="mb-5">
+          <a
+            href={googleSignInUrl(intent)}
+            className={`${btn("secondary")} w-full !h-12 text-[15px] flex items-center justify-center gap-3`}
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
+              <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" />
+              <path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z" />
+              <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
+            </svg>
+            Continue with Google
+          </a>
+          <div className="flex items-center gap-3 mt-5 text-[13px] text-fg-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-line" /> or use your email <span className="h-px flex-1 bg-line" />
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <AuthNote tone="error">{error}</AuthNote>}

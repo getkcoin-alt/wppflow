@@ -5,6 +5,7 @@ import { CheckList } from "./ui";
 import { AED_PAYMENT_NOTE, yearlyOf, type Interval } from "@/content/plans";
 import { taxNote, type Catalogue } from "@/lib/catalogue";
 import type { CheckoutOptions } from "@/lib/checkout";
+import { signupUrl } from "@/lib/signup";
 import { currencyForZone, formatMoney, type Currency } from "@/lib/money";
 import { trackAttrs } from "@/lib/analytics";
 
@@ -95,15 +96,16 @@ export function PricingGrid({ catalogue, checkout = null }: { catalogue: Catalog
               ) : null}
               <p className="mt-1 text-sm font-medium text-brand">{p.numbers}</p>
               <div className="mt-6 flex-1 text-sm"><CheckList items={p.includes} /></div>
-              {/* In rupees a paid plan can be bought here and now; in dirhams, or for Free and Enterprise, the team sets it up. */}
-              {cur === "INR" && buyable.has(p.id) ? (
-                <Link
-                  href={`/checkout?plan=${p.id}&interval=${interval === "yearly" ? "yearly" : "monthly"}`}
-                  {...trackAttrs("plan_choose", { plan: p.id, currency: cur, interval, checkout: "yes" })}
+              {/* Free, and a paid plan in rupees, start at the app's sign-up page (Google or email), with the plan carried along;
+                  a paid plan then opens its payment. In dirhams, or for Enterprise, the team sets it up. */}
+              {(p.id as string) === "free" || (cur === "INR" && buyable.has(p.id)) ? (
+                <a
+                  href={signupUrl(p.id, interval === "yearly" ? "yearly" : "monthly")}
+                  {...trackAttrs("plan_choose", { plan: p.id, currency: cur, interval, signup: "yes" })}
                   className={`${p.highlight ? "btn-primary" : "btn-ghost"} mt-8 w-full`}
                 >
-                  Buy {p.name}
-                </Link>
+                  {(p.id as string) === "free" ? "Get started free" : `Buy ${p.name}`}
+                </a>
               ) : (
                 <Link
                   href={`/contact?interest=${p.id}&plan=${encodeURIComponent(`${p.name} (${cur}, ${interval})`)}`}
@@ -124,7 +126,7 @@ export function PricingGrid({ catalogue, checkout = null }: { catalogue: Catalog
       )}
       {cur === "INR" && buyable.size > 0 && (
         <p className="mt-6 text-sm text-fg-3" data-testid="inr-note">
-          Buy online in rupees by card, UPI or net banking: your workspace is created as soon as the payment is confirmed, and your GST invoice is in the app.
+          Buy online in rupees: create your account with Google or your email, then pay by card, UPI or net banking. Your GST invoice is in the app.
         </p>
       )}
     </>

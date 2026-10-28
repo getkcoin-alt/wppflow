@@ -68,6 +68,36 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+describe("a plan chosen before the account existed", () => {
+  it("opens the payment for that plan, priced by the server, once and only once", async () => {
+    const handled = vi.fn();
+    wrap({ payIntent: { plan: "growth", interval: "annual" }, onPayIntentHandled: handled });
+    const dialog = within(await screen.findByRole("dialog", { name: /Pay for Growth/ }));
+    expect(dialog).toBeDefined();
+    await waitFor(() => expect(api.fetchBillingQuote).toHaveBeenCalledWith("growth", "annual"));
+    expect(handled).toHaveBeenCalledTimes(1);
+  });
+  it("defaults to monthly when no period was chosen, and opens nothing for the plan the company already has", async () => {
+    wrap({ payIntent: { plan: "growth", interval: "" }, onPayIntentHandled: vi.fn() });
+    await screen.findByRole("dialog", { name: /Pay for Growth/ });
+    expect(api.fetchBillingQuote).toHaveBeenCalledWith("growth", "monthly");
+    cleanup();
+    api.fetchBillingQuote.mockClear();
+    const handled = vi.fn();
+    wrap({ payIntent: { plan: "starter", interval: "monthly" }, onPayIntentHandled: handled });
+    await waitFor(() => expect(handled).toHaveBeenCalled());
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(api.fetchBillingQuote).not.toHaveBeenCalled();
+  });
+  it("opens nothing while online payment is not switched on", async () => {
+    api.fetchBilling.mockResolvedValue(overview({ payments: { configured: false, mode: null } }));
+    const handled = vi.fn();
+    wrap({ payIntent: { plan: "growth", interval: "monthly" }, onPayIntentHandled: handled });
+    await waitFor(() => expect(handled).toHaveBeenCalled());
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
 describe("Plans & Billing", () => {
   it("says when online payment is not switched on, and offers no way to pay", async () => {
     api.fetchBilling.mockResolvedValue(overview({ payments: { configured: false, mode: null } }));

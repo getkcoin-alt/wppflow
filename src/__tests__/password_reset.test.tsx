@@ -11,6 +11,8 @@ const api = vi.hoisted(() => ({
   requestPasswordReset: vi.fn(),
   getResetInfo: vi.fn(),
   resetPassword: vi.fn(),
+  fetchAuthProviders: vi.fn(),
+  googleSignInUrl: vi.fn(() => "/api/auth/google/start"),
 }));
 vi.mock("../services/api", () => api);
 import { LoginPage } from "../components/auth/LoginPage";

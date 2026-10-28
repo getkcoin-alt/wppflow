@@ -53,6 +53,15 @@ export function clearStoredToken() {
   storage?.removeItem(TENANT_STORAGE_KEY);
   storage?.removeItem("wppflow_refresh_token");
 }
+/** Which ways of signing in the server offers, so only buttons that work are shown. */
+export const fetchAuthProviders = (): Promise<{ google: boolean }> => apiGet("/api/auth/providers");
+/** Where the "Continue with Google" button goes. The server takes the person to Google and brings them back signed in. */
+export const googleSignInUrl = (intent?: { plan?: string; interval?: string } | null): string => {
+  const q = new URLSearchParams();
+  if (intent?.plan) q.set("plan", intent.plan);
+  if (intent?.interval) q.set("interval", intent.interval);
+  return resolveEndpoint(`/api/auth/google/start${q.toString() ? `?${q}` : ""}`);
+};
 export async function refreshSession() {
   if (!refreshPromise)
     refreshPromise = (async () => {

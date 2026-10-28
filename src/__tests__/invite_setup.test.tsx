@@ -8,6 +8,8 @@ const api = vi.hoisted(() => ({
   setStoredToken: vi.fn(),
   acceptInvitation: vi.fn().mockResolvedValue({ status: "success" }),
   getInviteInfo: vi.fn(),
+  fetchAuthProviders: vi.fn(),
+  googleSignInUrl: vi.fn(() => "/api/auth/google/start"),
 }));
 vi.mock("../services/api", () => api);
 import { LoginPage } from "../components/auth/LoginPage";

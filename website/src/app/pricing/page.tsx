@@ -29,7 +29,7 @@ const faqs = (taxAnswer: string, online: boolean) => [
   {
     q: "How do I buy a plan?",
     a: online
-      ? "In rupees, press Buy on a plan, enter your company and GST invoice details and pay by card, UPI or net banking. Your workspace is created as soon as the payment is confirmed and we email you a link to choose your password. For AED, Enterprise or a plan agreed with us first, choose a plan and send the form, or message sales on WhatsApp at +91 91191 12999, and our onboarding team sets you up and sends an invoice."
+      ? "In rupees, press Buy on a plan, create your account with Google or your email, then pay by card, UPI or net banking. Your GST invoice is in the app. For AED, Enterprise or a plan agreed with us first, choose a plan and send the form, or message sales on WhatsApp at +91 91191 12999, and our onboarding team sets you up and sends an invoice."
       : "Plans are set up by our onboarding team at the prices on this page. Choose a plan and send the form, or message sales on WhatsApp at +91 91191 12999. We set up your company and send an invoice in AED or INR.",
   },
   { q: "Are there per-message fees?", a: "No. Scriwo works with the WhatsApp numbers your team already uses, so there are no per-conversation charges on top of your plan. API-based platforms usually bill WhatsApp's message fees separately." },

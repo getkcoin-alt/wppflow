@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, RefreshCw } from "lucide-react";
 import { PlanCard, type PlanInfo } from "../admin/PlanCard";
@@ -133,7 +133,12 @@ export function BillingPage({
   ai,
   usage,
   subscription,
+  payIntent,
+  onPayIntentHandled,
 }: {
+  /** A plan the person chose before they had an account: its payment is opened as soon as the plans are known */
+  payIntent?: { plan: string; interval: "monthly" | "annual" | "" } | null;
+  onPayIntentHandled?: () => void;
   plan?: PlanInfo;
   numbersLimit?: number | null;
   numbersUsed?: number;
@@ -154,6 +159,12 @@ export function BillingPage({
     if (message) setNotice({ tone: "success", text: message });
   };
   const planId = subscription?.planId ?? plan?.id ?? null;
+  useEffect(() => {
+    if (!payIntent || !o) return;
+    if (o.payments.configured && payIntent.plan !== planId)
+      setPay({ planId: payIntent.plan, planName: payIntent.plan[0].toUpperCase() + payIntent.plan.slice(1), interval: payIntent.interval || "monthly" });
+    onPayIntentHandled?.();
+  }, [payIntent, o, planId, onPayIntentHandled]);
 
   const change = (fn: () => Promise<string>) => async () => {
     setBusy(true);

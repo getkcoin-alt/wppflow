@@ -46,6 +46,7 @@ import { UserManagement } from "./components/admin/UserManagement";
 import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
 import { BillingPage } from "./components/billing/BillingPage";
+import { clearIntent, isPayable, readIntent, type SignupIntent } from "./utils/signupIntent";
 import { Reports } from "./components/reports/Reports";
 import { NewChatSheet, type NewChatPerson } from "./components/user/NewChatSheet";
 import { NO_EXTRA, type InboxExtraFilters } from "./components/user/InboxFilters";
@@ -122,6 +123,18 @@ export function App() {
       active = false;
     };
   }, []);
+  // A plan chosen on the website's pricing page: once the person is inside, the payment for it is opened for them.
+  const [payIntent, setPayIntent] = useState<SignupIntent | null>(null);
+  useEffect(() => {
+    if (!user || user.mustChangePassword || user.role !== "admin") return;
+    const intent = readIntent();
+    if (!intent) return;
+    clearIntent();
+    if (!isPayable(intent)) return;
+    setPayIntent(intent);
+    setView("admin");
+    setAdminTab("billing");
+  }, [user]);
   const sessionsQuery = useQuery({
     queryKey: ["sessions", tenant],
     queryFn: api.getLiveSessions,
@@ -1157,6 +1170,8 @@ export function App() {
                   usage={capabilities.data?.usage}
                   ai={capabilities.data?.ai}
                   subscription={capabilities.data?.subscription}
+                  payIntent={payIntent}
+                  onPayIntentHandled={() => setPayIntent(null)}
                 />
               )}
               {adminTab === "cluster" && <ClusterHealth />}

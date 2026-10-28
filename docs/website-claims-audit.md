@@ -121,6 +121,21 @@ link as everything else, and only to people who wrote first. The welcome tells p
 it is an automated assistant if asked, but a company that must disclose automation up front should say so in its welcome.
 Not built: a different rule per country, answers from a document or a website, hand-over to a named teammate.
 
+## Signing up and signing in with Google (28 October 2026)
+
+Needs the Google client id and secret on the server (`docs/google-signin.md`); without them the button is hidden. Every line
+is covered by an automated test and a real-browser run (only Google's own sign-in page was simulated).
+
+| Behaviour | Evidence |
+|---|---|
+| "Get started free" and "Buy" on the pricing page (rupees) open the app's sign-up with the plan carried along; dirhams and Enterprise still go to the contact form | `signup.test.ts` (website) |
+| The sign-up page says which plan was chosen; Free goes straight in; a paid plan opens its payment (priced by the server) once the person is in | `google_signin.test.tsx`, `billing_page.test.tsx`, browser run |
+| "Continue with Google" is shown only when the server has it set up; a refusal or cancellation is explained in plain words | `google-auth.test.js`, `google_signin.test.tsx` |
+| The identity is checked (one-time state, nonce, PKCE, audience, issuer, expiry, verified e-mail) before anyone is signed in; the client secret never reaches the browser | `google-auth.test.js` (each check broken on purpose) |
+| A new Google person gets a Free workspace, never a paid one; an existing person with the same verified e-mail is joined to their account; a disabled account stays out; sign-up switched off blocks new people only | `google-auth.test.js` |
+
+**Not proven:** a real sign-in with Google. That needs the client id and secret on the live server and Google's consent screen in production mode.
+
 ## Plans
 
 Checked again on 25 October 2026 (first on 22 October, after the platform admin was given the choice of plan).
