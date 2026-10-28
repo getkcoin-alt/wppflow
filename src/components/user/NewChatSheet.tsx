@@ -7,7 +7,7 @@ import {
   lookupNumber,
   startChat,
   createGroup,
-  getContacts,
+  fetchContacts,
   type NumberLookup,
   type StartedChat,
 } from "../../services/api";
@@ -98,7 +98,7 @@ export function NewChatSheet({
     if (!open || mode !== "group") return;
     let cancelled = false;
     setContactsLoading(true);
-    getContacts({ limit: 100 })
+    fetchContacts({ limit: "100" })
       .then((res: any) => {
         if (!cancelled && res?.contacts) {
           setAvailableContacts(res.contacts);

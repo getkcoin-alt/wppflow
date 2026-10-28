@@ -231,6 +231,7 @@ export const syncInboxForSession = (name: string) =>
   apiPost(`/api/sessions/${encodeURIComponent(name)}/sync-inbox`, {});
 export const fetchContacts = (params: Record<string, string> = {}) =>
   apiGet(`/api/contacts?${new URLSearchParams(params)}`);
+export const getContacts = fetchContacts;
 export const addContact = (data: any) => apiPost("/api/contacts", data);
 
 // ── Labels: the company's own coloured tags ──────────────────────────────────────────────────────
