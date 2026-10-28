@@ -546,7 +546,12 @@ export function App() {
         .catch((e) => setError(e.message));
     };
   }, [openChat]);
-  const send = async (id: string, text: string, note = false) => {
+  const send = async (
+    id: string,
+    text: string,
+    note = false,
+    quotedMessageId?: string,
+  ) => {
     const key = crypto.randomUUID();
     const pending: ChatMessage = {
       id: `optimistic_${key}`,
@@ -572,6 +577,7 @@ export function App() {
         idempotencyKey: key,
         type: pending.type,
         isNote: note,
+        ...(quotedMessageId ? { quotedMessageId } : {}),
       });
       setOptimistic((prev) => ({
         ...prev,
@@ -588,6 +594,22 @@ export function App() {
             : m,
         ),
       }));
+    }
+  };
+  const removeMessage = async (
+    conversationId: string,
+    messageId: string,
+    forEveryone = false,
+  ) => {
+    try {
+      await api.deleteConversationMessage(
+        conversationId,
+        messageId,
+        forEveryone,
+      );
+      await refresh("messages", "conversations");
+    } catch (e: any) {
+      setError(e.message);
     }
   };
   const attachment = async (
@@ -907,6 +929,7 @@ export function App() {
               }}
               onLoadAllMedia={(id) => void loadAllMedia(id)}
               onSendMessage={send}
+              onDeleteMessage={removeMessage}
               onSendAttachment={attachment}
               onAssignAgent={(id, name) => {
                 void run(async () => {

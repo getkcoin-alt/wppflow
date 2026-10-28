@@ -113,7 +113,17 @@ export type MessageStatus =
   | "sent"
   | "delivered"
   | "read"
-  | "failed";
+  | "failed"
+  | "deleted";
+
+export interface QuotedMessageSnippet {
+  id?: string;
+  providerMessageId?: string;
+  sender?: string;
+  agentName?: string;
+  text?: string;
+  type?: string;
+}
 
 export interface ChatMessage {
   id: string;
@@ -135,7 +145,8 @@ export interface ChatMessage {
     | "list"
     | "internal_note"
     | "call_log"
-    | "e2e_notification";
+    | "e2e_notification"
+    | "revoked";
   mediaUrl?: string;
   /** Opens in the browser (PDF, photo, video, audio) instead of downloading */
   openUrl?: string;
@@ -159,6 +170,9 @@ export interface ChatMessage {
   idempotencyKey?: string;
   providerMessageId?: string;
   timestampEpoch?: number;
+  quoted?: QuotedMessageSnippet | null;
+  quotedMessageId?: string | null;
+  isDeleted?: boolean;
 }
 
 export interface ChatThread {

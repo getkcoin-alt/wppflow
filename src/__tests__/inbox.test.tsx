@@ -490,4 +490,77 @@ describe("the sales bar under a chat's header", () => {
     open("conv_1", undefined);
     expect(screen.queryByText(/Pipeline bar/)).toBeNull();
   });
+
+  it("handles replying to a message and sends quotedMessageId", () => {
+    const handleSendMessage = vi.fn();
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={mockMessages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId="conv_1"
+        onSendMessage={handleSendMessage}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+      />,
+    );
+
+    const replyButtons = screen.getAllByRole("button", { name: "Reply" });
+    // First reply button in message bubble
+    fireEvent.click(replyButtons[0]);
+
+    // Check preview banner is displayed
+    expect(screen.getByText(/Replying to/i)).toBeDefined();
+
+    const input = screen.getByPlaceholderText("Write a message");
+    fireEvent.change(input, { target: { value: "Got your message!" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    expect(handleSendMessage).toHaveBeenCalledWith(
+      "conv_1",
+      "Got your message!",
+      false,
+      "m1",
+    );
+  });
+
+  it("renders deleted messages with placeholder", () => {
+    const deletedMsgs = {
+      conv_1: [
+        {
+          id: "m_del",
+          chatId: "conv_1",
+          sender: "agent" as const,
+          text: "🚫 This message was deleted",
+          type: "revoked" as const,
+          status: "deleted" as const,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    };
+
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={deletedMsgs}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId="conv_1"
+        onSendMessage={vi.fn()}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("This message was deleted")).toBeDefined();
+  });
 });

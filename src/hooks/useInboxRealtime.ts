@@ -8,6 +8,7 @@ import {
   upsertConversation,
   upsertMessage,
   upsertNotification,
+  deleteMessageFromCache,
 } from "../services/realtimeCache";
 import type { AppNotification } from "../types";
 
@@ -111,6 +112,18 @@ export function useInboxRealtime({
         patchMessageStatus(qc, tenant, p.conversationId, p);
       else invalidate("messages");
     };
+    const onMessageUpdated = (p: any) => {
+      if (p?.conversationId && p?.message) {
+        upsertMessage(qc, tenant, p.conversationId, p.message);
+      }
+      onReceipt(p);
+    };
+    const onMessageDeleted = (p: any) => {
+      if (p?.conversationId && p?.messageId) {
+        deleteMessageFromCache(qc, tenant, p.conversationId, p.messageId);
+      }
+      invalidate("messages", "conversations");
+    };
     const onSession = () => invalidate("sessions", "number-health");
     const onSynced = () => void catchUp();
     const onProgress = (p: any) => {
@@ -154,7 +167,8 @@ export function useInboxRealtime({
       "message:received": onMessage,
       "message:created": onMessage,
       "notification:new": onNotify,
-      "message:updated": onReceipt,
+      "message:updated": onMessageUpdated,
+      "message:deleted": onMessageDeleted,
       "message:ack": onReceipt,
       "conversation:updated": onConversation,
       "conversation:read": onConversation,

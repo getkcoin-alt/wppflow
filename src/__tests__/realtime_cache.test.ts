@@ -168,4 +168,23 @@ describe("open conversation updates in place", () => {
     patchMessageStatus(qc, T, "c1", { messageId: "m2", status: "failed" });
     expect(rows(qc)[1].status).toBe("failed");
   });
+
+  it("updates conversation list lastMessage when patchMessageStatus receives ack", () => {
+    const qc = new QueryClient();
+    const f = { search: "", filter: "all" };
+    listWith(qc, f, [
+      conv("c1", 300, {
+        lastMessage: { id: "m2", text: "hi", status: "sending", ack: 0 },
+      }),
+    ]);
+    patchMessageStatus(qc, T, "c1", {
+      messageId: "m2",
+      status: "delivered",
+      ack: 2,
+    });
+    const c = (qc.getQueryData(["conversations", T, f]) as any).pages[0]
+      .conversations[0];
+    expect(c.lastMessage.status).toBe("delivered");
+    expect(c.lastMessage.ack).toBe(2);
+  });
 });

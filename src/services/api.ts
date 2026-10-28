@@ -361,6 +361,14 @@ export const addMessage = (id: string, data: any) =>
     `/api/conversations/${id}/${data.isNote || data.type === "internal_note" ? "notes" : "messages"}`,
     { ...data, idempotencyKey: data.idempotencyKey || crypto.randomUUID() },
   );
+export const deleteConversationMessage = (
+  conversationId: string,
+  messageId: string,
+  forEveryone = false,
+) =>
+  apiDelete(
+    `/api/conversations/${conversationId}/messages/${messageId}?forEveryone=${Boolean(forEveryone)}`,
+  );
 export const markConversationRead = (id: string) =>
   apiPost(`/api/conversations/${id}/read`, {});
 export const fetchCampaigns = () => apiGet("/api/campaigns");

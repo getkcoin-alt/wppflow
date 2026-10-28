@@ -114,30 +114,80 @@ export function patchMessageStatus(
 ) {
   const key = ["messages", tenant, conversationId];
   const data = qc.getQueryData<InfiniteData<MessagePage>>(key);
-  if (!data?.pages?.length) return;
-  let changed = false;
-  const pages = data.pages.map((p) => ({
-    ...p,
-    messages: p.messages.map((m) => {
-      const same =
-        (update.messageId && m.id === update.messageId) ||
-        (update.providerMessageId &&
-          m.providerMessageId === update.providerMessageId);
-      if (!same) return m;
-      const ack = update.ack ?? m.ack ?? 0;
-      const failed =
-        update.status === "failed" || update.status === "uncertain";
-      // Receipts only move forward; a failure may replace "still sending".
-      if (!failed && ack < (m.ack || 0)) return m;
-      changed = true;
-      return {
-        ...m,
-        ack: failed ? m.ack : ack,
-        status: (update.status as ChatMessage["status"]) || m.status,
-      };
-    }),
-  }));
-  if (changed) qc.setQueryData(key, { ...data, pages });
+  if (data?.pages?.length) {
+    let changed = false;
+    const pages = data.pages.map((p) => ({
+      ...p,
+      messages: p.messages.map((m) => {
+        const same =
+          (update.messageId && m.id === update.messageId) ||
+          (update.providerMessageId &&
+            m.providerMessageId === update.providerMessageId);
+        if (!same) return m;
+        const ack = update.ack ?? m.ack ?? 0;
+        const failed =
+          update.status === "failed" || update.status === "uncertain";
+        // Receipts only move forward; a failure may replace "still sending".
+        if (!failed && ack < (m.ack || 0)) return m;
+        changed = true;
+        return {
+          ...m,
+          ack: failed ? m.ack : ack,
+          status: (update.status as ChatMessage["status"]) || m.status,
+        };
+      }),
+    }));
+    if (changed) qc.setQueryData(key, { ...data, pages });
+  }
+
+  // Also patch the conversation's lastMessage in the sidebar conversation list
+  qc.getQueriesData<InfiniteData<ConversationPage>>({
+    queryKey: ["conversations", tenant],
+  }).forEach(([cKey, cData]) => {
+    if (!cData?.pages?.length) return;
+    let convChanged = false;
+    const pages = cData.pages.map((p) => ({
+      ...p,
+      conversations: p.conversations.map((c) => {
+        if (c.id !== conversationId) return c;
+        const lm = c.lastMessage;
+        if (!lm) return c;
+        const matches =
+          (update.messageId && (lm as any).id === update.messageId) ||
+          (update.providerMessageId &&
+            (lm as any).providerMessageId === update.providerMessageId) ||
+          lm.status === "sending";
+        if (!matches) return c;
+        convChanged = true;
+        return {
+          ...c,
+          lastMessage: {
+            ...lm,
+            status: (update.status as any) || lm.status,
+            ack: update.ack !== undefined ? update.ack : (lm as any).ack,
+          },
+        };
+      }),
+    }));
+    if (convChanged) qc.setQueryData(cKey, { ...cData, pages });
+  });
+}
+
+export function deleteMessageFromCache(
+  qc: QueryClient,
+  tenant: string | null,
+  conversationId: string,
+  messageId: string,
+) {
+  const key = ["messages", tenant, conversationId];
+  const data = qc.getQueryData<InfiniteData<MessagePage>>(key);
+  if (data?.pages?.length) {
+    const pages = data.pages.map((p) => ({
+      ...p,
+      messages: p.messages.filter((m) => m.id !== messageId),
+    }));
+    qc.setQueryData(key, { ...data, pages });
+  }
 }
 
 // Apply a batch of changed conversations (the catch-up response).

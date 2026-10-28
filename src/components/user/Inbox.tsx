@@ -25,6 +25,9 @@ import {
   MessageSquarePlus,
   Pin,
   PinOff,
+  Reply,
+  Trash2,
+  Ban,
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
 import { formatDuration } from "../../utils/duration";
@@ -55,7 +58,17 @@ interface InboxProps {
   cannedReplies: { shortcut: string; title: string; text: string }[];
   sessions: WhatsAppSession[];
   selectedChatId?: string | null;
-  onSendMessage: (chatId: string, text: string, isNote?: boolean) => void;
+  onSendMessage: (
+    chatId: string,
+    text: string,
+    isNote?: boolean,
+    quotedMessageId?: string,
+  ) => void;
+  onDeleteMessage?: (
+    chatId: string,
+    messageId: string,
+    forEveryone?: boolean,
+  ) => void;
   onSendAttachment: (
     chatId: string,
     attachment: {
@@ -191,6 +204,7 @@ export const Inbox: React.FC<InboxProps> = ({
   sessions,
   selectedChatId,
   onSendMessage,
+  onDeleteMessage,
   onSendAttachment,
   onAssignAgent,
   onToggleResolve,
@@ -272,6 +286,20 @@ export const Inbox: React.FC<InboxProps> = ({
   const [isNoteMode, setIsNoteMode] = useState(false);
   const composerInput = useRef<HTMLInputElement>(null);
   const [showCannedMenu, setShowCannedMenu] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{
+    id: string;
+    text: string;
+    sender: string;
+    senderName: string;
+    type?: string;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setReplyingTo(null);
+    setDeleteTarget(null);
+  }, [activeChatId]);
 
   // How long chats have waited moves on while the screen is open.
   const [now, setNow] = useState(() => Date.now());
@@ -393,9 +421,14 @@ export const Inbox: React.FC<InboxProps> = ({
     if (e) e.preventDefault();
     if (!inputText.trim() || !activeChat) return;
 
-    onSendMessage(activeChat.id, inputText, isNoteMode);
+    if (replyingTo?.id) {
+      onSendMessage(activeChat.id, inputText, isNoteMode, replyingTo.id);
+    } else {
+      onSendMessage(activeChat.id, inputText, isNoteMode);
+    }
     setInputText("");
     setShowCannedMenu(false);
+    setReplyingTo(null);
   };
 
   const handleInsertCanned = (text: string) => {
@@ -1144,84 +1177,159 @@ export const Inbox: React.FC<InboxProps> = ({
                     className={`flex ${isOut ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`relative max-w-[82%] md:max-w-[68%] rounded-[20px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade ${
+                      className={`relative group max-w-[82%] md:max-w-[68%] rounded-[20px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade ${
                         isOut
                           ? "bg-bubble-out rounded-br-md"
                           : "bg-bubble-in ring-1 ring-line rounded-bl-md"
                       }`}
                     >
-                      {/* Sender label for group participants or outgoing agents */}
-                      {isOut
-                        ? msg.agentName && (
-                            <div className="text-[12px] font-semibold text-brand leading-tight">
-                              {msg.agentName}
-                            </div>
-                          )
-                        : activeChat.isGroup &&
-                          msg.agentName && (
-                            <div className="text-[12px] font-semibold text-gold leading-tight">
-                              {msg.agentName}
-                            </div>
+                      {/* Action buttons (Reply / Delete) on hover */}
+                      {msg.type !== "revoked" && msg.status !== "deleted" && (
+                        <div
+                          className={`absolute -top-3.5 ${
+                            isOut ? "-left-16" : "-right-16"
+                          } hidden group-hover:flex items-center gap-0.5 p-0.5 bg-surface rounded-full border border-line shadow-card z-10 transition-all`}
+                        >
+                          <button
+                            type="button"
+                            title="Reply"
+                            aria-label="Reply"
+                            onClick={() => {
+                              setReplyingTo({
+                                id: msg.id,
+                                text: msg.text,
+                                sender: msg.sender,
+                                senderName: isOut
+                                  ? msg.agentName || "You"
+                                  : activeChat.contactName || "Customer",
+                                type: msg.type,
+                              });
+                              composerInput.current?.focus();
+                            }}
+                            className="p-1 rounded-full text-fg-3 hover:text-fg hover:bg-surface-2 transition"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+                          {onDeleteMessage && (
+                            <button
+                              type="button"
+                              title="Delete"
+                              aria-label="Delete"
+                              onClick={() => setDeleteTarget(msg)}
+                              className="p-1 rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
-
-                      {/* Text Message */}
-                      {(!msg.type || msg.type === "text") && (
-                        <>
-                          <p
-                            dir="auto"
-                            className="leading-[1.4] whitespace-pre-wrap break-words"
-                          >
-                            {msg.text}
-                          </p>
-                          {assistant?.available &&
-                            !isOut &&
-                            msg.text.trim().length > 1 && (
-                              <TranslateMessage
-                                text={msg.text}
-                                client={aiClient}
-                              />
-                            )}
-                        </>
-                      )}
-
-                      {/* Call Log */}
-                      {msg.type === "call_log" && (
-                        <div className="flex items-center gap-2.5 py-1">
-                          <div
-                            className={`p-2 rounded-full ${
-                              msg.text.includes("Missed")
-                                ? "bg-danger/20 text-danger"
-                                : "bg-brand-solid/20 text-brand"
-                            }`}
-                          >
-                            {msg.text.includes("Video") ? (
-                              <Video className="w-4 h-4" />
-                            ) : (
-                              <Phone className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div className="text-xs">
-                            <div className="font-semibold text-fg">
-                              {msg.text.includes("Video")
-                                ? "Video call"
-                                : "Voice call"}
-                            </div>
-                            <div className="text-[11px] text-fg-2">
-                              {msg.text}
-                            </div>
-                          </div>
                         </div>
                       )}
 
+                      {/* Quoted Message Preview inside bubble */}
+                      {msg.quoted &&
+                        msg.type !== "revoked" &&
+                        msg.status !== "deleted" && (
+                          <div className="mb-1.5 rounded-xl bg-fg/5 border-l-[3px] border-brand-solid p-2 text-xs">
+                            <div className="font-semibold text-brand text-[11px] truncate">
+                              {msg.quoted.sender === "agent"
+                                ? msg.quoted.agentName || "You"
+                                : msg.quoted.agentName ||
+                                  activeChat.contactName ||
+                                  "Customer"}
+                            </div>
+                            <div className="text-fg-2 truncate line-clamp-2 mt-0.5">
+                              {msg.quoted.text || "Media"}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Revoked / Deleted Message */}
+                      {(msg.type === "revoked" || msg.status === "deleted") && (
+                        <div className="flex items-center gap-1.5 py-1 text-fg-3 italic text-[13.5px]">
+                          <Ban className="w-4 h-4 shrink-0 text-fg-3 opacity-70" />
+                          <span>This message was deleted</span>
+                        </div>
+                      )}
+
+                      {/* Sender label for group participants or outgoing agents */}
+                      {msg.type !== "revoked" &&
+                        msg.status !== "deleted" &&
+                        (isOut
+                          ? msg.agentName && (
+                              <div className="text-[12px] font-semibold text-brand leading-tight">
+                                {msg.agentName}
+                              </div>
+                            )
+                          : activeChat.isGroup &&
+                            msg.agentName && (
+                              <div className="text-[12px] font-semibold text-gold leading-tight">
+                                {msg.agentName}
+                              </div>
+                            ))}
+
+                      {/* Text Message */}
+                      {msg.type !== "revoked" &&
+                        msg.status !== "deleted" &&
+                        (!msg.type || msg.type === "text") && (
+                          <>
+                            <p
+                              dir="auto"
+                              className="leading-[1.4] whitespace-pre-wrap break-words"
+                            >
+                              {msg.text}
+                            </p>
+                            {assistant?.available &&
+                              !isOut &&
+                              msg.text.trim().length > 1 && (
+                                <TranslateMessage
+                                  text={msg.text}
+                                  client={aiClient}
+                                />
+                              )}
+                          </>
+                        )}
+
+                      {/* Call Log */}
+                      {msg.type !== "revoked" &&
+                        msg.status !== "deleted" &&
+                        msg.type === "call_log" && (
+                          <div className="flex items-center gap-2.5 py-1">
+                            <div
+                              className={`p-2 rounded-full ${
+                                msg.text.includes("Missed")
+                                  ? "bg-danger/20 text-danger"
+                                  : "bg-brand-solid/20 text-brand"
+                              }`}
+                            >
+                              {msg.text.includes("Video") ? (
+                                <Video className="w-4 h-4" />
+                              ) : (
+                                <Phone className="w-4 h-4" />
+                              )}
+                            </div>
+                            <div className="text-xs">
+                              <div className="font-semibold text-fg">
+                                {msg.text.includes("Video")
+                                  ? "Video call"
+                                  : "Voice call"}
+                              </div>
+                              <div className="text-[11px] text-fg-2">
+                                {msg.text}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                       {/* Photos, videos, voice notes, stickers and files */}
-                      {[
-                        "image",
-                        "video",
-                        "audio",
-                        "document",
-                        "sticker",
-                        "gif",
-                      ].includes(String(msg.type)) && (
+                      {msg.type !== "revoked" &&
+                        msg.status !== "deleted" &&
+                        [
+                          "image",
+                          "video",
+                          "audio",
+                          "document",
+                          "sticker",
+                          "gif",
+                        ].includes(String(msg.type)) && (
                         <MediaBlock
                           msg={msg}
                           onOpen={setViewerId}
@@ -1411,6 +1519,30 @@ export const Inbox: React.FC<InboxProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Quoted Message Preview Banner */}
+              {replyingTo && !isNoteMode && (
+                <div className="mx-3 mt-2 p-2 rounded-2xl bg-surface-2 border-l-4 border-brand-solid flex items-start justify-between gap-2 animate-fade">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-brand">
+                      <Reply className="w-3 h-3" />
+                      <span>Replying to {replyingTo.senderName}</span>
+                    </div>
+                    <p className="text-xs text-fg-2 truncate mt-0.5 line-clamp-1">
+                      {replyingTo.text || "Media"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    className="p-1 rounded-full text-fg-3 hover:text-fg hover:bg-surface transition"
+                    title="Cancel reply"
+                    aria-label="Cancel reply"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
               <form
                 onSubmit={handleSend}
@@ -1684,6 +1816,87 @@ export const Inbox: React.FC<InboxProps> = ({
           }}
           onExpired={onRefreshMedia}
         />
+      )}
+
+      {/* Delete Message Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade">
+          <div className="bg-surface border border-line rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-fg text-base">
+                Delete message?
+              </h3>
+              <p className="text-xs text-fg-2">
+                Choose how you want to delete this message.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (!onDeleteMessage || !activeChat) return;
+                  setIsDeleting(true);
+                  try {
+                    await onDeleteMessage(
+                      activeChat.id,
+                      deleteTarget.id,
+                      false,
+                    );
+                    setDeleteTarget(null);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                className="w-full py-2.5 px-4 rounded-2xl bg-surface-2 hover:bg-surface-3 text-fg font-medium text-sm transition text-left flex items-center justify-between"
+              >
+                <span>Delete for me</span>
+                <span className="text-[11px] text-fg-3">
+                  Only removes from your view
+                </span>
+              </button>
+
+              {deleteTarget.sender === "agent" && (
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={async () => {
+                    if (!onDeleteMessage || !activeChat) return;
+                    setIsDeleting(true);
+                    try {
+                      await onDeleteMessage(
+                        activeChat.id,
+                        deleteTarget.id,
+                        true,
+                      );
+                      setDeleteTarget(null);
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-danger/10 hover:bg-danger/20 text-danger font-medium text-sm transition text-left flex items-center justify-between"
+                >
+                  <span>Delete for everyone</span>
+                  <span className="text-[11px] text-danger/80">
+                    Revokes for everyone
+                  </span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-fg-2 hover:text-fg hover:bg-surface-2 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
