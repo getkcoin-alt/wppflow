@@ -28,6 +28,7 @@ import {
   Reply,
   Trash2,
   Ban,
+  ChevronDown,
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
 import { formatDuration } from "../../utils/duration";
@@ -295,6 +296,7 @@ export const Inbox: React.FC<InboxProps> = ({
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState<string | null>(null);
 
   // Mobile touch swipe & long-press state
   const [swipeMsgId, setSwipeMsgId] = useState<string | null>(null);
@@ -377,6 +379,7 @@ export const Inbox: React.FC<InboxProps> = ({
   useEffect(() => {
     setReplyingTo(null);
     setDeleteTarget(null);
+    setActiveMenuMsgId(null);
     setSwipeMsgId(null);
     setSwipeOffset(0);
     clearTimeout(longPressTimer.current);
@@ -1282,49 +1285,10 @@ export const Inbox: React.FC<InboxProps> = ({
                 return (
                   <div
                     key={msg.id}
-                    className={`group relative flex items-center gap-1.5 my-0.5 ${
-                      isOut
-                        ? "justify-end flex-row"
-                        : "justify-start flex-row-reverse"
+                    className={`group relative flex my-0.5 px-2 ${
+                      isOut ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {/* Action buttons (Reply / Delete) beside bubble - desktop hover */}
-                    {msg.type !== "revoked" && msg.status !== "deleted" && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 p-1 bg-surface rounded-full border border-line shadow-card shrink-0 select-none z-10">
-                        <button
-                          type="button"
-                          title="Reply"
-                          aria-label="Reply"
-                          onClick={() => {
-                            setReplyingTo({
-                              id: msg.id,
-                              text: msg.text,
-                              sender: msg.sender,
-                              senderName: isOut
-                                ? msg.agentName || "You"
-                                : activeChat.contactName || "Customer",
-                              type: msg.type,
-                            });
-                            composerInput.current?.focus();
-                          }}
-                          className="p-1 rounded-full text-fg-3 hover:text-fg hover:bg-surface-2 transition"
-                        >
-                          <Reply className="w-3.5 h-3.5" />
-                        </button>
-                        {onDeleteMessage && (
-                          <button
-                            type="button"
-                            title="Delete"
-                            aria-label="Delete"
-                            onClick={() => setDeleteTarget(msg)}
-                            className="p-1 rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    )}
-
                     <div
                       onTouchStart={(e) => handleMessageTouchStart(msg, e)}
                       onTouchMove={(e) => handleMessageTouchMove(msg.id, e)}
@@ -1339,12 +1303,122 @@ export const Inbox: React.FC<InboxProps> = ({
                             ? "none"
                             : "transform 0.2s cubic-bezier(0.2, 0, 0, 1)",
                       }}
-                      className={`relative max-w-[82%] md:max-w-[68%] rounded-[20px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade touch-pan-y ${
+                      className={`relative max-w-[82%] md:max-w-[68%] rounded-[18px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade touch-pan-y shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] ${
                         isOut
-                          ? "bg-bubble-out rounded-br-md"
-                          : "bg-bubble-in ring-1 ring-line rounded-bl-md"
+                          ? "bg-bubble-out rounded-tr-xs"
+                          : "bg-bubble-in ring-1 ring-line/50 rounded-tl-xs"
                       }`}
                     >
+                      {/* WhatsApp Web style top-right hover menu trigger */}
+                      {msg.type !== "revoked" && msg.status !== "deleted" && (
+                        <div className="absolute top-1 right-1.5 z-20 flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            title="Reply"
+                            aria-label="Reply"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReplyingTo({
+                                id: msg.id,
+                                text: msg.text,
+                                sender: msg.sender,
+                                senderName: isOut
+                                  ? msg.agentName || "You"
+                                  : activeChat.contactName || "Customer",
+                                type: msg.type,
+                              });
+                              composerInput.current?.focus();
+                            }}
+                            className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full ${
+                              isOut
+                                ? "text-fg/60 hover:text-fg hover:bg-black/10"
+                                : "text-fg-3 hover:text-fg hover:bg-black/5"
+                            }`}
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+
+                          <div className="relative">
+                            <button
+                              type="button"
+                              title="Message options"
+                              aria-label="Message options"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuMsgId((curr) =>
+                                  curr === msg.id ? null : msg.id,
+                                );
+                              }}
+                              className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full ${
+                                isOut
+                                  ? "text-fg/60 hover:text-fg hover:bg-black/10"
+                                  : "text-fg-3 hover:text-fg hover:bg-black/5"
+                              } ${
+                                activeMenuMsgId === msg.id
+                                  ? "opacity-100 bg-black/10"
+                                  : ""
+                              }`}
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+
+                            {activeMenuMsgId === msg.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-30 cursor-default"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuMsgId(null);
+                                  }}
+                                />
+                                <div
+                                  className={`absolute top-full mt-1 ${
+                                    isOut ? "right-0" : "left-0"
+                                  } z-40 bg-surface border border-line rounded-2xl shadow-xl py-1 min-w-[140px] animate-fade text-fg text-sm`}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReplyingTo({
+                                        id: msg.id,
+                                        text: msg.text,
+                                        sender: msg.sender,
+                                        senderName: isOut
+                                          ? msg.agentName || "You"
+                                          : activeChat.contactName ||
+                                            "Customer",
+                                        type: msg.type,
+                                      });
+                                      setActiveMenuMsgId(null);
+                                      composerInput.current?.focus();
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-surface-2 transition flex items-center gap-2.5 text-[13px]"
+                                  >
+                                    <Reply className="w-3.5 h-3.5 text-brand" />
+                                    <span>Reply</span>
+                                  </button>
+
+                                  {onDeleteMessage && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteTarget(msg);
+                                        setActiveMenuMsgId(null);
+                                      }}
+                                      className="w-full px-3.5 py-2 text-left hover:bg-danger/10 text-danger transition flex items-center gap-2.5 text-[13px]"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 text-danger" />
+                                      <span>Delete message</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       {/* Swipe-to-reply icon indicator */}
                       {swipeMsgId === msg.id && swipeOffset > 10 && (
                         <div
