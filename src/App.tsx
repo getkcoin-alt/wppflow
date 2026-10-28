@@ -72,7 +72,7 @@ import {
   setTitleBadge,
   showDesktopNotification,
 } from "./utils/alerts";
-import { markNotificationsRead } from "./services/realtimeCache";
+import { markNotificationsRead, deleteMessageFromCache } from "./services/realtimeCache";
 import type { AppNotification } from "./types";
 import { reconcileMessages } from "./utils/messages";
 
@@ -420,13 +420,36 @@ export function App() {
         showDesktopNotification(n.title, n.body, () => goTo(n));
     },
     onIncoming: ({ conversation, message }) => {
-      // Only when nobody is looking at this chat; the list badge covers the rest.
-      if (document.visibilityState === "visible") return;
-      showDesktopNotification(
-        conversation?.contactName || "New WhatsApp message",
-        String(message.text || "").slice(0, 120),
-        () => conversation?.id && openConversationRef.current(conversation.id),
-      );
+      playPing();
+      if (document.visibilityState !== "visible") {
+        showDesktopNotification(
+          conversation?.contactName || "New WhatsApp message",
+          String(message.text || "").slice(0, 120),
+          () => conversation?.id && openConversationRef.current(conversation.id),
+        );
+      }
+    },
+    onMessageUpdated: ({ conversationId, message }) => {
+      if (!conversationId || !message) return;
+      setOptimistic((prev) => {
+        if (!prev[conversationId]?.length) return prev;
+        return {
+          ...prev,
+          [conversationId]: reconcileMessages(prev[conversationId], [message]),
+        };
+      });
+    },
+    onMessageDeleted: ({ conversationId, messageId }) => {
+      if (!conversationId || !messageId) return;
+      setOptimistic((prev) => {
+        if (!prev[conversationId]?.length) return prev;
+        return {
+          ...prev,
+          [conversationId]: prev[conversationId].filter(
+            (m) => m.id !== messageId && m.providerMessageId !== messageId,
+          ),
+        };
+      });
     },
   });
   useEffect(() => {
@@ -601,6 +624,30 @@ export function App() {
     messageId: string,
     forEveryone = false,
   ) => {
+    if (forEveryone) {
+      setOptimistic((prev) => ({
+        ...prev,
+        [conversationId]: (prev[conversationId] || []).map((m) =>
+          m.id === messageId || m.providerMessageId === messageId
+            ? {
+                ...m,
+                type: "revoked" as const,
+                status: "deleted" as const,
+                text: "🚫 This message was deleted",
+                isDeleted: false,
+              }
+            : m,
+        ),
+      }));
+    } else {
+      setOptimistic((prev) => ({
+        ...prev,
+        [conversationId]: (prev[conversationId] || []).filter(
+          (m) => m.id !== messageId && m.providerMessageId !== messageId,
+        ),
+      }));
+      deleteMessageFromCache(qc, tenant, conversationId, messageId);
+    }
     try {
       await api.deleteConversationMessage(
         conversationId,

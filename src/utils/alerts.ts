@@ -37,28 +37,74 @@ export function showDesktopNotification(
   }
 }
 
-let audio: AudioContext | undefined;
+let audioCtx: AudioContext | undefined;
 let lastPing = 0;
+
+function getAudioContext(): AudioContext | undefined {
+  if (typeof window === "undefined") return undefined;
+  const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+  if (!Ctx) return undefined;
+  if (!audioCtx) {
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+  return audioCtx;
+}
+
+if (typeof window !== "undefined") {
+  const unlock = () => {
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    window.removeEventListener("click", unlock);
+    window.removeEventListener("touchstart", unlock);
+    window.removeEventListener("keydown", unlock);
+  };
+  window.addEventListener("click", unlock, { passive: true });
+  window.addEventListener("touchstart", unlock, { passive: true });
+  window.addEventListener("keydown", unlock, { passive: true });
+}
+
 export function playPing() {
   const now = Date.now();
-  if (now - lastPing < 1500) return; // never a burst of sounds
+  if (now - lastPing < 800) return; // avoid noisy bursts
   lastPing = now;
   try {
-    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!Ctx) return;
-    audio ||= new Ctx();
-    const o = audio.createOscillator(),
-      g = audio.createGain();
-    o.type = "sine";
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(0.0001, audio.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.15, audio.currentTime + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.25);
-    o.connect(g).connect(audio.destination);
-    o.start();
-    o.stop(audio.currentTime + 0.27);
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+
+    const t = ctx.currentTime;
+
+    // First chime: 587.33 Hz (D5)
+    const o1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    o1.type = "sine";
+    o1.frequency.setValueAtTime(587.33, t);
+    g1.gain.setValueAtTime(0.0001, t);
+    g1.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+    g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o1.connect(g1).connect(ctx.destination);
+    o1.start(t);
+    o1.stop(t + 0.18);
+
+    // Second chime: 880.00 Hz (A5)
+    const o2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    o2.type = "sine";
+    o2.frequency.setValueAtTime(880, t + 0.09);
+    g2.gain.setValueAtTime(0.0001, t + 0.09);
+    g2.gain.exponentialRampToValueAtTime(0.22, t + 0.11);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+    o2.connect(g2).connect(ctx.destination);
+    o2.start(t + 0.09);
+    o2.stop(t + 0.40);
   } catch {
-    /* autoplay rules can block this until the person has interacted */
+    /* autoplay rules or device audio unavailable */
   }
 }
 

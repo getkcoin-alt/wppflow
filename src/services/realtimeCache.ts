@@ -93,11 +93,29 @@ export function upsertMessage(
   const key = ["messages", tenant, conversationId];
   const data = qc.getQueryData<InfiniteData<MessagePage>>(key);
   if (!data?.pages?.length) return; // not open: it loads fresh when opened
-  const pages = [...data.pages];
-  pages[0] = {
-    ...pages[0],
-    messages: reconcileMessages(pages[0].messages, [message]),
-  };
+  let found = false;
+  const pages = data.pages.map((p) => {
+    const hasMsg = p.messages.some(
+      (m) =>
+        m.id === message.id ||
+        (message.providerMessageId && m.providerMessageId === message.providerMessageId) ||
+        (message.idempotencyKey && m.idempotencyKey === message.idempotencyKey),
+    );
+    if (hasMsg) {
+      found = true;
+      return {
+        ...p,
+        messages: reconcileMessages(p.messages, [message]),
+      };
+    }
+    return p;
+  });
+  if (!found) {
+    pages[0] = {
+      ...pages[0],
+      messages: reconcileMessages(pages[0].messages, [message]),
+    };
+  }
   qc.setQueryData(key, { ...data, pages });
 }
 
@@ -184,7 +202,9 @@ export function deleteMessageFromCache(
   if (data?.pages?.length) {
     const pages = data.pages.map((p) => ({
       ...p,
-      messages: p.messages.filter((m) => m.id !== messageId),
+      messages: p.messages.filter(
+        (m) => m.id !== messageId && m.providerMessageId !== messageId,
+      ),
     }));
     qc.setQueryData(key, { ...data, pages });
   }

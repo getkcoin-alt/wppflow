@@ -22,13 +22,32 @@ export function reconcileMessages(
     let merged = message;
     const allKeys = new Set(keys);
     for (const group of matches) {
-      const old = group.message,
-        ack = Math.max(old.ack || 0, merged.ack || 0);
+      const old = group.message;
+      const isRevoked =
+        merged.type === "revoked" ||
+        old.type === "revoked" ||
+        merged.status === "deleted" ||
+        old.status === "deleted";
+      const isDeletedForMe = Boolean(merged.isDeleted || old.isDeleted);
+      const ack = Math.max(old.ack || 0, merged.ack || 0);
       merged = {
         ...old,
         ...merged,
-        ack,
-        status: (old.ack || 0) > (merged.ack || 0) ? old.status : merged.status,
+        ack: isRevoked ? 0 : ack,
+        status: isRevoked
+          ? "deleted"
+          : (old.ack || 0) > (merged.ack || 0)
+            ? old.status
+            : merged.status,
+        type: isRevoked ? "revoked" : merged.type || old.type,
+        text: isRevoked
+          ? "🚫 This message was deleted"
+          : merged.text !== undefined
+            ? merged.text
+            : old.text,
+        mediaUrl: isRevoked ? "" : (merged.mediaUrl ?? old.mediaUrl),
+        fileName: isRevoked ? "" : (merged.fileName ?? old.fileName),
+        isDeleted: isDeletedForMe,
       };
       for (const key of group.keys) allKeys.add(key);
       groups.delete(group);
@@ -39,6 +58,7 @@ export function reconcileMessages(
   }
   return [...groups]
     .map((g) => g.message)
+    .filter((m) => !(m.isDeleted && m.type !== "revoked"))
     .sort(
       (a, b) =>
         (a.timestampEpoch || 0) - (b.timestampEpoch || 0) ||

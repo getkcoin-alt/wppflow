@@ -26,6 +26,8 @@ export function useInboxRealtime({
   onNotification,
   onIncoming,
   onCompose,
+  onMessageUpdated,
+  onMessageDeleted,
 }: {
   enabled: boolean;
   qc: QueryClient;
@@ -35,6 +37,8 @@ export function useInboxRealtime({
   onIncoming?: (p: { conversation?: any; message: any }) => void;
   /** A teammate started or stopped writing a reply in a chat */
   onCompose?: (p: { conversationId: string; userId: number; name: string; typing: boolean }) => void;
+  onMessageUpdated?: (p: { conversationId: string; message: any }) => void;
+  onMessageDeleted?: (p: { conversationId: string; messageId: string }) => void;
 }) {
   const [sync, setSync] = useState<SyncState>(null);
   const selectedRef = useRef(selected);
@@ -46,10 +50,14 @@ export function useInboxRealtime({
   const onNotificationRef = useRef(onNotification);
   const onIncomingRef = useRef(onIncoming);
   const onComposeRef = useRef(onCompose);
+  const onMessageUpdatedRef = useRef(onMessageUpdated);
+  const onMessageDeletedRef = useRef(onMessageDeleted);
   useEffect(() => {
     onNotificationRef.current = onNotification;
     onIncomingRef.current = onIncoming;
     onComposeRef.current = onCompose;
+    onMessageUpdatedRef.current = onMessageUpdated;
+    onMessageDeletedRef.current = onMessageDeleted;
   });
 
   useEffect(() => {
@@ -115,12 +123,20 @@ export function useInboxRealtime({
     const onMessageUpdated = (p: any) => {
       if (p?.conversationId && p?.message) {
         upsertMessage(qc, tenant, p.conversationId, p.message);
+        onMessageUpdatedRef.current?.({
+          conversationId: p.conversationId,
+          message: p.message,
+        });
       }
       onReceipt(p);
     };
     const onMessageDeleted = (p: any) => {
       if (p?.conversationId && p?.messageId) {
         deleteMessageFromCache(qc, tenant, p.conversationId, p.messageId);
+        onMessageDeletedRef.current?.({
+          conversationId: p.conversationId,
+          messageId: p.messageId,
+        });
       }
       invalidate("messages", "conversations");
     };
