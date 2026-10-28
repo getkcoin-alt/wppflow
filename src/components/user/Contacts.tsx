@@ -23,7 +23,7 @@ import { parseContactsCsv, contactsCsv } from "../../utils/csv";
 import { Download, Funnel, Plus, Search, Tag, Upload, Users } from "lucide-react";
 import { NewLeadSheet } from "../pipeline/NewLeadSheet";
 import { usePipelineSettings } from "../pipeline/usePipelineSettings";
-import { safeAvatarFallback } from "../../utils/avatar";
+import { Avatar } from "../ui/Avatar";
 import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import { Sheet } from "../ui/Sheet";
@@ -393,10 +393,10 @@ export function Contacts({
                   className="h-4 w-4 accent-brand-solid"
                 />
               )}
-              <img
-                src={safeAvatarFallback(c.name)}
-                alt=""
-                className="h-11 w-11 rounded-full shrink-0"
+              <Avatar
+                src={c.avatar}
+                name={c.name}
+                className="h-11 w-11 rounded-full object-cover shrink-0"
               />
               <div className="min-w-0 flex-1 basis-48 lg:basis-auto">
                 <div className="text-[15.5px] font-medium text-fg truncate">

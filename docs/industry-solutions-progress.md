@@ -151,3 +151,30 @@ short questions, only from text the company wrote, until a teammate replies. Wha
   handed over once, a teammate's reply silences Riwo.
 - Not done: nothing here has run with a real WhatsApp number or a real model; the browser run used a scripted stand-in
   for the model. Riwo needs the Growth plan or above, the owner's AI switch, and a provider key on the server.
+
+## 11. Added afterwards: profile pictures in the inbox (28 October 2026)
+
+**Fault:** contacts' pictures were not shown in the inbox. The pictures were read from `contact.profilePicThumbObj.eurl`, a
+property the WhatsApp library marks deprecated (WhatsApp Web now keeps pictures in a separate store, so it is usually empty),
+and when it was filled it held a signed address that stops working within days. Nothing asked WhatsApp for the real
+picture, and a chat created by an incoming message never got one at all.
+
+**Fix (backend `avatarService.js`, route `/api/avatars/:kind/:id`, migration `033_profile_pictures.js`; app `ui/Avatar.tsx`):**
+the app is now given the server's own address for each picture. The server asks WhatsApp for the current picture with the
+recommended call (`getProfilePicFromServer`), fetches the image, keeps it (a week for a picture, half a day for "none"), and
+serves it. Asking is gentle: one question at a time per number with a pause, a short queue, and one lookup however many
+browsers ask. The address is signed per chat (a browser cannot send a sign-in token with an image); a wrong signature is
+answered like a chat that does not exist. Only ordinary https addresses on WhatsApp's own hosts are fetched, redirects are
+refused, and the bytes must really be a small JPEG, PNG or WebP. If WhatsApp is unreachable the last picture is still shown.
+The Contacts list now shows pictures too (it only ever showed initials).
+
+**Checked:** backend `avatars.test.js` (15 tests, with each safeguard broken on purpose); app `avatar.test.tsx` (6); a real
+browser run in which one customer has a picture and the others do not (the picture really decodes, the others show
+initials, Contacts shows it too).
+
+**Not checked, and why it matters:** this has not run against a real WhatsApp number. It depends on `getProfilePicFromServer`
+returning an address for the people who allow it; people who hide their picture from non-contacts will still show initials,
+which is correct. Pictures are loaded when a chat scrolls into view, so a long list fills in gradually the first time and is
+instant afterwards.
+
+Totals after this change: backend 631 tests in 59 files, 0 failed; app 523 tests in 47 files, 0 failed; typecheck, lint and production build clean.

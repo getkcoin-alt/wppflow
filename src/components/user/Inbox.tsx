@@ -42,7 +42,7 @@ import type { AiClient } from "../../services/ai";
 import { numberName, phoneText, sessionOfChat } from "../../utils/numbers";
 import { galleryItems } from "../../utils/viewer";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
-import { safeAvatarFallback } from "../../utils/avatar";
+import { Avatar } from "../ui/Avatar";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface InboxProps {
@@ -125,7 +125,6 @@ interface InboxProps {
   onRefreshMedia?: () => void;
 }
 
-const avatarFallback = safeAvatarFallback;
 
 function formatChatTimestamp(timestampStr?: string): string {
   if (!timestampStr) return "";
@@ -713,19 +712,11 @@ export const Inbox: React.FC<InboxProps> = ({
                     }`}
                   >
                     <div className="relative shrink-0">
-                      <img
-                        src={
-                          chat.avatar ||
-                          avatarFallback(chat.contactName, chat.isGroup)
-                        }
-                        alt=""
+                      <Avatar
+                        src={chat.avatar}
+                        name={chat.contactName}
+                        isGroup={chat.isGroup}
                         className="w-12 h-12 rounded-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = avatarFallback(
-                            chat.contactName,
-                            chat.isGroup,
-                          );
-                        }}
                       />
                       {chat.isGroup && (
                         <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-[18px] h-[18px] rounded-full bg-surface ring-2 ring-surface text-fg-2">
@@ -851,19 +842,11 @@ export const Inbox: React.FC<InboxProps> = ({
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
-              <img
-                src={
-                  activeChat.avatar ||
-                  avatarFallback(activeChat.contactName, activeChat.isGroup)
-                }
-                alt=""
+              <Avatar
+                src={activeChat.avatar}
+                name={activeChat.contactName}
+                isGroup={activeChat.isGroup}
                 className="w-10 h-10 rounded-full object-cover shrink-0"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = avatarFallback(
-                    activeChat.contactName,
-                    activeChat.isGroup,
-                  );
-                }}
               />
               <div className="min-w-0">
                 <div className="font-semibold text-[16px] text-fg truncate leading-tight">
@@ -1530,17 +1513,10 @@ export const Inbox: React.FC<InboxProps> = ({
 
             <div className="p-5 space-y-6">
               <div className="text-center">
-                <img
-                  src={
-                    activeContact.avatar || avatarFallback(activeContact.name)
-                  }
-                  alt=""
+                <Avatar
+                  src={activeContact.avatar}
+                  name={activeContact.name}
                   className="w-24 h-24 rounded-full object-cover mx-auto"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = avatarFallback(
-                      activeContact.name,
-                    );
-                  }}
                 />
                 <ContactName
                   key={activeContact.id}
