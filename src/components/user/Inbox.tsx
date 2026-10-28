@@ -43,6 +43,9 @@ import { numberName, phoneText, sessionOfChat } from "../../utils/numbers";
 import { galleryItems } from "../../utils/viewer";
 import { ChatThread, ChatMessage, WhatsAppSession } from "../../types";
 import { Avatar } from "../ui/Avatar";
+import { chatMatches, chatSubtitle, chatTitle, mobileText } from "../../utils/chatName";
+import { MessageResults } from "./SearchResults";
+import { MIN_SEARCH_CHARS, useDebounced } from "../../utils/searchText";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface InboxProps {
@@ -73,6 +76,8 @@ interface InboxProps {
   onLoadMoreChats?: () => void;
   hasOlderMessages?: boolean;
   onLoadOlder?: () => void;
+  /** Opens a chat found by searching, even when it is not among the chats loaded so far */
+  onOpenFound?: (conversationId: string) => void;
   onFilterChange?: (search: string, filter: string, sessionName: string, extra: InboxExtraFilters) => void;
   /** The company's labels, for the label filter */
   labels?: Label[];
@@ -223,6 +228,7 @@ export const Inbox: React.FC<InboxProps> = ({
   canManage = false,
   renderLeadPanel,
   onOpenSessions,
+  onOpenFound,
 }) => {
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "groups">(
     "all",
@@ -353,12 +359,7 @@ export const Inbox: React.FC<InboxProps> = ({
     : "";
   const filteredChats = useMemo(() => {
     return chats.filter((c) => {
-      const matchesSearch =
-        (c.contactName || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        (c.phone || "").toLowerCase().includes(searchQuery.toLowerCase());
-      if (!matchesSearch) return false;
+      if (!chatMatches(c, searchQuery)) return false;
       if (filterTab === "unread") return c.unreadCount > 0;
       if (filterTab === "groups") return Boolean(c.isGroup);
       return true;
@@ -378,6 +379,9 @@ export const Inbox: React.FC<InboxProps> = ({
     overscan: 8,
     enabled: filteredChats.length > 100,
   });
+  const searching = searchQuery.trim().length >= MIN_SEARCH_CHARS;
+  // messages are only searched once typing pauses
+  const pausedSearch = useDebounced(searchQuery);
   const chatRows =
     filteredChats.length > 100 && virtualChats.getVirtualItems().length
       ? virtualChats
@@ -463,7 +467,8 @@ export const Inbox: React.FC<InboxProps> = ({
   };
 
   // Empty state: no connected sessions
-  if (connectedSessions.length === 0 && chats.length === 0) {
+  // (a search or filter that finds nothing is not an empty inbox: the search box must stay)
+  if (connectedSessions.length === 0 && chats.length === 0 && !searchQuery.trim() && filterTab === "all" && !numberFilter && countExtra(extra) === 0) {
     return (
       <div className="flex h-full min-h-[70vh] bg-surface items-center justify-center animate-fade">
         <div className="text-center space-y-5 max-w-sm px-6">
@@ -642,6 +647,9 @@ export const Inbox: React.FC<InboxProps> = ({
               ))}
             </div>
           )}
+          {searching && filteredChats.length > 0 && (
+            <h3 className="px-3 pt-1 pb-1 text-[12px] font-semibold uppercase tracking-wide text-fg-3">Chats</h3>
+          )}
           <div
             style={
               filteredChats.length > 100 &&
@@ -651,11 +659,11 @@ export const Inbox: React.FC<InboxProps> = ({
             }
           >
             {filteredChats.length === 0 ? (
-              <div className="p-8 text-center text-fg-2 text-sm space-y-2">
-                <MessageSquare className="w-8 h-8 text-fg-3 mx-auto" />
+              <div className={`${searching ? "px-3 py-3 text-left" : "p-8 text-center"} text-fg-2 text-sm space-y-2`}>
+                {!searching && <MessageSquare className="w-8 h-8 text-fg-3 mx-auto" />}
                 <p>
                   {searchQuery
-                    ? `No chats match "${searchQuery}"`
+                    ? `No chats match "${searchQuery.trim()}"`
                     : activeNumber
                       ? "No conversations on this number yet"
                       : "No conversations found"}
@@ -714,7 +722,7 @@ export const Inbox: React.FC<InboxProps> = ({
                     <div className="relative shrink-0">
                       <Avatar
                         src={chat.avatar}
-                        name={chat.contactName}
+                        name={chatTitle(chat.contactName, chat.phone, chat.isGroup)}
                         isGroup={chat.isGroup}
                         className="w-12 h-12 rounded-full object-cover"
                       />
@@ -731,7 +739,7 @@ export const Inbox: React.FC<InboxProps> = ({
                           className={`text-[15px] truncate flex items-center gap-1.5 min-w-0 ${chat.unreadCount > 0 ? "font-semibold text-fg" : "font-medium text-fg"}`}
                         >
                           {chat.isPinned && <Pin className="w-3.5 h-3.5 shrink-0 text-gold" aria-label="Pinned" />}
-                          <span className="truncate">{chat.contactName}</span>
+                          <span className="truncate">{chatTitle(chat.contactName, chat.phone, chat.isGroup)}</span>
                         </span>
                         <span
                           className={`text-[12px] shrink-0 num ${chat.unreadCount > 0 ? "text-brand font-medium" : "text-fg-3"}`}
@@ -817,6 +825,18 @@ export const Inbox: React.FC<InboxProps> = ({
               })
             )}
           </div>
+          {searching && (
+            <MessageResults
+              text={pausedSearch}
+              sessionName={activeNumber}
+              formatTime={formatChatTimestamp}
+              onOpen={(id) => {
+                setActiveChatId(id);
+                setMobileChatOpen(true);
+                (onOpenFound ?? onOpenChat)(id);
+              }}
+            />
+          )}
           {hasMoreChats && (
             <button
               onClick={onLoadMoreChats}
@@ -844,18 +864,18 @@ export const Inbox: React.FC<InboxProps> = ({
               </button>
               <Avatar
                 src={activeChat.avatar}
-                name={activeChat.contactName}
+                name={chatTitle(activeChat.contactName, activeChat.phone, activeChat.isGroup)}
                 isGroup={activeChat.isGroup}
                 className="w-10 h-10 rounded-full object-cover shrink-0"
               />
               <div className="min-w-0">
                 <div className="font-semibold text-[16px] text-fg truncate leading-tight">
-                  {activeChat.contactName}
+                  {chatTitle(activeChat.contactName, activeChat.phone, activeChat.isGroup)}
                 </div>
                 <div className="text-[12.5px] text-fg-3 truncate num">
                   {activeChat.isGroup
                     ? `${activeChat.groupMembersCount || ""} ${activeChat.groupMembersCount ? "members" : "Group"}`
-                    : activeChat.phone}
+                    : chatSubtitle(activeChat)}
                   {sessions.length > 1 &&
                     (() => {
                       const line = sessionOfChat(sessions, activeChat);
@@ -1525,7 +1545,7 @@ export const Inbox: React.FC<InboxProps> = ({
                   onRename={onRenameContact ? (patch) => onRenameContact(activeContact.id, patch) : undefined}
                 />
                 <div className="text-[14px] text-fg-2 mt-0.5 num">
-                  {activeContact.phone}
+                  {mobileText(activeContact.phone)}
                 </div>
                 {activeContact.email && (
                   <div className="text-[13px] text-fg-3 mt-0.5">

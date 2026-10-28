@@ -33,7 +33,7 @@ function DockButton({
       aria-label={item.label}
       title={locked ? lockedHint(item) : undefined}
       aria-current={active ? "page" : undefined}
-      className={`group relative w-[68px] py-2.5 rounded-2xl flex flex-col items-center gap-1 transition-colors ${
+      className={`group relative w-[68px] py-2.5 [@media(max-height:760px)]:py-1.5 rounded-2xl flex flex-col items-center gap-1 transition-colors shrink-0 ${
         active
           ? "bg-surface-2 text-fg"
           : "text-fg-3 hover:text-fg hover:bg-surface-2/60"
@@ -88,41 +88,43 @@ export function Dock({
 }) {
   const visible = (i: NavItem) => navVisible(i, { manager, solutions });
   return (
-    <aside className="hidden lg:flex w-[92px] shrink-0 flex-col items-center pt-5 pb-4 gap-1 border-r border-line bg-surface">
-      <div className="mb-5">
+    <aside className="hidden lg:flex w-[92px] shrink-0 h-full min-h-0 flex-col items-center pt-5 [@media(max-height:760px)]:pt-3 pb-3 border-r border-line bg-surface">
+      <div className="mb-3 shrink-0">
         <ScriwoMark size={44} />
       </div>
-      <nav className="flex flex-col items-center gap-1" aria-label="Main">
-        {NAV.filter(visible).map((item) => (
-          <DockButton
-            key={item.key}
-            item={item}
-            active={isActive(item, view, tab)}
-            badge={item.key === "inbox" ? unreadChats : undefined}
-            locked={isLocked?.(item)}
-            onClick={() => onNavigate(item)}
-          />
-        ))}
-      </nav>
-      <div className="my-2 h-px w-8 bg-line" />
-      <nav className="flex flex-col items-center gap-1" aria-label="Workspace">
-        {NAV_SECONDARY.filter(visible).map((item) => (
-          <DockButton
-            key={item.key}
-            item={item}
-            active={isActive(item, view, tab)}
-            locked={isLocked?.(item)}
-            onClick={() => onNavigate(item)}
-          />
-        ))}
-      </nav>
-      <div className="flex-1" />
-      <div className="flex flex-col items-center gap-2">
+      {/* The screens scroll on their own when the window is short, so the top and the bottom buttons are always in reach. */}
+      <div data-testid="dock-scroll" className="dock-scroll flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden flex flex-col items-center gap-1 py-2">
+        <nav className="flex flex-col items-center gap-1" aria-label="Main">
+          {NAV.filter(visible).map((item) => (
+            <DockButton
+              key={item.key}
+              item={item}
+              active={isActive(item, view, tab)}
+              badge={item.key === "inbox" ? unreadChats : undefined}
+              locked={isLocked?.(item)}
+              onClick={() => onNavigate(item)}
+            />
+          ))}
+        </nav>
+        <div className="my-1.5 h-px w-8 bg-line shrink-0" />
+        <nav className="flex flex-col items-center gap-1" aria-label="Workspace">
+          {NAV_SECONDARY.filter(visible).map((item) => (
+            <DockButton
+              key={item.key}
+              item={item}
+              active={isActive(item, view, tab)}
+              locked={isLocked?.(item)}
+              onClick={() => onNavigate(item)}
+            />
+          ))}
+        </nav>
+      </div>
+      <div className="shrink-0 w-full pt-2 flex flex-col items-center gap-1.5 border-t border-line/70">
         <button
           onClick={onSearch}
           aria-label="Search and commands (Command K)"
           title="Search  ⌘K"
-          className="h-11 w-11 rounded-full grid place-items-center text-fg-2 hover:text-fg hover:bg-surface-2 transition"
+          className="h-11 w-11 [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:w-9 rounded-full grid place-items-center text-fg-2 hover:text-fg hover:bg-surface-2 transition"
         >
           <Search className="w-[21px] h-[21px]" strokeWidth={1.8} />
         </button>

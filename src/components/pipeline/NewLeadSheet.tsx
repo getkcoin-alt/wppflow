@@ -13,6 +13,7 @@ import {
 import { Field, Notice } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, selectCls } from "../ui/styles";
+import { mobileText } from "../../utils/chatName";
 
 const FOLLOW_UP_DAYS = [0, 1, 3, 7];
 const dayLabel = (d: number) => (d === 0 ? "No follow-up" : d === 1 ? "Tomorrow" : `In ${d} days`);
@@ -142,7 +143,7 @@ function Body({ from, contact, stages, teammates, aiAvailable, onClose, onCreate
             {picked ? (
               <p className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 h-12 text-[15px]">
                 <span dir="auto">
-                  {picked.name} <span className="text-fg-3 num">{picked.phone}</span>
+                  {picked.name} <span className="text-fg-3 num">{mobileText(picked.phone)}</span>
                 </span>
                 <button type="button" className="text-[13px] text-gold hover:underline" onClick={() => setPicked(null)}>
                   Change
@@ -161,7 +162,7 @@ function Body({ from, contact, stages, teammates, aiAvailable, onClose, onCreate
                     <li key={c.id}>
                       <button type="button" className="w-full text-left rounded-xl px-3 h-11 hover:bg-surface-2 flex items-center justify-between" onClick={() => setPicked({ id: c.id, name: c.name, phone: c.phone })}>
                         <span dir="auto">{c.name}</span>
-                        <span className="text-[12.5px] text-fg-3 num">{c.phone}</span>
+                        <span className="text-[12.5px] text-fg-3 num">{mobileText(c.phone)}</span>
                       </button>
                     </li>
                   ))}

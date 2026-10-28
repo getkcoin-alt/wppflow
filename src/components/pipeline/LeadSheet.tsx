@@ -20,6 +20,7 @@ import { FollowUps } from "./FollowUps";
 import { useHasSolution } from "../../hooks/useSolutions";
 import { QualificationSection } from "../realestate/QualificationSection";
 import { BookViewingSheet } from "../realestate/BookViewingSheet";
+import { mobileText } from "../../utils/chatName";
 
 // Everything about one lead: where it is, who has it, what it is worth, what to do next, and what has happened.
 export function LeadSheet({
@@ -59,7 +60,7 @@ export function LeadSheet({
       open={!!leadId}
       onClose={onClose}
       title={lead?.contactName || "Lead"}
-      subtitle={lead ? `${lead.phone}${lead.source ? ` · ${SOURCE_LABELS[lead.source] || lead.source}` : ""}` : ""}
+      subtitle={lead ? `${mobileText(lead.phone)}${lead.source ? ` · ${SOURCE_LABELS[lead.source] || lead.source}` : ""}` : ""}
       footer={
         lead ? (
           <>

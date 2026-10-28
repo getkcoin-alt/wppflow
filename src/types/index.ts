@@ -166,6 +166,8 @@ export interface ChatThread {
   contactId: string;
   contactName: string;
   phone: string;
+  /** The mobile number to show: empty when WhatsApp only gave a hidden id for this person */
+  displayPhone?: string;
   avatar: string;
   unreadCount: number;
   isGroup: boolean;

@@ -154,6 +154,15 @@
 }
 
 @layer components {
+  /* The left navigation scrolls on a short window; a soft fade at each end shows there is more. */
+  .dock-scroll {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
+  }
+  .dock-scroll::-webkit-scrollbar {
+    display: none;
+  }
   /* Frosted glass: top bars, sheets, floating controls */
   .glass {
     background: var(--glass);

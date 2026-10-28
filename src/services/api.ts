@@ -269,6 +269,24 @@ export interface StartedChat {
 }
 export const startChat = (data: { sessionName: string; phone?: string; name?: string; contactId?: string }): Promise<StartedChat> =>
   apiPost("/api/conversations", data);
+export interface InboxSearchHit {
+  messageId: string;
+  conversationId: string;
+  fromMe: boolean;
+  timestampEpoch: number;
+  /** The words around the match, and where the match sits inside them */
+  snippet: { text: string; start: number; length: number };
+  chat: { id: string; contactName: string; phone: string; displayPhone?: string; avatar: string; isGroup: boolean; sessionName: string };
+}
+export interface InboxSearchResult {
+  query: string;
+  chats: any[];
+  messages: InboxSearchHit[];
+  /** The message search ran out of time, so the list may be missing older matches */
+  partial: boolean;
+}
+export const searchInbox = (text: string, sessionName = ""): Promise<InboxSearchResult> =>
+  apiGet(`/api/conversations/search?q=${encodeURIComponent(text)}${sessionName ? `&sessionName=${encodeURIComponent(sessionName)}` : ""}`);
 export const patchContact = (id: string, data: any) =>
   apiPatch(`/api/contacts/${id}`, data);
 export const removeContact = (id: string) => apiDelete(`/api/contacts/${id}`);

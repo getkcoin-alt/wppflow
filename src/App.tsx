@@ -893,6 +893,7 @@ export function App() {
               sessions={sessions}
               selectedChatId={selected}
               onOpenChat={openChat}
+              onOpenFound={(id) => openConversationRef.current(id)}
               historyStatus={
                 historyState?.id === selected ? historyState : null
               }

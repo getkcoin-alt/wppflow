@@ -27,6 +27,7 @@ import { Avatar } from "../ui/Avatar";
 import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import { Sheet } from "../ui/Sheet";
+import { mobileText } from "../../utils/chatName";
 export function Contacts({
   onSelectChat,
   pipeline,
@@ -403,7 +404,7 @@ export function Contacts({
                   {c.name}
                 </div>
                 <div className="text-[13.5px] text-fg-2 truncate">
-                  {c.phone}
+                  {mobileText(c.phone)}
                   {c.email ? ` · ${c.email}` : ""}
                 </div>
               </div>
