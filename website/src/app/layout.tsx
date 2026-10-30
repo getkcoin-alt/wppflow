@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { MobileCta, WhatsAppButton } from "@/components/WhatsAppButton";
+import { RewoVisitorBot } from "@/components/RewoVisitorBot";
 import { themeScript } from "@/components/ThemeToggle";
 import { organization, website } from "@/lib/jsonld";
 import { SiteAnalytics } from "@/components/Analytics";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main">{children}</main>
         <Footer />
         <WhatsAppButton />
+        <RewoVisitorBot />
         <MobileCta />
         <SiteAnalytics />
         <RevealOnScroll />

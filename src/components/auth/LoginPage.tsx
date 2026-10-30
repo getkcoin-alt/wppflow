@@ -16,7 +16,6 @@ import { readIntent, startup } from "../../utils/signupIntent";
 import { AuthUser } from "../../types";
 import { AuthNote, AuthShell } from "./AuthShell";
 import { btn, inputCls } from "../ui/styles";
-import { RewoWebsiteWidget } from "../public/RewoWebsiteWidget";
 
 const GOOGLE_PROBLEMS: Record<string, string> = {
   unavailable: "Google sign-in isn't switched on yet. Please use your email and password.",
@@ -498,15 +497,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           {mode === "login" ? "Create a workspace" : "Sign in"}
         </button>
       </p>
-
-      <RewoWebsiteWidget
-        onOpenSignup={() => {
-          setMode("signup");
-          setError(null);
-          setSuccessMsg(null);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
-      />
     </AuthShell>
   );
 };

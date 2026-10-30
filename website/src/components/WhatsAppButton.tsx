@@ -14,7 +14,7 @@ export function WhatsAppButton() {
       href={href}
       aria-label={label}
       {...(SITE.whatsappNumber ? trackAttrs("whatsapp_click", { place: "floating" }) : trackAttrs("demo_click", { place: "floating" }))}
-      className="fixed bottom-5 right-5 z-40 hidden h-14 w-14 place-items-center rounded-full bg-brand-solid text-white shadow-pop transition-transform hover:scale-105 sm:grid"
+      className="fixed bottom-5 right-24 z-40 hidden h-14 w-14 place-items-center rounded-full bg-brand-solid text-white shadow-pop transition-transform hover:scale-105 sm:grid"
       {...(SITE.whatsappNumber ? { target: "_blank", rel: "noopener" } : {})}
     >
       <MessageCircle className="h-6 w-6" aria-hidden="true" />
