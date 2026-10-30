@@ -60,7 +60,7 @@ export function RewoVisitorBot() {
     {
       id: "intro-1",
       sender: "bot",
-      text: "👋 Welcome to **Scriwo**! I'm **Rewo**, your AI concierge.\n\nI can answer questions about our **Shared WhatsApp Inbox**, **Anti-Ban Broadcast Engine**, team collaboration, and pricing plans.\n\nTap a quick question below or ask me anything directly!",
+      text: "👋 Welcome to **Scriwo**! I'm **Riwo**, your AI concierge.\n\nI can answer questions about our **Shared WhatsApp Inbox**, **Anti-Ban Broadcast Engine**, team collaboration, and pricing plans.\n\nTap a quick question below or ask me anything directly!",
       time: "Just now",
       ctaType: "trial",
     },
@@ -235,16 +235,22 @@ export function RewoVisitorBot() {
             >
               <X className="h-3 w-3" />
             </button>
-            <div className="flex items-start gap-2.5 cursor-pointer" onClick={handleOpen}>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand-solid via-emerald-500 to-amber-500 text-white shadow-sm">
-                <Sparkles className="h-4 w-4" />
+            <div className="flex items-start gap-3 cursor-pointer" onClick={handleOpen}>
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-2 ring-gold/40 shadow-sm bg-surface-2 overflow-hidden">
+                <img
+                  src="/brand/riwo-hold.webp"
+                  alt="Riwo AI"
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div>
-                <p className="font-medium text-fg">
+                <p className="font-semibold text-fg">
                   Have questions about Scriwo?
                 </p>
                 <p className="mt-0.5 text-fg-3 text-[11px] sm:text-xs">
-                  Ask Rewo about features, Anti-Ban broadcasts, and pricing! ✨
+                  Ask Riwo about features, Anti-Ban broadcasts, and pricing! ✨
                 </p>
               </div>
             </div>
@@ -267,19 +273,25 @@ export function RewoVisitorBot() {
 
             <button
               onClick={handleOpen}
-              aria-label="Open Rewo AI Concierge"
-              className="relative flex h-14 items-center gap-2.5 rounded-full bg-surface px-4 py-2 text-fg shadow-pop hairline transition-all duration-300 hover:scale-105 active:scale-95 group-hover:border-gold/40"
+              aria-label="Open Riwo AI Concierge"
+              className="relative flex h-14 items-center gap-3 rounded-full bg-surface pl-2 pr-4 py-2 text-fg shadow-pop hairline transition-all duration-300 hover:scale-105 active:scale-95 group-hover:border-gold/50"
             >
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-solid via-emerald-600 to-leaf text-white shadow-sm">
-                <Bot className="h-5 w-5" />
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-2 ring-gold/40 shadow-sm bg-surface-2 overflow-visible">
+                <img
+                  src="/brand/riwo-hold.webp"
+                  alt="Riwo AI"
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 rounded-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
                 {/* Live Radar Ping */}
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 z-10">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-surface" />
                 </span>
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-semibold tracking-wide text-fg">Ask Rewo AI</span>
+                <span className="text-xs font-semibold tracking-wide text-fg">Ask Riwo AI</span>
                 <span className="text-[10px] text-fg-3 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Online
@@ -296,16 +308,22 @@ export function RewoVisitorBot() {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-line px-4 py-3 bg-surface-2/60 backdrop-blur-md">
             <div className="flex items-center gap-3">
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-solid via-emerald-600 to-leaf text-white shadow-sm">
-                <Bot className="h-5 w-5" />
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-2 ring-gold/40 shadow-sm bg-surface-2 overflow-visible">
+                <img
+                  src="/brand/riwo-hold.webp"
+                  alt="Riwo AI Concierge"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 z-10">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-surface" />
                 </span>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-semibold text-fg">Rewo AI</h3>
+                  <h3 className="text-sm font-semibold text-fg">Riwo AI</h3>
                   <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-medium text-gold uppercase tracking-wider">
                     Concierge
                   </span>
@@ -390,14 +408,20 @@ export function RewoVisitorBot() {
             {/* Live Typing Wave */}
             {loading && (
               <div className="flex items-center gap-2 text-xs text-fg-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 hairline">
-                  <Bot className="h-3.5 w-3.5 text-leaf" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-1 ring-gold/40 overflow-hidden bg-surface-2">
+                  <img
+                    src="/brand/riwo-hold.webp"
+                    alt="Riwo typing"
+                    width={28}
+                    height={28}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
                 <div className="flex items-center gap-1 rounded-2xl bg-surface-2 px-3 py-2 hairline">
                   <span className="rewo-typing-dot h-1.5 w-1.5 rounded-full bg-leaf inline-block" />
                   <span className="rewo-typing-dot h-1.5 w-1.5 rounded-full bg-leaf inline-block" />
                   <span className="rewo-typing-dot h-1.5 w-1.5 rounded-full bg-leaf inline-block" />
-                  <span className="ml-1.5 text-[11px] text-fg-3">Rewo is typing…</span>
+                  <span className="ml-1.5 text-[11px] text-fg-3">Riwo is typing…</span>
                 </div>
               </div>
             )}
@@ -438,7 +462,7 @@ export function RewoVisitorBot() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Rewo anything about Scriwo..."
+                placeholder="Ask Riwo anything about Scriwo..."
                 disabled={loading}
                 className="flex-1 rounded-full bg-surface-2 px-4 py-2 text-xs sm:text-sm text-fg placeholder:text-fg-3 hairline focus:outline-none focus:ring-1 focus:ring-gold/60 transition-all"
               />
