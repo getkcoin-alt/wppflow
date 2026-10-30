@@ -69,7 +69,7 @@ if (typeof window !== "undefined") {
 
 export function playPing() {
   const now = Date.now();
-  if (now - lastPing < 800) return; // avoid noisy bursts
+  if (now - lastPing < 600) return; // avoid noisy bursts
   lastPing = now;
   try {
     const ctx = getAudioContext();
@@ -80,29 +80,93 @@ export function playPing() {
 
     const t = ctx.currentTime;
 
-    // First chime: 587.33 Hz (D5)
-    const o1 = ctx.createOscillator();
-    const g1 = ctx.createGain();
-    o1.type = "sine";
-    o1.frequency.setValueAtTime(587.33, t);
-    g1.gain.setValueAtTime(0.0001, t);
-    g1.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
-    g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-    o1.connect(g1).connect(ctx.destination);
-    o1.start(t);
-    o1.stop(t + 0.18);
+    // Master bus with gentle lowpass filter (removes digital harshness above 3600Hz)
+    const masterFilter = ctx.createBiquadFilter();
+    masterFilter.type = "lowpass";
+    masterFilter.frequency.setValueAtTime(3600, t);
+    masterFilter.Q.setValueAtTime(0.7, t);
 
-    // Second chime: 880.00 Hz (A5)
-    const o2 = ctx.createOscillator();
-    const g2 = ctx.createGain();
-    o2.type = "sine";
-    o2.frequency.setValueAtTime(880, t + 0.09);
-    g2.gain.setValueAtTime(0.0001, t + 0.09);
-    g2.gain.exponentialRampToValueAtTime(0.22, t + 0.11);
-    g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
-    o2.connect(g2).connect(ctx.destination);
-    o2.start(t + 0.09);
-    o2.stop(t + 0.40);
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(1.0, t);
+
+    masterFilter.connect(masterGain);
+    masterGain.connect(ctx.destination);
+
+    // Helper: plays a bell chime note with natural attack and harmonic resonance
+    const playChime = (
+      startTime: number,
+      freq: number,
+      duration: number,
+      peakGain: number,
+      withHarmonic = true,
+    ) => {
+      // Fundamental oscillator
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      // Snappy physical attack (3ms), exponential decay
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(masterFilter);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.02);
+
+      // Warm acoustic overtone (subtle 5th harmonic for air & sparkle)
+      if (withHarmonic) {
+        const harm = ctx.createOscillator();
+        const harmGain = ctx.createGain();
+        harm.type = "sine";
+        harm.frequency.setValueAtTime(freq * 1.5, startTime);
+
+        harmGain.gain.setValueAtTime(0.0001, startTime);
+        harmGain.gain.exponentialRampToValueAtTime(
+          peakGain * 0.22,
+          startTime + 0.003,
+        );
+        harmGain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          startTime + duration * 0.75,
+        );
+
+        harm.connect(harmGain);
+        harmGain.connect(masterFilter);
+
+        harm.start(startTime);
+        harm.stop(startTime + duration + 0.02);
+      }
+    };
+
+    // 1. Tactile acoustic droplet click (transient micro-pop)
+    const clickOsc = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    clickOsc.type = "sine";
+    clickOsc.frequency.setValueAtTime(1150, t);
+    clickOsc.frequency.exponentialRampToValueAtTime(520, t + 0.018);
+
+    clickGain.gain.setValueAtTime(0.0001, t);
+    clickGain.gain.exponentialRampToValueAtTime(0.12, t + 0.002);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
+
+    clickOsc.connect(clickGain);
+    clickGain.connect(masterFilter);
+
+    clickOsc.start(t);
+    clickOsc.stop(t + 0.025);
+
+    // 2. Note 1: F#5 (739.99 Hz)
+    playChime(t, 739.99, 0.16, 0.22, false);
+
+    // 3. Note 2: B5 (987.77 Hz)
+    playChime(t + 0.065, 987.77, 0.20, 0.26, true);
+
+    // 4. Note 3: D#6 (1244.51 Hz) + shimmer
+    playChime(t + 0.13, 1244.51, 0.32, 0.3, true);
   } catch {
     /* autoplay rules or device audio unavailable */
   }
