@@ -580,15 +580,3 @@ function Line({ ok, yes, no }: { ok: boolean; yes: string; no: string }) {
     </div>
   );
 }
-    </Sheet>
-  );
-}
-
-function Line({ ok, yes, no }: { ok: boolean; yes: string; no: string }) {
-  return (
-    <div className={`flex items-start gap-2 ${ok ? "text-fg" : "text-warn"}`}>
-      {ok ? <Check className="w-4 h-4 mt-0.5 shrink-0 text-ok" aria-hidden /> : <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />}
-      <span>{ok ? yes : no}</span>
-    </div>
-  );
-}
