@@ -21,7 +21,26 @@ const waitingUntil = (c: any): Date | null => {
   const at = c.scheduledFor ? new Date(c.scheduledFor) : null;
   return c.status === "running" && at && at.getTime() > Date.now() ? at : null;
 };
+
+const isCoolingDown = (c: any): boolean => {
+  return Boolean(
+    c.status === "running" &&
+      c.cooldownUntil &&
+      new Date(c.cooldownUntil).getTime() > Date.now(),
+  );
+};
+
 const statusLabel = (c: any) => {
+  if (c.circuitBreakerTripped) {
+    return "Paused (Anti-Ban Safety)";
+  }
+  if (isCoolingDown(c)) {
+    const mins = Math.max(
+      1,
+      Math.ceil((new Date(c.cooldownUntil).getTime() - Date.now()) / 60000),
+    );
+    return `Cool-down batch pause (${mins}m left)`;
+  }
   const at = waitingUntil(c);
   return at
     ? `Starts ${at.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
@@ -125,7 +144,18 @@ export function Campaigns({
                       {c.name}
                     </h2>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                      <Pill tone={waiting ? "info" : STATUS_TONE[c.status] || "neutral"} dot>
+                      <Pill
+                        tone={
+                          c.circuitBreakerTripped
+                            ? "danger"
+                            : isCoolingDown(c)
+                              ? "info"
+                              : waiting
+                                ? "info"
+                                : STATUS_TONE[c.status] || "neutral"
+                        }
+                        dot
+                      >
                         {statusLabel(c)}
                       </Pill>
                       <span className="text-[12.5px] text-fg-3">

@@ -1,6 +1,13 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Check, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import {
   fetchAudience,
   fetchAutomationTemplates,
@@ -15,7 +22,14 @@ import type { WhatsAppSession } from "../../types";
 import { Field, Notice, Pill } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
-import { estimate, findBlanks, localInput, previewParts, SPEEDS } from "../../utils/broadcast";
+import {
+  estimate,
+  findBlanks,
+  hasSpintax,
+  localInput,
+  previewParts,
+  SPEEDS,
+} from "../../utils/broadcast";
 
 const ALL = "All Contacts";
 const STEPS = ["Message", "Audience", "Review"];
@@ -34,6 +48,10 @@ export interface BroadcastRequest {
   antiBanDelaySeconds: number;
   launch: "draft" | "now" | "schedule";
   scheduledFor: string;
+  batchSize?: number;
+  cooldownSeconds?: number;
+  spintaxEnabled?: boolean;
+  typingSimulation?: boolean;
 }
 
 // Writing a broadcast in three steps: what to say, who gets it, and a last look before it goes. The audience is
@@ -61,6 +79,11 @@ export function BroadcastWizard({
   const [tag, setTag] = useState(ALL);
   const [name, setName] = useState("");
   const [seconds, setSeconds] = useState<number>(8);
+  const [batchSize, setBatchSize] = useState<number>(25);
+  const [cooldownMinutes, setCooldownMinutes] = useState<number>(5);
+  const [spintaxEnabled, setSpintaxEnabled] = useState<boolean>(true);
+  const [typingSimulation, setTypingSimulation] = useState<boolean>(true);
+  const [spintaxSeed, setSpintaxSeed] = useState<number>(0);
   const [when, setWhen] = useState<"now" | "schedule" | "draft">("now");
   const [at, setAt] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -84,6 +107,7 @@ export function BroadcastWizard({
   const sender = session || connected[0]?.sessionKey || "";
   const senderInfo = sessions.find((s) => s.sessionKey === sender);
   const blanks = useMemo(() => findBlanks(text), [text]);
+  const containsSpintax = useMemo(() => hasSpintax(text), [text]);
   const reset = () => {
     setStep(0);
     setText("");
@@ -92,6 +116,11 @@ export function BroadcastWizard({
     setTag(ALL);
     setName("");
     setSeconds(8);
+    setBatchSize(25);
+    setCooldownMinutes(5);
+    setSpintaxEnabled(true);
+    setTypingSimulation(true);
+    setSpintaxSeed(0);
     setWhen("now");
     setAt("");
     setAgreed(false);
@@ -180,6 +209,10 @@ export function BroadcastWizard({
         antiBanDelaySeconds: seconds,
         launch: when,
         scheduledFor: when === "schedule" ? new Date(at).toISOString() : "",
+        batchSize,
+        cooldownSeconds: cooldownMinutes * 60,
+        spintaxEnabled,
+        typingSimulation,
       });
       close();
     } catch (e: any) {
@@ -190,7 +223,10 @@ export function BroadcastWizard({
   };
 
   const people = a?.willReceive ?? 0;
-  const parts = previewParts(text, companyName);
+  const parts = useMemo(
+    () => previewParts(text, companyName, spintaxEnabled),
+    [text, companyName, spintaxEnabled, spintaxSeed],
+  );
   const finalLabel =
     when === "now" ? `Send to ${people} ${people === 1 ? "person" : "people"}` : when === "schedule" ? `Schedule for ${people}` : "Save draft";
 
@@ -275,16 +311,46 @@ export function BroadcastWizard({
             />
           </Field>
           <div className="flex flex-wrap items-center gap-2 -mt-2">
-            <span className="text-[12.5px] text-fg-3">Add the customer's:</span>
+            <span className="text-[12.5px] text-fg-3">Add fields:</span>
             {FIELDS.map(([token, label]) => (
               <button key={token} type="button" onClick={() => insert(token)} className="rounded-full px-3 h-8 text-[12.5px] bg-surface-2 ring-1 ring-line hover:ring-gold/60">
                 {label}
               </button>
             ))}
+            <span className="text-[12.5px] text-fg-3 ml-2">Anti-Ban Spintax:</span>
+            <button
+              type="button"
+              onClick={() => insert("{Hi|Hello|Hey}")}
+              title="Insert greeting variation"
+              className="rounded-full px-3 h-8 text-[12.5px] bg-brand-solid/10 text-brand-solid ring-1 ring-brand-solid/25 hover:bg-brand-solid/15 flex items-center gap-1 font-medium"
+            >
+              <Sparkles className="w-3 h-3 text-brand-solid" />
+              <span>{"{Hi|Hello|Hey}"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => insert("{Hope you're having a great week|Hope this finds you well}")}
+              title="Insert friendly opening variation"
+              className="rounded-full px-3 h-8 text-[12.5px] bg-surface-2 ring-1 ring-line hover:ring-gold/60"
+            >
+              <span>Variation {"{A|B}"}</span>
+            </button>
           </div>
           {text.trim() && (
             <div>
-              <p className="text-[13px] font-medium text-fg-2 mb-2 ml-1">How a customer sees it</p>
+              <div className="flex items-center justify-between mb-2 ml-1">
+                <p className="text-[13px] font-medium text-fg-2">How a customer sees it</p>
+                {containsSpintax && (
+                  <button
+                    type="button"
+                    onClick={() => setSpintaxSeed((s) => s + 1)}
+                    className="text-[12px] text-brand-solid hover:underline flex items-center gap-1 font-medium"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Shuffle variation preview</span>
+                  </button>
+                )}
+              </div>
               <div className="rounded-2xl rounded-tl-sm bg-surface-2 ring-1 ring-line px-4 py-3 text-[14.5px] leading-relaxed whitespace-pre-wrap max-w-[92%]" data-testid="preview">
                 {parts.map((p, i) =>
                   p.blank ? (
@@ -296,8 +362,14 @@ export function BroadcastWizard({
                   ),
                 )}
               </div>
+              {containsSpintax && (
+                <p className="mt-2 flex items-center gap-1.5 text-[12.5px] text-ok font-medium ml-1">
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  Anti-Ban Spintax active: each recipient receives a dynamically varied message.
+                </p>
+              )}
               {blanks.length > 0 && (
-                <p className="mt-2 flex items-start gap-2 text-[13px] text-warn">
+                <p className="mt-2 flex items-start gap-2 text-[13px] text-warn ml-1">
                   <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />
                   Replace the highlighted parts with your own words before sending.
                 </p>
@@ -374,7 +446,7 @@ export function BroadcastWizard({
           <Field label="Name" hint="Only your team sees this.">
             <input aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder={`Broadcast · ${today()}`} className={inputCls} />
           </Field>
-          <Field label="Sending speed" hint={`${estimate(people, seconds)} for ${people} ${people === 1 ? "person" : "people"}. Slower is gentler on your number.`}>
+          <Field label="Cadence speed" hint={`${estimate(people, seconds, batchSize, cooldownMinutes * 60)} for ${people} ${people === 1 ? "person" : "people"}. Includes human jitter and batch pauses.`}>
             <select aria-label="Sending speed" value={seconds} onChange={(e) => setSeconds(Number(e.target.value))} className={selectCls}>
               {SPEEDS.map((s) => (
                 <option key={s.seconds} value={s.seconds}>
@@ -383,6 +455,64 @@ export function BroadcastWizard({
               ))}
             </select>
           </Field>
+
+          {/* Anti-Ban Safeguards Card */}
+          <div className="rounded-2xl ring-1 ring-line/80 bg-surface-2 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-ok" />
+                <span className="text-[13.5px] font-semibold text-fg">Anti-Ban Protection Engine</span>
+              </div>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-ok/15 text-ok">Active</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="space-y-1">
+                <label className="text-[12px] text-fg-3">Batch Size</label>
+                <select
+                  value={batchSize}
+                  onChange={(e) => setBatchSize(Number(e.target.value))}
+                  className={`${selectCls} text-[13px] py-1.5`}
+                >
+                  <option value={20}>20 contacts / batch</option>
+                  <option value={25}>25 contacts / batch (Recommended)</option>
+                  <option value={50}>50 contacts / batch</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[12px] text-fg-3">Batch Cool-Down</label>
+                <select
+                  value={cooldownMinutes}
+                  onChange={(e) => setCooldownMinutes(Number(e.target.value))}
+                  className={`${selectCls} text-[13px] py-1.5`}
+                >
+                  <option value={3}>3 minutes</option>
+                  <option value={5}>5 minutes (Recommended)</option>
+                  <option value={10}>10 minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <ul className="text-[12px] text-fg-3 space-y-1.5 pt-2 border-t border-line">
+              <li className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-ok shrink-0" />
+                <span>Dynamic 2–7s human jitter added to cadence</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-ok shrink-0" />
+                <span>Realistic typing presence simulated before send</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-ok shrink-0" />
+                <span>Circuit breaker auto-pauses campaign on 3 consecutive failures</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-ok shrink-0" />
+                <span>Auto-suppression on STOP/CANCEL protects against spam reports</span>
+              </li>
+            </ul>
+          </div>
+
           <fieldset>
             <legend className="text-[13px] font-medium text-fg-2 mb-2 ml-1">When</legend>
             <div className="space-y-2">
@@ -438,6 +568,18 @@ export function BroadcastWizard({
           <Pill tone="neutral">Only people who agreed receive broadcasts</Pill>
         </div>
       )}
+    </Sheet>
+  );
+}
+
+function Line({ ok, yes, no }: { ok: boolean; yes: string; no: string }) {
+  return (
+    <div className={`flex items-start gap-2 ${ok ? "text-fg" : "text-warn"}`}>
+      {ok ? <Check className="w-4 h-4 mt-0.5 shrink-0 text-ok" aria-hidden /> : <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />}
+      <span>{ok ? yes : no}</span>
+    </div>
+  );
+}
     </Sheet>
   );
 }
