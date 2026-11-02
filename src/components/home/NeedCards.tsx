@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, CalendarClock, Check, Clock, Loader2, Lock, MessageSquare, Send, Sparkles, Smartphone, X } from "lucide-react";
 import { aiSuggestReply, type AiTone, type HomeItem } from "../../services/api";
 import { Avatar } from "../ui/Avatar";
@@ -16,6 +16,9 @@ const TONES: { key: AiTone; label: string }[] = [
   { key: "brief", label: "Brief" },
 ];
 
+const MOOD_DOT = { positive: "bg-ok", neutral: "bg-fg-3", frustrated: "bg-danger", urgent: "bg-warn" } as const;
+const MOOD_LABEL = { positive: "Positive", neutral: "Neutral", frustrated: "Frustrated", urgent: "Urgent" } as const;
+
 const card = "rounded-3xl bg-surface border border-line p-4 sm:p-5 shadow-card transition-shadow hover:shadow-pop";
 
 /** A customer who is waiting: who, for how long, what they said, and Riwo's draft one tap away. */
@@ -32,9 +35,17 @@ export function ChatCard({
   onSend: (conversationId: string, text: string) => Promise<void>;
   onSent: () => void;
 }) {
-  const [draft, setDraft] = useState<{ text: string; tone: AiTone } | null>(null);
+  const prep = item.prep;
+  const [draft, setDraft] = useState<{ text: string; tone: AiTone; prepared?: boolean } | null>(prep?.draft ? { text: prep.draft, tone: "friendly", prepared: true } : null);
   const [busy, setBusy] = useState<"draft" | "send" | null>(null);
   const [error, setError] = useState("");
+  // Riwo finished preparing after the card was shown: offer it, unless the person has already started something else
+  const [declined, setDeclined] = useState(false);
+  useEffect(() => {
+    if (prep?.draft && !declined) setDraft((d) => d ?? { text: prep.draft, tone: "friendly", prepared: true });
+  }, [prep?.draft, declined]);
+  // a draft with a [bracketed placeholder] is Riwo saying it needs a fact only a person has
+  const needsFilling = draft ? /\[[^\]\n]+\]/.test(draft.text) : false;
 
   const write = async (tone: AiTone) => {
     setBusy("draft");
@@ -42,6 +53,7 @@ export function ChatCard({
     try {
       const out = await aiSuggestReply(item.conversationId, tone);
       setDraft({ text: out.text, tone });
+      setDeclined(false);
     } catch (e: any) {
       setError(e.message || "Riwo couldn't write a reply just now.");
     } finally {
@@ -77,6 +89,18 @@ export function ChatCard({
             </span>
             {item.assignedTo && <span className="text-[12px] text-fg-3">Assigned to {item.assignedTo}</span>}
           </div>
+          {prep && (prep.summary || prep.mood) && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-fg-2">
+              {prep.mood && (
+                <span className="inline-flex items-center gap-1.5 text-fg-2" title={prep.moodNote || undefined}>
+                  <span aria-hidden className={`h-2 w-2 rounded-full ${MOOD_DOT[prep.mood]}`} />
+                  {MOOD_LABEL[prep.mood]}
+                </span>
+              )}
+              {prep.summary && <span className="text-fg-2">{prep.summary}</span>}
+              {prep.nextStep && <span className="text-fg-3">Next: {prep.nextStep}</span>}
+            </div>
+          )}
           {item.preview && (
             <p dir="auto" className="mt-1.5 text-[14.5px] text-fg-2 leading-relaxed line-clamp-2">
               “{item.preview}”
@@ -89,7 +113,7 @@ export function ChatCard({
         <div className="mt-4 rounded-2xl bg-surface-2 p-3.5 animate-rise" role="group" aria-label={`Riwo's draft reply to ${item.title}`}>
           <div className="flex items-center gap-2 mb-2">
             <RiwoAvatar size={24} />
-            <span className="text-[12.5px] font-medium text-fg-2">Riwo's draft. Read it, change it, then send.</span>
+            <span className="text-[12.5px] font-medium text-fg-2">{draft.prepared ? "Riwo prepared this reply. Read it, change it, then send." : "Riwo's draft. Read it, change it, then send."}</span>
           </div>
           <textarea
             aria-label="Reply"
@@ -99,6 +123,7 @@ export function ChatCard({
             rows={3}
             className="w-full resize-y rounded-xl bg-surface border border-line px-3 py-2.5 text-[14.5px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-gold/60"
           />
+          {needsFilling && <p className="mt-2 text-[12.5px] text-warn">Riwo left a [bracketed] part for you to fill in before this can be sent.</p>}
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             {TONES.map((t) => (
               <button
@@ -113,13 +138,13 @@ export function ChatCard({
               </button>
             ))}
             <span className="flex-1" />
-            <button type="button" className={btn("ghost", "sm")} onClick={() => setDraft(null)} disabled={busy !== null}>
+            <button type="button" className={btn("ghost", "sm")} onClick={() => { setDraft(null); setDeclined(true); }} disabled={busy !== null}>
               <X className="w-4 h-4" aria-hidden /> Discard
             </button>
             <button type="button" className={btn("secondary", "sm")} onClick={() => onOpenChat(item.conversationId)} disabled={busy !== null}>
               Edit in chat
             </button>
-            <button type="button" className={btn("primary", "sm")} onClick={() => void send()} disabled={busy !== null || !draft.text.trim()}>
+            <button type="button" className={btn("primary", "sm")} onClick={() => void send()} disabled={busy !== null || !draft.text.trim() || needsFilling} title={needsFilling ? "Fill in the [bracketed] part first" : undefined}>
               {busy === "send" ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Send className="w-4 h-4" aria-hidden />} Send
             </button>
           </div>

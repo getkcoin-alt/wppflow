@@ -911,8 +911,17 @@ export const setPipelineAutoCreate = (enabled: boolean): Promise<PipelineSetting
   apiRequest("/api/leads/settings/auto-create", { method: "PUT", body: JSON.stringify({ enabled }) });
 
 // ── Today: what needs this person now ────────────────────────────────────────────────────────────
+/** What Riwo prepared for a waiting chat, while nobody was looking */
+export interface HomePrep {
+  summary: string;
+  mood: "positive" | "neutral" | "frustrated" | "urgent" | null;
+  moodNote: string;
+  nextStep: string;
+  /** A reply to read, change and send */
+  draft: string;
+}
 export type HomeItem =
-  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean }
+  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean; prep: HomePrep | null }
   | { kind: "task"; id: string; taskId: string; conversationId: string | null; title: string; who: string; dueAt: string; overdue: boolean; escalated: boolean }
   | { kind: "number"; id: string; sessionName: string; title: string; level: "down" | "warn" | "unpaired"; problem: string };
 export interface HomeData {

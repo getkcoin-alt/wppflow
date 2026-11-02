@@ -20,6 +20,7 @@ const chat = (over = {}) => ({ kind: "chat", id: "chat:c1", conversationId: "c1"
 const home = (over = {}) => ({ firstName: "Olivia", counts: none, replyTargetMinutes: 30, needsYou: [], more: 0, setup: null, ...over });
 
 let props: TodayProps;
+let qc: QueryClient;
 const show = (data: object, extra: Partial<TodayProps> = {}) => {
   api.fetchHome.mockResolvedValue(data);
   props = {
@@ -35,8 +36,9 @@ const show = (data: object, extra: Partial<TodayProps> = {}) => {
     onSetupStep: vi.fn(),
     ...extra,
   };
+  qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider client={qc}>
       <Today {...props} />
     </QueryClientProvider>,
   );
@@ -100,6 +102,43 @@ describe("Today", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Send$/ }));
     await waitFor(() => expect(props.onSend).toHaveBeenCalledWith("c1", "Hi Asha, yes it is. When would you like to see it?"));
     await waitFor(() => expect(api.fetchHome).toHaveBeenCalledTimes(2)); // the list is asked again: the customer has an answer
+  });
+
+  it("a reply Riwo prepared earlier is already there: with what the customer wants, how they sound, and the next step", async () => {
+    const prep = { summary: "Wants to view the villa on Friday.", mood: "urgent", moodNote: "needs it this week", nextStep: "Offer 5pm", draft: "Hi Asha! Friday at 5pm works. Shall I book it?" };
+    show(home({ needsYou: [chat({ prep })] }));
+    const box = (await screen.findByRole("textbox", { name: "Reply" })) as HTMLTextAreaElement;
+    expect(box.value).toBe(prep.draft);
+    expect(screen.getByText("Riwo prepared this reply. Read it, change it, then send.")).toBeDefined();
+    expect(screen.getByText("Wants to view the villa on Friday.")).toBeDefined();
+    expect(screen.getByText("Urgent")).toBeDefined();
+    expect(screen.getByText("Next: Offer 5pm")).toBeDefined();
+    expect(api.aiSuggestReply).not.toHaveBeenCalled(); // nothing to wait for: it was done while nobody looked
+    fireEvent.click(screen.getByRole("button", { name: /^Send$/ }));
+    await waitFor(() => expect(props.onSend).toHaveBeenCalledWith("c1", prep.draft));
+  });
+
+  it("a prepared reply with a [bracketed] part cannot be sent until it is filled in", async () => {
+    show(home({ needsYou: [chat({ prep: { summary: "Asks the price.", mood: "neutral", moodNote: "", nextStep: "", draft: "Hi Ben, our plans start at [price]." } })] }));
+    const send = (await screen.findByRole("button", { name: /^Send$/ })) as HTMLButtonElement;
+    expect(send.disabled).toBe(true);
+    expect(send.title).toBe("Fill in the [bracketed] part first");
+    expect(screen.getByText(/Riwo left a \[bracketed\] part/)).toBeDefined();
+    fireEvent.change(screen.getByRole("textbox", { name: "Reply" }), { target: { value: "Hi Ben, our plans start at INR 999." } });
+    expect((screen.getByRole("button", { name: /^Send$/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("when Riwo finishes after the card was shown it appears, unless the person already threw one away", async () => {
+    const prep = { summary: "Asks the price.", mood: "neutral", moodNote: "", nextStep: "", draft: "Hi! Plans start at INR 999." };
+    show(home({ needsYou: [chat()] }));
+    await screen.findByRole("button", { name: "Draft a reply with Riwo" });
+    api.fetchHome.mockResolvedValue(home({ needsYou: [chat({ prep })] }));
+    await qc.invalidateQueries({ queryKey: ["home", "t1"] });
+    expect(((await screen.findByRole("textbox", { name: "Reply" })) as HTMLTextAreaElement).value).toBe(prep.draft);
+    fireEvent.click(screen.getByRole("button", { name: /Discard/ }));
+    await qc.invalidateQueries({ queryKey: ["home", "t1"] });
+    await waitFor(() => expect(api.fetchHome.mock.calls.length).toBeGreaterThanOrEqual(3));
+    expect(screen.queryByRole("textbox", { name: "Reply" }), "a discarded draft does not come back").toBeNull();
   });
 
   it("another tone writes a new draft, and a draft can be thrown away without sending anything", async () => {

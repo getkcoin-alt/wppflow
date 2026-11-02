@@ -140,6 +140,7 @@ export function useInboxRealtime({
       }
       invalidate("messages", "conversations", "home");
     };
+    const onHome = () => invalidate("home");
     const onSession = () => invalidate("sessions", "number-health", "home");
     const onSynced = () => void catchUp();
     const onProgress = (p: any) => {
@@ -186,6 +187,7 @@ export function useInboxRealtime({
       "message:updated": onMessageUpdated,
       "message:deleted": onMessageDeleted,
       "message:ack": onReceipt,
+      "home:changed": onHome,
       "conversation:updated": onConversation,
       "conversation:read": onConversation,
       "conversations:synced": onSynced,
