@@ -59,6 +59,9 @@ describe("Scriwo Homes: the same app on the property address", () => {
     expect(screen.getByText("Homes")).toBeDefined();
     expect(screen.getByText("14 days of everything, free. No card needed.")).toBeDefined();
     expect(screen.getByText("Rashid Al Mansoori")).toBeDefined();
+    // the small print agrees with the trial, and does not say the workspace starts on Free
+    expect(screen.getByText(/starts with 14 days of the Growth plan/)).toBeDefined();
+    expect(screen.queryByText(/starts on the Free plan/)).toBeNull();
   });
 
   it("an ordinary address looks as it always did", () => {
@@ -67,6 +70,7 @@ describe("Scriwo Homes: the same app on the property address", () => {
     expect(screen.getAllByText(/thoughtfully handled/).length).toBeGreaterThan(0);
     expect(screen.queryByText("Homes")).toBeNull();
     expect(screen.queryByText(/14 days of everything/)).toBeNull();
+    expect(screen.getByText(/starts on the Free plan: one person and one WhatsApp number/)).toBeDefined();
   });
 
   it("signing up and continuing with Google both say they came from the homes address", async () => {

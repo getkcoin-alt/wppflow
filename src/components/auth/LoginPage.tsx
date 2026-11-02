@@ -463,7 +463,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
 
         {mode === "signup" && (
           <p className="text-[13px] text-fg-3 -mt-1">
-            A new workspace starts on the Free plan: one person and one WhatsApp number. For a team, write to us and we will move you to a bigger plan.
+            {currentVertical()
+              ? "Your workspace starts with 14 days of the Growth plan: up to 3 WhatsApp numbers and the whole team. After the trial it keeps working on the Free plan until you choose a plan; nothing is deleted."
+              : "A new workspace starts on the Free plan: one person and one WhatsApp number. For a team, write to us and we will move you to a bigger plan."}
           </p>
         )}
 
