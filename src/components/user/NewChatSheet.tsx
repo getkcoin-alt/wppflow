@@ -13,6 +13,7 @@ import {
 } from "../../services/api";
 import type { WhatsAppSession } from "../../types";
 import { numberName, phoneText } from "../../utils/numbers";
+import { mobileDigits } from "../../utils/chatName";
 import { Avatar } from "../ui/Avatar";
 
 export interface NewChatPerson {
@@ -148,8 +149,10 @@ export function NewChatSheet({
   // Filter contacts by search query in group mode
   const filteredContacts = useMemo(() => {
     const q = searchContact.trim().toLowerCase();
-    if (!q) return availableContacts;
-    return availableContacts.filter((c) => {
+    // someone WhatsApp only gave a hidden id for has no number to add to a group
+    const withNumbers = availableContacts.filter((c) => mobileDigits(c.phone));
+    if (!q) return withNumbers;
+    return withNumbers.filter((c) => {
       const cName = String(c.name || "").toLowerCase();
       const cPhone = String(c.phone || "").toLowerCase();
       return cName.includes(q) || cPhone.includes(q);

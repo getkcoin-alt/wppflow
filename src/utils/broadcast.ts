@@ -89,7 +89,7 @@ export function estimate(
   const minutes = Math.round(totalSeconds / 60);
   if (minutes < 60) {
     const batchNote =
-      numBatches > 0
+      numBatches > 0 && cooldownSeconds > 0
         ? ` (includes ${numBatches} cool-down pause${numBatches > 1 ? "s" : ""})`
         : "";
     return `about ${minutes} minute${minutes === 1 ? "" : "s"}${batchNote}`;
@@ -97,7 +97,7 @@ export function estimate(
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   const batchNote =
-    numBatches > 0
+    numBatches > 0 && cooldownSeconds > 0
       ? ` (includes ${numBatches} batch pause${numBatches > 1 ? "s" : ""})`
       : "";
   return `about ${hours} hour${hours === 1 ? "" : "s"}${rest ? ` ${rest} min` : ""}${batchNote}`;

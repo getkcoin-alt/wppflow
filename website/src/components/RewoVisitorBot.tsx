@@ -43,8 +43,8 @@ const DEFAULT_QUESTIONS = [
   },
   {
     icon: ArrowRight,
-    label: "🚀 How do I start a free trial?",
-    question: "How can I start a free trial and what is included?",
+    label: "🚀 How do I start for free?",
+    question: "How can I start on the Free plan and what is included?",
   },
 ];
 
@@ -60,7 +60,7 @@ export function RewoVisitorBot() {
     {
       id: "intro-1",
       sender: "bot",
-      text: "👋 Welcome to **Scriwo**! I'm **Riwo**, your AI concierge.\n\nI can answer questions about our **Shared WhatsApp Inbox**, **Anti-Ban Broadcast Engine**, team collaboration, and pricing plans.\n\nTap a quick question below or ask me anything directly!",
+      text: "👋 Welcome to **Scriwo**! I'm **Riwo**, your AI concierge.\n\nI can answer questions about our **Shared WhatsApp Inbox**, **Broadcast safeguards**, team collaboration, and pricing plans.\n\nTap a quick question below or ask me anything directly!",
       time: "Just now",
       ctaType: "trial",
     },
@@ -123,7 +123,7 @@ export function RewoVisitorBot() {
       }));
 
     try {
-      const response = await fetch("https://app.scriwo.com/api/public/rewo/chat", {
+      const response = await fetch("/api/public/rewo/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: query, history }),
@@ -134,7 +134,9 @@ export function RewoVisitorBot() {
       }
 
       const data = await response.json();
-      const botReply = data.reply || "I'm here to help! Could you please rephrase your question?";
+      // the server says "fallback" when it has no AI model to ask: the built-in answers below are used then
+      if (data.status !== "success" || !data.reply) throw new Error("No live answer available");
+      const botReply = String(data.reply);
 
       // Determine smart CTA based on content
       let ctaType: "trial" | "pricing" | "sales" | undefined;
@@ -160,13 +162,13 @@ export function RewoVisitorBot() {
     } catch (err: unknown) {
       console.warn("Rewo chat API fetch error, using fallback answer:", err);
       // Smart offline fallback
-      let fallback = "Thanks for your question! Scriwo provides a shared WhatsApp team inbox, anti-ban bulk broadcast safeguards, and unlimited team seats.\n\nYou can start a **7-Day Free Trial** in under 60 seconds or view all our pricing plans!";
+      let fallback = "Thanks for your question! Scriwo provides a shared WhatsApp team inbox, broadcasts with safeguards, and a Free plan with one WhatsApp number and no card.\n\nYou can start free in a couple of minutes or view all the plans!";
       const qLower = query.toLowerCase();
 
       if (qLower.includes("anti-ban") || qLower.includes("ban") || qLower.includes("block")) {
-        fallback = "🛡️ **Scriwo Anti-Ban Protection Engine**\n\nOur system incorporates 5 protective layers:\n• **Human Jitter**: 8–22s natural delays between messages\n• **Typing Simulation**: Live 'typing...' presence before sending\n• **Smart Batching**: 25 contacts per batch with 5-minute cool-down\n• **Opt-out Suppression**: Instantly blocks contacts who reply STOP\n• **Auto Circuit Breaker**: Halts broadcasts if abnormal failure spikes occur.";
+        fallback = "🛡️ **Broadcast safeguards**\n\nBroadcasts (Growth plan and above) go only to contacts who have given permission, and are sent gently:\n• **Random delays** of a few seconds between messages\n• **Typing presence** shown before each message\n• **Batches** with a cool-down pause between them (25 contacts and 5 minutes by default)\n• **Automatic pause** if three sends in a row fail\n\nThese lower the risk for your number. No tool can promise a number will never be restricted.";
       } else if (qLower.includes("price") || qLower.includes("cost") || qLower.includes("plan")) {
-        fallback = "💰 **Scriwo Pricing & Plans**\n\n• **Starter**: 1 Number, 3 Teammates, Shared Inbox\n• **Growth**: 3 Numbers, 10 Teammates, Anti-Ban Broadcasts\n• **Business**: 10 Numbers, Unlimited Teammates, Riwo AI Assistant\n\nAvailable in **AED** (UAE) and **INR** (India) with monthly or discounted annual billing.";
+        fallback = "💰 **Scriwo plans**\n\n• **Free**: 1 number, live inbox, private notes\n• **Starter**: up to 3 numbers, shared inbox, assign and resolve\n• **Growth**: up to 10 numbers, Riwo AI assistant, broadcasts, automations\n• **Business**: up to 25 numbers, API keys and webhooks\n\nPrices are in **AED** and **INR**, billed monthly or yearly. The pricing page has the exact amounts.";
       }
 
       setMessages((prev) => [
@@ -330,7 +332,7 @@ export function RewoVisitorBot() {
                 </div>
                 <p className="text-[11px] text-fg-3 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Instant answers & trial support
+                  Instant answers
                 </p>
               </div>
             </div>
@@ -380,7 +382,7 @@ export function RewoVisitorBot() {
                           className="rewo-shimmer-btn inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-solid to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
                         >
                           <Sparkles className="h-3.5 w-3.5" />
-                          Start 7-Day Free Trial
+                          Start free
                         </a>
                       )}
                       <Link
@@ -483,7 +485,7 @@ export function RewoVisitorBot() {
                 rel="noopener noreferrer"
                 className="text-gold font-medium hover:underline"
               >
-                Start Free Trial →
+                Start free →
               </a>
             </div>
           </div>

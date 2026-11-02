@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { btn, inputCls } from "../ui/styles";
+import { isWhatsAppId } from "../../utils/chatName";
 
 // The contact's name in the details panel. A pencil edits it; the name WhatsApp shows stays visible so it can be restored.
 export function ContactName({
@@ -68,7 +69,7 @@ export function ContactName({
           </button>
         )}
       </h4>
-      {whatsappName && whatsappName !== name && (
+      {whatsappName && !isWhatsAppId(whatsappName) && whatsappName !== name && (
         <p className="text-[12.5px] text-fg-3 mt-0.5">
           WhatsApp shows “{whatsappName}”
           {onRename && (

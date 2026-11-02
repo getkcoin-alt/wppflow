@@ -463,7 +463,7 @@ export function BroadcastWizard({
                 <ShieldCheck className="w-4 h-4 text-ok" />
                 <span className="text-[13.5px] font-semibold text-fg">Anti-Ban Protection Engine</span>
               </div>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-ok/15 text-ok">Active</span>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-ok/15 text-ok">On</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-1">
@@ -508,7 +508,7 @@ export function BroadcastWizard({
               </li>
               <li className="flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-ok shrink-0" />
-                <span>Auto-suppression on STOP/CANCEL protects against spam reports</span>
+                <span>Only people who have given permission are sent to; add a STOP rule under Automations so customers can opt out</span>
               </li>
             </ul>
           </div>

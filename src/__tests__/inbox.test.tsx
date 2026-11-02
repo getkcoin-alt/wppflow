@@ -525,7 +525,7 @@ describe("the sales bar under a chat's header", () => {
       "conv_1",
       "Got your message!",
       false,
-      "m1",
+      "msg_1",
     );
   });
 
@@ -582,8 +582,8 @@ describe("the sales bar under a chat's header", () => {
       />,
     );
 
-    const msgText = screen.getByText("Hello Alice! How can we assist you today?");
-    const msgBubble = msgText.closest(".touch-pan-y");
+    // the same words are also the chat list's preview: the one in the conversation is inside the swipeable bubble
+    const msgBubble = screen.getAllByText("Can you confirm order #4120?").map((el) => el.closest(".touch-pan-y")).find(Boolean) ?? null;
     expect(msgBubble).toBeDefined();
 
     if (msgBubble) {

@@ -1287,7 +1287,7 @@ export const Inbox: React.FC<InboxProps> = ({
                     key={msg.id}
                     className={`group relative flex my-0.5 px-2 ${
                       isOut ? "justify-end" : "justify-start"
-                    }`}
+                    } ${activeMenuMsgId === msg.id ? "z-30" : ""}`}
                   >
                     <div
                       onTouchStart={(e) => handleMessageTouchStart(msg, e)}

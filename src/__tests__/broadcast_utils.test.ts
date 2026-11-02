@@ -19,15 +19,17 @@ describe("writing a broadcast", () => {
   it("says how long sending takes", () => {
     expect(estimate(1, 8)).toBe("under a minute");
     expect(estimate(5, 8)).toBe("under a minute");
-    expect(estimate(31, 8)).toBe("about 4 minutes");
+    // the gaps, plus about 3.5 seconds of human-like variation per message, plus a pause after every batch (25 and 5 minutes by default)
+    expect(estimate(31, 8)).toBe("about 11 minutes (includes 1 cool-down pause)");
+    expect(estimate(31, 8, 25, 0)).toBe("about 6 minutes");
     expect(estimate(2, 60)).toBe("about 1 minute");
-    expect(estimate(500, 8)).toBe("about 1 hour 7 min");
-    expect(estimate(451, 8)).toBe("about 1 hour");
+    expect(estimate(500, 8, 500, 300)).toBe("about 1 hour 36 min");
     expect(estimate(0, 8)).toBe("under a minute");
+    expect(estimate(500, 8)).toBe("about 3 hours 11 min (includes 19 batch pauses)");
   });
 
-  it("offers speeds from fast to careful, and never faster than the server allows", () => {
-    expect(SPEEDS.map((s) => s.seconds)).toEqual([4, 8, 15]);
+  it("offers the standard speed first, and never faster than the server allows", () => {
+    expect(SPEEDS.map((s) => s.seconds)).toEqual([8, 15, 5]);
     expect(Math.min(...SPEEDS.map((s) => s.seconds))).toBeGreaterThanOrEqual(4);
   });
 
