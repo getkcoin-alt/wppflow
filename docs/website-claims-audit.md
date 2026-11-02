@@ -365,3 +365,22 @@ says that once an export leaves Scriwo, protecting that copy is the customer's j
 **Known limit.** Anyone can start a trial, and a person who makes a second workspace gets a second trial; sign-ups are
 rate-limited like any other. The main menu already lists Features, Scriwo Homes, Riwo AI, Industries, Pricing, Developers,
 White-label and Guides, and a test keeps that order.
+
+
+## Knowledge base, Riwo sales agent and describe-it-in-your-words (3 November 2026)
+
+Built, and on the website only as described here. Evidence is the named tests; nothing has been seen with a real customer conversation,
+a real provider or a real company website.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| The owner adds up to five websites; Riwo reads them page by page (robots.txt obeyed, private addresses refused), writes what the company does and lists its products, and an owner's notes are added | Test | `knowledge-base.test.js`, `knowledge_agent.test.tsx` |
+| Refresh reads a site again and updates only what changed; a page taken down is forgotten; an unchanged site costs no Riwo request; sites are re-read every 24 hours | Test | `knowledge-base.test.js` (each rule broken on purpose) |
+| Riwo is given the profile, the notes and the pages that match what the customer wrote; every answer is checked against that text | Test | `knowledge-base.test.js`, `riwo-agent.test.js` |
+| The Riwo sales agent talks from the knowledge base from the very first message, learns what the customer needs, and works toward one of four closes | Test | `riwo-agent.test.js` |
+| Prices go to a person unless the company lets Riwo repeat the prices on its website; an invented price or link is never sent; a second try, then a person; ready customers and unanswerable questions are handed over with a summary | Test | `riwo-agent.test.js` (the figure check, the price gate and the hand-over each broken on purpose) |
+| "Describe it in your own words": Riwo asks up to three questions, then drafts an agent that passes the same checks; nothing is saved or switched on | Test | `agent-draft.test.js`, `knowledge_agent.test.tsx` |
+
+**Not claimed.** That Riwo "closes sales" by itself: it moves the customer to the next step and a person finishes the sale. That it
+"learns" or "trains" from chats: it reads the website and notes, nothing else. That it works for any website: sites that only show
+their words after loading scripts cannot be read.

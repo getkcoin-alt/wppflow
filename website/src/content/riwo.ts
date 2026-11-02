@@ -45,6 +45,11 @@ export const RIWO_STEPS = [
 // What Riwo can do without being asked each time. Every one is off until an owner turns it on.
 export const RIWO_AUTOMATIC = [
   {
+    title: "Sales agent from your website",
+    body: "Give Riwo your website and it learns every product and page, then talks to new customers from it: finds out what they need, recommends the right product and moves them to the next step you chose. Refresh whenever the site changes. You describe it in your own words, and Riwo drafts the setup for you to check.",
+    href: "/features/riwo-knowledge-agent",
+  },
+  {
     title: "Autopilot",
     body: "Answers a customer with one of your own saved replies, word for word, when it fully answers the question, and clears the thank-yous. Never in groups, never when the customer sounds unhappy, never in a chat your team is handling. Every action is listed and can be undone.",
     href: "/features/riwo-autopilot",
@@ -66,7 +71,8 @@ export const RIWO_FAQS = [
   { q: "Does Riwo send messages by itself?", a: "Not unless you ask it to. By default Riwo only writes a draft, and a person reads it, edits it and presses send. An owner can switch on Autopilot (it can only send your own saved replies, word for word, in safe cases) or a Sales assistant rule (it asks your questions and answers short questions from what you wrote about your business). Both are off until switched on, and pricing and proposals are always handed to a person." },
   { q: "Will customers know they are talking to an assistant?", a: "Yes. Everything Riwo sends ends with a short line saying it is an automated reply and that the customer can write \"human\" to reach a person. When they do, Riwo stops, your team is notified and the chat goes to the top of Today." },
   { q: "Can Riwo quote a price?", a: "No. A request for pricing, a quote or a proposal is recognised by a word list, in English, Arabic, Hindi and Hinglish, before the AI is asked. The customer gets your formal message that an executive is on it, and your team gets the requirements the customer shared. Riwo also cannot repeat a price, link or phone number that is not in text you wrote." },
-  { q: "Can Riwo learn about my business from my website?", a: "Yes. In the Sales assistant, enter your website address and Riwo reads your public pages and drafts what it may say about your business, and suggests questions to ask. You read and edit it before it is used. Prices on the page are left out." },
+  { q: "Can Riwo learn about my business from my website?", a: "Yes. Add your website to the knowledge base (up to five sites) and Riwo reads its pages and learns your products and services. Press Refresh when your website changes; it also reads again by itself every day. Your own notes can be added in your own words. Riwo answers only from this, and never repeats a price, link or promise that is not in it." },
+  { q: "Can Riwo run the whole chat and close the sale?", a: "Riwo can run the conversation: answer from your knowledge base, find out what the customer needs, recommend the right product and move them to the next step you chose, such as a demo, their contact details or a link. A person finishes the sale. Prices and proposals go to your team unless you let Riwo repeat the prices on your website, and Riwo never negotiates or invents terms." },
   { q: "Which languages does Riwo understand?", a: "Riwo replies in the language and script the customer used most recently, including English, Arabic, Hindi, Hinglish, Urdu and Tamil, and it can translate your reply into 15 languages." },
   { q: "Which plans include Riwo?", a: "Riwo is included in the Growth, Business and Enterprise plans. Company owners can switch it off, and each company has a daily allowance." },
   { q: "Is our chat data safe with Riwo?", a: "Riwo sees a chat only to prepare or write a reply for it, or when a rule you switched on is talking to that customer. Customer messages are treated as data, never as instructions, so a message cannot trick Riwo into doing something else. Riwo runs on several AI services, and some free services may keep what they are sent. Owners can switch on Private mode to limit Riwo to services that do not keep messages, or switch Riwo off for the company." },

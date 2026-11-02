@@ -74,7 +74,9 @@ export function describeRule(
             : `When a message contains ${quote(words) || "…"}`;
   const reply = c.reply ? ` and replies “${clip(c.reply, 70)}”` : "";
   const then =
-    rule.actionType === "ai_chat" && rule.config?.sales?.enabled
+    rule.actionType === "ai_chat" && rule.config?.agent?.enabled
+      ? "lets Riwo talk to them from your knowledge base like a salesperson: it finds out what they need, recommends the right product, moves them toward your goal, and hands over to a person when they are ready, with a summary"
+      : rule.actionType === "ai_chat" && rule.config?.sales?.enabled
       ? "sends your welcome message with the first question, asks the rest one at a time, and when they ask for pricing or a proposal sends your formal message, hands the chat to an executive and adds them to your pipeline"
       : rule.actionType === "ai_chat"
       ? "sends your welcome message and lets Riwo answer their short questions, from what you wrote about your business, until your team replies"

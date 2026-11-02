@@ -11,6 +11,12 @@ const api = vi.hoisted(() => ({
   toggleAutomationApi: vi.fn(),
   removeAutomation: vi.fn(),
   fetchAssignment: vi.fn(),
+  fetchKnowledge: vi.fn(),
+  addKnowledgeSource: vi.fn(),
+  refreshKnowledgeSource: vi.fn(),
+  removeKnowledgeSource: vi.fn(),
+  saveKnowledgeNotes: vi.fn(),
+  draftAgent: vi.fn(),
   saveAssignment: vi.fn(),
   getStoredTenantId: vi.fn(() => "t1"),
 }));
@@ -60,6 +66,7 @@ beforeEach(() => {
   for (const fn of Object.values(api)) fn.mockReset();
   onChanged.mockReset();
   api.getStoredTenantId.mockReturnValue("t1");
+  api.fetchKnowledge.mockResolvedValue({ sources: [], overview: "", products: [], notes: "", writtenByRiwo: false, ready: false });
   api.fetchAssignment.mockResolvedValue({ enabled: false, mode: "round_robin", team: "", sessionNames: [], keepOwner: true, maxOpen: null, useHours: false, timezone: "Asia/Kolkata", workDays: [1, 2, 3, 4, 5], workStart: "09:00", workEnd: "18:00", members: [], teams: [], numbers: [] });
   api.fetchAutomationContext.mockResolvedValue({ countries: [{ code: "971", name: "United Arab Emirates" }], homeCodes: ["971"], homeFrom: "", riwo: { available: true, reason: null }, chat: { defaultReplies: 5, maxReplies: 10, sources: [], handoff: "" } });
   api.fetchAutomationTemplates.mockResolvedValue({ templates: TEMPLATES });

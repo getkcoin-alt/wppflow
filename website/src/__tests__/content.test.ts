@@ -43,7 +43,7 @@ describe("site content", () => {
 describe("the AI and partner claims", () => {
   it("has a page for each AI and sales feature that the home page links to", async () => {
     const slugs = FEATURES.map((f) => f.slug);
-    for (const slug of ["ai-today-home", "riwo-autopilot", "ai-sales-assistant", "ai-handoff-and-disclosure", "whatsapp-sales-pipeline", "team-reports-and-assignment"]) expect(slugs).toContain(slug);
+    for (const slug of ["ai-today-home", "riwo-autopilot", "ai-sales-assistant", "ai-handoff-and-disclosure", "whatsapp-sales-pipeline", "team-reports-and-assignment", "riwo-knowledge-agent"]) expect(slugs).toContain(slug);
     const { RIWO_AUTOMATIC } = await import("@/content/riwo");
     for (const a of RIWO_AUTOMATIC) expect(allRoutes().map((r) => r.path), a.title).toContain(a.href);
   });

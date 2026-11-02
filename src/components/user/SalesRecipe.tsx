@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Briefcase, Loader2, Plus, X } from "lucide-react";
-import { fetchAutomationContext, type AutomationContext, type RuleDraft } from "../../services/api";
+import { fetchAutomationContext, fetchKnowledge, type AutomationContext, type RuleDraft } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, textareaCls } from "../ui/styles";
@@ -59,6 +59,10 @@ function Body({
 }) {
   const c = initial.config;
   const sales = c.sales;
+  // a company that has given Riwo its website can use that instead of writing the text again
+  const base = useQuery({ queryKey: ["knowledge"], queryFn: fetchKnowledge, staleTime: 15_000 });
+  const hasBase = Boolean(base.data?.ready);
+  const [useBase, setUseBase] = useState(c.useKnowledge !== false);
   const [name, setName] = useState(initial.name || "Sales assistant");
   const [welcome, setWelcome] = useState(c.reply || WELCOME);
   const [knowledge, setKnowledge] = useState(c.knowledge || "");
@@ -103,7 +107,7 @@ function Body({
   const save = async (turnOn: boolean) => {
     if (!name.trim()) return setError("Give the rule a name.");
     if (!welcome.trim()) return setError("Write the welcome message.");
-    if (knowledge.trim().length < 20) return setError("Write a few sentences about your business, or enter your website above and tap Read my website.");
+    if (!(hasBase && useBase) && knowledge.trim().length < 20) return setError("Write a few sentences about your business, or enter your website above and tap Read my website.");
     if (!questions.length) return setError("Add at least one question for Riwo to ask.");
     if (!formal.trim()) return setError("Write the message that is sent when someone asks for pricing or a proposal.");
     const hours = Number(followUp);
@@ -120,6 +124,7 @@ function Body({
       config: {
         reply: welcome.trim(),
         knowledge: knowledge.trim(),
+        useKnowledge: hasBase && useBase,
         website: website.trim() || undefined,
         handoff: handoff.trim() || undefined,
         sourceOptions: [],
@@ -266,6 +271,15 @@ function Body({
             </button>
           </div>
         </fieldset>
+
+        {hasBase && (
+          <label className="flex items-start gap-2.5 text-[13.5px] text-fg-2 rounded-2xl ring-1 ring-line p-4">
+            <input type="checkbox" className="mt-1" checked={useBase} onChange={(e) => setUseBase(e.target.checked)} />
+            <span>
+              <strong className="font-medium text-fg">Use my knowledge base.</strong> Riwo answers from your websites and notes ({base.data?.sources.length} {base.data?.sources.length === 1 ? "website" : "websites"}), so it knows all your products. The text below is extra.
+            </span>
+          </label>
+        )}
 
         <Field label="What can Riwo tell them about your business?" hint="Riwo answers short questions from this only. It never makes up prices, offers or links, and never talks about pricing or proposals at all.">
           <textarea

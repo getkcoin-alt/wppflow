@@ -11,6 +11,12 @@ const api = vi.hoisted(() => ({
   toggleAutomationApi: vi.fn(),
   removeAutomation: vi.fn(),
   fetchAssignment: vi.fn(),
+  fetchKnowledge: vi.fn(),
+  addKnowledgeSource: vi.fn(),
+  refreshKnowledgeSource: vi.fn(),
+  removeKnowledgeSource: vi.fn(),
+  saveKnowledgeNotes: vi.fn(),
+  draftAgent: vi.fn(),
   saveAssignment: vi.fn(),
   getStoredTenantId: vi.fn(() => "t1"),
 }));
@@ -81,6 +87,7 @@ beforeEach(() => {
   api.getStoredTenantId.mockReturnValue("t1");
   api.fetchAutomationContext.mockResolvedValue(context());
   api.fetchAutomationTemplates.mockResolvedValue({ templates: TEMPLATES });
+  api.fetchKnowledge.mockResolvedValue({ sources: [], overview: "", products: [], notes: "", writtenByRiwo: false, ready: false });
   api.fetchAssignment.mockResolvedValue({ enabled: false, mode: "round_robin", team: "", sessionNames: [], keepOwner: true, maxOpen: null, useHours: false, timezone: "Asia/Dubai", workDays: [1, 2, 3, 4, 5], workStart: "09:00", workEnd: "18:00", members: [], teams: [], numbers: [] });
   api.addAutomation.mockResolvedValue({ automation: saved() });
   api.updateAutomation.mockResolvedValue({ automation: saved() });

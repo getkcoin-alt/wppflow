@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Inbox, UserCheck, StickyNote, Megaphone, Bot, Smartphone, ShieldCheck, Code2, BellRing, Contact,
-  Sunrise, Zap, Briefcase, KanbanSquare, BarChart3, UserRoundCheck,
+  Sunrise, Zap, Briefcase, KanbanSquare, BarChart3, UserRoundCheck, BookOpen,
 } from "lucide-react";
 
 export type Feature = {
@@ -109,6 +109,29 @@ export const FEATURES: Feature[] = [
       { q: "Does the AI quote prices?", a: "No. Pricing and proposal requests are recognised by a word list before the AI is asked, and are always handed to a person with your formal message." },
       { q: "Does the customer know it is automated?", a: "Yes. Everything Riwo sends says it is an automated reply and that the customer can write \"human\" to reach a person." },
       { q: "Which plans include it?", a: "Automations are part of the Growth plan and above. Answering questions and reading your website use Riwo, which is also Growth and above." },
+    ],
+  },
+  {
+    slug: "riwo-knowledge-agent",
+    icon: BookOpen,
+    name: "Knowledge base and sales agent",
+    keyword: "AI sales agent WhatsApp from website",
+    title: "An AI sales agent that knows your whole website",
+    summary:
+      "Give Riwo your website and it learns every product, service and portfolio page. It then talks to new customers like someone who works for you: it finds out what they need, recommends the right product and moves them to the next step you chose. You set it up by describing it in your own words.",
+    points: [
+      { title: "One link, every product", body: "Add your website (up to five) and Riwo reads it page by page, writes what you do and lists each product, so a company with many products is talked about naturally." },
+      { title: "Refresh when it changes", body: "Press Refresh and Riwo reads the site again, updating only what changed and forgetting pages you took down. It also re-reads by itself every day." },
+      { title: "Your notes too", body: "Add what your website doesn't say, such as hours, how demos work and what you never do." },
+      { title: "Describe it in your own words", body: "Tell Riwo what you want, the way you would brief a new salesperson. It asks what it still needs to know and drafts the settings for you to check. Nothing switches on until you say so." },
+      { title: "Natural, not scripted", body: "It answers from your knowledge base, finds out what the customer needs, handles doubts with what is true, and works toward your goal: a handover, their details, a demo or a link." },
+      { title: "Safe by design", body: "Riwo never invents a price, link or promise: anything not on your website or in your notes is never sent. Prices go to your team unless you let Riwo repeat the prices on your site. A person takes over when the customer is ready, with a summary, and the customer is added to your pipeline." },
+    ],
+    howTo: ["Open Automations and add your website to the knowledge base.", "Choose Riwo sales agent and describe in your own words what you want. Answer Riwo's questions.", "Check the settings, save, and turn it on."],
+    faqs: [
+      { q: "Does Riwo close the sale by itself?", a: "It runs the conversation and moves the customer to the next step you chose. A person finishes the sale, and Riwo never negotiates or invents terms." },
+      { q: "Does it learn from my customers' chats?", a: "No. It reads your website and your notes, and nothing else." },
+      { q: "Which plans include it?", a: "Automations and Riwo are part of the Growth plan and above." },
     ],
   },
   {

@@ -491,10 +491,44 @@ export interface RuleDraft {
     sourceOptions?: string[];
     /** The website the "about" text was read from */
     website?: string;
+    /** Riwo answers from the company's knowledge base (its websites and notes), as well as any text written in the rule */
+    useKnowledge?: boolean;
+    /** "Riwo sales agent": a whole conversation toward a goal, in the owner's own words */
+    agent?: { enabled: boolean; goal: string; playbook: string; closeWith: AgentClose; pricing: "handoff" | "knowledge" };
     /** "Sales assistant": the questions Riwo asks, the formal message for pricing and proposals, and where the lead goes */
     sales?: { enabled: boolean; questions: string[]; formal?: string; followUpHours?: number; stageName?: string };
   };
 }
+export type AgentClose = "handoff" | "collect_details" | "book_demo" | "send_link";
+export interface KnowledgeSource {
+  id: string;
+  url: string;
+  status: "queued" | "reading" | "ready" | "failed";
+  error: string;
+  pages: number;
+  autoRefresh: boolean;
+  lastReadAt: string | null;
+  lastChangedAt: string | null;
+}
+export interface KnowledgeStatus {
+  sources: KnowledgeSource[];
+  overview: string;
+  products: { name: string; summary: string; url: string }[];
+  notes: string;
+  writtenByRiwo: boolean;
+  ready: boolean;
+}
+/** The company's knowledge base: the websites Riwo reads (with a refresh), and the owner's own notes */
+export const fetchKnowledge = (): Promise<KnowledgeStatus> => apiGet("/api/knowledge");
+export const addKnowledgeSource = (url: string): Promise<KnowledgeStatus> => apiPost("/api/knowledge/sources", { url });
+export const refreshKnowledgeSource = (id: string): Promise<KnowledgeStatus> => apiPost(`/api/knowledge/sources/${encodeURIComponent(id)}/refresh`, {});
+export const removeKnowledgeSource = (id: string): Promise<KnowledgeStatus> => apiDelete(`/api/knowledge/sources/${encodeURIComponent(id)}`);
+export const saveKnowledgeNotes = (notes: string): Promise<KnowledgeStatus> => apiPut("/api/knowledge/notes", { notes });
+/** Describe an automation in your own words: Riwo asks what it needs, or drafts it */
+export const draftAgent = (
+  instruction: string,
+  answers: { question: string; answer: string }[] = [],
+): Promise<{ clarify?: string[]; draft?: RuleDraft; understood?: string; needs?: string[]; problem?: string }> => apiPost("/api/automations/draft", { instruction, answers });
 export interface AutomationTemplate {
   id: string;
   group: string;
