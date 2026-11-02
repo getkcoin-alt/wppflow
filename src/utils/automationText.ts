@@ -74,7 +74,9 @@ export function describeRule(
             : `When a message contains ${quote(words) || "…"}`;
   const reply = c.reply ? ` and replies “${clip(c.reply, 70)}”` : "";
   const then =
-    rule.actionType === "ai_chat"
+    rule.actionType === "ai_chat" && rule.config?.sales?.enabled
+      ? "sends your welcome message with the first question, asks the rest one at a time, and when they ask for pricing or a proposal sends your formal message, hands the chat to an executive and adds them to your pipeline"
+      : rule.actionType === "ai_chat"
       ? "sends your welcome message and lets Riwo answer their short questions, from what you wrote about your business, until your team replies"
       : rule.actionType === "reply_text"
       ? rule.actionSummary

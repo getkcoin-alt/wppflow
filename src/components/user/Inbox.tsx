@@ -1,3 +1,4 @@
+import { handoffLabel } from "../../utils/handoff";
 import React, { useRef, useState, useEffect, useMemo, type ReactNode } from "react";
 import {
   Search,
@@ -932,8 +933,8 @@ export const Inbox: React.FC<InboxProps> = ({
                       </div>
                       {chat.needsHuman && !chat.isClosed && (
                         <div className="mt-1">
-                          <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full text-[11.5px] font-semibold bg-danger text-white" title="The customer asked to talk to a person. Riwo has stopped answering them.">
-                            Asked for a person
+                          <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full text-[11.5px] font-semibold bg-danger text-white" title={handoffLabel(chat.needsHumanReason).hint}>
+                            {handoffLabel(chat.needsHumanReason).label}
                           </span>
                         </div>
                       )}

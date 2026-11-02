@@ -100,6 +100,12 @@ describe("Today", () => {
     expect(dayLine({ ...none, waiting: 3, askedForPerson: 2 }, 30)).toMatch(/^2 customers have asked for a person\./);
   });
 
+  it("a customer the sales assistant handed over says why: pricing, or all questions answered", async () => {
+    show(home({ counts: { ...none, waiting: 2, askedForPerson: 2 }, needsYou: [chat({ askedForPerson: true, askedReason: "pricing" }), chat({ id: "chat:c2", conversationId: "c2", askedForPerson: true, askedReason: "qualified" })] }));
+    expect(within(await screen.findByTestId("need-chat:c1")).getByText("Wants pricing")).toBeDefined();
+    expect(within(await screen.findByTestId("need-chat:c2")).getByText("Ready for an executive")).toBeDefined();
+  });
+
   it("says plainly when everything is answered", async () => {
     show(home());
     expect(await screen.findByText("All clear")).toBeDefined();

@@ -79,6 +79,8 @@ export function describeEvent(e: { type: string; actorName: string; detail: Reco
       return `${who} reopened it in ${e.detail.to}`;
     case "owner":
       return e.detail.to ? `${who} gave it to ${e.detail.to}` : `${who} took the owner off`;
+    case "requirements":
+      return `${who} noted what they need: ${(e.detail.items || []).map((i: { answer: string }) => i.answer).join(", ") || "nothing yet"}`;
     case "value":
       return `${who} changed the value from ${e.detail.from} to ${e.detail.to}`;
     default:

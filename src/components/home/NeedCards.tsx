@@ -1,3 +1,4 @@
+import { handoffLabel } from "../../utils/handoff";
 import { useEffect, useState } from "react";
 import { AlertTriangle, CalendarClock, Check, Clock, Loader2, Lock, MessageSquare, Send, Sparkles, Smartphone, UserRound, X } from "lucide-react";
 import { aiSuggestReply, type AiTone, type HomeItem } from "../../services/api";
@@ -81,9 +82,9 @@ export function ChatCard({
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <h3 className="text-[16px] font-semibold text-fg truncate">{item.title}</h3>
             {item.askedForPerson && (
-              <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[12px] font-semibold bg-danger text-white" title="The customer asked to talk to a person. Riwo has stopped answering them.">
+              <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[12px] font-semibold bg-danger text-white" title={handoffLabel(item.askedReason).hint}>
                 <UserRound className="w-3 h-3" aria-hidden />
-                Asked for a person
+                {handoffLabel(item.askedReason).label}
               </span>
             )}
             <span

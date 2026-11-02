@@ -193,6 +193,8 @@ export interface ChatThread {
   isClosed?: boolean;
   /** The customer asked to talk to a person; set until a teammate answers */
   needsHuman?: boolean;
+  /** Why: they asked for a person, for pricing or a proposal, or Riwo finished its questions */
+  needsHumanReason?: "person" | "pricing" | "qualified" | null;
   isPinned?: boolean;
   /** Epoch seconds of the customer's first message nobody on the team has answered yet */
   awaitingSince?: number | null;

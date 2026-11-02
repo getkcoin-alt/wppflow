@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Globe2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Bot, Briefcase, Globe2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   addAutomation,
   fetchAutomationContext,
@@ -15,6 +15,7 @@ import { Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
 import { RuleEditor } from "./RuleEditor";
 import { AbroadRecipe } from "./AbroadRecipe";
+import { SalesRecipe } from "./SalesRecipe";
 import { AssignmentRule } from "./AssignmentRule";
 import { blankRule, describeRule, endSentence, withOwnTimezone } from "../../utils/automationText";
 
@@ -28,6 +29,18 @@ const abroadStart = (): RuleDraft => ({
   actionType: "ai_chat",
   actionSummary: "",
   templateId: "foreign-welcome-riwo",
+  config: {},
+});
+
+// the sales assistant is a Riwo chat that asks questions and hands pricing requests to an executive
+const isSales = (r: { config?: { sales?: { enabled?: boolean } } }) => r.config?.sales?.enabled === true;
+const salesStart = (): RuleDraft => ({
+  name: "Sales assistant",
+  triggerType: "first_message",
+  triggerCondition: "",
+  actionType: "ai_chat",
+  actionSummary: "",
+  templateId: "sales-assistant",
   config: {},
 });
 
@@ -52,6 +65,7 @@ export function Automations({
 }) {
   const [editing, setEditing] = useState<Editing | null>(null),
     [recipe, setRecipe] = useState<Editing | null>(null),
+    [salesRecipe, setSalesRecipe] = useState<Editing | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const templates = useQuery({
@@ -74,9 +88,12 @@ export function Automations({
   // used to say "United Arab Emirates" instead of "+971" in the sentences below
   const context = useQuery({ queryKey: ["automation-context"], queryFn: fetchAutomationContext, staleTime: 60_000 });
   const countryName = (code: string) => context.data?.countries.find((c) => c.code === code)?.name || `+${code}`;
-  const edit = (a: any) => (a.triggerType === "foreign_number" ? setRecipe({ rule: ruleOf(a), id: a.id }) : setEditing({ rule: ruleOf(a), id: a.id }));
+  const edit = (a: any) =>
+    isSales(a) ? setSalesRecipe({ rule: ruleOf(a), id: a.id }) : a.triggerType === "foreign_number" ? setRecipe({ rule: ruleOf(a), id: a.id }) : setEditing({ rule: ruleOf(a), id: a.id });
   const fromTemplate = (t: AutomationTemplate) =>
-    t.rule.triggerType === "foreign_number"
+    isSales(t.rule)
+      ? setSalesRecipe({ rule: { name: t.name, templateId: t.id, ...t.rule, config: { ...t.rule.config } }, hint: t.hint })
+      : t.rule.triggerType === "foreign_number"
       ? setRecipe({ rule: { name: t.name, templateId: t.id, ...t.rule, config: { ...t.rule.config } }, hint: t.hint })
       : setEditing({
       rule: withOwnTimezone({ name: t.name, templateId: t.id, ...t.rule, config: { ...t.rule.config } }),
@@ -154,6 +171,30 @@ export function Automations({
         }}
       />
 
+      <SalesRecipe
+        open={!!salesRecipe}
+        initial={salesRecipe?.rule || salesStart()}
+        editing={!!salesRecipe?.id}
+        onClose={() => setSalesRecipe(null)}
+        onSave={async (rule, turnOn) => {
+          if (salesRecipe?.id) await updateAutomation(salesRecipe.id, rule);
+          else {
+            const created = await addAutomation(rule);
+            if (turnOn)
+              try {
+                await toggleAutomationApi(created.automation.id);
+              } catch (e: any) {
+                setSalesRecipe(null);
+                onChanged();
+                setError(`Saved, but it is still paused: ${e.message}`);
+                return;
+              }
+          }
+          setSalesRecipe(null);
+          onChanged();
+        }}
+      />
+
       <AbroadRecipe
         open={!!recipe}
         initial={recipe?.rule || abroadStart()}
@@ -178,6 +219,23 @@ export function Automations({
           onChanged();
         }}
       />
+
+      {!automations.some(isSales) && (
+        <section aria-label="Sales assistant" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
+          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
+            <Briefcase className="w-5 h-5" aria-hidden />
+          </div>
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[17px] font-semibold">Sales assistant</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              Riwo asks new customers your questions and keeps the answers. When they ask for pricing or a proposal, it sends your formal message, hands the chat to an executive with a summary, and adds them to your pipeline.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setSalesRecipe({ rule: salesStart() })}>
+            <Plus className="w-4 h-4" aria-hidden /> Set it up
+          </button>
+        </section>
+      )}
 
       {!automations.some((a) => a.triggerType === "foreign_number") && (
         <section aria-label="Welcome people from other countries" className="card p-6 mb-8 flex flex-wrap items-start gap-4">

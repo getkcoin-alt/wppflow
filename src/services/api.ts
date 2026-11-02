@@ -476,6 +476,8 @@ export interface RuleDraft {
     handoff?: string;
     maxReplies?: number;
     sourceOptions?: string[];
+    /** "Sales assistant": the questions Riwo asks, the formal message for pricing and proposals, and where the lead goes */
+    sales?: { enabled: boolean; questions: string[]; formal?: string; followUpHours?: number; stageName?: string };
   };
 }
 export interface AutomationTemplate {
@@ -497,7 +499,13 @@ export interface AutomationContext {
   homeCodes: string[];
   homeFrom: string;
   riwo: { available: boolean; reason: "not_configured" | "plan" | "disabled" | null };
-  chat: { defaultReplies: number; maxReplies: number; sources: string[]; handoff: string };
+  chat: {
+    defaultReplies: number;
+    maxReplies: number;
+    sources: string[];
+    handoff: string;
+    sales: { maxQuestions: number; questions: string[]; formal: string; followUpHours: number };
+  };
 }
 export const fetchAutomationContext = (): Promise<AutomationContext> =>
   apiGet("/api/automations/context");
@@ -921,7 +929,7 @@ export interface HomePrep {
   draft: string;
 }
 export type HomeItem =
-  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean; askedForPerson: boolean; prep: HomePrep | null }
+  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean; askedForPerson: boolean; askedReason?: "person" | "pricing" | "qualified" | null; prep: HomePrep | null }
   | { kind: "task"; id: string; taskId: string; conversationId: string | null; title: string; who: string; dueAt: string; overdue: boolean; escalated: boolean }
   | { kind: "number"; id: string; sessionName: string; title: string; level: "down" | "warn" | "unpaired"; problem: string };
 export interface HomeData {
