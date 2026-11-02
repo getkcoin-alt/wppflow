@@ -242,7 +242,7 @@ function CallLog({ missedOnly }: { missedOnly?: boolean }) {
                           <div>
                             <div className="eyebrow mb-1">Notes</div>
                             <p className="text-[13px] leading-[1.5] text-fg-2">{c.notes || '—'}</p>
-                            {c.summary && <><div className="eyebrow mb-1 mt-3">AI summary</div><p className="text-[13px] leading-[1.5] text-fg-2">{c.summary}</p></>}
+                            {c.summary && <><div className="eyebrow mb-1 mt-3">Vico AI summary</div><p className="text-[13px] leading-[1.5] text-fg-2">{c.summary}</p></>}
                           </div>
                           <div>
                             {c.recorded ? <><div className="eyebrow mb-1.5">Recording</div><RecordingPlayer seed={c.id} length={c.duration} /></> : <div className="text-xs text-faint">No recording for this call.</div>}

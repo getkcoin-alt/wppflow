@@ -117,7 +117,7 @@ export function CommandPalette() {
         <div className="flex items-center gap-4 border-t bg-surface-2 px-4 py-2 text-[11px] text-faint">
           <span className="flex items-center gap-1"><Kbd>↑</Kbd><Kbd>↓</Kbd> navigate</span>
           <span className="flex items-center gap-1"><Kbd>↵</Kbd> open</span>
-          <span className="ml-auto">Meridian Command</span>
+          <span className="ml-auto">leadVico Command</span>
         </div>
       </div>
     </div>,

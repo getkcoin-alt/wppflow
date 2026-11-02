@@ -92,14 +92,14 @@ export default function Settings() {
                 <Field label="Email"><Input defaultValue={me.email} /></Field>
                 <Field label="Direct line"><Input defaultValue={me.phone} /></Field>
                 <Field label="Timezone"><Select value="ny" onChange={() => {}} options={[{ value: 'ny', label: '(GMT-5) Eastern Time' }, { value: 'ldn', label: '(GMT+0) London' }, { value: 'ist', label: '(GMT+5:30) India Standard Time' }]} /></Field>
-                <Field label="Email signature"><Input defaultValue="Aisha Rahman · VP of Sales · Meridian" /></Field>
+                <Field label="Email signature"><Input defaultValue="Aisha Rahman · VP of Sales · leadVico" /></Field>
               </div>
             </Section>
           )}
 
           {sec === 'workspace' && (
             <>
-              <Section title="Appearance" desc="Personalise how Meridian looks for you.">
+              <Section title="Appearance" desc="Personalise how leadVico looks for you.">
                 <div className="grid grid-cols-3 gap-3">
                   {([['light', 'Light', Sun], ['dark', 'Dark', Moon], ['system', 'System', Monitor]] as const).map(([v, l, I]) => (
                     <button key={v} onClick={() => { prefs.setTheme(v); applyTheme(v); }} className={cn('group overflow-hidden rounded-xl text-left transition', prefs.theme === v ? 'shadow-[0_0_0_2px_rgb(var(--brand))]' : 'shadow-[0_0_0_1px_rgb(var(--line-strong))] hover:shadow-[0_0_0_1px_rgb(var(--faint))]')}>
@@ -112,10 +112,10 @@ export default function Settings() {
                   ))}
                 </div>
               </Section>
-              <Section title="Workspace" desc="Applies to everyone in Meridian Inc." action={<Button variant="primary" size="sm" onClick={save}>Save</Button>}>
+              <Section title="Workspace" desc="Applies to everyone in leadVico Inc." action={<Button variant="primary" size="sm" onClick={save}>Save</Button>}>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Company name"><Input defaultValue="Meridian Inc." /></Field>
-                  <Field label="Workspace URL"><Input defaultValue="meridian.crm.app" /></Field>
+                  <Field label="Company name"><Input defaultValue="leadVico Inc." /></Field>
+                  <Field label="Workspace URL"><Input defaultValue="app.leadvico.com" /></Field>
                   <Field label="Reporting currency" hint={`Preview: ${money(125000)} — every amount in the app updates instantly.`}>
                     <Select<Currency> value={prefs.currency} onChange={(v) => { prefs.setCurrency(v); toast({ tone: 'success', title: `Currency set to ${v}`, body: CURRENCIES[v].label }); }} options={(Object.keys(CURRENCIES) as Currency[]).map((c) => ({ value: c, label: `${c} — ${CURRENCIES[c].label}` }))} />
                   </Field>
@@ -183,7 +183,7 @@ export default function Settings() {
             <>
               <Section title="Calling" desc="Configure the integrated dialer for your whole team.">
                 <Row icon={<Mic />} title="Record calls automatically" desc="Recordings are stored for 12 months and attached to the timeline."><Switch checked={prefs.recordCalls} onChange={(v) => prefs.set({ recordCalls: v })} /></Row>
-                <Row icon={<Sparkles />} title="Live transcription & Copilot" desc="Real-time transcript, talk-ratio and next-step suggestions during calls."><Switch checked={prefs.liveTranscript} onChange={(v) => prefs.set({ liveTranscript: v })} /></Row>
+                <Row icon={<Sparkles />} title="Live transcription & Vico AI" desc="Real-time transcript, talk-ratio and next-step suggestions during calls."><Switch checked={prefs.liveTranscript} onChange={(v) => prefs.set({ liveTranscript: v })} /></Row>
                 <Row icon={<MapPin />} title="Local presence dialing" desc="Show a local caller ID matching the prospect’s area code."><Switch checked onChange={() => toast({ title: 'Local presence is included in your plan' })} /></Row>
                 <Row icon={<Voicemail />} title="Voicemail drop" desc="Leave a pre-recorded voicemail with one click."><Switch checked onChange={() => {}} /></Row>
                 <Row icon={<ShieldCheck />} title="Recording consent message" desc="Plays “This call may be recorded for quality purposes.”"><Switch checked onChange={() => {}} /></Row>

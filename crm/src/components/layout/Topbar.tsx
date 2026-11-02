@@ -60,7 +60,7 @@ export function Topbar() {
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-bg/80 px-4 backdrop-blur-xl sm:px-6">
       <IconButton label="Open menu" className="lg:hidden" onClick={() => setMobileNav(true)}><MenuIcon className="size-[18px]" /></IconButton>
       <div className="flex min-w-0 items-center gap-1.5 text-[13px]">
-        <Link to={`/${seg}`} className={cn('truncate font-medium', lead ? 'text-muted hover:text-fg' : 'text-fg')}>{titles[seg] ?? 'Meridian'}</Link>
+        <Link to={`/${seg}`} className={cn('truncate font-medium', lead ? 'text-muted hover:text-fg' : 'text-fg')}>{titles[seg] ?? 'leadVico'}</Link>
         {lead && <><ChevronRight className="size-3.5 shrink-0 text-faint" /><span className="truncate font-medium">{lead.firstName} {lead.lastName}</span></>}
       </div>
 

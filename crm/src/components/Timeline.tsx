@@ -41,7 +41,7 @@ export function Timeline({ entity, stickyTop = 'top-14' }: { entity: EntityRef; 
     if (!text.trim()) return;
     addActivity(mode === 'note'
       ? { type: 'note', at: Date.now(), repId: ME, ref: entity, title: 'Note added', body: text.trim() }
-      : { type: 'email', at: Date.now(), repId: ME, ref: entity, title: text.trim().split('\n')[0]!.slice(0, 80), body: 'Sent from Meridian · tracking enabled' });
+      : { type: 'email', at: Date.now(), repId: ME, ref: entity, title: text.trim().split('\n')[0]!.slice(0, 80), body: 'Sent from leadVico · tracking enabled' });
     toast({ tone: 'success', title: mode === 'note' ? 'Note saved' : 'Email sent', body: 'Added to the activity timeline' });
     setText('');
   };
@@ -66,7 +66,7 @@ export function Timeline({ entity, stickyTop = 'top-14' }: { entity: EntityRef; 
           className="block w-full resize-none bg-transparent px-3 py-2.5 text-[13px] outline-none placeholder:text-faint"
         />
         <div className="flex items-center justify-between px-2 pb-2">
-          <button onClick={() => setText(mode === 'note' ? 'Spoke with the champion — budget approved for Q1, waiting on IT security sign-off. Next: send SOC 2 pack + schedule technical review.' : 'Following up on our conversation\n\nHi — great speaking today. As promised, attaching the proposal and security pack.')} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand hover:bg-brand/10"><Sparkles className="size-3.5" />Draft with AI</button>
+          <button onClick={() => setText(mode === 'note' ? 'Spoke with the champion — budget approved for Q1, waiting on IT security sign-off. Next: send SOC 2 pack + schedule technical review.' : 'Following up on our conversation\n\nHi — great speaking today. As promised, attaching the proposal and security pack.')} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand hover:bg-brand/10"><Sparkles className="size-3.5" />Draft with Vico AI</button>
           <Button size="sm" variant="primary" icon={<Send />} disabled={!text.trim()} onClick={submit}>{mode === 'note' ? 'Save note' : 'Send'}<span className="ml-1 hidden text-[10px] opacity-60 sm:inline">⌘↵</span></Button>
         </div>
       </div>
@@ -100,7 +100,7 @@ export function Timeline({ entity, stickyTop = 'top-14' }: { entity: EntityRef; 
                     {a.body && <p className={cn('mt-1 text-[13px] leading-[1.5] text-fg-2', a.type === 'note' && 'rounded-lg bg-warning/[.06] px-3 py-2 ring-1 ring-inset ring-warning/15')}>{a.body}</p>}
                     {call?.summary && (
                       <div className="mt-2 rounded-lg bg-brand/[.05] px-3 py-2 ring-1 ring-inset ring-brand/15">
-                        <div className="flex items-center gap-1 text-[11px] font-semibold text-brand"><Sparkles className="size-3" />AI summary</div>
+                        <div className="flex items-center gap-1 text-[11px] font-semibold text-brand"><Sparkles className="size-3" />Vico AI summary</div>
                         <p className="mt-0.5 text-[12.5px] leading-[1.5] text-fg-2">{call.summary}</p>
                       </div>
                     )}

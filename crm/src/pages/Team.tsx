@@ -145,7 +145,7 @@ function RepDrawer({ stats: s, onClose }: { stats: RepStats; onClose: () => void
             <div className="text-xs text-muted">{s.rep.title} · {s.rep.team} · {s.rep.territory}</div>
             <div className="mt-2 flex gap-2">
               <Button size="sm" icon={<Mail />} onClick={() => toast({ title: 'Message sent', body: `to ${s.rep.email}` })}>Message</Button>
-              <Button size="sm" icon={<Phone />} onClick={() => toast({ title: `Calling ${s.rep.name.split(' ')[0]}…`, body: 'Internal call via Meridian' })}>Call</Button>
+              <Button size="sm" icon={<Phone />} onClick={() => toast({ title: `Calling ${s.rep.name.split(' ')[0]}…`, body: 'Internal call via leadVico' })}>Call</Button>
               {s.rep.presence === 'on-call' && <Button size="sm" icon={<Headphones />} onClick={() => toast({ title: 'Live coaching started', body: 'Whisper mode enabled' })}>Listen in</Button>}
             </div>
           </div>
@@ -194,11 +194,11 @@ function InviteModal({ onClose }: { onClose: () => void }) {
   const invite = useCRM((s) => s.inviteRep);
   const [f, setF] = useState({ name: '', email: '', role: 'Account Executive' as Role, team: 'Mid-Market' as TeamT, quota: '300000' });
   return (
-    <Modal open onClose={onClose} title="Invite teammate" description="They’ll get an email to join the Meridian workspace." icon={<UserPlus />}
+    <Modal open onClose={onClose} title="Invite teammate" description="They’ll get an email to join the leadVico workspace." icon={<UserPlus />}
       footer={<><Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!f.name || !f.email} onClick={() => { invite({ name: f.name, email: f.email, phone: '+1 (415) 555-0199', role: f.role, title: f.role, team: f.team, territory: 'Unassigned', quota: Number(f.quota) }); toast({ tone: 'success', title: 'Invitation sent', body: f.email }); onClose(); }}>Send invite</Button></>}>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Full name"><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Jamie Lee" /></Field>
-        <Field label="Work email"><Input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} placeholder="jamie@meridian.io" /></Field>
+        <Field label="Work email"><Input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} placeholder="jamie@leadvico.com" /></Field>
         <Field label="Role"><Select value={f.role} onChange={(v) => setF({ ...f, role: v })} options={(['Admin', 'Sales Manager', 'Account Executive', 'SDR'] as Role[]).map((r) => ({ value: r, label: r }))} /></Field>
         <Field label="Team"><Select value={f.team} onChange={(v) => setF({ ...f, team: v })} options={(['Enterprise', 'Mid-Market', 'Growth'] as TeamT[]).map((r) => ({ value: r, label: r }))} /></Field>
         <Field label="Quarterly quota (USD)" className="col-span-2"><Input type="number" value={f.quota} onChange={(e) => setF({ ...f, quota: e.target.value })} /></Field>

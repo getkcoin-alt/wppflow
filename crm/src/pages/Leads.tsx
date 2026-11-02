@@ -70,7 +70,7 @@ export default function Leads() {
     </th>
   );
 
-  const exportRows = (list: Lead[]) => downloadCSV('meridian-leads.csv', list.map((l) => ({ name: `${l.firstName} ${l.lastName}`, title: l.title, company: l.company, email: l.email, phone: l.phone, status: l.status, score: l.score, source: l.source, owner: reps.find((r) => r.id === l.ownerId)?.name ?? '', est_value_usd: l.estValue })));
+  const exportRows = (list: Lead[]) => downloadCSV('leadvico-leads.csv', list.map((l) => ({ name: `${l.firstName} ${l.lastName}`, title: l.title, company: l.company, email: l.email, phone: l.phone, status: l.status, score: l.score, source: l.source, owner: reps.find((r) => r.id === l.ownerId)?.name ?? '', est_value_usd: l.estValue })));
 
   return (
     <div>

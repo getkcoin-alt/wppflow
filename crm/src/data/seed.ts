@@ -45,7 +45,7 @@ const repDefs: [string, string, Rep['role'], string, Rep['team'], string, number
 export const reps: Rep[] = repDefs.map(([k, name, role, title, team, territory, quota, hue, presence], i) => ({
   id: `rep_${k}`,
   name,
-  email: `${k}@meridian.io`,
+  email: `${k}@leadvico.com`,
   phone: `+1 (415) 555-01${String(10 + i).padStart(2, '0')}`,
   role, title, team, territory, quota, hue, presence,
   joinedAt: NOW - (120 + i * 97) * DAY,
@@ -407,7 +407,7 @@ calls.forEach((c) => pushAct({
   title: c.status === 'completed' ? `${c.direction === 'inbound' ? 'Inbound' : 'Outbound'} call · ${c.disposition}` : c.status === 'missed' ? 'Missed inbound call' : c.status === 'voicemail' ? 'Left voicemail' : 'Call not answered',
   body: c.notes,
 }));
-const emailSubjects = ['Re: Pricing for 40 seats', 'Following up on our call', 'Security questionnaire — completed', 'Proposal: Meridian Platform', 'Quick question about your rollout', 'Case study you asked for', 'Agenda for Thursday'];
+const emailSubjects = ['Re: Pricing for 40 seats', 'Following up on our call', 'Security questionnaire — completed', 'Proposal: leadVico Platform', 'Quick question about your rollout', 'Case study you asked for', 'Agenda for Thursday'];
 const noteBodies = ['Champion mentioned their current vendor contract renews in March — timing works in our favour.', 'Decision committee: COO, Head of IT, Finance BP. IT is the likely blocker on SSO.', 'Asked about multi-currency reporting; flagged to product.', 'Prefers WhatsApp for quick coordination; formal comms via email.'];
 leads.forEach((l) => {
   const owner = l.ownerId ?? 'rep_zara';
@@ -456,7 +456,7 @@ export const notifications: Notification[] = [
 
 /* ───────────────────────── Live call script ───────────────────────── */
 export const transcriptScript: { who: 'rep' | 'them'; text: string }[] = [
-  { who: 'rep', text: 'Hi, this is Aisha from Meridian — is now still a good time?' },
+  { who: 'rep', text: 'Hi, this is Aisha from leadVico — is now still a good time?' },
   { who: 'them', text: 'Yes, perfect timing. I just came out of our ops review actually.' },
   { who: 'rep', text: 'Great. Last time you mentioned call logging was spread across three tools. Is that still the main pain?' },
   { who: 'them', text: 'It is. Our reps spend maybe 40 minutes a day just updating records after calls.' },

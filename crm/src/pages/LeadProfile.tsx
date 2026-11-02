@@ -175,7 +175,7 @@ export default function LeadProfile() {
 
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-br from-brand/[.08] to-transparent">
-              <CardHeader title="Copilot insights" icon={<Sparkles className="!text-brand" />} />
+              <CardHeader title="Vico AI insights" icon={<Sparkles className="!text-brand" />} />
               <ul className="space-y-2.5 px-4 pb-4 text-[13px] leading-[1.45] text-fg-2">
                 <li className="flex gap-2"><TrendingUp className="mt-0.5 size-3.5 shrink-0 text-success" />Engagement up 3× this week — opened pricing email 3 times.</li>
                 <li className="flex gap-2"><Clock3 className="mt-0.5 size-3.5 shrink-0 text-brand" />Best time to call: <b className="font-semibold text-fg">Tue–Wed, 10–11 AM</b> local.</li>

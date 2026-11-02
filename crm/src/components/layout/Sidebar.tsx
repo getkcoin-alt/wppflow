@@ -14,12 +14,12 @@ export function Logo({ collapsed }: { collapsed?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <span className="relative flex size-7 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#7774ff] to-[#4b47e0] shadow-[inset_0_1px_0_rgb(255_255_255/.3),0_2px_6px_-1px_rgb(88_86_238/.5)]">
-        <svg viewBox="0 0 32 32" className="size-[18px]"><path d="M7 23V9.5l9 8 9-8V23" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <svg viewBox="0 0 32 32" className="size-[18px]"><path d="M8 9.5l8 13.5 8-13.5" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </span>
       {!collapsed && (
         <div className="leading-none">
-          <div className="text-[14px] font-semibold tracking-[-0.02em]">Meridian</div>
-          <div className="mt-0.5 text-[10.5px] font-medium text-faint">Revenue OS</div>
+          <div className="text-[14px] font-semibold tracking-[-0.02em]">leadVico</div>
+          <div className="mt-0.5 text-[10.5px] font-medium text-faint">Sales CRM</div>
         </div>
       )}
     </div>
@@ -106,7 +106,7 @@ export function Sidebar({ mobile }: { mobile?: boolean }) {
 
       {!collapsed && (
         <div className="mx-3 mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-brand/[.09] to-transparent p-3 shadow-[inset_0_0_0_1px_rgb(var(--brand)/.18)]">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-brand"><Sparkles className="size-3.5" />Copilot insight</div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-brand"><Sparkles className="size-3.5" />Vico AI insight</div>
           <p className="mt-1 text-xs leading-[1.45] text-fg-2">4 hot leads haven’t been called in 48h. Best connect window: <b className="font-semibold text-fg">10–11 AM</b>.</p>
           <NavLink to="/calls" onClick={() => mobile && setMobileNav(false)} className="mt-2 inline-block text-xs font-semibold text-brand hover:underline">Open call queue →</NavLink>
         </div>

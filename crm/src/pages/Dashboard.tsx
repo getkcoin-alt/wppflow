@@ -121,7 +121,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <Segmented value={range} onChange={setRange} options={[{ value: '7', label: '7 days' }, { value: '30', label: '30 days' }, { value: 'qtd', label: 'Quarter' }]} />
-          <Button icon={<Download />} onClick={() => downloadCSV('meridian-revenue.csv', revenueHistory.map((r) => ({ month: r.month, won_usd: r.won, target_usd: r.target, pipeline_usd: r.pipeline })))}>Export</Button>
+          <Button icon={<Download />} onClick={() => downloadCSV('leadvico-revenue.csv', revenueHistory.map((r) => ({ month: r.month, won_usd: r.won, target_usd: r.target, pipeline_usd: r.pipeline })))}>Export</Button>
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export default function Contacts() {
     <div>
       <PageHeader title="Contacts" subtitle={`${contacts.length} people across ${companies.length} accounts`}
         actions={<>
-          <Button icon={<Download />} onClick={() => downloadCSV('meridian-contacts.csv', rows.map((c) => ({ name: `${c.firstName} ${c.lastName}`, title: c.title, company: companies.find((x) => x.id === c.companyId)?.name, email: c.email, phone: c.phone, persona: c.persona })))}>Export</Button>
+          <Button icon={<Download />} onClick={() => downloadCSV('leadvico-contacts.csv', rows.map((c) => ({ name: `${c.firstName} ${c.lastName}`, title: c.title, company: companies.find((x) => x.id === c.companyId)?.name, email: c.email, phone: c.phone, persona: c.persona })))}>Export</Button>
           <Button variant="primary" icon={<Plus />} onClick={() => open({ kind: 'contact' })}>New contact</Button>
         </>} />
       <Card className="overflow-hidden">

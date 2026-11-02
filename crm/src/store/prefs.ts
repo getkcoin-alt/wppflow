@@ -28,7 +28,7 @@ export const usePrefs = create<Prefs>()(
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       set: (p) => set(p),
     }),
-    { name: 'meridian-prefs' },
+    { name: 'leadvico-prefs' },
   ),
 );
 

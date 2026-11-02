@@ -211,7 +211,7 @@ function ActiveCall() {
                 ))}
                 {insights.length > 0 && (
                   <div className="mt-3 space-y-1.5 rounded-xl bg-gradient-to-br from-brand/25 to-brand/5 p-2.5 ring-1 ring-brand/30">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#b9b8ff]"><Sparkles className="size-3" />Copilot</div>
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#b9b8ff]"><Sparkles className="size-3" />Vico AI</div>
                     {insights.slice(-2).map((x) => <div key={x.text} className="animate-fade-in text-[12px] leading-[1.4] text-white/85">{x.icon} {x.text}</div>)}
                   </div>
                 )}
@@ -290,7 +290,7 @@ function WrapUp() {
         </div>
         {aiSummary && (
           <div className="rounded-xl bg-brand/[.06] p-3 ring-1 ring-inset ring-brand/20">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-brand"><Sparkles className="size-3.5" />AI call summary</div>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-brand"><Sparkles className="size-3.5" />Vico AI call summary</div>
             <p className="mt-1.5 text-[13px] leading-[1.5] text-fg-2">Prospect confirmed ~40 seats; key pain is ~40 min/day of manual call logging. Requires SSO and audit trail. Agreed next step: technical demo with IT on Thursday at 2pm; send Enterprise proposal today.</p>
             <div className="mt-2 flex flex-wrap gap-1.5"><Badge tone="success">Positive sentiment</Badge><Badge tone="brand">Talk ratio 46 / 54</Badge><Badge>Pricing discussed</Badge></div>
           </div>
