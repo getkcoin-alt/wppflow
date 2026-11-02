@@ -97,7 +97,7 @@ export function useInboxRealtime({
       if (p?.conversationId && p.message)
         upsertMessage(qc, tenant, p.conversationId, p.message);
       if (p?.conversation) upsertConversation(qc, tenant, p.conversation);
-      else invalidate("conversations");
+      else invalidate("conversations", "home");
       if (
         p?.message &&
         p.message.sender === "customer" &&
@@ -113,7 +113,7 @@ export function useInboxRealtime({
     };
     const onConversation = (p: any) => {
       if (p?.conversation) upsertConversation(qc, tenant, p.conversation);
-      else invalidate("conversations");
+      else invalidate("conversations", "home");
     };
     const onReceipt = (p: any) => {
       if (p?.conversationId)
@@ -138,9 +138,9 @@ export function useInboxRealtime({
           messageId: p.messageId,
         });
       }
-      invalidate("messages", "conversations");
+      invalidate("messages", "conversations", "home");
     };
-    const onSession = () => invalidate("sessions", "number-health");
+    const onSession = () => invalidate("sessions", "number-health", "home");
     const onSynced = () => void catchUp();
     const onProgress = (p: any) => {
       clearTimeout(clearTimer);
@@ -163,7 +163,7 @@ export function useInboxRealtime({
       invalidate("conversations");
     };
     const onCampaign = () => invalidate("campaigns");
-    const onLead = () => invalidate("leads", "lead", "lead-tasks");
+    const onLead = () => invalidate("leads", "lead", "lead-tasks", "home");
     // The platform admin switched a module on or off for this company's plan: the screens lock or unlock now
     const onPlan = () => invalidate("capabilities", "billing");
     const onWake = () => {

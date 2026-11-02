@@ -11,9 +11,9 @@ import {
   type View,
 } from "./navigation";
 
-const PRIMARY_KEYS = ["inbox", "sessions", "contacts"];
+const PRIMARY_KEYS = ["dashboard", "inbox", "contacts"];
 
-// Phone navigation: three primary destinations, alerts, and a "More" sheet for the rest.
+// Phone navigation: three primary destinations (Today first), alerts, and a "More" sheet for the rest.
 export function TabBar({
   view,
   tab,

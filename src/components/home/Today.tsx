@@ -1,0 +1,158 @@
+import { useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import confetti from "canvas-confetti";
+import { Search, Smartphone } from "lucide-react";
+import { fetchHome, getStoredTenantId, updateLeadTask, type HomeData, type HomeItem } from "../../services/api";
+import { Notice, Page } from "../ui/Page";
+import { btn } from "../ui/styles";
+import { RiwoAvatar } from "../user/Riwo";
+import { ChatCard, NumberCard, TaskCard } from "./NeedCards";
+import { Performance } from "./Performance";
+import { SetupCoach } from "./SetupCoach";
+import { dayLine, endOfToday, greetingFor } from "./greeting";
+
+export interface TodayProps {
+  workspaceName: string;
+  /** Riwo's drafts: whether this company can use them, or is on a plan without them */
+  ai: { available: boolean; locked: boolean };
+  /** Whether any number is connected (a workspace with none is shown how to start) */
+  hasNumber: boolean;
+  onOpenChat: (conversationId: string) => void;
+  onSend: (conversationId: string, text: string) => Promise<void>;
+  onSearch: () => void;
+  onOpenInbox: () => void;
+  onOpenNumbers: () => void;
+  onConnectNumber: () => void;
+  onSetupStep: (key: "connect" | "replies" | "automation" | "team") => void;
+}
+
+// The first screen: what needs the person now, with the work already prepared, then everything else, quieter.
+export function Today(props: TodayProps) {
+  const tenant = getStoredTenantId();
+  const qc = useQueryClient();
+  const home = useQuery({
+    queryKey: ["home", tenant],
+    queryFn: () => fetchHome(endOfToday()),
+    refetchInterval: 30_000,
+  });
+  const data = home.data;
+  const refresh = () => qc.invalidateQueries({ queryKey: ["home", tenant] });
+
+  // a small celebration when the last waiting thing is dealt with, never on first load
+  const total = data ? data.counts.waiting + data.counts.tasksDue + data.counts.numbersNeedingCare : null;
+  const before = useRef<number | null>(null);
+  useEffect(() => {
+    if (total === null) return;
+    if (before.current !== null && before.current > 0 && total === 0 && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
+      confetti({ particleCount: 70, spread: 70, origin: { y: 0.35 } });
+    before.current = total;
+  }, [total]);
+
+  const done = async (item: Extract<HomeItem, { kind: "task" }>) => {
+    await updateLeadTask(item.taskId, { done: true });
+    await refresh();
+  };
+  const snooze = async (item: Extract<HomeItem, { kind: "task" }>) => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    await updateLeadTask(item.taskId, { dueAt: tomorrow.toISOString() });
+    await refresh();
+  };
+
+  if (home.error)
+    return (
+      <Page>
+        <Notice tone="error">{home.error.message}</Notice>
+        <button className={`${btn("secondary", "sm")} mt-3`} onClick={() => void home.refetch()}>
+          Try again
+        </button>
+      </Page>
+    );
+  if (!data)
+    return (
+      <Page>
+        <div className="skeleton h-10 w-80 max-w-full mb-3" />
+        <div className="skeleton h-5 w-[28rem] max-w-full mb-8" />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="skeleton h-32 !rounded-3xl" />
+          ))}
+        </div>
+        <span className="sr-only">Loading what needs you</span>
+      </Page>
+    );
+
+  return (
+    <Page>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-4 min-w-0">
+          <RiwoAvatar size={52} className="mt-1" />
+          <div className="min-w-0">
+            <p className="eyebrow">{props.workspaceName}</p>
+            <h1 className="mt-1 font-serif text-[34px] sm:text-[40px] leading-[1.1] text-fg tracking-tight">
+              {greetingFor()}
+              {data.firstName ? `, ${data.firstName}` : ""}
+            </h1>
+            <p className="mt-2 text-[15.5px] text-fg-2 max-w-2xl" aria-live="polite">
+              {props.hasNumber || data.needsYou.length ? dayLine(data.counts, data.replyTargetMinutes) : "Connect your WhatsApp number and your customers' messages will appear here."}
+            </p>
+          </div>
+        </div>
+        <button type="button" onClick={props.onSearch} className="inline-flex items-center gap-2.5 h-11 pl-4 pr-3 rounded-full bg-surface border border-line text-[14px] text-fg-3 hover:text-fg hover:border-gold/50 transition shadow-card" aria-label="Search and commands (Command K)">
+          <Search className="w-4 h-4" aria-hidden />
+          Search or jump to…
+          <kbd className="ml-3 hidden sm:inline-block rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-fg-3">⌘K</kbd>
+        </button>
+      </header>
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_20rem] items-start">
+        <section aria-labelledby="needs-title">
+          <h2 id="needs-title" className="eyebrow mb-3">
+            Needs you now
+          </h2>
+          {!props.hasNumber && data.needsYou.length === 0 ? (
+            <div className="rounded-3xl bg-surface border border-line p-8 text-center shadow-card">
+              <img src="/brand/riwo-wave.webp" alt="" width={96} height={96} className="mx-auto h-24 w-24 rounded-3xl object-cover" />
+              <h3 className="mt-3 text-[20px] font-semibold text-fg">Let's connect your WhatsApp number</h3>
+              <p className="mt-1.5 text-[14.5px] text-fg-2 max-w-md mx-auto">It takes about a minute. Scan one code with your phone, and every conversation lands here, shared with your team.</p>
+              <button type="button" className={`${btn("primary")} mt-5`} onClick={props.onConnectNumber}>
+                <Smartphone className="w-4 h-4" aria-hidden /> Connect a number
+              </button>
+            </div>
+          ) : data.needsYou.length === 0 ? (
+            <div className="rounded-3xl bg-surface border border-line p-8 text-center shadow-card">
+              <RiwoAvatar size={64} className="mx-auto" />
+              <h3 className="mt-3 text-[20px] font-semibold text-fg">All clear</h3>
+              <p className="mt-1.5 text-[14.5px] text-fg-2 max-w-md mx-auto">Every customer has an answer and no follow-up is due. I'll tell you the moment something needs you.</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {data.needsYou.map((item) =>
+                item.kind === "chat" ? (
+                  <ChatCard key={item.id} item={item} ai={props.ai} onOpenChat={props.onOpenChat} onSend={props.onSend} onSent={() => void refresh()} />
+                ) : item.kind === "task" ? (
+                  <TaskCard key={item.id} item={item} onOpenChat={props.onOpenChat} onDone={done} onSnooze={snooze} />
+                ) : (
+                  <NumberCard key={item.id} item={item} onOpenNumbers={props.onOpenNumbers} />
+                ),
+              )}
+            </ul>
+          )}
+          {data.more > 0 && (
+            <button type="button" className={`${btn("ghost", "sm")} mt-3`} onClick={props.onOpenInbox}>
+              And {data.more} more. Open the inbox to see them all.
+            </button>
+          )}
+        </section>
+        {data.setup && (
+          <aside>
+            <SetupCoach setup={data.setup} onStep={props.onSetupStep} />
+          </aside>
+        )}
+      </div>
+
+      <Performance />
+    </Page>
+  );
+}

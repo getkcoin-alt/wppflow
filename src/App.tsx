@@ -38,7 +38,7 @@ import { Automations } from "./components/user/Automations";
 import { Pipeline } from "./components/pipeline/Pipeline";
 import { LeadPanel } from "./components/pipeline/LeadPanel";
 import { SupportAccessCard } from "./components/admin/SupportAccessCard";
-import { Dashboard } from "./components/user/Dashboard";
+import { Today } from "./components/home/Today";
 import { FeatureLocked } from "./components/ui/FeatureLocked";
 import { SolutionsContext } from "./hooks/useSolutions";
 import { RealEstateHub } from "./components/realestate/RealEstateHub";
@@ -86,7 +86,7 @@ export function App() {
     [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [view, setView] = useState<View>("user");
-  const [tab, setTab] = useState<UserSubTab>("inbox"),
+  const [tab, setTab] = useState<UserSubTab>("dashboard"),
     [adminTab, setAdminTab] = useState<AdminSubTab>("users"),
     [devTab, setDevTab] = useState<DevSubTab>("docs");
   const [pairOpen, setPairOpen] = useState(false),
@@ -1143,16 +1143,25 @@ export function App() {
             <Reports sessions={sessions} currentUserId={user?.id} onOpenChat={(id) => openConversationRef.current(id)} />
           )}
           {view === "user" && tab === "dashboard" && (
-            <Dashboard
+            <Today
               workspaceName={user.company_name}
-              onNavigateToInbox={() => setTab("inbox")}
-              onOpenSessionModal={() => {
-                setTab("sessions");
-                setPairOpen(true);
+              ai={{ available: Boolean(capabilities.data?.ai?.available), locked: capabilities.data?.ai?.reason === "plan" }}
+              hasNumber={connected > 0}
+              onOpenChat={(id) => openConversationRef.current(id)}
+              onSend={async (id, text) => {
+                await api.addMessage(id, { text, type: "text", idempotencyKey: crypto.randomUUID() });
+                await refresh("conversations", "messages");
               }}
-              onOpenNewBroadcast={() => {
-                setTab("campaigns");
-                setCampaignOpen(true);
+              onSearch={() => setPaletteOpen(true)}
+              onOpenInbox={() => setTab("inbox")}
+              onOpenNumbers={() => setTab("sessions")}
+              onConnectNumber={openPair}
+              onSetupStep={(key) => {
+                if (key === "connect") return openPair();
+                if (key === "replies") return setTab("inbox");
+                if (key === "automation") return setTab("automations");
+                setView("admin");
+                setAdminTab("users");
               }}
             />
           )}

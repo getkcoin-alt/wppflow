@@ -5,10 +5,10 @@ import {
   Code2,
   Contact,
   Funnel,
-  LayoutDashboard,
   Megaphone,
   MessageSquare,
   Smartphone,
+  Sparkles,
   Users2,
   type LucideIcon,
 } from "lucide-react";
@@ -43,6 +43,13 @@ export interface NavItem {
 
 // One definition feeds the desktop dock, the phone tab bar and the command palette.
 export const NAV: NavItem[] = [
+  {
+    key: "dashboard",
+    label: "Today",
+    icon: Sparkles,
+    view: "user",
+    tab: "dashboard",
+  },
   {
     key: "inbox",
     label: "Inbox",
@@ -97,13 +104,6 @@ export const NAV: NavItem[] = [
     tab: "automations",
     manager: true,
     needs: { feature: "automations", plan: "Growth" },
-  },
-  {
-    key: "dashboard",
-    label: "Overview",
-    icon: LayoutDashboard,
-    view: "user",
-    tab: "dashboard",
   },
   {
     key: "reports",

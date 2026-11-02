@@ -910,6 +910,23 @@ export const setPipelineCurrency = (currency: "AED" | "INR"): Promise<PipelineSe
 export const setPipelineAutoCreate = (enabled: boolean): Promise<PipelineSettings> =>
   apiRequest("/api/leads/settings/auto-create", { method: "PUT", body: JSON.stringify({ enabled }) });
 
+// ── Today: what needs this person now ────────────────────────────────────────────────────────────
+export type HomeItem =
+  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean }
+  | { kind: "task"; id: string; taskId: string; conversationId: string | null; title: string; who: string; dueAt: string; overdue: boolean; escalated: boolean }
+  | { kind: "number"; id: string; sessionName: string; title: string; level: "down" | "warn" | "unpaired"; problem: string };
+export interface HomeData {
+  firstName: string;
+  counts: { waiting: number; overdue: number; tasksDue: number; tasksOverdue: number; numbersNeedingCare: number };
+  replyTargetMinutes: number;
+  needsYou: HomeItem[];
+  more: number;
+  /** Owners and administrators of a workspace that is not set up yet */
+  setup: { steps: { key: "connect" | "replies" | "automation" | "team"; label: string; done: boolean }[]; done: number; total: number } | null;
+}
+/** `until` is the end of the person's own day, which only their browser knows. */
+export const fetchHome = async (until: string): Promise<HomeData> => apiGet(`/api/home?until=${encodeURIComponent(until)}`);
+
 // ── AI assistant (Riwo) ──────────────────────────────────────────────────────────────────────────
 export type AiTone = "friendly" | "professional" | "brief";
 export type AiStyle = "polish" | "shorter" | "friendlier" | "formal";
