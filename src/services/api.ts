@@ -921,12 +921,12 @@ export interface HomePrep {
   draft: string;
 }
 export type HomeItem =
-  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean; prep: HomePrep | null }
+  | { kind: "chat"; id: string; conversationId: string; title: string; avatar: string; preview: string; waitingSeconds: number; overdue: boolean; unread: number; assignedTo: string; isMine: boolean; askedForPerson: boolean; prep: HomePrep | null }
   | { kind: "task"; id: string; taskId: string; conversationId: string | null; title: string; who: string; dueAt: string; overdue: boolean; escalated: boolean }
   | { kind: "number"; id: string; sessionName: string; title: string; level: "down" | "warn" | "unpaired"; problem: string };
 export interface HomeData {
   firstName: string;
-  counts: { waiting: number; overdue: number; tasksDue: number; tasksOverdue: number; numbersNeedingCare: number };
+  counts: { waiting: number; overdue: number; tasksDue: number; tasksOverdue: number; numbersNeedingCare: number; askedForPerson?: number };
   replyTargetMinutes: number;
   needsYou: HomeItem[];
   more: number;

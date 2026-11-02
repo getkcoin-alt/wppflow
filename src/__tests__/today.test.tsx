@@ -18,7 +18,7 @@ vi.mock("../services/api", async (original) => ({ ...(await original<typeof impo
 vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 import { Today, type TodayProps } from "../components/home/Today";
 
-const none = { waiting: 0, overdue: 0, tasksDue: 0, tasksOverdue: 0, numbersNeedingCare: 0 };
+const none = { waiting: 0, overdue: 0, tasksDue: 0, tasksOverdue: 0, numbersNeedingCare: 0, askedForPerson: 0 };
 const chat = (over = {}) => ({ kind: "chat", id: "chat:c1", conversationId: "c1", title: "Asha Rao", avatar: "", preview: "Is the villa still available?", waitingSeconds: 5400, overdue: true, unread: 1, assignedTo: "", isMine: false, ...over });
 const home = (over = {}) => ({ firstName: "Olivia", counts: none, replyTargetMinutes: 30, needsYou: [], more: 0, setup: null, ...over });
 
@@ -90,6 +90,14 @@ describe("Today", () => {
     show(home());
     await screen.findByText("All clear");
     expect(screen.queryByRole("region", { name: "Morning brief" })).toBeNull();
+  });
+
+  it("a customer who asked for a person is marked, and the day says so first", async () => {
+    show(home({ counts: { ...none, waiting: 2, askedForPerson: 1 }, needsYou: [chat({ askedForPerson: true })] }));
+    const card = await screen.findByTestId("need-chat:c1");
+    expect(within(card).getByText("Asked for a person")).toBeDefined();
+    expect(screen.getByText(/^1 customer has asked for a person\. 2 customers are waiting for a reply\./)).toBeDefined();
+    expect(dayLine({ ...none, waiting: 3, askedForPerson: 2 }, 30)).toMatch(/^2 customers have asked for a person\./);
   });
 
   it("says plainly when everything is answered", async () => {

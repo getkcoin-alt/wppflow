@@ -95,6 +95,11 @@ describe("searching the inbox", () => {
     expect(screen.getByText("+971500000001")).toBeDefined();
   });
 
+  it("marks a customer who asked for a person, so the team sees it in the list", () => {
+    mount({ chats: [chat({ needsHuman: true }), chat({ id: "c2", contactId: "p2", contactName: "Ben Hall", phone: "971500000009" })] });
+    expect(screen.getAllByText("Asked for a person")).toHaveLength(1);
+  });
+
   it("finds a chat by a number written any way, ignoring the hidden ones", () => {
     mount();
     type("+91 98100 11122");

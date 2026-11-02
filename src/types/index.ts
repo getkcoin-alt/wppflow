@@ -191,6 +191,8 @@ export interface ChatThread {
   assignedAvatar?: string;
   isSnoozed?: boolean;
   isClosed?: boolean;
+  /** The customer asked to talk to a person; set until a teammate answers */
+  needsHuman?: boolean;
   isPinned?: boolean;
   /** Epoch seconds of the customer's first message nobody on the team has answered yet */
   awaitingSince?: number | null;

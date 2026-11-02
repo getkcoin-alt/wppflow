@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CalendarClock, Check, Clock, Loader2, Lock, MessageSquare, Send, Sparkles, Smartphone, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, Clock, Loader2, Lock, MessageSquare, Send, Sparkles, Smartphone, UserRound, X } from "lucide-react";
 import { aiSuggestReply, type AiTone, type HomeItem } from "../../services/api";
 import { Avatar } from "../ui/Avatar";
 import { RiwoAvatar } from "../user/Riwo";
@@ -74,12 +74,18 @@ export function ChatCard({
   };
 
   return (
-    <li className={card} data-testid={`need-${item.id}`}>
+    <li className={`${card} ${item.askedForPerson ? "ring-2 ring-danger/40" : ""}`} data-testid={`need-${item.id}`}>
       <div className="flex items-start gap-3.5">
         <Avatar src={item.avatar} name={item.title} className="h-12 w-12 rounded-full object-cover shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <h3 className="text-[16px] font-semibold text-fg truncate">{item.title}</h3>
+            {item.askedForPerson && (
+              <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[12px] font-semibold bg-danger text-white" title="The customer asked to talk to a person. Riwo has stopped answering them.">
+                <UserRound className="w-3 h-3" aria-hidden />
+                Asked for a person
+              </span>
+            )}
             <span
               className={`inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[12px] font-medium ${item.overdue ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"}`}
               title={item.overdue ? "Past your reply target" : "Waiting for a reply"}

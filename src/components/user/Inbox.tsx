@@ -930,6 +930,13 @@ export const Inbox: React.FC<InboxProps> = ({
                           )}
                         </div>
                       </div>
+                      {chat.needsHuman && !chat.isClosed && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full text-[11.5px] font-semibold bg-danger text-white" title="The customer asked to talk to a person. Riwo has stopped answering them.">
+                            Asked for a person
+                          </span>
+                        </div>
+                      )}
                       {chat.awaitingSince && !chat.isClosed && !chat.isGroup && (() => {
                         const waited = Math.max(0, now / 1000 - chat.awaitingSince);
                         if (waited < 60) return null;
