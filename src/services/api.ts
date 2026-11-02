@@ -931,8 +931,36 @@ export interface HomeData {
   needsYou: HomeItem[];
   more: number;
   /** Owners and administrators of a workspace that is not set up yet */
+  /** The morning brief, for owners and administrators */
+  brief?: { day: string; text: string; source: "ai" | "rules" } | null;
   setup: { steps: { key: "connect" | "replies" | "automation" | "team"; label: string; done: boolean }[]; done: number; total: number } | null;
 }
+// ── Autopilot: what Riwo may do by itself ─────────────────────────────────────────────────────────
+export interface AutopilotEntry {
+  id: string;
+  rule: string;
+  outcome: "sent" | "cleared" | "undone";
+  what: string;
+  text: string;
+  conversationId: string;
+  title: string;
+  at: string;
+  canUndo: boolean;
+}
+export interface AutopilotState {
+  /** Riwo can act right now; otherwise `reason` says why not (the plan has no Riwo, it is switched off, nothing private is connected) */
+  available: boolean;
+  reason: null | "not_configured" | "plan" | "disabled" | "no_private_provider";
+  canEdit: boolean;
+  rules: { key: string; label: string; description: string; enabled: boolean }[];
+  sentToday: number;
+  dailyCap: number;
+  log: AutopilotEntry[];
+}
+export const fetchAutopilot = (): Promise<AutopilotState> => apiGet("/api/home/autopilot");
+export const setAutopilotRule = (key: string, enabled: boolean) => apiRequest(`/api/home/autopilot/rules/${encodeURIComponent(key)}`, { method: "PUT", body: JSON.stringify({ enabled }) });
+export const undoAutopilot = (id: string) => apiPost(`/api/home/autopilot/${encodeURIComponent(id)}/undo`, {});
+
 /** `until` is the end of the person's own day, which only their browser knows. */
 export const fetchHome = async (until: string): Promise<HomeData> => apiGet(`/api/home?until=${encodeURIComponent(until)}`);
 
@@ -991,6 +1019,9 @@ export const setAiEnabled = (enabled: boolean): Promise<AiStatus> =>
     method: "PUT",
     body: JSON.stringify({ enabled }),
   });
+/** "Ask Riwo" in the search bar: which of the given commands a few typed words ask for, or null. */
+export const aiRouteCommand = async (text: string, commands: { id: string; label: string; hint?: string }[]): Promise<string | null> =>
+  (await apiPost("/api/ai/command", { text, commands })).commandId ?? null;
 export const setAiPrivateOnly = (privateOnly: boolean): Promise<AiStatus> =>
   apiRequest("/api/ai/settings", {
     method: "PUT",

@@ -8,6 +8,9 @@ const api = vi.hoisted(() => ({
   fetchHome: vi.fn(),
   aiSuggestReply: vi.fn(),
   updateLeadTask: vi.fn(),
+  fetchAutopilot: vi.fn(),
+  setAutopilotRule: vi.fn(),
+  undoAutopilot: vi.fn(),
   apiGet: vi.fn(),
   getStoredTenantId: () => "t1",
 }));
@@ -46,6 +49,7 @@ const show = (data: object, extra: Partial<TodayProps> = {}) => {
 
 beforeEach(() => {
   for (const f of Object.values(api)) if (typeof f === "function" && "mockReset" in f) (f as any).mockReset();
+  api.fetchAutopilot.mockResolvedValue({ available: true, reason: null, canEdit: false, rules: [], sentToday: 0, dailyCap: 50, log: [] });
   api.apiGet.mockResolvedValue({ summary: { conversations: 12, contacts: 30, sessions: 1, pending: 0, sent: 10, delivered: 8, read: 5 } });
 });
 afterEach(cleanup);
@@ -76,6 +80,16 @@ describe("Today", () => {
     expect(within(card).getByText(/Is the villa still available/)).toBeDefined();
     expect(within(card).getByTitle("Past your reply target").textContent).toMatch(/Waiting 1\.5 h/);
     expect(document.body.textContent).not.toContain("@lid");
+  });
+
+  it("an owner is shown the morning brief, and others are not", async () => {
+    show(home({ brief: { day: "2026-06-10", text: "Yesterday was busy. Today: reply to the customers still waiting.", source: "ai" } }));
+    const brief = await screen.findByRole("region", { name: "Morning brief" });
+    expect(brief.textContent).toContain("Today: reply to the customers still waiting.");
+    cleanup();
+    show(home());
+    await screen.findByText("All clear");
+    expect(screen.queryByRole("region", { name: "Morning brief" })).toBeNull();
   });
 
   it("says plainly when everything is answered", async () => {
@@ -230,5 +244,77 @@ describe("Today", () => {
     expect(await screen.findByText("Could not reach the server.")).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("All clear")).toBeDefined();
+  });
+});
+
+describe("Autopilot on Today", () => {
+  const state = (over = {}) => ({
+    available: true, reason: null, canEdit: true, sentToday: 3, dailyCap: 50,
+    rules: [
+      { key: "saved_replies", label: "Answer questions with my saved replies", description: "Riwo sends the saved reply, word for word.", enabled: false },
+      { key: "thanks_done", label: "Clear thank-yous", description: "Takes thank-yous off your list.", enabled: true },
+    ],
+    log: [{ id: "l1", rule: "saved_replies", outcome: "sent", what: "Sent “Opening hours”", text: "We open at 9.", conversationId: "c7", title: "Chitra Das", at: new Date().toISOString(), canUndo: true }],
+    ...over,
+  });
+
+  it("an owner sees the rules in plain words, switches one on, and sees what Autopilot did", async () => {
+    api.fetchAutopilot.mockResolvedValue(state());
+    api.setAutopilotRule.mockResolvedValue({});
+    show(home());
+    const toggle = await screen.findByRole("switch", { name: "Answer questions with my saved replies" });
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("switch", { name: "Clear thank-yous" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText(/3 sent today, up to 50 a day/)).toBeDefined();
+    expect(screen.getByText(/never answers a group/)).toBeDefined();
+    const list = screen.getByRole("list", { name: "Autopilot did this" });
+    expect(within(list).getByText("Chitra Das")).toBeDefined();
+    expect(within(list).getByText("Sent “Opening hours”")).toBeDefined();
+    fireEvent.click(toggle);
+    await waitFor(() => expect(api.setAutopilotRule).toHaveBeenCalledWith("saved_replies", true));
+    await waitFor(() => expect(api.fetchAutopilot.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  it("an action can be taken back with one tap, and the waiting list is asked again", async () => {
+    api.fetchAutopilot.mockResolvedValue(state());
+    api.undoAutopilot.mockResolvedValue({});
+    show(home());
+    fireEvent.click(await screen.findByRole("button", { name: /Take back: Sent “Opening hours” for Chitra Das/ }));
+    await waitFor(() => expect(api.undoAutopilot).toHaveBeenCalledWith("l1"));
+    await waitFor(() => expect(api.fetchHome.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  it("says why it could not do it, and a click on a name opens that chat", async () => {
+    api.fetchAutopilot.mockResolvedValue(state());
+    api.undoAutopilot.mockRejectedValue(new Error("That reply is still being sent. Try again in a moment."));
+    show(home());
+    fireEvent.click(await screen.findByRole("button", { name: /Take back/ }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/still being sent/);
+    fireEvent.click(screen.getByRole("button", { name: "Chitra Das" }));
+    expect(props.onOpenChat).toHaveBeenCalledWith("c7");
+  });
+
+  it("a teammate can read what it did but not change the rules, and sees nothing when there is nothing", async () => {
+    api.fetchAutopilot.mockResolvedValue(state({ canEdit: false }));
+    show(home());
+    await screen.findByRole("list", { name: "Autopilot did this" });
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.getByText("On")).toBeDefined();
+    cleanup();
+    api.fetchAutopilot.mockResolvedValue(state({ canEdit: false, log: [] }));
+    show(home());
+    await screen.findByText("All clear");
+    expect(screen.queryByText("Autopilot")).toBeNull();
+  });
+
+  it("on a plan without Riwo it says so instead of offering switches, and says why when Riwo is off", async () => {
+    api.fetchAutopilot.mockResolvedValue(state({ available: false, reason: "plan", log: [] }));
+    show(home());
+    expect(await screen.findByText(/Autopilot is part of the Growth plan/)).toBeDefined();
+    expect(screen.queryByRole("switch")).toBeNull();
+    cleanup();
+    api.fetchAutopilot.mockResolvedValue(state({ available: false, reason: "disabled", log: [] }));
+    show(home());
+    expect(await screen.findByText("Riwo is switched off for your company.")).toBeDefined();
   });
 });

@@ -76,6 +76,27 @@ import { markNotificationsRead, deleteMessageFromCache } from "./services/realti
 import type { AppNotification } from "./types";
 import { reconcileMessages } from "./utils/messages";
 
+// The palette's chat search is the inbox's own search: names, numbers in any format, and the words in messages. These
+// live outside the component so they stay the same function between renders.
+async function findChats(text: string) {
+  const found = await api.searchInbox(text, "");
+  const seen = new Set<string>();
+  const hits: { id: string; title: string; subtitle?: string }[] = [];
+  for (const c of found.chats) {
+    if (seen.has(c.id)) continue;
+    seen.add(c.id);
+    hits.push({ id: c.id, title: c.contactName, subtitle: c.displayPhone || undefined });
+  }
+  for (const m of found.messages) {
+    if (seen.has(m.conversationId)) continue;
+    seen.add(m.conversationId);
+    hits.push({ id: m.conversationId, title: m.chat.contactName, subtitle: m.snippet.text });
+  }
+  return hits;
+}
+const askRiwo = (text: string, list: { id: string; label: string; hint?: string }[]) =>
+  api.aiRouteCommand(text, list.map(({ id, label, hint }) => ({ id, label, hint })));
+
 export function App() {
   const qc = useQueryClient();
   const theme = useTheme();
@@ -891,6 +912,9 @@ export function App() {
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         commands={commands}
+        onFindChats={findChats}
+        onOpenChat={(id) => openConversationRef.current(id)}
+        onAsk={capabilities.data?.ai?.available ? askRiwo : undefined}
       />
       <div className="flex-1 min-h-0 min-w-0 relative">
         {(error || queryError || sync || info) && (
@@ -1156,6 +1180,7 @@ export function App() {
               onOpenInbox={() => setTab("inbox")}
               onOpenNumbers={() => setTab("sessions")}
               onConnectNumber={openPair}
+              onPlan={planAction}
               onSetupStep={(key) => {
                 if (key === "connect") return openPair();
                 if (key === "replies") return setTab("inbox");

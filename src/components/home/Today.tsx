@@ -1,14 +1,15 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
-import { Search, Smartphone } from "lucide-react";
-import { fetchHome, getStoredTenantId, updateLeadTask, type HomeData, type HomeItem } from "../../services/api";
+import { Search, Smartphone, Sparkles } from "lucide-react";
+import { fetchHome, getStoredTenantId, updateLeadTask, type HomeItem } from "../../services/api";
 import { Notice, Page } from "../ui/Page";
 import { btn } from "../ui/styles";
 import { RiwoAvatar } from "../user/Riwo";
 import { ChatCard, NumberCard, TaskCard } from "./NeedCards";
 import { Performance } from "./Performance";
 import { SetupCoach } from "./SetupCoach";
+import { AutopilotPanel } from "./AutopilotPanel";
 import { dayLine, endOfToday, greetingFor } from "./greeting";
 
 export interface TodayProps {
@@ -24,6 +25,8 @@ export interface TodayProps {
   onOpenNumbers: () => void;
   onConnectNumber: () => void;
   onSetupStep: (key: "connect" | "replies" | "automation" | "team") => void;
+  /** Opens the plans, for a company whose plan has no Autopilot */
+  onPlan?: () => void;
 }
 
 // The first screen: what needs the person now, with the work already prepared, then everything else, quieter.
@@ -106,6 +109,16 @@ export function Today(props: TodayProps) {
         </button>
       </header>
 
+      {data.brief && (
+        <section aria-label="Morning brief" className="mt-6 rounded-3xl border border-gold/30 bg-gold/[0.06] px-5 py-4 flex items-start gap-3.5">
+          <Sparkles className="w-5 h-5 mt-0.5 shrink-0 text-gold" aria-hidden />
+          <div className="min-w-0">
+            <p className="eyebrow">Morning brief</p>
+            <p className="mt-1 text-[15px] leading-relaxed text-fg">{data.brief.text}</p>
+          </div>
+        </section>
+      )}
+
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_20rem] items-start">
         <section aria-labelledby="needs-title">
           <h2 id="needs-title" className="eyebrow mb-3">
@@ -145,11 +158,10 @@ export function Today(props: TodayProps) {
             </button>
           )}
         </section>
-        {data.setup && (
-          <aside>
-            <SetupCoach setup={data.setup} onStep={props.onSetupStep} />
-          </aside>
-        )}
+        <aside className="space-y-6">
+          {data.setup && <SetupCoach setup={data.setup} onStep={props.onSetupStep} />}
+          <AutopilotPanel onOpenChat={props.onOpenChat} onPlan={props.onPlan} />
+        </aside>
       </div>
 
       <Performance />
