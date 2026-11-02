@@ -10,3 +10,13 @@ export function signupUrl(plan: string, interval?: "monthly" | "yearly"): string
   if (plan !== "free" && interval) url.searchParams.set("interval", interval === "yearly" ? "annual" : "monthly");
   return url.toString();
 }
+
+// "Start 14-day free trial": sign up first, then the Growth plan starts for 14 days with nothing to pay. The person chooses a plan
+// inside the app when the trial is nearly over.
+export function trialUrl(): string {
+  const url = new URL(SITE.appUrl);
+  url.searchParams.set("signup", "1");
+  url.searchParams.set("plan", "growth");
+  url.searchParams.set("trial", "1");
+  return url.toString();
+}

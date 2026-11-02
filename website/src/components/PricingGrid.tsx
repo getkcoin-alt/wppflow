@@ -5,7 +5,7 @@ import { CheckList } from "./ui";
 import { AED_PAYMENT_NOTE, yearlyOf, type Interval } from "@/content/plans";
 import { taxNote, type Catalogue } from "@/lib/catalogue";
 import type { CheckoutOptions } from "@/lib/checkout";
-import { signupUrl } from "@/lib/signup";
+import { trialUrl, signupUrl } from "@/lib/signup";
 import { currencyForZone, formatMoney, type Currency } from "@/lib/money";
 import { trackAttrs } from "@/lib/analytics";
 
@@ -115,10 +115,22 @@ export function PricingGrid({ catalogue, checkout = null }: { catalogue: Catalog
                   {p.id === "enterprise" ? "Talk to sales" : p.id === "free" ? "Get started free" : `Choose ${p.name}`}
                 </Link>
               )}
+              {p.id === "growth" && (
+                <a
+                  href={trialUrl()}
+                  {...trackAttrs("plan_choose", { plan: p.id, currency: cur, interval, trial: "14-day" })}
+                  className="mt-3 text-center text-sm font-medium text-brand hover:underline"
+                >
+                  or start a 14-day free trial
+                </a>
+              )}
             </section>
           );
         })}
       </div>
+      <p className="mt-6 text-sm text-fg-3" data-testid="trial-note">
+        Free trial: 14 days of the Growth plan, no card needed. You sign up first, then choose a plan inside the app when you are ready.
+      </p>
       {cur === "AED" && (
         <p className="mt-6 text-sm text-fg-3" data-testid="aed-note">
           {AED_PAYMENT_NOTE}

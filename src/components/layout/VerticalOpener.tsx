@@ -1,19 +1,18 @@
 import { useEffect, useRef } from "react";
-import { currentVertical, type VerticalCopy } from "../../utils/vertical";
 
 /**
- * On an industry's own address (homes.scriwo.com) a company that has that industry opens on its screen, once per visit, so the
- * first thing an agency sees is its property hub and not the general home. It draws nothing.
+ * A company that has the real-estate layer opens on its own property dashboard when someone signs in, once per visit, whatever
+ * address they used (app.scriwo.com or homes.scriwo.com). Companies without it open on the general home, as always. It draws
+ * nothing, and people can go anywhere else from there.
  */
-export function VerticalOpener({ solutions, open }: { solutions: string[]; open: (tab: VerticalCopy["homeTab"]) => void }) {
+export function VerticalOpener({ solutions, open }: { solutions: string[]; open: (tab: "realestate") => void }) {
   const done = useRef(false);
-  const vertical = currentVertical();
-  const ready = Boolean(vertical && solutions.includes("real_estate"));
+  const ready = solutions.includes("real_estate");
   useEffect(() => {
-    if (ready && vertical && !done.current) {
+    if (ready && !done.current) {
       done.current = true;
-      open(vertical.homeTab);
+      open("realestate");
     }
-  }, [ready, vertical, open]);
+  }, [ready, open]);
   return null;
 }

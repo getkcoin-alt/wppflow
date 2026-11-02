@@ -18,7 +18,7 @@ vi.mock("../services/api", () => api);
 import { LoginPage } from "../components/auth/LoginPage";
 import { VerticalOpener } from "../components/layout/VerticalOpener";
 import { currentVertical, verticalOfHostname } from "../utils/vertical";
-import { recaptureStartup } from "../utils/signupIntent";
+import { isPayable, readIntent, recaptureStartup } from "../utils/signupIntent";
 
 const arrive = (address: string) => {
   window.sessionStorage.clear();
@@ -89,8 +89,8 @@ describe("Scriwo Homes: the same app on the property address", () => {
     expect(api.signupUser.mock.calls[0][5]).toBe("homes");
   });
 
-  it("a company with real estate opens on its hub, once; one without it is left where it is", () => {
-    arrive("/?vertical=homes");
+  it("a company with real estate opens on its property dashboard once, on any address; one without it stays on the general home", () => {
+    arrive("/");
     const open = vi.fn();
     const { rerender } = render(<VerticalOpener solutions={[]} open={open} />);
     expect(open).not.toHaveBeenCalled();
@@ -100,9 +100,39 @@ describe("Scriwo Homes: the same app on the property address", () => {
     rerender(<VerticalOpener solutions={["real_estate", "x"]} open={open} />);
     expect(open).toHaveBeenCalledTimes(1);
     cleanup();
-    arrive("/");
     const other = vi.fn();
-    render(<VerticalOpener solutions={["real_estate"]} open={other} />);
+    render(<VerticalOpener solutions={["something_else"]} open={other} />);
     expect(other).not.toHaveBeenCalled();
+  });
+
+  it("sign-up asks what the company does, and real estate is sent to the server", async () => {
+    arrive("/?signup=1");
+    api.signupUser.mockResolvedValue({ status: "success", token: "t", user: { id: 1 } });
+    render(<LoginPage onAuthSuccess={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("What does your company do?"), { target: { value: "real_estate" } });
+    expect(screen.getByText(/We will set you up with Scriwo Homes/)).toBeDefined();
+    fireEvent.change(screen.getByPlaceholderText("Jane Doe"), { target: { value: "Rana" } });
+    fireEvent.change(screen.getByPlaceholderText("Acme Logistics"), { target: { value: "Rana Realty" } });
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), { target: { value: "rana@x.test" } });
+    fireEvent.change(screen.getByPlaceholderText("••••••••"), { target: { value: "Password@1234" } });
+    fireEvent.click(screen.getByRole("button", { name: /Create (workspace|account)|Sign up|Get started/i }));
+    await waitFor(() => expect(api.signupUser).toHaveBeenCalled());
+    expect(api.signupUser.mock.calls[0][5]).toBeNull();
+    expect(api.signupUser.mock.calls[0][6]).toEqual({ trial: false, industry: "real_estate" });
+  });
+
+  it("the 14-day trial from the website: says what happens, and asks the server for the trial instead of a payment", async () => {
+    arrive("/?signup=1&plan=growth&trial=1");
+    api.signupUser.mockResolvedValue({ status: "success", token: "t", user: { id: 1 } });
+    render(<LoginPage onAuthSuccess={vi.fn()} />);
+    expect(screen.getByText(/your 14-day Growth trial starts straight away\. No card needed/)).toBeDefined();
+    expect(screen.queryByText(/you will be taken to the payment/)).toBeNull();
+    fireEvent.change(screen.getByPlaceholderText("Jane Doe"), { target: { value: "Tara" } });
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), { target: { value: "tara@x.test" } });
+    fireEvent.change(screen.getByPlaceholderText("••••••••"), { target: { value: "Password@1234" } });
+    fireEvent.click(screen.getByRole("button", { name: /Create (workspace|account)|Sign up|Get started/i }));
+    await waitFor(() => expect(api.signupUser).toHaveBeenCalled());
+    expect(api.signupUser.mock.calls[0][6]).toMatchObject({ trial: true });
+    expect(isPayable(readIntent())).toBe(false);
   });
 });

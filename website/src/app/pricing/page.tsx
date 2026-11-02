@@ -25,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const faqs = (taxAnswer: string, online: boolean) => [
+  { q: "Is there a free trial?", a: "Yes. Start a 14-day free trial of the Growth plan: you sign up first (no card needed), your workspace starts on Growth, and you choose a plan inside the app when you are ready. After the trial it keeps working on the Free plan until you choose one; nothing is deleted." },
   { q: "Is there a free plan?", a: "Yes. One account with one WhatsApp number is free. Choose Free and our onboarding team will set it up for you." },
   {
     q: "How do I buy a plan?",

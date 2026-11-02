@@ -45,6 +45,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
   // the plan chosen on the website's pricing page, kept while the person signs up or goes to Google and back
   const [intent] = useState(() => readIntent());
   const [googleOn, setGoogleOn] = useState(false);
+  // "What does your company do?": choosing real estate sets the workspace up for property agencies, with the 14-day trial
+  const [industry, setIndustry] = useState("");
   useEffect(() => {
     let live = true;
     Promise.resolve()
@@ -152,7 +154,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           setError(res.message || "Invalid email or password.");
         }
       } else {
-        const res = await signupUser(name, email, password, companyName, role, currentVertical()?.key ?? null);
+        const res = await signupUser(name, email, password, companyName, role, currentVertical()?.key ?? null, { trial: intent?.trial === true, industry });
         if (res.status === "success" && res.token && res.user) {
           setStoredToken(res.token);
           setSuccessMsg(`Account created. Welcome to ${currentVertical()?.name ?? "Scriwo"}.`);
@@ -340,7 +342,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
       {intent && mode === "signup" && (
         <div className="mb-5">
           <AuthNote tone="success">
-            {intent.plan === "free"
+            {intent.trial
+              ? "Create your account and your 14-day Growth trial starts straight away. No card needed. You choose a plan when you are ready."
+              : intent.plan === "free"
               ? "You chose the Free plan. Create your account and you are in."
               : `You chose the ${intent.plan[0].toUpperCase()}${intent.plan.slice(1)} plan${intent.interval === "annual" ? ", paid yearly" : intent.interval === "monthly" ? ", paid monthly" : ""}. Create your account, then you will be taken to the payment.`}
           </AuthNote>
@@ -393,6 +397,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
                 onChange={(e) => setCompanyName(e.target.value)}
                 className={inputCls}
               />,
+            )}
+            {!currentVertical() &&
+              field(
+                "What does your company do?",
+                <select aria-label="What does your company do?" value={industry} onChange={(e) => setIndustry(e.target.value)} className={inputCls}>
+                  <option value="">Something else</option>
+                  <option value="real_estate">Real estate: a property agency or brokerage</option>
+                </select>,
+              )}
+            {industry === "real_estate" && !currentVertical() && (
+              <p className="text-[13px] text-fg-3 leading-relaxed px-1">
+                We will set you up with Scriwo Homes: the property pipeline, the property assistant and a 14-day trial of the Growth plan, free.
+              </p>
             )}
             <p className="text-[13px] text-fg-3 leading-relaxed px-1">
               Creating a workspace makes you its owner. You can invite teammates

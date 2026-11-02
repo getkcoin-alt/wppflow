@@ -86,15 +86,36 @@ describe("the AI and partner claims", () => {
 
 describe("Scriwo Homes", () => {
   it("has a page, is linked, and promises only what is built", async () => {
-    const { HOMES, HOMES_FAQS, HOMES_FLOW, HOMES_RULES, HOMES_STEPS } = await import("@/content/homes");
+    const h = await import("@/content/homes");
     expect(allRoutes().map((r) => r.path)).toContain("/homes");
-    expect(HOMES.appUrl).toBe("https://homes.scriwo.com");
-    const copy = [HOMES.intro, ...HOMES_FAQS.map((f) => f.a), ...HOMES_FLOW.map((f) => f.body), ...HOMES_RULES.map((f) => f.body), ...HOMES_STEPS.map((s) => s.join(" "))].join(" ");
+    expect(h.HOMES.appUrl).toBe("https://homes.scriwo.com");
+    const copy = [h.HOMES.intro, ...Object.values(h.HOMES_OFFER), ...h.HOMES_FAQS.map((f) => f.a), ...h.HOMES_PROS.map((f) => f.body), ...h.HOMES_WONT.map((f) => f.body), ...h.HOMES_DATA, h.HOMES_DATA_NOTE, ...h.HOMES_STEPS.map((s) => s.join(" "))].join(" ");
     // not built yet, so never claimed as available
     expect(copy).not.toMatch(/syncs? with (google|outlook)|automatic(ally)? (sends|confirm)|imports? from (property finder|bayut)|arabic screens/i);
     expect(copy).toMatch(/Not yet/);
+  });
+
+  it("states the 14-day trial and the same price, and never promises 100% or a guarantee", async () => {
+    const h = await import("@/content/homes");
+    const copy = JSON.stringify(h);
     expect(copy).toMatch(/14 days/);
-    expect(copy).toMatch(/never|cannot/i);
+    expect(copy).toMatch(/Sign up first/i);
+    expect(copy).toMatch(/same price/i);
+    expect(copy).not.toMatch(/two months|first ten|100\s*%|guarantee|surety|unhackable/i);
+    // the limits of the AI are said plainly
+    expect(copy).toMatch(/does not decide the budget/);
+    expect(copy).toMatch(/does not close the deal/);
+    // and what the customer is responsible for after an export
+    expect(copy).toMatch(/up to you/);
+  });
+});
+
+describe("the main menu", () => {
+  it("lists Features, Scriwo Homes, Riwo AI, Industries, Pricing, Developers, White-label and Guides, in that order", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/components/Header.tsx", "utf8");
+    const labels = [...src.matchAll(/\{ href: "\/[a-z-]+", label: "([^"]+)" \}/g)].map((m) => m[1]).filter((l) => l !== "Contact");
+    expect(labels).toEqual(["Features", "Scriwo Homes", "Riwo AI", "Industries", "Pricing", "Developers", "White-label", "Guides"]);
   });
 });
 

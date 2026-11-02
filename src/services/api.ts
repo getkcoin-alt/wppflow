@@ -56,8 +56,9 @@ export function clearStoredToken() {
 /** Which ways of signing in the server offers, so only buttons that work are shown. */
 export const fetchAuthProviders = (): Promise<{ google: boolean }> => apiGet("/api/auth/providers");
 /** Where the "Continue with Google" button goes. The server takes the person to Google and brings them back signed in. */
-export const googleSignInUrl = (intent?: { plan?: string; interval?: string } | null, vertical?: string | null): string => {
+export const googleSignInUrl = (intent?: { plan?: string; interval?: string; trial?: boolean } | null, vertical?: string | null): string => {
   const q = new URLSearchParams();
+  if (intent?.trial) q.set("trial", "growth");
   if (vertical) q.set("vertical", vertical);
   if (intent?.plan) q.set("plan", intent.plan);
   if (intent?.interval) q.set("interval", intent.interval);
@@ -166,7 +167,17 @@ export const signupUser = (
   companyName?: string,
   _role?: string,
   vertical?: string | null,
-) => auth("/api/auth/signup", { name, email, password, companyName, ...(vertical ? { vertical } : {}) });
+  extra?: { trial?: boolean; industry?: string },
+) =>
+  auth("/api/auth/signup", {
+    name,
+    email,
+    password,
+    companyName,
+    ...(vertical ? { vertical } : {}),
+    ...(extra?.trial ? { trial: "growth" } : {}),
+    ...(extra?.industry ? { industry: extra.industry } : {}),
+  });
 export const getInviteInfo = (token: string) =>
   apiGet(`/api/auth/invite-info?token=${encodeURIComponent(token)}`);
 export const acceptInvitation = (token: string, password: string) =>

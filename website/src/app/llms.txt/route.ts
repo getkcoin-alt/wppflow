@@ -36,7 +36,7 @@ export async function GET() {
     `- [Riwo](${absolute("/riwo")}): ${RIWO.oneLine} Included in the ${RIWO.plan}.`,
     "",
     "## Scriwo Homes",
-    `- [Scriwo Homes](${absolute("/homes")}): Scriwo for property agencies at homes.scriwo.com. Qualifies buyers and renters on WhatsApp, opens and assigns leads in a property pipeline, matches listings by rule, books viewings and alerts managers to unanswered enquiries. 14-day free trial of the Growth plan, no card needed. The AI never states prices or availability.`,
+    `- [Scriwo Homes](${absolute("/homes")}): Scriwo for property agencies at homes.scriwo.com. Qualifies buyers and renters on WhatsApp, opens and assigns leads in a property pipeline, matches listings by rule, books viewings and alerts managers to unanswered enquiries. Same price as Scriwo (Growth plan and above). 14-day free trial of the Growth plan: sign up first, no card needed. The AI never states prices or availability.`,
     "",
     "## Partners",
     `- [White-label and reseller partnerships](${absolute("/white-label")}): agencies, resellers and software companies can offer Scriwo to their own clients. Partnerships are set up with the Scriwo team; branding, domains and pricing are agreed for each partner.`,

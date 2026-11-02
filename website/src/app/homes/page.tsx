@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Gift, ShieldCheck, UserCheck } from "lucide-react";
 import { Container, Crumbs, CtaBand, FaqList, PageHero, SectionTitle } from "@/components/ui";
 import { JsonLd } from "@/components/JsonLd";
-import { HOMES, HOMES_FAQS, HOMES_FLOW, HOMES_LOST_LEAD, HOMES_RULES, HOMES_STEPS } from "@/content/homes";
+import { HOMES, HOMES_DATA, HOMES_DATA_NOTE, HOMES_FAQS, HOMES_LOST_LEAD, HOMES_OFFER, HOMES_PROS, HOMES_STEPS, HOMES_WONT } from "@/content/homes";
 import { faqPage } from "@/lib/jsonld";
+import { trialUrl } from "@/lib/signup";
 import { trackAttrs } from "@/lib/analytics";
 
 export const metadata: Metadata = {
   title: "Scriwo Homes — WhatsApp CRM for Property Agencies in Dubai and the UAE",
   description:
-    "Qualify buyers and renters on WhatsApp, assign every lead, match listings, book viewings and see which enquiries nobody answered. Scriwo Homes for property agencies: 14-day free trial, no card needed.",
+    "Scriwo's AI CRM for property agencies: qualify buyers and renters on WhatsApp, assign every lead, match listings, book viewings and see which enquiries nobody answered. The same price as Scriwo, with a 14-day free trial and no card.",
   alternates: { canonical: "/homes" },
 };
 
@@ -21,12 +22,28 @@ export default function HomesPage() {
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Scriwo Homes", path: "/homes" }]} />
       <PageHero eyebrow={HOMES.eyebrow} title={HOMES.title} intro={HOMES.intro}>
         <a href={`${HOMES.appUrl}/?signup=1`} {...trackAttrs("demo_click", { place: "homes-hero" })} className="btn-primary">
-          Start your 14-day trial <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          Start your 14-day free trial <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </a>
         <Link href="/contact?interest=demo" className="btn-ghost">Book a demo for your agency</Link>
       </PageHero>
 
-      <Container className="mt-4 grid gap-12 lg:grid-cols-[1fr_1fr]">
+      <Container className="mt-4">
+        <div data-reveal className="grid gap-5 md:grid-cols-2">
+          <div className="card lift p-7">
+            <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-gold/15 text-gold"><Gift className="h-5 w-5" aria-hidden="true" /></div>
+            <h2 className="text-xl">{HOMES_OFFER.trial}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-fg-2">{HOMES_OFFER.trialBody}</p>
+          </div>
+          <div className="card lift p-7">
+            <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand"><Check className="h-5 w-5" aria-hidden="true" /></div>
+            <h2 className="text-xl">{HOMES_OFFER.same}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-fg-2">{HOMES_OFFER.sameBody}</p>
+            <Link href="/pricing" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand">See the plans <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+          </div>
+        </div>
+      </Container>
+
+      <Container className="mt-20 grid gap-12 lg:grid-cols-[1fr_1fr]">
         <div>
           <SectionTitle eyebrow="The problem" title="One conversation can be the commission" />
           <ol className="mt-8 space-y-4">
@@ -50,25 +67,44 @@ export default function HomesPage() {
       </Container>
 
       <Container className="mt-24">
-        <SectionTitle eyebrow="How an enquiry is handled" title="From first message to booked viewing" />
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {HOMES_FLOW.map((f) => (
+        <SectionTitle eyebrow="What your agency gets" title="From first message to booked viewing" />
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {HOMES_PROS.map((f) => (
             <div key={f.title} className="card lift p-6">
-              <h3 className="text-lg">{f.title}</h3>
+              <h3 className="text-lg leading-snug">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-fg-2">{f.body}</p>
             </div>
           ))}
         </div>
       </Container>
 
-      <Container className="mt-24 grid gap-5 md:grid-cols-3">
-        {HOMES_RULES.map((r) => (
-          <div key={r.title} className="card lift p-6">
-            <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-gold/15 text-gold"><ShieldCheck className="h-5 w-5" aria-hidden="true" /></div>
-            <h2 className="text-lg">{r.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-fg-2">{r.body}</p>
-          </div>
-        ))}
+      <Container className="mt-24">
+        <SectionTitle eyebrow="What Riwo will not do" title="The AI that knows where its job ends" intro="Other tools let a bot improvise with your clients. Riwo is deliberately limited, because in property one wrong number or promise costs a commission." />
+        <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          {HOMES_WONT.map((r) => (
+            <div key={r.title} className="card lift p-6">
+              <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-gold/15 text-gold"><UserCheck className="h-5 w-5" aria-hidden="true" /></div>
+              <h3 className="text-lg">{r.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-fg-2">{r.body}</p>
+            </div>
+          ))}
+        </div>
+      </Container>
+
+      <Container className="mt-24 grid gap-10 lg:grid-cols-[1fr_1fr]">
+        <div>
+          <SectionTitle eyebrow="Your data" title="Your agency's data stays your agency's" />
+          <ul className="mt-8 space-y-3 text-fg-2">
+            {HOMES_DATA.map((t) => (
+              <li key={t} className="flex gap-3 text-sm"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />{t}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="card self-start p-8">
+          <p className="eyebrow">Be honest with yourself</p>
+          <h2 className="mt-3 text-2xl">After you export, it is yours to protect</h2>
+          <p className="mt-4 text-sm leading-relaxed text-fg-2">{HOMES_DATA_NOTE}</p>
+        </div>
       </Container>
 
       <Container className="mt-24">
@@ -87,7 +123,7 @@ export default function HomesPage() {
         <SectionTitle eyebrow="Questions" title="About Scriwo Homes" />
         <div className="mt-8"><FaqList faqs={HOMES_FAQS} /></div>
       </Container>
-      <CtaBand cta={{ href: "/contact?interest=demo", label: "Book a demo for your agency" }} title="Stop losing property enquiries" body="Start the 14-day trial at homes.scriwo.com, or tell us about your agency and we will set it up with you." />
+      <CtaBand cta={{ href: `${HOMES.appUrl}/?signup=1`, label: "Start your 14-day free trial" }} title="Stop losing property enquiries" body="Start your 14-day free trial, or tell us about your agency and we will set it up with you." />
     </>
   );
 }

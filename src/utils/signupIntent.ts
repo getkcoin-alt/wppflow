@@ -5,6 +5,8 @@
 export interface SignupIntent {
   plan: string;
   interval: "monthly" | "annual" | "";
+  /** the person chose the 14-day free trial: the Growth plan starts when the workspace is made, and nothing is paid */
+  trial?: true;
 }
 export interface Startup {
   /** arrived to create an account: the sign-up form is shown first */
@@ -16,7 +18,7 @@ export interface Startup {
   googleError: string;
 }
 const KEY = "scriwo_intent";
-const OWN_PARAMS = ["signup", "plan", "interval", "google", "google_error"];
+const OWN_PARAMS = ["signup", "plan", "interval", "trial", "google", "google_error"];
 
 const store = (): Storage | null => {
   try {
@@ -25,17 +27,19 @@ const store = (): Storage | null => {
     return null;
   }
 };
-export const cleanIntent = (plan: string | null, interval: string | null): SignupIntent | null => {
+export const cleanIntent = (plan: string | null, interval: string | null, trial?: string | boolean | null): SignupIntent | null => {
   const p = (plan || "").toLowerCase();
   if (!/^[a-z0-9_-]{1,30}$/.test(p)) return null;
   const i = (interval || "").toLowerCase();
-  return { plan: p, interval: i === "annual" || i === "yearly" ? "annual" : i === "monthly" ? "monthly" : "" };
+  // only the Growth plan has a trial
+  const wantsTrial = p === "growth" && (trial === true || trial === "1" || trial === "growth");
+  return { plan: p, interval: i === "annual" || i === "yearly" ? "annual" : i === "monthly" ? "monthly" : "", ...(wantsTrial ? { trial: true as const } : {}) };
 };
 export const readIntent = (): SignupIntent | null => {
   try {
     const raw = store()?.getItem(KEY);
     const v = raw ? JSON.parse(raw) : null;
-    return v ? cleanIntent(v.plan, v.interval) : null;
+    return v ? cleanIntent(v.plan, v.interval, v.trial === true) : null;
   } catch {
     return null;
   }
@@ -49,7 +53,7 @@ export const clearIntent = () => {
 };
 /** Paid plans are paid for inside the app; Free needs nothing and Enterprise is agreed with us first. */
 export const isPayable = (intent: SignupIntent | null): intent is SignupIntent =>
-  Boolean(intent && intent.plan !== "free" && intent.plan !== "enterprise");
+  Boolean(intent && !intent.trial && intent.plan !== "free" && intent.plan !== "enterprise");
 
 // Reads this page's address: remembers the intent, and takes our own words out of the address bar so a refresh or a shared
 // link does not repeat them. Invitation and password-reset links are left alone.
@@ -58,7 +62,7 @@ export function captureStartup(): Startup {
   if (typeof window === "undefined") return none;
   const url = new URL(window.location.href);
   const p = url.searchParams;
-  const intent = cleanIntent(p.get("plan"), p.get("interval"));
+  const intent = cleanIntent(p.get("plan"), p.get("interval"), p.get("trial"));
   const startup: Startup = {
     signup: p.get("signup") === "1",
     intent,

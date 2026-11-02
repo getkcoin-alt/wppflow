@@ -340,3 +340,28 @@ sign-up sets up. New: `/homes` on the website (header, footer, `llms.txt`), `web
 ask for the trial from any address: it is a free trial for everyone who asks, rate-limited like any sign-up. "Continue with
 Google" is hidden on `homes.scriwo.com` until that address is registered as a redirect URI with Google (Google returns to one
 registered address). Not seen with a real agency yet. `/homes` says "we are onboarding our first agencies".
+
+
+### Scriwo Homes: 14-day trial, sign-up first, and the real-estate dashboard (update, 2 November 2026)
+
+Owner's decisions: the trial stays 14 days for everyone (no two-month offer for early agencies); on the website a plan or the
+trial both go to sign-up first; people with a real-estate business land on a real-estate dashboard.
+
+| Website says | Status | Evidence |
+|---|---|---|
+| "Start a 14-day free trial" (pricing page, Growth card; Scriwo Homes page) signs the visitor up first; the workspace then starts on Growth for 14 days with no card, and the person chooses a plan inside the app | Test | `vertical.test.js` ("the 14-day trial from the website"), `vertical_homes.test.tsx`, website `signup.test.ts` |
+| After the trial the workspace keeps working on Free and nothing is deleted | Test | `vertical.test.js` (the existing renewal date and grace rule) |
+| Sign-up asks "What does your company do?"; choosing real estate gives the property workspace and the same trial from any address | Test | `vertical.test.js`, `vertical_homes.test.tsx` |
+| A company with the real-estate layer opens on the property dashboard when someone signs in (any address); other companies open on the general home | Test | `vertical_homes.test.tsx` |
+| Same price: the real-estate layer, pipeline and assistant come with Growth and above | Test | `plans-admin.test.js`; the page quotes no price of its own |
+| "Riwo does not decide the budget or close the deal": it asks, records and hands over; pricing and proposals go to a person | Test | `sales-assistant.test.js`, `real-estate-ai.test.js` |
+| Data: separate per agency, role-based on the server, export at any time, tamper-evident record of automated messages | Test | `tenant-isolation.test.js`, `accountability-export.test.js` |
+
+**Not promised, on purpose.** The brief asked for "100% data protection surety". The page does not say that: no software can promise
+it, and a written guarantee would make the company liable for more than anyone can control. It states what the product does and
+says that once an export leaves Scriwo, protecting that copy is the customer's job. `content.test.ts` fails if "100%",
+"guarantee" or "surety" appear on the page, or if the founding "two months" offer returns.
+
+**Known limit.** Anyone can start a trial, and a person who makes a second workspace gets a second trial; sign-ups are
+rate-limited like any other. The main menu already lists Features, Scriwo Homes, Riwo AI, Industries, Pricing, Developers,
+White-label and Guides, and a test keeps that order.
