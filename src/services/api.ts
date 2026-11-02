@@ -1186,6 +1186,10 @@ export async function downloadFile(path: string, filename: string, failure = "Th
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+/** Take the company's data away, and check the record of what the machine said (owners and administrators) */
+export const downloadCompanyData = () => downloadFile("/api/export", `scriwo-export-${new Date().toISOString().slice(0, 10)}.json`, "The export could not be downloaded. Please try again in a while.");
+export const downloadAllMessages = () => downloadFile("/api/export/messages.csv", `scriwo-messages-${new Date().toISOString().slice(0, 10)}.csv`, "The messages could not be downloaded. Please try again in a while.");
+export const verifyAutomatedRecord = (): Promise<{ ok: boolean; checked: number; brokenAtId: number | null }> => apiGet("/api/automated-messages/verify");
 export const downloadInvoice = (id: string, number: string) =>
   downloadFile(`/api/billing/invoices/${encodeURIComponent(id)}/pdf`, `Scriwo-invoice-${number.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`, "The invoice could not be downloaded. Please try again.");
 

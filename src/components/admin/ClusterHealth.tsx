@@ -5,6 +5,7 @@ import { Notice, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
 import { MediaStorageCard } from "./MediaStorageCard";
 import { AiAssistantCard } from "./AiAssistantCard";
+import { DataPortabilityCard } from "./DataPortabilityCard";
 
 function Tile({
   label,
@@ -96,6 +97,7 @@ export function ClusterHealth() {
       )}
       <MediaStorageCard />
       <AiAssistantCard />
+      <DataPortabilityCard />
     </section>
   );
 }
