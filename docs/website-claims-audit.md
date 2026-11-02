@@ -321,3 +321,22 @@ logo, domain or partner billing, Stages 1 to 3 of that document have to be built
 **Still not on the website, on purpose:** Scriwo Real Estate (not deployed to a pilot), the Arabic and Hindi pages (`/ar`, `/hi`
 have not been updated and still describe the earlier product), and any claim that a model "learns" from chats (it does not: Riwo
 reads the text the company wrote, and the website it points to, and nothing is trained).
+
+
+## Scriwo Homes (property agencies), 2 November 2026
+
+Decision (owner, after advice from a peer): real estate in Dubai is the first vertical. The same app is served at
+`homes.scriwo.com`; the address decides the name and words on the sign-in page, which screen a new workspace opens on, and what
+sign-up sets up. New: `/homes` on the website (header, footer, `llms.txt`), `website/src/content/homes.ts`.
+
+| Website says | Status | Evidence |
+|---|---|---|
+| Signing up at homes.scriwo.com opens a property workspace: the real-estate layer on, the property pipeline (New enquiry, Contacted, Viewing booked, Offer made, Negotiation, Deal closed, Lost), a 14-day Growth trial with no card, and the Property assistant as a ready-made rule | Test | `vertical.test.js`, `automation-rules.test.js`, `vertical_homes.test.tsx` |
+| After the trial the workspace stays; seven days later the paid features switch off, nothing is deleted | Test | `vertical.test.js` (uses the existing renewal-date and grace rule, so the trial needs no new billing code) |
+| The AI never states a price, availability or a return; pricing goes to a person; every automated message is recorded; data can be exported | Test | `sales-assistant.test.js`, `real-estate-ai.test.js`, `accountability-export.test.js` |
+| Not claimed, because not built: calendar sync, automatic WhatsApp confirmations, Property Finder or Bayut import, Arabic screens | Checked | `content.test.ts` fails if the page says otherwise |
+
+**Known limits.** The vertical is chosen by the address the visitor signs up on (and by a field the browser sends), so anyone can
+ask for the trial from any address: it is a free trial for everyone who asks, rate-limited like any sign-up. "Continue with
+Google" is hidden on `homes.scriwo.com` until that address is registered as a redirect URI with Google (Google returns to one
+registered address). Not seen with a real agency yet. `/homes` says "we are onboarding our first agencies".

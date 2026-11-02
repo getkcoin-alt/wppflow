@@ -13,6 +13,7 @@ import {
   googleSignInUrl,
 } from "../../services/api";
 import { readIntent, startup } from "../../utils/signupIntent";
+import { currentVertical, verticalOfHostname } from "../../utils/vertical";
 import { AuthUser } from "../../types";
 import { AuthNote, AuthShell } from "./AuthShell";
 import { btn, inputCls } from "../ui/styles";
@@ -48,7 +49,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     let live = true;
     Promise.resolve()
       .then(fetchAuthProviders)
-      .then((p) => live && setGoogleOn(Boolean(p.google)))
+      // Google returns to one registered address (the main app), so on an industry's own address it is hidden until that
+      // address is registered with Google; email and password work there as they do everywhere
+      .then((p) => live && setGoogleOn(Boolean(p.google) && !verticalOfHostname(window.location.hostname)))
       .catch(() => {});
     return () => {
       live = false;
@@ -149,10 +152,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
           setError(res.message || "Invalid email or password.");
         }
       } else {
-        const res = await signupUser(name, email, password, companyName, role);
+        const res = await signupUser(name, email, password, companyName, role, currentVertical()?.key ?? null);
         if (res.status === "success" && res.token && res.user) {
           setStoredToken(res.token);
-          setSuccessMsg("Account created. Welcome to Scriwo.");
+          setSuccessMsg(`Account created. Welcome to ${currentVertical()?.name ?? "Scriwo"}.`);
           setTimeout(() => onAuthSuccess(res.user, res.token!), 700);
         } else {
           setError(res.message || "Signup failed. Please try again.");
@@ -329,6 +332,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
         </p>
       </div>
 
+      {currentVertical() && mode === "signup" && (
+        <div className="mb-5">
+          <AuthNote tone="success">{currentVertical()!.trialNote}</AuthNote>
+        </div>
+      )}
       {intent && mode === "signup" && (
         <div className="mb-5">
           <AuthNote tone="success">
@@ -341,7 +349,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
       {googleOn && mode !== "forgot" && (
         <div className="mb-5">
           <a
-            href={googleSignInUrl(intent)}
+            href={googleSignInUrl(intent, currentVertical()?.key ?? null)}
             className={`${btn("secondary")} w-full !h-12 text-[15px] flex items-center justify-center gap-3`}
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

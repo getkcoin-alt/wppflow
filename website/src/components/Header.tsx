@@ -8,6 +8,7 @@ import { trackAttrs } from "@/lib/analytics";
 
 const NAV = [
   { href: "/features", label: "Features" },
+  { href: "/homes", label: "Scriwo Homes" },
   { href: "/riwo", label: "Riwo AI" },
   { href: "/industries", label: "Industries" },
   { href: "/pricing", label: "Pricing" },

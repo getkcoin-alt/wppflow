@@ -47,6 +47,7 @@ import { AuditLogs } from "./components/admin/AuditLogs";
 import { ClusterHealth } from "./components/admin/ClusterHealth";
 import { BillingPage } from "./components/billing/BillingPage";
 import { clearIntent, isPayable, readIntent, type SignupIntent } from "./utils/signupIntent";
+import { VerticalOpener } from "./components/layout/VerticalOpener";
 import { Reports } from "./components/reports/Reports";
 import { NewChatSheet, type NewChatPerson } from "./components/user/NewChatSheet";
 import { NO_EXTRA, type InboxExtraFilters } from "./components/user/InboxFilters";
@@ -876,6 +877,7 @@ export function App() {
   const inbox = view === "user" && tab === "inbox";
   return (
     <SolutionsContext.Provider value={solutions}>
+      <VerticalOpener solutions={solutions} open={(next) => { setView("user"); setTab(next); }} />
     <div className="h-dvh flex flex-col lg:flex-row bg-app text-fg overflow-hidden">
       <Dock
         view={view}

@@ -17,6 +17,7 @@ export function allRoutes(): Route[] {
     { path: "/whatsapp-crm", priority: 0.8 },
     { path: "/riwo", priority: 0.8 },
     { path: "/white-label", priority: 0.7 },
+    { path: "/homes", priority: 0.9 },
     { path: "/ar", priority: 0.8 },
     { path: "/hi", priority: 0.8 },
     { path: "/free-whatsapp-crm", priority: 0.8 },

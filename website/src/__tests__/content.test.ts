@@ -84,6 +84,20 @@ describe("the AI and partner claims", () => {
   });
 });
 
+describe("Scriwo Homes", () => {
+  it("has a page, is linked, and promises only what is built", async () => {
+    const { HOMES, HOMES_FAQS, HOMES_FLOW, HOMES_RULES, HOMES_STEPS } = await import("@/content/homes");
+    expect(allRoutes().map((r) => r.path)).toContain("/homes");
+    expect(HOMES.appUrl).toBe("https://homes.scriwo.com");
+    const copy = [HOMES.intro, ...HOMES_FAQS.map((f) => f.a), ...HOMES_FLOW.map((f) => f.body), ...HOMES_RULES.map((f) => f.body), ...HOMES_STEPS.map((s) => s.join(" "))].join(" ");
+    // not built yet, so never claimed as available
+    expect(copy).not.toMatch(/syncs? with (google|outlook)|automatic(ally)? (sends|confirm)|imports? from (property finder|bayut)|arabic screens/i);
+    expect(copy).toMatch(/Not yet/);
+    expect(copy).toMatch(/14 days/);
+    expect(copy).toMatch(/never|cannot/i);
+  });
+});
+
 describe("contact form checks", () => {
   const ok = { name: "Aisha", email: "aisha@example.ae", phone: "", company: "", country: "", teamSize: "", interest: "demo", message: "" };
   it("accepts a minimal enquiry", () => expect(validateContact(ok)).toEqual({}));

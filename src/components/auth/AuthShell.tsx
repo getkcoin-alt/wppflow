@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Check, Lock, MessageCircle, Users } from "lucide-react";
 import { ScriwoMark, Wordmark } from "../brand/Logo";
+import { currentVertical, type VerticalCopy } from "../../utils/vertical";
 
 const POINTS = [
   { icon: MessageCircle, text: "One calm inbox for every WhatsApp number" },
@@ -9,34 +10,35 @@ const POINTS = [
 ];
 
 // Decorative preview of the product; hidden from assistive tech.
-function Preview() {
+function Preview({ vertical }: { vertical: VerticalCopy | null }) {
+  const v = vertical?.preview;
   return (
     <div aria-hidden className="relative w-full max-w-[420px] select-none">
       <div className="absolute -inset-10 bg-[radial-gradient(closest-side,rgba(214,185,123,0.16),transparent)] animate-drift" />
       <div className="relative rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.8)]">
         <div className="flex items-center gap-3 pb-4 border-b border-white/10">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#7B6BC9] to-[#4a3f86] grid place-items-center text-white/90 text-sm font-semibold">
-            AM
+            {v?.initials || "AM"}
           </div>
           <div>
             <div className="text-[14px] font-medium text-white">
-              Aarav Mehta
+              {v?.who || "Aarav Mehta"}
             </div>
             <div className="text-[12px] text-white/50">typing…</div>
           </div>
         </div>
         <div className="pt-4 space-y-2.5 text-[13.5px]">
           <div className="max-w-[78%] rounded-2xl rounded-bl-md bg-white/10 px-3.5 py-2.5 text-white/90">
-            Can you confirm my order is on the way?
+            {v?.asks || "Can you confirm my order is on the way?"}
           </div>
           <div className="max-w-[78%] ml-auto rounded-2xl rounded-br-md bg-[#0F6B55] px-3.5 py-2.5 text-white">
-            Yes. It left our warehouse this morning.
+            {v?.answer || "Yes. It left our warehouse this morning."}
           </div>
           <div className="rounded-2xl border border-dashed border-[#D6B97B]/50 bg-[#D6B97B]/10 px-3.5 py-2.5 text-[#E9D6A8]">
             <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] opacity-80">
               <Lock className="w-3 h-3" /> Private note
             </span>
-            <div className="mt-1">Repeat buyer. Offer free gift wrapping.</div>
+            <div className="mt-1">{v?.note || "Repeat buyer. Offer free gift wrapping."}</div>
           </div>
         </div>
       </div>
@@ -45,6 +47,8 @@ function Preview() {
 }
 
 export function AuthShell({ children }: { children: ReactNode }) {
+  const vertical = currentVertical();
+  const points = vertical ? vertical.points.map((text, i) => ({ icon: [MessageCircle, Users, Lock][i % 3], text })) : POINTS;
   return (
     <div className="min-h-dvh bg-app text-fg lg:grid lg:grid-cols-[1.08fr_1fr]">
       <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-[#08090a] text-white p-14">
@@ -52,21 +56,23 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <div className="relative flex items-center gap-4">
           <ScriwoMark size={44} />
           <Wordmark className="text-[26px] !text-white" />
+          {vertical && <span className="rounded-full bg-[#D6B97B]/15 px-3 py-1 text-[12px] font-medium uppercase tracking-[0.16em] text-[#E9D6A8]">{vertical.suffix}</span>}
         </div>
         <div className="relative">
           <h1 className="font-serif text-[64px] leading-[1.02] tracking-[-0.02em] font-normal">
-            Every conversation,
+            {vertical ? vertical.headline[0] : "Every conversation,"}
             <br />
             <span className="italic text-gold-gradient">
-              thoughtfully handled.
+              {vertical ? vertical.headline[1] : "thoughtfully handled."}
             </span>
           </h1>
           <p className="mt-6 text-[18px] leading-relaxed text-white/60 max-w-md">
-            One quiet, beautiful place for your whole team to talk with
-            customers on WhatsApp.
+            {vertical
+              ? vertical.intro
+              : "One quiet, beautiful place for your whole team to talk with customers on WhatsApp."}
           </p>
           <ul className="mt-10 space-y-4">
-            {POINTS.map(({ icon: Icon, text }) => (
+            {points.map(({ icon: Icon, text }) => (
               <li
                 key={text}
                 className="flex items-center gap-3.5 text-[15.5px] text-white/80"
@@ -83,7 +89,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           <p className="text-[13px] text-white/35">
             © {new Date().getFullYear()} Scriwo
           </p>
-          <Preview />
+          <Preview vertical={vertical} />
         </div>
       </aside>
 
@@ -93,8 +99,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
             <ScriwoMark size={56} />
             <Wordmark className="mt-4 text-[26px]" />
             <p className="mt-4 font-serif text-[30px] leading-tight">
-              Every conversation,{" "}
-              <span className="italic text-gold">thoughtfully handled.</span>
+              {vertical ? vertical.headline[0] : "Every conversation,"}{" "}
+              <span className="italic text-gold">{vertical ? vertical.headline[1] : "thoughtfully handled."}</span>
             </p>
           </div>
           {children}
