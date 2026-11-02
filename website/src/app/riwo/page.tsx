@@ -3,13 +3,13 @@ import Link from "next/link";
 import { ArrowRight, ShieldCheck, Sparkle, UserCheck } from "lucide-react";
 import { Container, Crumbs, CtaBand, FaqList, SectionTitle } from "@/components/ui";
 import { JsonLd } from "@/components/JsonLd";
-import { RIWO, RIWO_ACTIONS, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
+import { RIWO, RIWO_ACTIONS, RIWO_AUTOMATIC, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
 import { faqPage, howTo, speakable } from "@/lib/jsonld";
 import { trackAttrs } from "@/lib/analytics";
 
 export const metadata: Metadata = {
   title: "Riwo — AI Reply Assistant for WhatsApp Teams",
-  description: "Riwo is the AI assistant inside Scriwo's shared WhatsApp inbox. It drafts replies, improves your wording, translates into Arabic, Hindi and 13 more languages, and summarises long chats. A person always sends.",
+  description: "Riwo is the AI assistant inside Scriwo's shared WhatsApp inbox. It prepares replies, improves your wording, translates into Arabic, Hindi and 13 more languages, summarises long chats, qualifies new leads and hands pricing to your team. A person sends by default; automatic sending is optional and limited to safe cases.",
   alternates: { canonical: "/riwo" },
 };
 
@@ -42,7 +42,7 @@ export default function RiwoPage() {
       </section>
 
       <Container className="mt-16">
-        <SectionTitle eyebrow="What Riwo does" title="Four things, done well" />
+        <SectionTitle eyebrow="What Riwo does" title="Five things, done well" />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           {RIWO_ACTIONS.map((a) => (
             <div key={a.title} className="card lift p-6">
@@ -74,9 +74,21 @@ export default function RiwoPage() {
         </div>
       </Container>
 
+      <Container className="mt-24">
+        <SectionTitle eyebrow="When you switch it on" title="Riwo can also work on its own, in safe cases" intro="Each of these is off until an owner turns it on, and each is limited so it cannot say something your company did not write." />
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {RIWO_AUTOMATIC.map((a) => (
+            <Link key={a.title} href={a.href} className="card lift block p-6">
+              <h2 className="flex items-center gap-2 text-xl"><Sparkle className="h-5 w-5 text-gold" aria-hidden="true" />{a.title}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-fg-2">{a.body}</p>
+            </Link>
+          ))}
+        </div>
+      </Container>
+
       <Container className="mt-24 grid gap-5 md:grid-cols-3">
         {[
-          { icon: UserCheck, title: "A person always sends", body: "Riwo writes into the message box and stops. Your teammate reads, edits and presses send." },
+          { icon: UserCheck, title: "You stay in control", body: "By default Riwo writes the draft and your teammate reads, edits and presses send. Automatic sending is optional, and pricing or proposals always go to a person." },
           { icon: ShieldCheck, title: "Safe with customer text", body: "Customer messages are treated as data, never as instructions, so a message cannot steer Riwo." },
           { icon: Sparkle, title: "In the customer's language", body: "Riwo answers in the language and script the customer used, from Arabic and Hindi to Hinglish and Tamil." },
         ].map(({ icon: Icon, title, body }) => (

@@ -7,7 +7,8 @@ import { COMPARISONS } from "@/content/compare";
 import { GENERAL_FAQS } from "@/content/faqs";
 import { yearlyOf } from "@/content/plans";
 import { getCatalogue, taxNote } from "@/lib/catalogue";
-import { RIWO, RIWO_ACTIONS, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
+import { RIWO, RIWO_ACTIONS, RIWO_AUTOMATIC, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
+import { PARTNERS, PARTNER_FAQS, PARTNER_STEPS, PARTNER_TOPICS } from "@/content/partners";
 
 // Prices come from the product and are looked at again every five minutes.
 export const revalidate = 300;
@@ -38,6 +39,7 @@ export async function GET() {
   ];
   out.push(`## Riwo, the AI assistant`, `URL: ${absolute("/riwo")}`, "", RIWO.oneLine, `Included in the ${RIWO.plan}.`, "");
   out.push(...RIWO_ACTIONS.map((a) => `- ${a.title}: ${a.body}`), "", "How to use it:", ...RIWO_STEPS.map((s, i) => `${i + 1}. ${s}`), "");
+  out.push("What Riwo can do on its own, when an owner switches it on:", ...RIWO_AUTOMATIC.map((a) => `- ${a.title}: ${a.body}`), "");
   out.push(...RIWO_FAQS.flatMap((q) => [`Q: ${q.q}`, `A: ${q.a}`]), "");
   for (const f of FEATURES) {
     out.push(`## ${f.title}`, `URL: ${absolute(`/features/${f.slug}`)}`, "", f.summary, "");
@@ -56,6 +58,7 @@ export async function GET() {
     out.push(`## ${p.title}`, `URL: ${absolute(`/blog/${p.slug}`)}`, "", p.answer, "");
     for (const s of p.sections) out.push(`### ${s.heading}`, ...s.body, ...(s.list || []).map((l) => `- ${l}`), "");
   }
+  out.push(`## White-label and reseller partnerships`, `URL: ${absolute("/white-label")}`, "", PARTNERS.intro, "", ...PARTNER_STEPS.map(([t, b], i) => `${i + 1}. ${t}: ${b}`), "", "Agreed with our team:", ...PARTNER_TOPICS.map((t) => `- ${t}`), "", ...PARTNER_FAQS.flatMap((q) => [`Q: ${q.q}`, `A: ${q.a}`]), "");
   out.push("## Locations", ...CITIES.map((c) => `- WhatsApp CRM ${c.name} (${c.region}, ${c.country}): ${c.local} ${absolute(`/whatsapp-crm/${c.slug}`)}`), "");
   out.push("## Contact", `- Contact form: ${absolute("/contact")}`, `- Sales on WhatsApp: ${SITE.whatsappDisplay}`);
   return new Response(out.join("\n"), { headers: { "Content-Type": "text/plain; charset=utf-8" } });

@@ -12,6 +12,7 @@ const NAV = [
   { href: "/industries", label: "Industries" },
   { href: "/pricing", label: "Pricing" },
   { href: "/developers", label: "Developers" },
+  { href: "/white-label", label: "White-label" },
   { href: "/blog", label: "Guides" },
 ];
 

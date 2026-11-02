@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LANGUAGE_ALTERNATES } from "@/content/locales";
-import { ArrowRight, Sparkle, ShieldCheck, Gauge, Users, Sparkles, KeyRound, RotateCcw } from "lucide-react";
+import { ArrowRight, Sparkle, ShieldCheck, Gauge, Users, Sparkles, KeyRound, RotateCcw, Sunrise, Zap, Briefcase, UserRoundCheck, Handshake } from "lucide-react";
 import { Container, SectionTitle, FaqList, CtaBand, LinkCard, CheckList } from "@/components/ui";
 import { InboxMock } from "@/components/InboxMock";
 import { PlaneTrail, Ribbon } from "@/components/Motion";
@@ -16,6 +16,13 @@ import { cheapestPaid, getCatalogue } from "@/lib/catalogue";
 import { formatMoney } from "@/lib/money";
 import { SITE } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
+
+const AI_FIRST = [
+  { icon: Sunrise, title: "Today: open it, and the work is prepared", body: "Waiting chats come first, each with the customer's mood, a one-line summary and a reply Riwo has already drafted. Read it, tap send.", href: "/features/ai-today-home" },
+  { icon: Briefcase, title: "A sales assistant for new customers", body: "Riwo asks your questions, keeps the answers and, when someone asks for pricing or a proposal, sends your formal message, hands the chat to an executive and adds them to your pipeline.", href: "/features/ai-sales-assistant" },
+  { icon: Zap, title: "Autopilot for the safe replies", body: "Optional. Riwo answers with your own saved replies, word for word, in cases that are safe to automate, and every action can be undone.", href: "/features/riwo-autopilot" },
+  { icon: UserRoundCheck, title: "Honest, with a person on call", body: "Automated replies say so, a customer can write \"human\" at any time, and pricing is always handled by your team.", href: "/features/ai-handoff-and-disclosure" },
+];
 
 const PILLARS = [
   { icon: Users, title: "Built for companies with staff", body: "A platform admin creates your company, the owner sets a password from a single-use link, and invites the team. Each person links their own number. Owners see everything; staff see their own chats plus any assigned to them. The server enforces it." },
@@ -50,7 +57,7 @@ export default async function Home() {
               Every WhatsApp chat your team has, <span className="gold-text">in one calm place.</span>
             </h1>
             <p data-speakable className="rise-3 mt-6 max-w-xl text-lg leading-relaxed text-fg-2">
-              Scriwo is the shared WhatsApp inbox and CRM for companies with staff. Each teammate links their own number, owners see every conversation, and the team assigns, notes and resolves chats together.
+              Scriwo is the shared WhatsApp inbox and CRM for companies with staff. Each teammate links their own number, owners see every conversation, and the team assigns, notes and resolves chats together. Riwo, the built-in AI, prepares replies, qualifies new customers and hands pricing to a person.
             </p>
             <div className="rise-3 mt-8 flex flex-wrap gap-3">
               <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "home-hero" })} className="btn-primary">
@@ -86,6 +93,15 @@ export default async function Home() {
         </div>
       </Container>
 
+      <Container className="mt-24">
+        <SectionTitle eyebrow="AI that does the work" title="Less typing, faster answers, nothing risky sent" intro="Riwo prepares the work and your team stays in charge. Anything that sends by itself is optional, limited, and labelled." />
+        <div className="mt-12 grid gap-5 sm:grid-cols-2">
+          {AI_FIRST.map(({ icon: Icon, title, body, href }) => (
+            <LinkCard key={title} href={href} title={title} body={body} icon={<Icon className="h-5 w-5" aria-hidden="true" />} />
+          ))}
+        </div>
+      </Container>
+
       <section className="mt-24 bg-surface-2/60 py-20">
         <Container className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
           <div data-reveal className="relative mx-auto w-full max-w-md">
@@ -94,7 +110,7 @@ export default async function Home() {
             <img src="/brand/riwo-chats.webp" alt="Riwo, the Scriwo AI assistant, sorting WhatsApp messages" width={800} height={800} loading="lazy" className="float relative w-full rounded-4xl shadow-pop" />
           </div>
           <div>
-            <SectionTitle eyebrow="Meet Riwo · AI assistant" title="Your team writes better replies, faster" intro={RIWO.oneLine} />
+            <SectionTitle eyebrow="Meet Riwo · AI assistant" title="Replies prepared, wording polished, languages covered" intro={RIWO.oneLine} />
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {RIWO_ACTIONS.map((a) => (
                 <div key={a.title} className="card lift p-5">
@@ -134,6 +150,8 @@ export default async function Home() {
                 "Broadcasts only to contacts who opted in",
                 "Delays between messages to protect your number",
                 "Keyword automations for repeat questions",
+                "A sales pipeline with follow-ups and reminders",
+                "Reply-time reports and fair assignment of new chats",
                 "Saved replies for the whole team",
                 "CSV import and export",
                 "API tester, SDK samples, keys and webhooks inside the product",
@@ -146,7 +164,7 @@ export default async function Home() {
       <Container className="mt-24">
         <SectionTitle eyebrow="Features" title="Everything a WhatsApp team needs, nothing it does not" />
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.slice(0, 9).map((f) => (
+          {FEATURES.slice(0, 12).map((f) => (
             <LinkCard key={f.slug} href={`/features/${f.slug}`} title={f.name} body={f.summary} icon={<f.icon className="h-5 w-5" aria-hidden="true" />} />
           ))}
         </div>
@@ -174,6 +192,20 @@ export default async function Home() {
               </ul>
             </div>
           ))}
+        </div>
+      </Container>
+
+      <Container className="mt-24">
+        <div data-reveal className="card flex flex-wrap items-center gap-6 p-8 sm:p-10">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gold/15 text-gold"><Handshake className="h-6 w-6" aria-hidden="true" /></div>
+          <div className="min-w-[16rem] flex-1">
+            <p className="eyebrow">Agencies, resellers and software companies</p>
+            <h2 className="mt-2 text-2xl sm:text-3xl">White-label Scriwo for your own clients</h2>
+            <p className="mt-2 max-w-2xl text-fg-2">Offer a shared WhatsApp inbox, an AI sales assistant and a pipeline under your own name. We set up the partnership with you and run the platform.</p>
+          </div>
+          <Link href="/white-label" {...trackAttrs("demo_click", { place: "home-white-label" })} className="btn-primary">
+            Become a partner <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </Container>
 

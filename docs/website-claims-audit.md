@@ -98,7 +98,7 @@ Property Finder or Bayut, Arabic or right-to-left screens, a second pipeline, wh
 ## Welcoming people from other countries (automation)
 
 Added on 28 October 2026 (Growth and above for the automation; "Let Riwo chat" also needs Riwo, which is Growth and above).
-**Not on the website yet.** Every line is covered by an automated test and a browser run on a disposable database; none has
+**On the website since 2 November 2026** (Riwo page, "Welcome people from abroad" under what Riwo can do on its own). Every line is covered by an automated test and a browser run on a disposable database; none has
 been seen with a real WhatsApp number.
 
 | Behaviour | Evidence |
@@ -156,7 +156,7 @@ Checked again on 25 October 2026 (first on 22 October, after the platform admin 
 | Companies on the original "Workspace" plan | Kept | Any plan name that is not one of the five keeps every feature, so nothing already working stops. They can be moved to a plan from the platform screen |
 | Growth: Riwo, the AI reply assistant (with a daily allowance per company) | Test | Locked below Growth by the server and the screens. Each company has a daily allowance (server default 300, or the number the platform admin agrees); `ai-assistant.test.js`, `plans-admin.test.js` |
 | Riwo translates into 15 languages | Code | The list in `src/services/ai.ts` has 15; the page says the same |
-| Growth: sales pipeline | Test | Enforced (Growth and above) but **not mentioned on the pricing page, the features pages or the FAQ**. See "What to build next" |
+| Growth: sales pipeline | Test | Enforced (Growth and above). Mentioned on the pricing page (Growth), the features pages and the home page since 2 November 2026 |
 | AI usage is part of the subscription | Test | The company's "Your plan" card shows today's Riwo use against its allowance, when it resets, and the month so far; the platform admin sees each company's use and can agree a different daily allowance when adding a company or changing its plan, with the change in the audit log (`ai-assistant.test.js`, `plans-admin.test.js`, `platform_plans.test.tsx`) |
 | Self-service sign-up | Fixed | It used to create a "Workspace" company with every feature and 5 numbers, which skipped the pricing page entirely. It now creates a Free company: one person, one number. Set `ALLOW_PUBLIC_SIGNUP=false` on the server to turn sign-up off |
 
@@ -285,3 +285,39 @@ Built on 26 October 2026. Platform admin, **Subscriptions** tab.
 features. Online payment in rupees works when the Razorpay keys are set on the server (the website flag `PAYMENTS_LIVE` is still
 false and only controls the older banner; whether Buy buttons show is decided by the server); AED, Free and Enterprise are
 set up by the onboarding team and payments are recorded by hand.
+
+
+## AI-first home, Autopilot, Sales assistant, hand-off and white-label (website update, 2 November 2026)
+
+New pages and copy: `/features/ai-today-home`, `riwo-autopilot`, `ai-sales-assistant`, `ai-handoff-and-disclosure`,
+`whatsapp-sales-pipeline`, `team-reports-and-assignment`, `/white-label`, the home page's "AI that does the work" section, the
+Riwo page's "When you switch it on", the Growth and Enterprise plan lists and the FAQs. Fixed on the same day: the Riwo page,
+its steps and FAQ said "Riwo never sends anything to a customer on its own", which stopped being true when Autopilot and the
+Sales assistant were built; they now say the default (a person sends) and the optional exceptions. The counts on the home and
+security pages are now 74 backend test files and 608 app tests.
+
+| Website says | Status | Evidence |
+|---|---|---|
+| Today is the first screen: waiting chats with mood, one-line summary and a prepared reply; follow-ups, numbers needing care, reply-time performance; a morning brief; a setup coach; Ask Riwo in plain words (opens screens and fills things in, never acts silently) | Test | `home.test.js`, `ai-prep.test.js`, `ai-brief.test.js`, `ai-command.test.js`, `today.test.tsx`, `command_palette.test.tsx`. Prepared replies and the brief need Riwo (Growth and above); the screen itself is on every plan |
+| Riwo prepares in the background from the daily allowance and a person's click always goes first | Test | `ai-router.test.js` (background work uses half of a provider's limit), `ai-prep.test.js` |
+| Owners can switch Riwo off for the whole company | Test | `ai-assistant.test.js`. There is **no** separate switch for preparation alone in the screens, so the site does not claim one |
+| Autopilot is off until an owner turns it on; it sends only a saved reply word for word, or clears a thank-you; never in groups, in a chat a teammate owns or answered lately, when the customer sounds unhappy or urgent, to someone who said stop, twice in a few hours, or past a daily limit; every action is listed and can be undone | Test | `autopilot.test.js` |
+| Everything Riwo sends ends with a line saying it is automated and how to reach a person; "human" (English, Arabic, Hindi, Hinglish) stops Riwo, notifies the team and puts the chat first | Test | `handoff.test.js`, `auto-chat.test.js` |
+| Private mode limits Riwo to providers that do not keep or train on messages; free providers may keep what they are sent | Test | `ai-router.test.js` |
+| Sales assistant: welcome plus the first question, up to six questions asked word for word, answers kept, a lead made after the first answer, pricing/quote/proposal requests (English, Arabic, Hindi, Hinglish) handed over before the model is asked with the company's formal message, lead moved to Proposal (never backwards), requirements in a private note, team notified, follow-up task, works without the model | Test | `sales-assistant.test.js` (each rule broken on purpose), `sales_recipe.test.tsx` |
+| "Read my website" drafts the about text and questions from the company's public pages, leaves out prices, and is checked by the owner before use | Test | `website-reader.test.js` (private addresses, redirects and the price filter each broken on purpose), `sales_recipe.test.tsx` |
+| Reply-time reports, leaderboard, daily owner summary, round-robin or least-busy assignment, follow-ups on chats, labels and filters | Test | `reports.test.js`, `assignment-rules.test.js`, `inbox-followups.test.js`, `labels-and-names.test.js`, `reports_page.test.tsx` |
+| Growth includes the AI features, the pipeline, assignment and reports; Free and Starter list none of them | Test | `plans-admin.test.js`; `website/src/__tests__/content.test.ts` checks the pricing copy. Reports are open on every plan in the product (like saved replies), so Free and Starter get more than the page promises |
+
+**White-label.** The site now offers white-label and reseller partnerships (`/white-label`, the FAQ, Enterprise, the footer and
+`llms.txt`). **It is an offer made through a conversation, not a feature.** The product has no partner role, no branding fields,
+no custom domains and no partner billing (`docs/white-label-foundation.md`, "design only"). What exists today is Stage 0: our
+team creates each client's company, picks the plan and switches industry layers on, and every company's data is separate. So the
+page promises only that, says that branding, domains and pricing are "agreed with our team" and that we tell the partner "what is
+available today", and lists branding, domain and billing as topics rather than features. `content.test.ts` fails if the wording
+turns into "self-serve", "instantly", "in minutes", "one click" or "unlimited". Before anyone is told they can have their own
+logo, domain or partner billing, Stages 1 to 3 of that document have to be built.
+
+**Still not on the website, on purpose:** Scriwo Real Estate (not deployed to a pilot), the Arabic and Hindi pages (`/ar`, `/hi`
+have not been updated and still describe the earlier product), and any claim that a model "learns" from chats (it does not: Riwo
+reads the text the company wrote, and the website it points to, and nothing is trained).

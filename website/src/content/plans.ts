@@ -52,7 +52,7 @@ export const PLANS: Plan[] = [
   {
     id: "growth", name: "Growth", for: "Sales and support teams", numbers: "Up to 10 numbers", highlight: true,
     price: { AED: 799, INR: 6999 },
-    includes: ["Everything in Starter", "Riwo, the AI reply assistant", "Broadcasts to opted-in contacts", "Keyword automations and saved replies", "Desktop and offline alerts", "Audit log"],
+    includes: ["Everything in Starter", "Riwo, the AI assistant: prepared replies on your Today screen, drafts, translation and summaries", "AI sales assistant that asks your questions and hands pricing to an executive", "Autopilot for safe saved-reply answers (optional)", "Sales pipeline with follow-ups and reminders", "Fair assignment of new chats and reply-time reports", "Broadcasts to opted-in contacts", "Keyword automations and saved replies", "Desktop and offline alerts", "Audit log"],
   },
   {
     id: "business", name: "Business", for: "Multi-branch companies", numbers: "Up to 25 numbers",
@@ -62,6 +62,6 @@ export const PLANS: Plan[] = [
   {
     id: "enterprise", name: "Enterprise", for: "Large teams and custom needs", numbers: "Custom number limit",
     price: { AED: null, INR: null },
-    includes: ["Everything in Business", "Custom number limit", "Dedicated onboarding", "Help connecting your systems"],
+    includes: ["Everything in Business", "Custom number limit", "Dedicated onboarding", "Help connecting your systems", "White-label and reseller partnership, agreed with our team"],
   },
 ];

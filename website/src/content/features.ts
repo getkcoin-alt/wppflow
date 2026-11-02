@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Inbox, UserCheck, StickyNote, Megaphone, Bot, Smartphone, ShieldCheck, Code2, BellRing, Contact,
+  Sunrise, Zap, Briefcase, KanbanSquare, BarChart3, UserRoundCheck,
 } from "lucide-react";
 
 export type Feature = {
@@ -43,6 +44,125 @@ export const FEATURES: Feature[] = [
       { q: "Does the phone need to stay online?", a: "The linked phone should stay charged and connected, just like with WhatsApp Web. Scriwo alerts you when a phone goes offline so you can fix it before customers wait." },
       { q: "Can I see chats from WhatsApp groups?", a: "Yes. Groups appear as groups in the inbox, and status updates are filtered out of customer conversations." },
     ],
+  },
+  {
+    slug: "ai-today-home",
+    icon: Sunrise,
+    name: "Today: your AI-first home",
+    keyword: "AI WhatsApp inbox",
+    title: "Open Scriwo and see what needs you, with the reply already prepared",
+    summary:
+      "Today is the first screen. It lists the chats that need a person, how long each has waited, what the customer wants and a reply Riwo has already drafted, so the usual job is read, tap and send.",
+    points: [
+      { title: "Needs you now", body: "Waiting chats, oldest first, with the customer's mood, a one-line summary and a ready reply. Send it as it is, edit it, or open the chat." },
+      { title: "A short morning brief", body: "Two warm sentences on how yesterday went and the one thing most worth your attention today, written from your real numbers." },
+      { title: "Follow-ups and phones in one place", body: "Follow-ups that are due, numbers that need care, and your reply-time performance, without opening four screens." },
+      { title: "Ask Riwo", body: "Type what you want in plain words, such as \"show unpaid leads\", and Scriwo takes you there. It opens screens and fills things in for you to confirm; it never acts silently." },
+      { title: "A setup coach for new workspaces", body: "Connect a number, write about your business, add saved replies, invite the team. One clear next step at a time." },
+      { title: "Fair on your allowance", body: "Riwo prepares replies in the background using the same daily allowance as everything else, and people who click always come first. Owners can switch Riwo off for the whole company at any time." },
+    ],
+    howTo: ["Sign in. Today is the first screen.", "Read the card for the chat that has waited longest, and the reply Riwo prepared.", "Send, edit or open the chat. The card clears and the next one is ready."],
+    faqs: [
+      { q: "Does Today send anything by itself?", a: "No. Today prepares; you send. Replies leave only when a person taps send. Sending automatically is a separate, optional setting called Autopilot." },
+      { q: "Which plans include the prepared replies?", a: "Riwo, and so the prepared replies and the morning brief, is part of the Growth plan and above. The Today screen itself is on every plan." },
+    ],
+  },
+  {
+    slug: "riwo-autopilot",
+    icon: Zap,
+    name: "Autopilot for safe replies",
+    keyword: "WhatsApp auto reply AI",
+    title: "Let Riwo handle the safe, repetitive replies, and nothing else",
+    summary:
+      "Autopilot is off until an owner switches it on. When on, Riwo answers a customer only with one of your own saved replies, word for word, and only in cases that are safe to automate. Every action is listed and can be taken back.",
+    points: [
+      { title: "Your words, not the AI's", body: "Riwo picks which saved reply fully answers the question. It never writes what the customer reads, so it cannot invent a price or a promise." },
+      { title: "Clear the thank-yous", body: "When a customer only says thanks or OK, the chat leaves your waiting list. Nothing is sent." },
+      { title: "Strict guard rails", body: "Never in groups, never in a chat a teammate owns or answered lately, never when the customer sounds unhappy or urgent, never to someone who said stop, never twice in a few hours, and a daily limit." },
+      { title: "Always labelled", body: "Customers can see the reply came from Riwo, and a customer who writes \"human\" is handed to a person at once." },
+      { title: "Everything is recorded", body: "A list shows what Autopilot did today, and each reply has an Undo." },
+    ],
+    howTo: ["Open Today and find Autopilot.", "Turn on the rule you want, such as answering with saved replies.", "Check the list of what it did, and undo anything you do not like."],
+    faqs: [
+      { q: "Can Autopilot send prices or offers?", a: "Only if a saved reply you wrote says so. Riwo does not write messages of its own in Autopilot." },
+      { q: "Is it on by default?", a: "No. Every Autopilot rule is off until an owner turns it on, for the whole company." },
+    ],
+  },
+  {
+    slug: "ai-sales-assistant",
+    icon: Briefcase,
+    name: "AI sales assistant",
+    keyword: "WhatsApp sales assistant",
+    title: "Qualify every new WhatsApp lead, then hand the sale to an executive",
+    summary:
+      "Riwo welcomes a new customer, asks your discovery questions one at a time, answers short questions from what you wrote about your business, and keeps the answers. When they ask for pricing or a proposal, it sends your formal message, hands the chat to an executive with a summary and adds the customer to your pipeline.",
+    points: [
+      { title: "Your questions, in your order", body: "What are you looking for, how many, where, by when. Up to six, asked exactly as you wrote them, and skipped if the customer already answered." },
+      { title: "Pricing always goes to a person", body: "The moment someone asks for pricing, a quote or a proposal, in English, Arabic, Hindi or Hinglish, Riwo stops and sends your formal message: an executive is reviewing the requirements and will reply. It never states a price." },
+      { title: "A pipeline built for you", body: "The first answer creates a lead; a pricing request moves it to your Proposal step. Nothing moves backwards, and the executive finds the customer's requirements in a private note in the chat." },
+      { title: "Nobody is left waiting", body: "The assigned teammate and the managers are notified, the chat stays at the top of Today, and a follow-up task is made for the executive." },
+      { title: "Learns from your website", body: "Enter your website address and Riwo reads your public pages and drafts what it may say about your business, plus suggested questions. You check and edit it before it is used." },
+      { title: "Works without the AI too", body: "If Riwo is unavailable, the questions and the pricing hand-off still run." },
+    ],
+    howTo: ["Open Automations and choose Sales assistant.", "Enter your website and tap Read my website, or write a few sentences yourself. Edit the questions and the formal message.", "Save and turn it on. New customers are welcomed and qualified from the next message."],
+    faqs: [
+      { q: "Does the AI quote prices?", a: "No. Pricing and proposal requests are recognised by a word list before the AI is asked, and are always handed to a person with your formal message." },
+      { q: "Does the customer know it is automated?", a: "Yes. Everything Riwo sends says it is an automated reply and that the customer can write \"human\" to reach a person." },
+      { q: "Which plans include it?", a: "Automations are part of the Growth plan and above. Answering questions and reading your website use Riwo, which is also Growth and above." },
+    ],
+  },
+  {
+    slug: "ai-handoff-and-disclosure",
+    icon: UserRoundCheck,
+    name: "Honest AI with a person on call",
+    keyword: "AI chatbot human handoff WhatsApp",
+    title: "Customers always know when it is an assistant, and can ask for a person",
+    summary:
+      "Anything Riwo sends carries a short line saying it is automated and how to reach a person. When a customer asks for one, in English, Arabic or Hinglish, the automation stops, your team is notified and the chat goes to the top.",
+    points: [
+      { title: "Disclosure on every automated reply", body: "A short line at the end of each message from Riwo, so nobody is misled about who they are talking to." },
+      { title: "\"Human\" works", body: "Phrases such as \"I want to talk to a person\", the same in Arabic or Hindi, or a lone \"human\" once Riwo has been answering." },
+      { title: "The team is told at once", body: "The chat owner or the managers get a notification, and the chat shows as \"Asked for a person\", \"Wants pricing\" or \"Ready for an executive\" until a teammate replies." },
+      { title: "Private mode", body: "Owners can limit Riwo to AI providers that do not keep or train on customer messages." },
+    ],
+    howTo: ["Nothing to set up: disclosure and hand-off are built in.", "Watch Today for chats marked as asking for a person.", "Reply as normal. The mark clears when you do."],
+    faqs: [{ q: "Can I turn the disclosure line off?", a: "No. It is part of how Scriwo keeps automated replies honest." }],
+  },
+  {
+    slug: "whatsapp-sales-pipeline",
+    icon: KanbanSquare,
+    name: "Sales pipeline",
+    keyword: "WhatsApp CRM pipeline",
+    title: "A sales pipeline that lives inside your WhatsApp conversations",
+    summary:
+      "Turn a chat into a lead in one tap, move it across your steps on a board, set follow-ups and see who owns what. Leads follow the chat, so nothing needs copying into another tool.",
+    points: [
+      { title: "From chat to lead in one tap", body: "Or let a rule do it for new customers and for people who ask for a quote. One open lead per contact, and never from a group chat." },
+      { title: "Board, list and Today", body: "A step per column with counts and values, a list view, and a Today list of follow-ups. Rename, reorder and add steps, or start from a template for real estate, car dealers or clinics." },
+      { title: "Follow-ups that remind", body: "A reminder arrives when a follow-up is due, and an overdue one is escalated to the owner and administrators after a day (you can change this)." },
+      { title: "Same visibility as the inbox", body: "Managers see every lead; staff see their own and the leads on their numbers. The owner of a lead and the assignee of its chat are one person." },
+      { title: "A written history", body: "Every move, won or lost with a reason, and what Riwo noted, in order." },
+    ],
+    howTo: ["Open a chat and tap Add to pipeline, or turn on the Sales assistant to do it for you.", "Drag the lead across the steps as the deal moves.", "Set a follow-up so it is never forgotten."],
+    faqs: [{ q: "Which plans include the pipeline?", a: "The sales pipeline is part of the Growth plan and above." }],
+  },
+  {
+    slug: "team-reports-and-assignment",
+    icon: BarChart3,
+    name: "Reply-time reports and fair assignment",
+    keyword: "WhatsApp team performance reports",
+    title: "Know how fast your team replies, and share new chats fairly",
+    summary:
+      "See your median and 90th-percentile reply times, how many chats meet your target and who is waiting, with a leaderboard and a daily summary for owners. New chats can be shared round-robin or to the least busy person.",
+    points: [
+      { title: "Reply-time reports", body: "Median and 90th percentile, the share replied to within your target, chats still waiting, a leaderboard and a CSV export." },
+      { title: "Daily owner summary", body: "A short summary each day, so you do not have to open the report to know how the team did." },
+      { title: "Round-robin or least busy", body: "New chats go to available teammates by turns, or to whoever has the fewest open chats, within the working hours and numbers you choose." },
+      { title: "Follow-ups on chats", body: "A follow-up does not need a lead. \"Call back Thursday\" on any chat reminds the right person, and overdue ones are escalated to the managers." },
+      { title: "Labels and filters", body: "Coloured labels, filters by label and by status, and a New chat button for a number you type." },
+    ],
+    howTo: ["Open Reports to see reply times.", "Open Automations to choose how new chats are assigned.", "Set follow-ups from any chat."],
+    faqs: [{ q: "What are the reports counted from?", a: "From real customer messages and the replies sent to them, per teammate and per number. You can download the figures as CSV." }],
   },
   {
     slug: "chat-assignment",

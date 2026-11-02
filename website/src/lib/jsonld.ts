@@ -67,6 +67,8 @@ export const softwareApplication = (plans: Plan[] = PLANS) => ({
   featureList: [
     "Shared WhatsApp inbox", "Chat assignment", "Private notes", "@mentions", "Broadcasts to opted-in contacts",
     "Keyword automations", "Audit log", "Scoped API keys", "Signed webhooks", "CSV import and export",
+    "AI reply assistant (Riwo)", "AI sales assistant", "Optional Autopilot for saved replies", "Sales pipeline", "Reply-time reports",
+    "Fair assignment of new chats", "White-label partnerships",
   ],
 });
 
