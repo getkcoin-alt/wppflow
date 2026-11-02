@@ -916,7 +916,7 @@ export type AiStyle = "polish" | "shorter" | "friendlier" | "formal";
 export interface AiStatus {
   available: boolean;
   /** Why it can't be used: no key on the server, the plan doesn't include it, or an admin switched it off */
-  reason: null | "not_configured" | "plan" | "disabled";
+  reason: null | "not_configured" | "plan" | "disabled" | "no_private_provider";
   enabled: boolean;
   used: number;
   limit: number;
@@ -928,9 +928,13 @@ export interface AiStatus {
   /** What the company has asked of Riwo so far this month */
   month?: { requests: number; inputTokens: number; outputTokens: number };
   /** Which AI service writes the answers */
-  provider?: "openrouter" | "anthropic" | null;
+  provider?: string | null;
   /** Running on free models, whose providers may keep what they receive */
   free?: boolean;
+  /** Some connected AI service may keep what it receives, and this company has not limited Riwo to those that do not */
+  mayKeepMessages?: boolean;
+  /** This company limits Riwo to AI services that say they do not keep or train on messages */
+  privateOnly?: boolean;
 }
 export interface AiSummary {
   text: string;
@@ -940,7 +944,9 @@ export interface AiSummary {
 }
 /** What the connection test found: the AI account, the models available and every attempt. */
 export interface AiTestResult {
-  provider: "openrouter" | "anthropic" | null;
+  provider: string | null;
+  /** Every connected AI service, in the order they are tried */
+  providers?: { id: string; ok: boolean; policy: "no-training" | "may-train" | "unknown"; free: boolean; model?: string; error?: string }[];
   ok: boolean;
   /** The sentence to show when it isn't working */
   error?: string;
@@ -958,6 +964,11 @@ export const setAiEnabled = (enabled: boolean): Promise<AiStatus> =>
   apiRequest("/api/ai/settings", {
     method: "PUT",
     body: JSON.stringify({ enabled }),
+  });
+export const setAiPrivateOnly = (privateOnly: boolean): Promise<AiStatus> =>
+  apiRequest("/api/ai/settings", {
+    method: "PUT",
+    body: JSON.stringify({ privateOnly }),
   });
 export const aiSuggestReply = (
   conversationId: string,

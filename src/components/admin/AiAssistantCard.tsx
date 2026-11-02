@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, X } from "lucide-react";
-import { getAiStatus, getStoredTenantId, setAiEnabled, testAi, type AiTestResult } from "../../services/api";
+import { getAiStatus, getStoredTenantId, setAiEnabled, setAiPrivateOnly, testAi, type AiTestResult } from "../../services/api";
 import { Notice, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
 
@@ -12,6 +12,8 @@ const WHERE: Record<string, string> = {
   anthropic:
     "The text is processed by Anthropic's Claude to write the result and is not used by Scriwo for anything else.",
 };
+const WHERE_FREE =
+  "The text goes to a free AI service to write the result. Free services can keep what they receive and may use it to improve their models. Turn on private mode to use only services that say they do not.";
 const WHERE_DEFAULT =
   "The text is processed by an AI service to write the result and is not used by Scriwo for anything else.";
 
@@ -20,6 +22,13 @@ const REASONS: Record<string, string> = {
     "The AI isn't switched on for this server yet. The person who runs the server adds the AI key, and Riwo appears.",
   plan: "Riwo is part of the Growth plan and above. Ask the Scriwo team to move your company to a plan that includes it.",
   disabled: "Riwo is switched off for your company.",
+  no_private_provider:
+    "Riwo is limited to AI services that keep messages private, and none of those is connected yet. Ask the person who runs the server to connect one, or turn off private mode below.",
+};
+const POLICY: Record<string, string> = {
+  "no-training": "does not train on messages",
+  "may-train": "may keep messages",
+  unknown: "keeping of messages unknown",
 };
 
 // The plain-language reading of a test, so nobody has to interpret the raw attempts.
@@ -51,6 +60,19 @@ function TestReport({ result }: { result: AiTestResult }) {
         )}
       </div>
       {note && <p className="mt-2 text-fg-2">{note}</p>}
+      {(result.providers?.length ?? 0) > 1 && (
+        <ul className="mt-3 space-y-1.5" aria-label="Connected AI services">
+          {result.providers!.map((p) => (
+            <li key={p.id} className="flex items-start gap-2">
+              {p.ok ? <Check className="w-4 h-4 mt-0.5 shrink-0 text-ok" aria-label="Worked" /> : <X className="w-4 h-4 mt-0.5 shrink-0 text-danger" aria-label="Failed" />}
+              <span className="min-w-0">
+                <span className="font-medium text-fg">{p.id}</span>
+                <span className="text-fg-2">{` · ${POLICY[p.policy] || p.policy}${p.ok ? "" : p.error ? ` · ${p.error}` : ""}`}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       {result.freeModels !== undefined && (
         <p className="mt-2 text-fg-2">
           {result.freeModels === 0
@@ -100,6 +122,22 @@ export function AiAssistantCard() {
     setError("");
     try {
       await setAiEnabled(!data.enabled);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["ai-status", tenant] }),
+        qc.invalidateQueries({ queryKey: ["capabilities", tenant] }),
+      ]);
+    } catch (e: any) {
+      setError(e.message || "Couldn't change the setting.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const togglePrivate = async () => {
+    if (!data) return;
+    setBusy(true);
+    setError("");
+    try {
+      await setAiPrivateOnly(!data.privateOnly);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["ai-status", tenant] }),
         qc.invalidateQueries({ queryKey: ["capabilities", tenant] }),
@@ -195,6 +233,27 @@ export function AiAssistantCard() {
           <p className="mt-2 text-[12.5px] text-fg-3">The allowance is shared by everyone in your company and resets at midnight UTC.</p>
         </div>
       )}
+      {data && data.reason !== "plan" && data.reason !== "not_configured" && (
+        <div className="mt-5 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[14px] font-medium text-fg">Private mode</div>
+            <p className="mt-1 text-[13px] text-fg-2 max-w-xl">
+              Only use AI services that say they do not keep or train on what they are sent. Some free services may keep it. Turn this on if your customers' messages must stay private.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(data.privateOnly)}
+            aria-label="Only use AI services that keep my messages private"
+            disabled={busy}
+            onClick={() => void togglePrivate()}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-60 ${data.privateOnly ? "bg-brand-solid" : "bg-surface-2 ring-1 ring-line"}`}
+          >
+            <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${data.privateOnly ? "left-[22px]" : "left-0.5"}`} />
+          </button>
+        </div>
+      )}
       {data && data.reason !== "plan" && (
         <div className="mt-5">
           <button type="button" className={btn("secondary", "sm")} disabled={testing} onClick={() => void runTest()}>
@@ -208,7 +267,7 @@ export function AiAssistantCard() {
       <details className="mt-5 text-[13.5px] text-fg-2">
         <summary className="cursor-pointer font-medium text-fg">What Riwo sees</summary>
         <p className="mt-2 max-w-2xl leading-relaxed">
-          When someone asks Riwo for help, it receives the latest messages of that chat as text, your saved replies, the private notes on that chat and your company's name. Phone numbers, photos and files are not sent. {(data?.provider && WHERE[data.provider]) || WHERE_DEFAULT}
+          When someone asks Riwo for help, it receives the latest messages of that chat as text, your saved replies, the private notes on that chat and your company's name. Phone numbers, photos and files are not sent. {(data?.provider && WHERE[data.provider]) || (data?.mayKeepMessages ? WHERE_FREE : WHERE_DEFAULT)}
         </p>
       </details>
     </section>

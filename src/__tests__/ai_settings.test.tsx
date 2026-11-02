@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   getAiStatus: vi.fn(),
   setAiEnabled: vi.fn(),
   testAi: vi.fn(),
+  setAiPrivateOnly: vi.fn(),
   getStoredTenantId: () => "t1",
 }));
 vi.mock("../services/api", () => api);
@@ -25,6 +26,7 @@ beforeEach(() => {
   api.getAiStatus.mockReset();
   api.setAiEnabled.mockReset();
   api.testAi.mockReset();
+  api.setAiPrivateOnly.mockReset();
 });
 
 describe("the AI assistant settings", () => {
@@ -66,11 +68,42 @@ describe("the AI assistant settings", () => {
     api.getAiStatus.mockResolvedValueOnce(on).mockResolvedValue({ ...on, available: false, reason: "disabled", enabled: false });
     api.setAiEnabled.mockResolvedValue({});
     wrap();
-    fireEvent.click(await screen.findByRole("switch"));
+    fireEvent.click(await screen.findByRole("switch", { name: "Use Riwo in this company" }));
     expect(api.setAiEnabled).toHaveBeenCalledWith(false);
     expect(await screen.findByText("Off")).toBeDefined();
     expect(screen.getByText("Riwo is switched off for your company.")).toBeDefined();
-    expect(screen.getByRole("switch").getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("switch", { name: "Use Riwo in this company" }).getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("private mode limits Riwo to services that keep messages private, and says what it means", async () => {
+    api.getAiStatus.mockResolvedValueOnce({ ...on, provider: "gemini", free: true, mayKeepMessages: true, privateOnly: false }).mockResolvedValue({ ...on, provider: "gemini", free: true, mayKeepMessages: false, privateOnly: true });
+    api.setAiPrivateOnly.mockResolvedValue({});
+    wrap();
+    const toggle = await screen.findByRole("switch", { name: "Only use AI services that keep my messages private" });
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByText(/Free services can keep what they receive/)).toBeDefined();
+    fireEvent.click(toggle);
+    expect(api.setAiPrivateOnly).toHaveBeenCalledWith(true);
+    await waitFor(() => expect(screen.getByRole("switch", { name: "Only use AI services that keep my messages private" }).getAttribute("aria-checked")).toBe("true"));
+  });
+
+  it("says why Riwo is paused when private mode is on and no private service is connected", async () => {
+    api.getAiStatus.mockResolvedValue({ ...on, available: false, reason: "no_private_provider", privateOnly: true });
+    wrap();
+    expect(await screen.findByText(/none of those is connected yet/)).toBeDefined();
+  });
+
+  it("a test with several services says which worked, and what each keeps", async () => {
+    api.getAiStatus.mockResolvedValue({ ...on, provider: "groq" });
+    api.testAi.mockResolvedValue({ provider: "groq", ok: true, model: "gemini-2.5-flash", providers: [{ id: "groq", ok: false, policy: "no-training", free: true, error: "The AI provider answered 429." }, { id: "gemini", ok: true, policy: "may-train", free: true, model: "gemini-2.5-flash" }], attempts: [] });
+    wrap();
+    fireEvent.click(await screen.findByRole("button", { name: "Run a test" }));
+    const list = await screen.findByRole("list", { name: "Connected AI services" });
+    expect(list.textContent).toContain("groq");
+    expect(list.textContent).toContain("does not train on messages");
+    expect(list.textContent).toContain("gemini");
+    expect(list.textContent).toContain("may keep messages");
+    expect(list.textContent).toContain("answered 429");
   });
 
   it("a test shows the account, the models found and what each attempt said", async () => {
@@ -160,9 +193,9 @@ describe("the AI assistant settings", () => {
     api.getAiStatus.mockResolvedValue(on);
     api.setAiEnabled.mockRejectedValue(new Error("You do not have permission for this action"));
     wrap();
-    fireEvent.click(await screen.findByRole("switch"));
+    fireEvent.click(await screen.findByRole("switch", { name: "Use Riwo in this company" }));
     expect((await screen.findByRole("alert")).textContent).toContain("do not have permission");
-    await waitFor(() => expect(screen.getByRole("switch").getAttribute("aria-checked")).toBe("true"));
+    await waitFor(() => expect(screen.getByRole("switch", { name: "Use Riwo in this company" }).getAttribute("aria-checked")).toBe("true"));
   });
 });
 
