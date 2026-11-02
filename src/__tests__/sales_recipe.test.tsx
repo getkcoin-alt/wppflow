@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   updateAutomation: vi.fn(),
   toggleAutomationApi: vi.fn(),
   removeAutomation: vi.fn(),
+  aboutFromWebsite: vi.fn(),
   fetchAssignment: vi.fn(),
   saveAssignment: vi.fn(),
   getStoredTenantId: vi.fn(() => "t1"),
@@ -179,6 +180,68 @@ describe("the sales assistant", () => {
     api.fetchAutomationContext.mockResolvedValue(context({ riwo: { available: false, reason: "plan" } }));
     const form = await open();
     expect(form.getByRole("status").textContent).toMatch(/each reply is taken as the answer to the question just asked/);
+  });
+});
+
+describe("reading the company's website", () => {
+  const draft = { url: "https://marinahomes.example", pages: 3, about: "Marina Homes helps families buy, sell and rent apartments in Dubai Marina. Our website is https://marinahomes.example.", questions: ["Are you looking to buy, rent or sell?", "Which area?", "How many bedrooms?"], usedAi: true };
+  const readSite = (form: ReturnType<typeof within>, address = "marinahomes.example") => {
+    fireEvent.change(form.getByLabelText("Your website"), { target: { value: address } });
+    fireEvent.click(form.getByRole("button", { name: "Read my website" }));
+  };
+
+  it("fills the about text and the questions, says what it did, and is saved with the address", async () => {
+    api.aboutFromWebsite.mockResolvedValue(draft);
+    const form = await open();
+    readSite(form);
+    expect(await form.findByText(/Riwo read 3 pages of your website and wrote this/)).toBeDefined();
+    expect(api.aboutFromWebsite).toHaveBeenCalledWith("marinahomes.example");
+    expect((form.getByLabelText("About your business") as HTMLTextAreaElement).value).toBe(draft.about);
+    expect((within(form.getByRole("list", { name: "Questions" })).getAllByRole("textbox") as HTMLInputElement[]).map((q) => q.value)).toEqual(draft.questions);
+    expect((form.getByLabelText("Your website") as HTMLInputElement).value).toBe("https://marinahomes.example");
+    fireEvent.click(form.getByRole("button", { name: "Save paused" }));
+    await waitFor(() => expect(api.addAutomation).toHaveBeenCalledTimes(1));
+    const rule = api.addAutomation.mock.calls[0][0];
+    expect(rule.config).toMatchObject({ website: "https://marinahomes.example", knowledge: draft.about });
+    expect(rule.config.sales.questions).toEqual(draft.questions);
+  });
+
+  it("can be undone, and does not overwrite questions the company already changed: they are offered instead", async () => {
+    api.aboutFromWebsite.mockResolvedValue(draft);
+    const form = await open();
+    fillAbout(form);
+    fireEvent.change(form.getByLabelText("Question 1"), { target: { value: "What is your name?" } });
+    readSite(form);
+    await form.findByText(/Riwo read 3 pages/);
+    expect((form.getByLabelText("About your business") as HTMLTextAreaElement).value).toBe(draft.about);
+    expect((form.getByLabelText("Question 1") as HTMLInputElement).value).toBe("What is your name?");
+    expect(form.getByText(/Riwo suggested 3 questions from your website/)).toBeDefined();
+    fireEvent.click(form.getByRole("button", { name: "Add them" }));
+    expect((within(form.getByRole("list", { name: "Questions" })).getAllByRole("textbox") as HTMLInputElement[]).length).toBe(6);
+    expect(form.queryByText(/Riwo suggested/)).toBeNull();
+    fireEvent.click(form.getByRole("button", { name: /Undo/ }));
+    expect((form.getByLabelText("About your business") as HTMLTextAreaElement).value).toBe(ABOUT);
+  });
+
+  it("says what went wrong in plain words, asks for an address first, and is honest when Riwo only copied the page", async () => {
+    const form = await open();
+    fireEvent.click(form.getByRole("button", { name: "Read my website" }));
+    expect(await form.findByText("Enter your website address first.")).toBeDefined();
+    api.aboutFromWebsite.mockRejectedValueOnce(new Error("We couldn't find that website. Check the address."));
+    readSite(form, "nowhere.example");
+    expect(await form.findByRole("alert")).toBeDefined();
+    expect(form.getByRole("alert").textContent).toMatch(/couldn't find that website/);
+    expect((form.getByLabelText("About your business") as HTMLTextAreaElement).value).toBe("");
+    api.aboutFromWebsite.mockResolvedValueOnce({ ...draft, usedAi: false, questions: [] });
+    readSite(form);
+    expect(await form.findByText(/We copied the opening words of your website/)).toBeDefined();
+    expect((within(form.getByRole("list", { name: "Questions" })).getAllByRole("textbox") as HTMLInputElement[]).map((q) => q.value)).toEqual(QUESTIONS);
+  });
+
+  it("the form says how to get the text when it is missing", async () => {
+    const form = await open();
+    fireEvent.click(form.getByRole("button", { name: "Save paused" }));
+    expect(await form.findByText(/or enter your website above and tap Read my website/)).toBeDefined();
   });
 });
 

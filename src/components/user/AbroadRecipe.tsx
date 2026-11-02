@@ -9,6 +9,7 @@ import {
 import { Field, Notice } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
+import { WebsiteReader } from "./WebsiteReader";
 
 const WELCOME =
   "Hi {{first_name}}, welcome to {{company}}! 👋 Thanks for getting in touch.\n\nBefore we begin: how did you find us? AI, our website, social media or word of mouth?\n\nOur team will be in touch with you soon. Until then, you can ask me anything about {{company}}.";
@@ -106,6 +107,8 @@ function Body({
   );
   const [useRiwo, setUseRiwo] = useState(wasRiwo && canUseRiwo);
   const [knowledge, setKnowledge] = useState(c.knowledge || "");
+  const [website, setWebsite] = useState(c.website || "");
+  const [before, setBefore] = useState<string | null>(null);
   const [maxReplies, setMaxReplies] = useState(
     c.maxReplies ?? ctx.chat.defaultReplies,
   );
@@ -138,7 +141,7 @@ function Body({
     if (!welcome.trim()) return setError("Write the welcome message.");
     if (useRiwo && knowledge.trim().length < 20)
       return setError(
-        "Write a few sentences about your business for Riwo to answer from.",
+        "Write a few sentences about your business for Riwo to answer from, or enter your website and tap Read my website.",
       );
     setBusy(turnOn ? "live" : "paused");
     setError("");
@@ -156,6 +159,7 @@ function Body({
           ? {
               reply: welcome.trim(),
               knowledge: knowledge.trim(),
+              website: website.trim() || undefined,
               maxReplies,
               handoff: handoff.trim() || undefined,
               sourceOptions: options,
@@ -392,6 +396,19 @@ function Body({
           )}
           {useRiwo && (
             <>
+              <WebsiteReader
+                website={website}
+                onWebsite={setWebsite}
+                onDraft={({ about }) => {
+                  setBefore(knowledge);
+                  setKnowledge(about.slice(0, 3000));
+                }}
+                canUndo={before !== null}
+                onUndo={() => {
+                  if (before !== null) setKnowledge(before);
+                  setBefore(null);
+                }}
+              />
               <Field
                 label="What can Riwo tell them about your business?"
                 hint="Riwo uses only this. It never makes up prices, offers or links, and passes anything else to your team."

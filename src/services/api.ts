@@ -476,6 +476,8 @@ export interface RuleDraft {
     handoff?: string;
     maxReplies?: number;
     sourceOptions?: string[];
+    /** The website the "about" text was read from */
+    website?: string;
     /** "Sales assistant": the questions Riwo asks, the formal message for pricing and proposals, and where the lead goes */
     sales?: { enabled: boolean; questions: string[]; formal?: string; followUpHours?: number; stageName?: string };
   };
@@ -507,6 +509,9 @@ export interface AutomationContext {
     sales: { maxQuestions: number; questions: string[]; formal: string; followUpHours: number };
   };
 }
+/** Riwo reads the company's own website and drafts the "about" text and questions; nothing is saved */
+export const aboutFromWebsite = (url: string): Promise<{ url: string; pages: number; about: string; questions: string[]; usedAi: boolean }> =>
+  apiPost("/api/automations/about-from-website", { url });
 export const fetchAutomationContext = (): Promise<AutomationContext> =>
   apiGet("/api/automations/context");
 export const fetchAutomationTemplates = (): Promise<{

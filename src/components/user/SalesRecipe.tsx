@@ -5,6 +5,7 @@ import { fetchAutomationContext, type AutomationContext, type RuleDraft } from "
 import { Field, Notice } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, textareaCls } from "../ui/styles";
+import { WebsiteReader } from "./WebsiteReader";
 
 const WELCOME = "Hi {{first_name}}, welcome to {{company}}! 👋 Thanks for getting in touch. I'll ask a few quick questions so the right person can help you.";
 const FIELDS: [string, string][] = [
@@ -61,6 +62,9 @@ function Body({
   const [name, setName] = useState(initial.name || "Sales assistant");
   const [welcome, setWelcome] = useState(c.reply || WELCOME);
   const [knowledge, setKnowledge] = useState(c.knowledge || "");
+  const [website, setWebsite] = useState(c.website || "");
+  const [before, setBefore] = useState<string | null>(null); // what was in the box before a website draft replaced it
+  const [suggested, setSuggested] = useState<string[]>([]);
   const [questions, setQuestions] = useState<string[]>(sales?.questions?.length ? sales.questions : ctx.chat.sales.questions);
   const [newQuestion, setNewQuestion] = useState("");
   const [formal, setFormal] = useState(sales?.formal || ctx.chat.sales.formal);
@@ -70,6 +74,17 @@ function Body({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"" | "paused" | "live">("");
   const max = ctx.chat.sales.maxQuestions;
+
+  // a draft from the website replaces the text (with an Undo); suggested questions replace the usual ones only if those are untouched
+  const untouched = questions.join("\n") === ctx.chat.sales.questions.join("\n");
+  const applyDraft = ({ about, questions: ideas }: { about: string; questions: string[] }) => {
+    setBefore(knowledge);
+    setKnowledge(about.slice(0, 3000));
+    if (ideas.length && untouched) {
+      setQuestions(ideas.slice(0, max));
+      setSuggested([]);
+    } else setSuggested(ideas.filter((q) => !questions.some((x) => x.toLowerCase() === q.toLowerCase())).slice(0, max));
+  };
 
   const move = (i: number, by: -1 | 1) => {
     const j = i + by;
@@ -88,7 +103,7 @@ function Body({
   const save = async (turnOn: boolean) => {
     if (!name.trim()) return setError("Give the rule a name.");
     if (!welcome.trim()) return setError("Write the welcome message.");
-    if (knowledge.trim().length < 20) return setError("Write a few sentences about your business, so Riwo can answer short questions from them.");
+    if (knowledge.trim().length < 20) return setError("Write a few sentences about your business, or enter your website above and tap Read my website.");
     if (!questions.length) return setError("Add at least one question for Riwo to ask.");
     if (!formal.trim()) return setError("Write the message that is sent when someone asks for pricing or a proposal.");
     const hours = Number(followUp);
@@ -105,6 +120,7 @@ function Body({
       config: {
         reply: welcome.trim(),
         knowledge: knowledge.trim(),
+        website: website.trim() || undefined,
         handoff: handoff.trim() || undefined,
         sourceOptions: [],
         sales: { enabled: true, questions, formal: formal.trim(), followUpHours: hours, stageName: stageName.trim() },
@@ -170,6 +186,17 @@ function Body({
           <input aria-label="Rule name" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
         </Field>
 
+        <WebsiteReader
+          website={website}
+          onWebsite={setWebsite}
+          onDraft={applyDraft}
+          canUndo={before !== null}
+          onUndo={() => {
+            if (before !== null) setKnowledge(before);
+            setBefore(null);
+          }}
+        />
+
         <Field label="Your welcome message" hint="Sent word for word, followed by your first question.">
           <textarea aria-label="Your welcome message" rows={4} value={welcome} onChange={(e) => setWelcome(e.target.value)} className={textareaCls} />
         </Field>
@@ -204,6 +231,21 @@ function Body({
               </li>
             ))}
           </ol>
+          {suggested.length > 0 && (
+            <div role="status" className="rounded-2xl bg-surface-2 ring-1 ring-line px-4 py-3 text-[13.5px] text-fg-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+              Riwo suggested {suggested.length} {suggested.length === 1 ? "question" : "questions"} from your website.
+              <button
+                type="button"
+                className={btn("secondary", "sm")}
+                onClick={() => {
+                  setQuestions([...questions, ...suggested].slice(0, max));
+                  setSuggested([]);
+                }}
+              >
+                Add {suggested.length === 1 ? "it" : "them"}
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
             <input
               aria-label="Add a question"
