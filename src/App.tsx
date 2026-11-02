@@ -1126,10 +1126,13 @@ export function App() {
               onOpenPlan={planAction}
               pipeline={locked("leads") ? undefined : { teammates: team.data?.members || [], isManager: manager, aiAvailable: false }}
               onSelectChat={(person) => {
-                const usable = sessions.filter((x) => x.status === "CONNECTED");
-                if (usable.length !== 1) return setNewChat({ person });
-                // one connected number: no need to ask which
                 void run(async () => {
+                  // the chat the person is already in comes first: it works for someone WhatsApp gave no number for, too
+                  const existing = person.contactId ? await api.fetchChatOfContact(person.contactId).catch(() => null) : null;
+                  if (existing?.id) return openConversationRef.current(existing.id);
+                  const usable = sessions.filter((x) => x.status === "CONNECTED");
+                  if (usable.length !== 1) return setNewChat({ person });
+                  // one connected number: no need to ask which
                   const result = await api.startChat({ contactId: person.contactId, sessionName: usable[0].sessionKey });
                   await openStartedChat(result);
                 }).catch(() => {});

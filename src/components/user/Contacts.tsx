@@ -20,7 +20,7 @@ import { LabelPicker } from "../labels/LabelPicker";
 import { useLabels } from "../labels/useLabels";
 import type { NewChatPerson } from "./NewChatSheet";
 import { parseContactsCsv, contactsCsv } from "../../utils/csv";
-import { Download, Funnel, Plus, Search, Tag, Upload, Users } from "lucide-react";
+import { Download, Funnel, MessageSquare, Plus, Search, Tag, Upload, Users } from "lucide-react";
 import { NewLeadSheet } from "../pipeline/NewLeadSheet";
 import { usePipelineSettings } from "../pipeline/usePipelineSettings";
 import { Avatar } from "../ui/Avatar";
@@ -425,9 +425,11 @@ export function Contacts({
               <div className="flex items-center gap-1 ml-auto">
                 <button
                   className={btn("ghost", "sm")}
+                  title="Open the chat"
+                  aria-label={`Open the chat with ${c.name}`}
                   onClick={() => onSelectChat({ contactId: c.id, name: c.name, phone: c.phone, optIn: Boolean(c.optIn) })}
                 >
-                  Message
+                  <MessageSquare className="w-4 h-4" aria-hidden />
                 </button>
                 {pipeline && (
                   <button className={btn("ghost", "sm")} onClick={() => setLeadFor(c)} aria-label={`Add ${c.name} to the pipeline`}>

@@ -178,13 +178,29 @@ describe("contact names and numbers", () => {
     const onSelectChat = vi.fn();
     wrap(<Contacts onSelectChat={onSelectChat} />);
     await screen.findByText("Bilal");
-    fireEvent.click(within(screen.getByText("Bilal").closest("li") as HTMLElement).getByRole("button", { name: "Message" }));
+    fireEvent.click(within(screen.getByText("Bilal").closest("li") as HTMLElement).getByRole("button", { name: "Open the chat with Bilal" }));
     expect(onSelectChat).toHaveBeenCalledWith({ contactId: "c2", name: "Bilal", phone: "971500000002", optIn: false });
   });
 });
 
 const line = (over: Partial<WhatsAppSession>): WhatsAppSession => ({
   id: "s", sessionKey: "line-1", displayName: "Line", phone: "971500000100", status: "CONNECTED", battery: 1, isCharging: false, antiBanHealth: 1, warmupDay: 1, proxyIp: "", messagesSentToday: 0, messagesLimitToday: 1, lastActive: "", wppVersion: "", channel: "sales", ownerUserId: 1, ownerName: "Olivia Owner", ...over,
+});
+
+describe("New group", () => {
+  it("offers people with a real number, and not someone WhatsApp only gave a hidden id for", async () => {
+    api.fetchContacts.mockResolvedValue({
+      contacts: [
+        { id: "c1", name: "Aisha Khan", phone: "971500000001", labels: [], tags: [] },
+        { id: "c9", name: "Unknown contact", phone: "83752348860497@lid", labels: [], tags: [] },
+      ],
+      nextCursor: null,
+    });
+    wrap(<NewChatSheet open initialMode="group" sessions={[line({})]} currentUserId={1} onClose={() => {}} onStarted={vi.fn()} />);
+    expect(await screen.findByText("Aisha Khan")).toBeDefined();
+    expect(screen.queryByText("Unknown contact")).toBeNull();
+    expect(document.body.textContent).not.toContain("83752348860497");
+  });
 });
 
 describe("New chat", () => {

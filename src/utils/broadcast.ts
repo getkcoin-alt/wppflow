@@ -80,8 +80,8 @@ export function estimate(
   if (people <= 0) return "under a minute";
   const numBatches = Math.floor(Math.max(0, people - 1) / batchSize);
   const totalCooldown = numBatches * cooldownSeconds;
-  // Human jitter adds ~3-4 seconds per message on average
-  const averageJitter = people * 3.5;
+  // The server adds 2-7 seconds of variation to each gap, and a little more for a long message: about 5 seconds on average
+  const averageJitter = people * 5;
   const totalSeconds =
     Math.max(0, (people - 1) * secondsBetween) + totalCooldown + averageJitter;
 

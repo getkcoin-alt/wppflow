@@ -339,6 +339,9 @@ export const markAllNotificationsRead = () =>
   apiPost("/api/notifications/read-all", {});
 export const fetchConversation = async (id: string) =>
   (await apiGet(`/api/conversations/${encodeURIComponent(id)}`)).conversation;
+/** The chat a saved person is already in (the most recent one this user may open), or null when there is none yet. */
+export const fetchChatOfContact = async (contactId: string) =>
+  (await apiGet(`/api/conversations/of-contact/${encodeURIComponent(contactId)}`)).conversation ?? null;
 export const fetchChats = () => fetchConversations();
 export const addChat = (data: any) => apiPost("/api/conversations", data);
 export const patchChat = (id: string, data: any) =>
