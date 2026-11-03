@@ -620,6 +620,28 @@ export interface SimulatedTurn {
 /** One turn of "try it": nothing is sent to WhatsApp or saved */
 export const simulateWorkflow = (body: { rule: RuleDraft; state: SimulatedState | null; text: string; labels?: string[]; transcript?: { from: "customer" | "riwo"; text: string }[]; name?: string }): Promise<SimulatedTurn> =>
   apiPost("/api/automations/workflow/simulate", body);
+export interface WorkflowInsights {
+  started: number;
+  active: number;
+  finished: number;
+  handedOver: number;
+  unclear: number;
+  meetings: number;
+  last7Days: number;
+  questions: { question: string; options: { key: string; label: string; count: number }[] }[];
+  suggestion: string;
+}
+/** How a workflow is doing: how many chats it began, which way answers went, and what to improve */
+export const fetchWorkflowInsights = (id: string): Promise<{ insights: WorkflowInsights }> => apiGet(`/api/automations/${encodeURIComponent(id)}/insights`);
+export interface AutomationVersion {
+  version: number;
+  name: string;
+  note: string;
+  createdAt: string;
+}
+/** The saved versions of a rule (what it was before each change), newest first, and putting one back */
+export const fetchAutomationVersions = (id: string): Promise<{ versions: AutomationVersion[] }> => apiGet(`/api/automations/${encodeURIComponent(id)}/versions`);
+export const restoreAutomationVersion = (id: string, version: number) => apiPost(`/api/automations/${encodeURIComponent(id)}/versions/${version}/restore`, {});
 export interface AutomationTemplate {
   id: string;
   group: string;

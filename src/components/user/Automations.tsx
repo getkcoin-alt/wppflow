@@ -18,6 +18,7 @@ import { AbroadRecipe } from "./AbroadRecipe";
 import { SalesRecipe } from "./SalesRecipe";
 import { AgentRecipe } from "./AgentRecipe";
 import { WorkflowBuilder, type BuilderInitial } from "./workflow/WorkflowBuilder";
+import { Insights } from "./workflow/Insights";
 import { KnowledgeCard } from "./KnowledgeCard";
 import { AssignmentRule } from "./AssignmentRule";
 import { blankRule, describeRule, endSentence, withOwnTimezone } from "../../utils/automationText";
@@ -388,6 +389,7 @@ export function Automations({
                 </div>
                 <p className="mt-3 text-[14px] text-fg-2">{sentence.when},</p>
                 <p className="mt-1 text-[15px] text-fg leading-relaxed">{endSentence(sentence.then)}</p>
+                {a.actionType === "workflow" && <Insights id={a.id} />}
                 <p className="mt-4 text-[12.5px] text-fg-3">
                   Completed executions: {a.executionsCount}
                   {a.config?.cooldownHours ? ` · waits ${a.config.cooldownHours} h before repeating` : ""}

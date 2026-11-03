@@ -13,9 +13,13 @@ const api = vi.hoisted(() => ({
   updateAutomation: vi.fn(),
   toggleAutomationApi: vi.fn(),
   fetchAutomationContext: vi.fn(),
+  fetchAutomationVersions: vi.fn(),
+  restoreAutomationVersion: vi.fn(),
+  fetchWorkflowInsights: vi.fn(),
 }));
 vi.mock("../services/api", () => api);
 import { WorkflowBuilder } from "../components/user/workflow/WorkflowBuilder";
+import { Insights } from "../components/user/workflow/Insights";
 import type { WorkflowDraft } from "../services/api";
 
 const flow = () => ({
@@ -154,6 +158,7 @@ describe("trying it and saving it", () => {
     api.fetchAutomationContext.mockResolvedValue({ countries: [], homeCodes: [] });
     api.checkWorkflow.mockImplementation(async (rule) => ({ draft: draft({ rule }) }));
     api.draftWorkflow.mockResolvedValue({ draft: draft() });
+    api.fetchAutomationVersions.mockResolvedValue({ versions: [] });
   });
   const built = async () => {
     const view = open();
@@ -252,3 +257,44 @@ describe("trying it and saving it", () => {
     expect(onSaved).toHaveBeenCalledWith("Saved “Work or family”.");
   });
 });
+
+describe("going back and seeing how it is doing", () => {
+  beforeEach(() => {
+    Object.values(api).forEach((f) => f.mockReset());
+    api.fetchWorkflowRecipes.mockResolvedValue({ recipes: [] });
+    api.fetchAutomationContext.mockResolvedValue({ countries: [], homeCodes: [] });
+    api.checkWorkflow.mockImplementation(async (rule) => ({ draft: draft({ rule }) }));
+  });
+
+  it("offers to undo the last change of a saved workflow, and nothing to undo on a new one", async () => {
+    api.fetchAutomationVersions.mockResolvedValue({ versions: [{ version: 3, name: "Work or family", note: "Before a change", createdAt: "2026-11-03T10:00:00Z" }] });
+    api.restoreAutomationVersion.mockResolvedValue({});
+    const { onSaved } = open({ initial: { id: "a9", rule: draft().rule } });
+    await screen.findByText(/Here is what I understood\./);
+    fireEvent.click(await screen.findByRole("button", { name: "Undo my last change" }));
+    await waitFor(() => expect(api.restoreAutomationVersion).toHaveBeenCalledWith("a9", 3));
+    expect(onSaved).toHaveBeenCalledWith("Went back to the version before your last change.");
+  });
+
+  it("shows nothing to undo when the workflow has never been changed", async () => {
+    api.fetchAutomationVersions.mockResolvedValue({ versions: [] });
+    open({ initial: { id: "a9", rule: draft().rule } });
+    await screen.findByText(/Here is what I understood\./);
+    await waitFor(() => expect(api.fetchAutomationVersions).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "Undo my last change" })).toBeNull();
+  });
+
+  it("tells how it is doing in one line, with Riwo's suggestion", async () => {
+    api.fetchWorkflowInsights.mockResolvedValue({ insights: { started: 12, active: 1, finished: 6, handedOver: 4, unclear: 3, meetings: 2, last7Days: 5, questions: [{ question: "Is this about work?", options: [{ key: "work", label: "Work", count: 7 }, { key: "personal", label: "Family or friend", count: 4 }] }], suggestion: "3 of 12 people gave an answer Riwo could not understand. Add the words people really use." } });
+    wrap(<Insights id="a1" />);
+    expect(await screen.findByText(/people so far \(5 in the last 7 days\) · 7 work, 4 family or friend · 4 handed to a person · 2 asked for a meeting · 1 waiting for an answer/)).toBeTruthy();
+    expect(screen.getByText(/3 of 12 people gave an answer Riwo could not understand/)).toBeTruthy();
+  });
+
+  it("says so when nobody has been through it yet", async () => {
+    api.fetchWorkflowInsights.mockResolvedValue({ insights: { started: 0, active: 0, finished: 0, handedOver: 0, unclear: 0, meetings: 0, last7Days: 0, questions: [], suggestion: "" } });
+    wrap(<Insights id="a1" />);
+    expect(await screen.findByText("No one has gone through it yet.")).toBeTruthy();
+  });
+});
+

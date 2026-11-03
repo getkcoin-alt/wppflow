@@ -5,7 +5,9 @@ import {
   addAutomation,
   checkWorkflow,
   draftWorkflow,
+  fetchAutomationVersions,
   fetchWorkflowRecipes,
+  restoreAutomationVersion,
   toggleAutomationApi,
   updateAutomation,
   type RuleDraft,
@@ -67,6 +69,9 @@ function Body({ onClose, onSaved, initial }: { onClose: () => void; onSaved: (me
   const [message, setMessage] = useState("");
   const [shown, setShown] = useState<WorkflowRecipe[]>([]);
   const recipes = useQuery({ queryKey: ["workflow-recipes"], queryFn: fetchWorkflowRecipes, staleTime: 60 * 60 * 1000 });
+  // a saved workflow keeps what it was before each change: the last change can be undone
+  const versions = useQuery({ queryKey: ["automation-versions", initial?.id], queryFn: () => fetchAutomationVersions(initial!.id), enabled: Boolean(initial), staleTime: 0 });
+  const lastVersion = versions.data?.versions[0];
   const timer = useRef<number | undefined>(undefined);
   const seq = useRef(0);
 
@@ -187,10 +192,28 @@ function Body({ onClose, onSaved, initial }: { onClose: () => void; onSaved: (me
     }
   };
 
+  const undo = async () => {
+    if (!initial || !lastVersion) return;
+    setBusy("save");
+    setError("");
+    try {
+      await restoreAutomationVersion(initial.id, lastVersion.version);
+      onSaved("Went back to the version before your last change.");
+    } catch (e: any) {
+      setError(e.message || "Couldn't go back.");
+    } finally {
+      setBusy("");
+    }
+  };
   const known = labelsLookedAt(draft?.rule.config.workflow);
   const footer =
     stage === "confirm" && draft ? (
       <div className="w-full flex flex-wrap items-center justify-end gap-2">
+        {initial && lastVersion && (
+          <button type="button" className={`${btn("ghost")} sm:mr-auto`} disabled={busy === "save"} onClick={() => void undo()}>
+            Undo my last change
+          </button>
+        )}
         <button type="button" className={btn("ghost")} onClick={onClose}>
           Cancel
         </button>
