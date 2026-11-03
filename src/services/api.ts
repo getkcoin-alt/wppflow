@@ -455,7 +455,7 @@ export const updateAutomation = (id: string, data: any) =>
     method: "PUT",
     body: JSON.stringify(data),
   });
-export type RuleTrigger = "keyword" | "first_message" | "after_hours" | "foreign_number";
+export type RuleTrigger = "keyword" | "first_message" | "after_hours" | "foreign_number" | "returning";
 export type RuleAction =
   | "reply_text"
   | "assign_agent"
@@ -463,7 +463,8 @@ export type RuleAction =
   | "opt_in"
   | "opt_out"
   | "create_lead"
-  | "ai_chat";
+  | "ai_chat"
+  | "workflow";
 export interface OpeningHours {
   timezone: string;
   /** 1 is Monday, 7 is Sunday */
@@ -500,7 +501,64 @@ export interface RuleDraft {
     agent?: { enabled: boolean; goal: string; playbook: string; closeWith: AgentClose; pricing: "handoff" | "knowledge" };
     /** "Sales assistant": the questions Riwo asks, the formal message for pricing and proposals, and where the lead goes */
     sales?: { enabled: boolean; questions: string[]; formal?: string; followUpHours?: number; stageName?: string };
+    /** "Returning": how many quiet days before someone counts as coming back, and whether a first message counts too */
+    silentDays?: number;
+    includeNew?: boolean;
+    /** A workflow: steps that ask, understand the answer and branch */
+    workflow?: Workflow;
+    /** Test mode: the rule only runs for these numbers (digits with the country code) */
+    pilot?: { enabled: boolean; phones: string[] };
   };
+}
+export type WorkflowStepType = "say" | "ask" | "collect" | "meeting" | "branch" | "agent" | "label" | "notify" | "assign" | "lead" | "task" | "handoff" | "end";
+/** One step of a workflow. Which fields it has depends on its type; the server checks and completes them. */
+export interface WorkflowStep {
+  type: WorkflowStepType;
+  text?: string;
+  question?: string;
+  options?: { key: string; label: string; hints: string[] }[];
+  next?: string | Record<string, string | null> | null;
+  goal?: string;
+  playbook?: string;
+  title?: string;
+  add?: string;
+  teammate?: string;
+  [field: string]: unknown;
+}
+export interface Workflow {
+  version: 1;
+  start: string;
+  nodes: Record<string, WorkflowStep>;
+  quiet?: boolean;
+}
+export interface WorkflowOutlineItem {
+  id: string;
+  via: string;
+  type: WorkflowStepType;
+  summary: string;
+  goes: { label: string; to: string }[];
+}
+export type WorkflowNeed = "knowledge" | "countries" | "hours";
+/** A workflow as it is shown for confirmation: the rule to save, when it starts, the safety it carries and the steps */
+export interface WorkflowDraft {
+  rule: RuleDraft;
+  when: string;
+  understood: string;
+  guardrails: string[];
+  outline: WorkflowOutlineItem[];
+  warnings: string[];
+  needs: WorkflowNeed[];
+  source: "ai" | "recipe";
+  note: string;
+}
+export interface WorkflowQuestion {
+  question: string;
+  choices: string[];
+}
+export interface WorkflowRecipe {
+  id: string;
+  title: string;
+  summary: string;
 }
 export type AgentClose = "handoff" | "collect_details" | "book_demo" | "send_link";
 export interface KnowledgeSource {
@@ -532,6 +590,36 @@ export const draftAgent = (
   instruction: string,
   answers: { question: string; answer: string }[] = [],
 ): Promise<{ clarify?: string[]; draft?: RuleDraft; understood?: string; needs?: string[]; problem?: string }> => apiPost("/api/automations/draft", { instruction, answers });
+/** Describe a workflow in your own words (or pick a ready-made one): Riwo asks what it needs, or drafts it. Nothing is saved. */
+export const draftWorkflow = (body: { instruction?: string; answers?: { question: string; answer: string }[]; recipe?: string }): Promise<{ clarify?: WorkflowQuestion[]; draft?: WorkflowDraft | null; message?: string; recipes?: WorkflowRecipe[] }> =>
+  apiPost("/api/automations/workflow/draft", body);
+export const reviseWorkflow = (rule: RuleDraft, instruction: string): Promise<{ clarify?: WorkflowQuestion[]; draft?: WorkflowDraft; diff?: string[] }> => apiPost("/api/automations/workflow/revise", { rule, instruction });
+/** The workflow as the screen has it, checked and completed by the server: the same view as a draft */
+export const checkWorkflow = (rule: RuleDraft): Promise<{ draft: WorkflowDraft }> => apiPost("/api/automations/workflow/check", { rule });
+export const fetchWorkflowRecipes = (): Promise<{ recipes: WorkflowRecipe[] }> => apiGet("/api/automations/workflow/recipes");
+export interface SimulatedEvent {
+  kind: "say" | "label" | "notify" | "assign" | "lead" | "task" | "handoff" | "end" | "note";
+  text: string;
+  node?: string;
+}
+export interface SimulatedState {
+  node: string | null;
+  vars: Record<string, unknown>;
+  attempts: number;
+}
+export interface SimulatedTurn {
+  events: SimulatedEvent[];
+  state: SimulatedState;
+  pause: "ask" | "collect" | "meeting" | "agent" | null;
+  done: boolean;
+  outcome: string | null;
+  /** how Riwo understood the customer's answer to a question */
+  read: { choice: string; label: string | null; via: string } | null;
+  node: string | null;
+}
+/** One turn of "try it": nothing is sent to WhatsApp or saved */
+export const simulateWorkflow = (body: { rule: RuleDraft; state: SimulatedState | null; text: string; labels?: string[]; transcript?: { from: "customer" | "riwo"; text: string }[]; name?: string }): Promise<SimulatedTurn> =>
+  apiPost("/api/automations/workflow/simulate", body);
 export interface AutomationTemplate {
   id: string;
   group: string;

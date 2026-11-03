@@ -10,6 +10,7 @@ export function Sheet({
   subtitle,
   children,
   footer,
+  wide = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -17,6 +18,8 @@ export function Sheet({
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** a big dialog for screens with two columns */
+  wide?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -38,7 +41,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full sm:max-w-lg max-h-[92dvh] flex flex-col bg-surface rounded-t-[32px] sm:rounded-[32px] pop animate-rise"
+        className={`relative w-full ${wide ? "sm:max-w-5xl" : "sm:max-w-lg"} max-h-[92dvh] flex flex-col bg-surface rounded-t-[32px] sm:rounded-[32px] pop animate-rise`}
       >
         <div className="sm:hidden mx-auto mt-3 h-1.5 w-10 rounded-full bg-fg/15" />
         <div className="flex items-start justify-between gap-4 px-6 sm:px-8 pt-5 sm:pt-8 pb-2">

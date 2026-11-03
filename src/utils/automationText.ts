@@ -7,6 +7,7 @@ export const TRIGGER_LABELS: Record<RuleTrigger, string> = {
   first_message: "Someone writes for the first time",
   after_hours: "Someone writes outside opening hours",
   foreign_number: "A number from another country writes",
+  returning: "Someone writes after a quiet spell",
 };
 export const ACTION_LABELS: Record<RuleAction, string> = {
   reply_text: "Send a reply",
@@ -16,6 +17,7 @@ export const ACTION_LABELS: Record<RuleAction, string> = {
   opt_out: "Take them off broadcasts",
   create_lead: "Add them to the sales pipeline",
   ai_chat: "Let Riwo chat until your team replies",
+  workflow: "Run a workflow",
 };
 export const MATCH_LABELS = {
   contains: "Contains the words",
@@ -61,7 +63,9 @@ export function describeRule(
   const words = keywordList(rule.triggerCondition || "");
   const home = (c.homeCodes || []).map((code) => countryName(code) || `+${code}`);
   const when =
-    rule.triggerType === "foreign_number"
+    rule.triggerType === "returning"
+      ? `When someone writes after ${c.silentDays || 30} quiet days${c.includeNew === false ? "" : ", or for the first time"}`
+      : rule.triggerType === "foreign_number"
       ? `When a number from outside ${home.length ? home.join(" and ") : "your country"} writes${c.onlyNew === false ? "" : " for the first time"}`
       : rule.triggerType === "first_message"
       ? "When someone writes for the first time"
@@ -74,7 +78,9 @@ export function describeRule(
             : `When a message contains ${quote(words) || "…"}`;
   const reply = c.reply ? ` and replies “${clip(c.reply, 70)}”` : "";
   const then =
-    rule.actionType === "ai_chat" && rule.config?.agent?.enabled
+    rule.actionType === "workflow"
+      ? `runs your workflow (${Object.keys(rule.config?.workflow?.nodes || {}).length} steps): it asks, understands the answer and goes the way of it, and tells you what matters${rule.config?.pilot?.enabled ? `. In test mode: only for ${rule.config.pilot.phones.length} number${rule.config.pilot.phones.length === 1 ? "" : "s"} you listed` : ""}`
+      : rule.actionType === "ai_chat" && rule.config?.agent?.enabled
       ? "lets Riwo talk to them from your knowledge base like a salesperson: it finds out what they need, recommends the right product, moves them toward your goal, and hands over to a person when they are ready, with a summary"
       : rule.actionType === "ai_chat" && rule.config?.sales?.enabled
       ? "sends your welcome message with the first question, asks the rest one at a time, and when they ask for pricing or a proposal sends your formal message, hands the chat to an executive and adds them to your pipeline"

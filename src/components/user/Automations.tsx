@@ -17,6 +17,7 @@ import { RuleEditor } from "./RuleEditor";
 import { AbroadRecipe } from "./AbroadRecipe";
 import { SalesRecipe } from "./SalesRecipe";
 import { AgentRecipe } from "./AgentRecipe";
+import { WorkflowBuilder, type BuilderInitial } from "./workflow/WorkflowBuilder";
 import { KnowledgeCard } from "./KnowledgeCard";
 import { AssignmentRule } from "./AssignmentRule";
 import { blankRule, describeRule, endSentence, withOwnTimezone } from "../../utils/automationText";
@@ -80,6 +81,8 @@ export function Automations({
     [recipe, setRecipe] = useState<Editing | null>(null),
     [salesRecipe, setSalesRecipe] = useState<Editing | null>(null),
     [agentRecipe, setAgentRecipe] = useState<Editing | null>(null),
+    [builder, setBuilder] = useState<{ initial: BuilderInitial | null } | null>(null),
+    [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const templates = useQuery({
@@ -102,8 +105,15 @@ export function Automations({
   // used to say "United Arab Emirates" instead of "+971" in the sentences below
   const context = useQuery({ queryKey: ["automation-context"], queryFn: fetchAutomationContext, staleTime: 60_000 });
   const countryName = (code: string) => context.data?.countries.find((c) => c.code === code)?.name || `+${code}`;
+  // a workflow in test mode only runs for the numbers its owner listed; this makes it run for everyone
+  const switchOnForEveryone = (a: any) =>
+    run(async () => {
+      const { pilot: _pilot, ...config } = a.config || {};
+      void _pilot;
+      await updateAutomation(a.id, { ...ruleOf(a), config });
+    });
   const edit = (a: any) =>
-    isAgent(a) ? setAgentRecipe({ rule: ruleOf(a), id: a.id }) : isSales(a) ? setSalesRecipe({ rule: ruleOf(a), id: a.id }) : a.triggerType === "foreign_number" ? setRecipe({ rule: ruleOf(a), id: a.id }) : setEditing({ rule: ruleOf(a), id: a.id });
+    a.actionType === "workflow" ? setBuilder({ initial: { id: a.id, rule: ruleOf(a) } }) : isAgent(a) ? setAgentRecipe({ rule: ruleOf(a), id: a.id }) : isSales(a) ? setSalesRecipe({ rule: ruleOf(a), id: a.id }) : a.triggerType === "foreign_number" ? setRecipe({ rule: ruleOf(a), id: a.id }) : setEditing({ rule: ruleOf(a), id: a.id });
   const fromTemplate = (t: AutomationTemplate) =>
     isSales(t.rule)
       ? setSalesRecipe({ rule: { name: t.name, templateId: t.id, ...t.rule, config: { ...t.rule.config } }, hint: t.hint })
@@ -159,9 +169,14 @@ export function Automations({
         title="Automations"
         subtitle="Rules answer, route and organise new customer messages for you. New rules start paused until you turn them on."
         actions={
-          <button onClick={() => setEditing({ rule: blankRule() })} className={btn("primary")}>
-            <Plus className="w-4 h-4" /> New rule
-          </button>
+          <>
+            <button onClick={() => setBuilder({ initial: null })} className={btn("secondary")}>
+              <Sparkles className="w-4 h-4" /> Describe it in words
+            </button>
+            <button onClick={() => setEditing({ rule: blankRule() })} className={btn("primary")}>
+              <Plus className="w-4 h-4" /> New rule
+            </button>
+          </>
         }
       />
       {error && (
@@ -169,6 +184,22 @@ export function Automations({
           <Notice tone="error">{error}</Notice>
         </div>
       )}
+      {notice && (
+        <div className="mb-4">
+          <Notice tone="success">{notice}</Notice>
+        </div>
+      )}
+
+      <WorkflowBuilder
+        open={!!builder}
+        initial={builder?.initial || null}
+        onClose={() => setBuilder(null)}
+        onSaved={(message) => {
+          setBuilder(null);
+          setNotice(message);
+          onChanged();
+        }}
+      />
 
       <RuleEditor
         open={!!editing}
@@ -258,6 +289,21 @@ export function Automations({
         }}
       />
 
+      {!automations.some((a) => a.actionType === "workflow") && (
+        <section aria-label="Describe a workflow in your own words" className="card p-6 mb-8 flex flex-wrap items-center gap-5 bg-gradient-to-br from-brand/5 via-transparent to-gold/10">
+          <img src="/brand/riwo-wave.webp" alt="" width={84} height={84} className="h-[84px] w-[84px] rounded-3xl object-cover shrink-0" />
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[18px] font-semibold">Just tell Riwo what you want</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              Write it the way you would tell a new team member, in any language. Riwo builds the whole workflow for you, adds the safety, shows it back in plain steps and lets you try it as a customer before anyone real sees it.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setBuilder({ initial: null })}>
+            <Sparkles className="w-4 h-4" aria-hidden /> Describe it
+          </button>
+        </section>
+      )}
+
       <KnowledgeCard />
 
       {!automations.some(isAgent) && (
@@ -333,9 +379,12 @@ export function Automations({
               <article key={a.id} className="card p-6 flex flex-col">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="text-[18px] font-semibold">{a.name}</h2>
-                  <Pill tone={a.isEnabled ? "ok" : "neutral"} dot>
-                    {a.isEnabled ? "Live" : "Paused"}
-                  </Pill>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {a.config?.pilot?.enabled && <Pill tone="gold">Test mode</Pill>}
+                    <Pill tone={a.isEnabled ? "ok" : "neutral"} dot>
+                      {a.isEnabled ? "Live" : "Paused"}
+                    </Pill>
+                  </div>
                 </div>
                 <p className="mt-3 text-[14px] text-fg-2">{sentence.when},</p>
                 <p className="mt-1 text-[15px] text-fg leading-relaxed">{endSentence(sentence.then)}</p>
@@ -351,6 +400,11 @@ export function Automations({
                     <button disabled={busy} onClick={() => edit(a)} className={btn("ghost", "sm")} aria-label={`Edit ${a.name}`}>
                       <Pencil className="w-4 h-4" /> Edit
                     </button>
+                    {a.config?.pilot?.enabled && (
+                      <button disabled={busy} onClick={() => void switchOnForEveryone(a)} className={btn("ghost", "sm")} aria-label={`Run ${a.name} for everyone`}>
+                        For everyone
+                      </button>
+                    )}
                   </div>
                   <button
                     disabled={busy}

@@ -166,7 +166,7 @@ function EditorBody({
         <Field label="When">
           <select aria-label="When" value={rule.triggerType} onChange={(e) => changeTrigger(e.target.value as RuleTrigger)} className={selectCls}>
             {/* "other countries" and "Let Riwo chat" have their own, simpler form: AbroadRecipe */}
-            {(Object.keys(TRIGGER_LABELS) as RuleTrigger[]).filter((t) => t !== "foreign_number").map((t) => (
+            {(Object.keys(TRIGGER_LABELS) as RuleTrigger[]).filter((t) => t !== "foreign_number" && t !== "returning").map((t) => (
               <option key={t} value={t}>
                 {TRIGGER_LABELS[t]}
               </option>
@@ -229,7 +229,7 @@ function EditorBody({
 
         <Field label="Then">
           <select aria-label="Then" value={rule.actionType} onChange={(e) => changeAction(e.target.value as RuleAction)} className={selectCls}>
-            {(Object.keys(ACTION_LABELS) as RuleAction[]).filter((a) => a !== "ai_chat").map((a) => (
+            {(Object.keys(ACTION_LABELS) as RuleAction[]).filter((a) => a !== "ai_chat" && a !== "workflow").map((a) => (
               <option key={a} value={a}>
                 {ACTION_LABELS[a]}
               </option>
