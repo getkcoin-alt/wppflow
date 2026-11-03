@@ -21,10 +21,10 @@ export default function HomesPage() {
       <JsonLd data={faqPage(HOMES_FAQS)} />
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Scriwo Homes", path: "/homes" }]} />
       <PageHero eyebrow={HOMES.eyebrow} title={HOMES.title} intro={HOMES.intro}>
-        <a href={`${HOMES.appUrl}/?signup=1`} {...trackAttrs("demo_click", { place: "homes-hero" })} className="btn-primary">
+        <a href={`${HOMES.appUrl}/?signup=1`} {...trackAttrs("trial_click", { place: "homes-hero" })} className="btn-primary">
           Start your 14-day free trial <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </a>
-        <Link href="/contact?interest=demo" className="btn-ghost">Book a demo for your agency</Link>
+        <Link href="/pricing" className="btn-ghost">See the plans</Link>
       </PageHero>
 
       <Container className="mt-4">

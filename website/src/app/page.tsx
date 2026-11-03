@@ -16,6 +16,7 @@ import { cheapestPaid, getCatalogue } from "@/lib/catalogue";
 import { formatMoney } from "@/lib/money";
 import { SITE } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
+import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 const AI_FIRST = [
   { icon: Sunrise, title: "Today: open it, and the work is prepared", body: "Waiting chats come first, each with the customer's mood, a one-line summary and a reply Riwo has already drafted. Read it, tap send.", href: "/features/ai-today-home" },
@@ -60,9 +61,7 @@ export default async function Home() {
               Scriwo is the shared WhatsApp inbox and CRM for companies with staff. Each teammate links their own number, owners see every conversation, and the team assigns, notes and resolves chats together. Riwo, the built-in AI, prepares replies, qualifies new customers and hands pricing to a person.
             </p>
             <div className="rise-3 mt-8 flex flex-wrap gap-3">
-              <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "home-hero" })} className="btn-primary">
-                Book a demo <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              <a href={trialUrl()} {...trackAttrs("trial_click", { place: "home-hero" })} className="btn-primary">{TRIAL_LABEL} <ArrowRight className="h-4 w-4" aria-hidden="true" /></a>
               <Link href="/pricing" className="btn-ghost">See plans</Link>
             </div>
             <ul className="rise-3 mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-fg-3">
