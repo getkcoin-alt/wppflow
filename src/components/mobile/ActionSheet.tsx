@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { SheetShell } from "../ui/Sheet";
+import { SheetShell, strayClick } from "../ui/Sheet";
 
 export interface SheetAction {
   key: string;
@@ -41,11 +41,12 @@ export function ActionSheet({ open, onClose, title, subtitle, actions }: { open:
                   <button
                     type="button"
                     disabled={a.disabled}
-                    onClick={() => {
+                    onClick={(e) => {
+                      if (strayClick(e)) return;
                       onClose();
                       a.onSelect();
                     }}
-                    className={`press w-full min-h-[52px] px-3 rounded-2xl flex items-center gap-3.5 text-left text-[16px] disabled:opacity-40 active:bg-surface-2 hover:bg-surface-2 transition-colors ${a.tone === "danger" ? "text-danger" : "text-fg"}`}
+                    className={`hit-none press w-full min-h-[52px] px-3 rounded-2xl flex items-center gap-3.5 text-left text-[16px] disabled:opacity-40 active:bg-surface-2 hover:bg-surface-2 transition-colors ${a.tone === "danger" ? "text-danger" : "text-fg"}`}
                   >
                     {Icon && <Icon className={`w-[22px] h-[22px] shrink-0 ${a.tone === "danger" ? "" : "text-fg-2"}`} strokeWidth={1.8} aria-hidden />}
                     <span className="min-w-0 flex-1">

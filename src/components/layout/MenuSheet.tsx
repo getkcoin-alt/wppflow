@@ -15,7 +15,7 @@ function Row({ item, locked, active, onOpen }: { item: NavItem; locked: boolean;
       onClick={onOpen}
       title={locked ? lockedHint(item) : undefined}
       aria-current={active ? "page" : undefined}
-      className="group relative w-full min-h-[56px] flex items-center gap-3 px-4 text-left active:bg-surface-2 hover:bg-surface-2 transition-colors"
+      className="hit-none group relative w-full min-h-[56px] flex items-center gap-3 px-4 text-left active:bg-surface-2 hover:bg-surface-2 transition-colors"
     >
       <span className={`h-9 w-9 shrink-0 rounded-xl grid place-items-center ${active ? "bg-brand-solid text-white" : "bg-surface-2 text-fg-2"}`}>
         <Icon className="w-[19px] h-[19px]" strokeWidth={1.9} aria-hidden />
@@ -124,7 +124,7 @@ export function MenuSheet({
 
             {account && (
               <Group>
-                <button type="button" onClick={account.onOpen} className="w-full min-h-[64px] flex items-center gap-3 px-4 text-left active:bg-surface-2 hover:bg-surface-2 transition-colors">
+                <button type="button" onClick={account.onOpen} className="hit-none w-full min-h-[64px] flex items-center gap-3 px-4 text-left active:bg-surface-2 hover:bg-surface-2 transition-colors">
                   <Avatar name={account.name} className="h-10 w-10 shrink-0 rounded-full" />
                   <span className="flex-1 min-w-0">
                     <span className="block truncate text-[16px] text-fg font-medium">{account.name}</span>

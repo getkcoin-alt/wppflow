@@ -529,6 +529,31 @@ describe("a sheet on a phone", () => {
     act(() => void vi.advanceTimersByTime(300));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
+  it("is not closed, nor a row picked, by the click that ends the long-press that opened it", () => {
+    function Holder() {
+      const [shown, setShown] = useState(false);
+      const press = useLongPress(() => setShown(true), { ms: 450 });
+      return (
+        <>
+          <button {...press}>hold</button>
+          <ActionSheet open={shown} onClose={() => setShown(false)} title="Menu" actions={[{ key: "a", label: "First", onSelect: () => void 0 }]} />
+        </>
+      );
+    }
+    render(<Holder />);
+    fireEvent.pointerDown(screen.getByText("hold"), { pointerId: 1, pointerType: "touch", clientX: 5, clientY: 5 });
+    act(() => void vi.advanceTimersByTime(500));
+    expect(screen.getByRole("dialog")).toBeDefined();
+    // the finger lifts and the browser sends a click to whatever is under it now: the backdrop
+    fireEvent.pointerUp(screen.getByText("hold"), { pointerId: 1, pointerType: "touch" });
+    fireEvent.click(screen.getByRole("button", { name: "Close" }), { detail: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "First" }), { detail: 1 });
+    expect(screen.getByRole("dialog")).toBeDefined();
+    // a later, real tap on the backdrop closes it
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Close" }), { pointerId: 2, pointerType: "touch" });
+    fireEvent.click(screen.getByRole("button", { name: "Close" }), { detail: 1 });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
   it("closes with Escape and keeps the page behind it still while it is open", () => {
     const onClose = vi.fn();
     const { unmount } = open(onClose);

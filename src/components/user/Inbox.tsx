@@ -30,6 +30,9 @@ import {
   Trash2,
   Ban,
   ChevronDown,
+  Copy,
+  Info,
+  Languages,
 } from "lucide-react";
 import { ScriwoMark } from "../brand/Logo";
 import { formatDuration } from "../../utils/duration";
@@ -52,10 +55,30 @@ import { chatMatches, chatSubtitle, chatTitle, mobileText } from "../../utils/ch
 import { MessageResults } from "./SearchResults";
 import { MIN_SEARCH_CHARS, useDebounced } from "../../utils/searchText";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import confetti from "canvas-confetti";
+import { useIsPhone } from "../../hooks/useMedia";
+import { useBackClose } from "../../hooks/useBackClose";
+import { usePullToRefresh } from "../../hooks/usePullToRefresh";
+import { useToast } from "../mobile/Toasts";
+import { PullIndicator } from "../mobile/PullIndicator";
+import { ActionSheet } from "../mobile/ActionSheet";
+import { Fab } from "../mobile/Fab";
+import { Sheet } from "../ui/Sheet";
+import { btn } from "../ui/styles";
+import { ChatRow } from "./inbox/ChatRow";
+import { PhoneListTop } from "./inbox/PhoneListTop";
+import { chatMenu, leadingSwipes, trailingSwipes, type ChatActionHandlers } from "./inbox/chatActions";
+import { PhoneThreadHeader } from "./inbox/PhoneThreadHeader";
+import { PhoneComposer } from "./inbox/PhoneComposer";
+import { chatSignal, waitingCount } from "../../utils/chatSignal";
 
 interface InboxProps {
   /** told when a conversation takes over the screen on a phone (so the tab bar can step aside) */
   onFocusChange?: (focused: boolean) => void;
+  /** Clears a chat's unread badge without opening it */
+  onMarkRead?: (chatId: string) => void;
+  /** Fetches the list again (a pull down on a phone), when there is no WhatsApp number to sync from */
+  onRefresh?: () => Promise<unknown>;
   chats: ChatThread[];
   messages: Record<string, ChatMessage[]>;
   contacts: Record<string, any>;
@@ -83,7 +106,8 @@ interface InboxProps {
     },
   ) => void;
   onAssignAgent: (chatId: string, agentName: string) => void;
-  onToggleResolve: (chatId: string) => void;
+  /** Finish a chat or reopen it. `closed` says which (an Undo must not depend on what the list showed a moment ago); left out, it flips. */
+  onToggleResolve: (chatId: string, closed?: boolean) => void;
   onOpenChat: (chatId: string, sync?: boolean) => void;
   onSyncInbox: (sessionKey: string) => Promise<void>;
   teammates?: { id: string | number; name: string }[];
@@ -202,6 +226,8 @@ function getMessageDateGroup(timestampStr?: string): string {
 
 export const Inbox: React.FC<InboxProps> = ({
   onFocusChange,
+  onMarkRead,
+  onRefresh,
   chats,
   messages,
   contacts,
@@ -269,6 +295,20 @@ export const Inbox: React.FC<InboxProps> = ({
     onFocusChange?.(mobileChatOpen);
     return () => onFocusChange?.(false);
   }, [mobileChatOpen, onFocusChange]);
+  const isPhone = useIsPhone();
+  // Back (the Android button, the iOS edge swipe) goes from the chat to the list, not out of the app
+  useBackClose(isPhone && mobileChatOpen, () => setMobileChatOpen(false));
+  const toast = useToast();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [filterSheet, setFilterSheet] = useState(false);
+  const [menuChat, setMenuChat] = useState<ChatThread | null>(null);
+  const [assignChat, setAssignChat] = useState<ChatThread | null>(null);
+  // the open chat on a phone: its "⋯", what a hold on a message offers, a message being translated, the saved replies, and the jump-to-latest button
+  const [threadMenu, setThreadMenu] = useState(false);
+  const [actionMsg, setActionMsg] = useState<ChatMessage | null>(null);
+  const [translateFor, setTranslateFor] = useState<string | null>(null);
+  const [quickSheet, setQuickSheet] = useState(false);
+  const [awaySince, setAwaySince] = useState<number | null>(null);
 
   // Automatically select and load messages for the active or first chat
   useEffect(() => {
@@ -293,7 +333,7 @@ export const Inbox: React.FC<InboxProps> = ({
   // Composer state
   const [inputText, setInputText] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
-  const composerInput = useRef<HTMLInputElement>(null);
+  const composerInput = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const [showCannedMenu, setShowCannedMenu] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{
     id: string;
@@ -328,7 +368,8 @@ export const Inbox: React.FC<InboxProps> = ({
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(25);
         }
-        setDeleteTarget(msg);
+        if (isPhone) setActionMsg(msg);
+        else setDeleteTarget(msg);
       }
     }, 500);
   };
@@ -391,6 +432,9 @@ export const Inbox: React.FC<InboxProps> = ({
     setSwipeMsgId(null);
     setSwipeOffset(0);
     clearTimeout(longPressTimer.current);
+    setActionMsg(null);
+    setTranslateFor(null);
+    setAwaySince(null);
   }, [activeChatId]);
 
   // How long chats have waited moves on while the screen is open.
@@ -495,7 +539,7 @@ export const Inbox: React.FC<InboxProps> = ({
   const virtualChats = useVirtualizer({
     count: filteredChats.length,
     getScrollElement: () => chatListRef.current,
-    estimateSize: () => 82,
+    estimateSize: () => (isPhone ? 80 : 82),
     overscan: 8,
     enabled: filteredChats.length > 100,
   });
@@ -547,6 +591,75 @@ export const Inbox: React.FC<InboxProps> = ({
       setIsSyncing(false);
     }
   };
+
+  // The phone list: what a swipe or a hold can do with a chat
+  const me = teammates.find((m) => String(m.id) === String(currentUserId)) || null;
+  const openFromList = (id: string) => {
+    setActiveChatId(id);
+    setMobileChatOpen(true);
+    onOpenChat(id);
+  };
+  const rowActions: ChatActionHandlers = {
+    me,
+    canPickTeammate: teammates.length > 0,
+    onOpen: (c) => openFromList(c.id),
+    onAssign: (c, name) => {
+      onAssignAgent(c.id, name);
+      toast.show({ text: name === "Unassigned" ? "Unassigned" : `Assigned to ${name === me?.name ? "you" : name}` });
+    },
+    onPickAssignee: (c) => setAssignChat(c),
+    onMarkRead: onMarkRead ? (c) => onMarkRead(c.id) : undefined,
+    onTogglePin: onTogglePin ? (c, pinned) => onTogglePin(c.id, pinned) : undefined,
+    onToggleDone: (c) => {
+      onToggleResolve(c.id, !c.isClosed);
+      // the last chat anyone was waiting on, finished from an unfiltered list: a moment to enjoy
+      const zero = !c.isClosed && waitingCount([c]) > 0 && waitingCount(chats.filter((x) => x.id !== c.id)) === 0 && countExtra(extra) === 0 && filterTab === "all" && !searchQuery.trim();
+      if (zero) confetti({ particleCount: 60, spread: 70, origin: { y: 0.4 }, disableForReducedMotion: true });
+      toast.show({ text: c.isClosed ? "Reopened" : zero ? "Marked done. Nobody is waiting now" : "Marked done", actionLabel: "Undo", onAction: () => onToggleResolve(c.id, Boolean(c.isClosed)) });
+    },
+    onMore: (c) => setMenuChat(c),
+  };
+  // pull the list down to refresh it from WhatsApp, in place of the refresh button
+  const pull = usePullToRefresh(
+    chatListRef,
+    async () => {
+      if (connectedSessions.length > 0) await handleSync();
+      else await onRefresh?.();
+    },
+    isPhone && !mobileChatOpen && (connectedSessions.length > 0 || Boolean(onRefresh)),
+  );
+
+  // a file chosen in the composer (the same for the desktop box and the phone's "+")
+  const handleFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !activeChat) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setReplyError("Files must be 10 MB or smaller");
+      toast.show({ text: "Files must be 10 MB or smaller", tone: "error" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const kind = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : file.type.startsWith("audio/") ? "audio" : "document";
+      onSendAttachment(activeChat.id, { data: String(reader.result), filename: file.name, kind, mimeType: file.type });
+      event.target.value = "";
+    };
+    reader.readAsDataURL(file);
+  };
+  // on a phone, a button takes you back to the newest message once you have scrolled away from it
+  const onFeedScroll = () => {
+    const f = feedRef.current;
+    if (!f) return;
+    const away = f.scrollHeight - f.scrollTop - f.clientHeight > 320;
+    setAwaySince((cur) => (away ? (cur ?? currentMessages.length) : null));
+  };
+  const quoteOf = (msg: ChatMessage) => ({
+    id: msg.id,
+    text: msg.text,
+    sender: msg.sender,
+    senderName: msg.sender === "agent" || msg.sender === "bot" ? msg.agentName || "You" : activeChat?.contactName || "Customer",
+    type: msg.type,
+  });
 
   const renderStatusTick = (msg: ChatMessage) => {
     if (msg.status === "uncertain")
@@ -619,12 +732,171 @@ export const Inbox: React.FC<InboxProps> = ({
     );
   }
 
+  // what the details show: a side panel on wide screens, a sheet on a phone
+  const detailsBody =
+    activeContact && activeChat ? (
+            <div className={isPhone ? "space-y-6" : "p-5 space-y-6"}>
+              <div className="text-center">
+                <Avatar
+                  src={activeContact.avatar}
+                  name={activeContact.name}
+                  className="w-24 h-24 rounded-full object-cover mx-auto"
+                />
+                <ContactName
+                  key={activeContact.id}
+                  name={activeContact.name}
+                  whatsappName={activeContact.whatsappName}
+                  onRename={onRenameContact ? (patch) => onRenameContact(activeContact.id, patch) : undefined}
+                />
+                <div className="text-[14px] text-fg-2 mt-0.5 num">
+                  {mobileText(activeContact.phone)}
+                </div>
+                {activeContact.email && (
+                  <div className="text-[13px] text-fg-3 mt-0.5">
+                    {activeContact.email}
+                  </div>
+                )}
+                {activeContact.storeConnected && (
+                  <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-brand/10 text-brand text-[12.5px] font-medium">
+                    Lifetime value $
+                    {activeContact.lifetimeValue?.toLocaleString()}
+                  </div>
+                )}
+              </div>
+
+              <section className="space-y-2">
+                <h5 className="eyebrow">Labels</h5>
+                {onSetContactLabels ? (
+                  <LabelPicker value={activeContact.labels ?? []} onChange={(ids) => onSetContactLabels(activeContact.id, ids)} />
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {(activeContact.labels ?? []).length === 0 && <span className="text-[13px] text-fg-3">No labels yet</span>}
+                    {(activeContact.labels ?? []).map((l: { id: string; name: string; color: string }) => (
+                      <LabelChip key={l.id} label={l as any} />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {activeContact.storeConnected && (
+                <section className="space-y-2">
+                  <h5 className="eyebrow flex items-center gap-1.5">
+                    <ShoppingBag className="w-3 h-3" />
+                    Orders
+                  </h5>
+                  {(activeContact.orders || []).length > 0 ? (
+                    <div className="space-y-2">
+                      {(activeContact.orders || []).map((ord: any) => (
+                        <div
+                          key={ord.id}
+                          className="p-3 bg-surface-2 rounded-2xl text-[13px] space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-fg num">
+                              {ord.orderNumber}
+                            </span>
+                            <span className="text-brand font-semibold num">
+                              {ord.total} {ord.currency}
+                            </span>
+                          </div>
+                          <div className="text-fg-2 line-clamp-1">
+                            {ord.itemsSummary}
+                          </div>
+                          <div className="flex items-center justify-between text-[12px] text-fg-3">
+                            <span>{ord.date}</span>
+                            <span>{ord.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-fg-3">
+                      No orders recorded yet.
+                    </p>
+                  )}
+                </section>
+              )}
+
+              {Object.keys(activeContact.customTraits || {}).length > 0 && (
+                <section className="space-y-2">
+                  <h5 className="eyebrow">Details</h5>
+                  <dl className="text-[13.5px] divide-y divide-line">
+                    {Object.entries(activeContact.customTraits || {}).map(
+                      ([key, val]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between gap-4 py-2"
+                        >
+                          <dt className="text-fg-2">{key}</dt>
+                          <dd className="text-fg font-medium text-right">
+                            {String(val)}
+                          </dd>
+                        </div>
+                      ),
+                    )}
+                  </dl>
+                </section>
+              )}
+
+              <section className="space-y-2">
+                <h5 className="eyebrow flex items-center gap-1.5">
+                  <Lock className="w-3 h-3" />
+                  Team notes
+                </h5>
+                {(activeContact.notes || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {activeContact.notes.map((n: any) => (
+                      <div
+                        key={n.id}
+                        className="note-bubble rounded-2xl px-3.5 py-2.5 space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-[12px] text-warn font-medium">
+                          <span>{n.author}</span>
+                          <span className="text-fg-3 font-normal num">
+                            {formatChatTimestamp(n.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-fg text-[13.5px] leading-snug whitespace-pre-wrap">
+                          {n.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-fg-3 leading-relaxed">
+                    Switch the composer to “Team note” to leave a private note
+                    only your team can see.
+                  </p>
+                )}
+              </section>
+            </div>
+    ) : null;
+
   return (
     <div className="flex h-full min-h-0 bg-surface overflow-hidden">
       {/* ── Conversations ─────────────────────────────────────────────────── */}
       <div
         className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} w-full lg:w-[380px] lg:border-r border-line flex-col bg-surface shrink-0 min-h-0`}
       >
+        {isPhone && (
+          <PhoneListTop
+            searchOpen={searchOpen}
+            onSearchOpen={setSearchOpen}
+            query={searchQuery}
+            onQuery={setSearchQuery}
+            tab={filterTab}
+            onTab={setFilterTab}
+            extra={extra}
+            onExtra={setExtra}
+            unread={chats.filter((c) => c.unreadCount > 0).length}
+            waiting={waitingCount(chats)}
+            onOpenFilters={() => setFilterSheet(true)}
+            numbersDown={sessions.filter((s) => s.status !== "CONNECTED").length}
+            onOpenSessions={onOpenSessions}
+            availability={availability?.inRotation && onSetAvailable ? { inRotation: true, available: availability.available, onToggle: () => onSetAvailable(!availability.available) } : null}
+          />
+        )}
+        {!isPhone && (<>
         <div className="px-5 pt-5 pb-3 flex items-start justify-between shrink-0">
           <div>
             <h2 className="text-[26px] font-semibold leading-tight text-fg">
@@ -760,11 +1032,18 @@ export const Inbox: React.FC<InboxProps> = ({
           {showFilters && <InboxFilters labels={labels} teams={teams} value={extra} onChange={setExtra} />}
         </div>
 
+        </>)}
+
         {/* Conversation list */}
         <div
           ref={chatListRef}
-          className="flex-1 overflow-y-auto px-2 pb-3 min-h-0"
+          className={`flex-1 overflow-y-auto ${isPhone ? "scroll-contain" : "px-2"} pb-3 min-h-0`}
         >
+          {isPhone && (
+            <div className="sticky top-0 z-20 h-0">
+              <PullIndicator pull={pull.pull} refreshing={pull.refreshing} />
+            </div>
+          )}
           {isLoading && filteredChats.length === 0 && (
             <div
               role="status"
@@ -790,7 +1069,11 @@ export const Inbox: React.FC<InboxProps> = ({
               filteredChats.length > 100 &&
               virtualChats.getVirtualItems().length
                 ? { height: virtualChats.getTotalSize(), position: "relative" }
-                : undefined
+                : isPhone && pull.pull > 0
+                  ? { transform: `translateY(${pull.pull}px)` }
+                  : isPhone
+                    ? { transition: "transform 0.2s cubic-bezier(0.2, 0, 0, 1)" }
+                    : undefined
             }
           >
             {filteredChats.length === 0 ? (
@@ -831,6 +1114,28 @@ export const Inbox: React.FC<InboxProps> = ({
               </div>
             ) : (
               chatRows.map(({ chat, virtual }) => {
+                if (isPhone) {
+                  return (
+                    <div
+                      key={chat.id}
+                      data-index={virtual?.index}
+                      ref={virtual ? virtualChats.measureElement : undefined}
+                      style={virtual ? { position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${virtual.start}px)` } : undefined}
+                    >
+                      <ChatRow
+                        chat={chat}
+                        title={chatTitle(chat.contactName, chat.phone, chat.isGroup)}
+                        time={formatChatTimestamp(chat.lastMessage?.timestamp)}
+                        signal={chatSignal(chat, now, replyTargetMinutes)}
+                        active={chat.id === activeChatId}
+                        leading={leadingSwipes(chat, rowActions)}
+                        trailing={trailingSwipes(chat, rowActions)}
+                        onOpen={() => openFromList(chat.id)}
+                        onMenu={() => setMenuChat(chat)}
+                      />
+                    </div>
+                  );
+                }
                 const isActive = chat.id === activeChatId;
                 const formattedTime = formatChatTimestamp(
                   chat.lastMessage?.timestamp,
@@ -1011,7 +1316,24 @@ export const Inbox: React.FC<InboxProps> = ({
       <div
         className={`${mobileChatOpen ? "flex" : "hidden lg:flex"} flex-1 flex-col bg-app min-w-0 min-h-0 relative`}
       >
-        {activeChat ? (
+        {activeChat && isPhone ? (
+          <PhoneThreadHeader
+            title={chatTitle(activeChat.contactName, activeChat.phone, activeChat.isGroup)}
+            subtitle={
+              activeChat.isClosed
+                ? "Resolved"
+                : activeChat.isGroup
+                  ? `${activeChat.groupMembersCount || ""} ${activeChat.groupMembersCount ? "members" : "Group"}`
+                  : [chatSubtitle(activeChat), (() => { const line = sessions.length > 1 ? sessionOfChat(sessions, activeChat) : null; return line ? `via ${numberName(line, currentUserId)}` : ""; })()].filter(Boolean).join(" · ")
+            }
+            avatar={activeChat.avatar}
+            isGroup={activeChat.isGroup}
+            otherUnread={chats.filter((c) => c.id !== activeChat.id && c.unreadCount > 0).length}
+            onBack={() => setMobileChatOpen(false)}
+            onDetails={() => setShowCrmPanel(true)}
+            onMore={() => setThreadMenu(true)}
+          />
+        ) : activeChat ? (
           <div className="h-[68px] px-3 sm:px-5 glass border-b border-line flex items-center justify-between gap-3 shrink-0 z-10">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -1153,7 +1475,8 @@ export const Inbox: React.FC<InboxProps> = ({
         {/* ── Messages ── */}
         <div
           ref={feedRef}
-          className="flex-1 overflow-y-auto px-3 sm:px-8 py-6 space-y-1.5 chat-wallpaper min-h-0"
+          onScroll={isPhone ? onFeedScroll : undefined}
+          className={`flex-1 overflow-y-auto chat-wallpaper min-h-0 ${isPhone ? "px-1.5 py-3 scroll-contain" : "px-3 sm:px-8 py-6 space-y-1.5"}`}
         >
           {!activeChat && (
             <div className="h-full flex flex-col items-center justify-center text-center space-y-4 text-fg-2">
@@ -1270,8 +1593,11 @@ export const Inbox: React.FC<InboxProps> = ({
                   Load older messages
                 </button>
               )}
-              {currentMessages.map((msg) => {
+              {currentMessages.map((msg, index) => {
                 const isOut = msg.sender === "agent" || msg.sender === "bot";
+                // on a phone, a run of messages from one side is one group: the first has the tail, the rest sit close under it
+                const before = currentMessages[index - 1];
+                const startsRun = isPhone && (!before || before.sender !== msg.sender || Boolean(before.isNote) || before.type === "internal_note");
 
                 // Internal Team Note Bubble
                 if (msg.isNote || msg.type === "internal_note") {
@@ -1300,7 +1626,7 @@ export const Inbox: React.FC<InboxProps> = ({
                 return (
                   <div
                     key={msg.id}
-                    className={`group relative flex my-0.5 px-2 ${
+                    className={`group relative flex ${isPhone ? `px-1 ${startsRun ? "mt-2" : "mt-0.5"}` : "my-0.5 px-2"} ${
                       isOut ? "justify-end" : "justify-start"
                     } ${activeMenuMsgId === msg.id ? "z-30" : ""}`}
                   >
@@ -1318,14 +1644,14 @@ export const Inbox: React.FC<InboxProps> = ({
                             ? "none"
                             : "transform 0.2s cubic-bezier(0.2, 0, 0, 1)",
                       }}
-                      className={`relative max-w-[82%] md:max-w-[68%] rounded-[18px] px-3.5 py-2 text-[14.5px] text-fg space-y-1 animate-fade touch-pan-y shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] ${
-                        isOut
-                          ? "bg-bubble-out rounded-tr-xs"
-                          : "bg-bubble-in ring-1 ring-line/50 rounded-tl-xs"
+                      className={`relative rounded-[18px] px-3.5 py-2 text-fg space-y-1 animate-fade touch-pan-y shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] ${
+                        isPhone
+                          ? `max-w-[84%] text-[16px] ${isOut ? "bg-bubble-out" : "bg-bubble-in"} ${startsRun ? (isOut ? "bubble-tail-out rounded-tr-[5px]" : "bubble-tail-in rounded-tl-[5px]") : ""}`
+                          : `max-w-[82%] md:max-w-[68%] text-[14.5px] ${isOut ? "bg-bubble-out rounded-tr-xs" : "bg-bubble-in ring-1 ring-line/50 rounded-tl-xs"}`
                       }`}
                     >
-                      {/* WhatsApp Web style top-right hover menu trigger */}
-                      {msg.type !== "revoked" && msg.status !== "deleted" && (
+                      {/* WhatsApp Web style top-right hover menu trigger (a hold, on a phone) */}
+                      {!isPhone && msg.type !== "revoked" && msg.status !== "deleted" && (
                         <div className="absolute top-1 right-1.5 z-20 flex items-center gap-0.5">
                           <button
                             type="button"
@@ -1513,10 +1839,13 @@ export const Inbox: React.FC<InboxProps> = ({
                             </p>
                             {assistant?.available &&
                               !isOut &&
-                              msg.text.trim().length > 1 && (
+                              msg.text.trim().length > 1 &&
+                              (!isPhone || translateFor === msg.id) && (
                                 <TranslateMessage
                                   text={msg.text}
                                   client={aiClient}
+                                  autoStart={isPhone}
+                                  onHide={isPhone ? () => setTranslateFor(null) : undefined}
                                 />
                               )}
                           </>
@@ -1587,12 +1916,25 @@ export const Inbox: React.FC<InboxProps> = ({
                 );
               })}
               <div ref={messagesEndRef} />
+              {isPhone && awaySince !== null && (
+                <div className="sticky bottom-2 h-0 flex justify-end pr-2 z-20">
+                  <button
+                    type="button"
+                    aria-label="Jump to the latest message"
+                    onClick={() => messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" })}
+                    className="press -translate-y-full h-11 min-w-11 px-3 rounded-full bg-surface ring-1 ring-line pop inline-flex items-center justify-center gap-1.5 text-fg-2"
+                  >
+                    {currentMessages.length > awaySince && <span className="text-[13px] font-semibold text-brand num">{currentMessages.length - awaySince}</span>}
+                    <ChevronDown className="w-5 h-5" aria-hidden />
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
 
         {/* Canned Quick Replies Menu */}
-        {showCannedMenu && (
+        {showCannedMenu && !isPhone && (
           <div className="mx-3 sm:mx-6 mb-2 p-3 rounded-3xl bg-surface border border-line shadow-card animate-rise z-20">
             {canManage && onSaveReply && (
               <form
@@ -1691,7 +2033,41 @@ export const Inbox: React.FC<InboxProps> = ({
         )}
 
         {/* ── Composer ── */}
-        {activeChat && (
+        {activeChat && isPhone && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,video/mp4,audio/mpeg,audio/ogg,audio/webm,application/pdf,text/plain"
+              className="hidden"
+              aria-hidden
+              tabIndex={-1}
+              onChange={handleFile}
+            />
+            <PhoneComposer
+              value={inputText}
+              onChange={setInputText}
+              onSend={handleSend}
+              inputRef={composerInput}
+              note={isNoteMode}
+              onNote={setIsNoteMode}
+              replyingTo={replyingTo}
+              onCancelReply={() => setReplyingTo(null)}
+              writing={(typing[activeChat.id]?.length ?? 0) > 0 ? `${typing[activeChat.id].join(" and ")} ${typing[activeChat.id].length > 1 ? "are" : "is"} writing a reply to this customer` : undefined}
+              attach={{ enabled: mediaEnabled, onPick: () => fileInputRef.current?.click() }}
+              onQuickReplies={() => setQuickSheet(true)}
+              riwo={
+                assistant?.available
+                  ? {
+                      draft: currentMessages.length > 0 && currentMessages[currentMessages.length - 1].sender === "customer" ? () => riwo.run({ kind: "reply", tone: "friendly" }) : null,
+                      summarize: () => riwo.run({ kind: "summary" }),
+                    }
+                  : null
+              }
+            />
+          </>
+        )}
+        {activeChat && !isPhone && (
           <div className="px-3 sm:px-6 pt-2 pb-3 sm:pb-4 shrink-0 relative z-30 bg-app">
             {(typing[activeChat.id]?.length ?? 0) > 0 && (
               <p role="status" className="mb-2 px-3 py-1.5 rounded-full bg-warn/10 text-warn text-[13px] font-medium flex items-center gap-2">
@@ -1787,32 +2163,7 @@ export const Inbox: React.FC<InboxProps> = ({
                   type="file"
                   accept="image/jpeg,image/png,image/webp,video/mp4,audio/mpeg,audio/ogg,audio/webm,application/pdf,text/plain"
                   className="hidden"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (!file || !activeChat) return;
-                    if (file.size > 10 * 1024 * 1024) {
-                      setReplyError("Files must be 10 MB or smaller");
-                      return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      const kind = file.type.startsWith("image/")
-                        ? "image"
-                        : file.type.startsWith("video/")
-                          ? "video"
-                          : file.type.startsWith("audio/")
-                            ? "audio"
-                            : "document";
-                      onSendAttachment(activeChat.id, {
-                        data: String(reader.result),
-                        filename: file.name,
-                        kind,
-                        mimeType: file.type,
-                      });
-                      event.target.value = "";
-                    };
-                    reader.readAsDataURL(file);
-                  }}
+                  onChange={handleFile}
                 />
 
                 <button
@@ -1832,7 +2183,7 @@ export const Inbox: React.FC<InboxProps> = ({
 
                 <div className="flex-1 relative">
                   <input
-                    ref={composerInput}
+                    ref={composerInput as React.RefObject<HTMLInputElement>}
                     type="text"
                     value={inputText}
                     onChange={(e) => {
@@ -1878,7 +2229,12 @@ export const Inbox: React.FC<InboxProps> = ({
       </div>
 
       {/* ── Details (a side panel on wide screens, a sheet on small ones) ─── */}
-      {showCrmPanel && activeContact && activeChat && (
+      {isPhone && (
+        <Sheet open={showCrmPanel && Boolean(activeContact && activeChat)} onClose={() => setShowCrmPanel(false)} title="Details">
+          {detailsBody}
+        </Sheet>
+      )}
+      {!isPhone && showCrmPanel && activeContact && activeChat && (
         <>
           <button
             aria-label="Close details"
@@ -1897,141 +2253,7 @@ export const Inbox: React.FC<InboxProps> = ({
               </button>
             </div>
 
-            <div className="p-5 space-y-6">
-              <div className="text-center">
-                <Avatar
-                  src={activeContact.avatar}
-                  name={activeContact.name}
-                  className="w-24 h-24 rounded-full object-cover mx-auto"
-                />
-                <ContactName
-                  key={activeContact.id}
-                  name={activeContact.name}
-                  whatsappName={activeContact.whatsappName}
-                  onRename={onRenameContact ? (patch) => onRenameContact(activeContact.id, patch) : undefined}
-                />
-                <div className="text-[14px] text-fg-2 mt-0.5 num">
-                  {mobileText(activeContact.phone)}
-                </div>
-                {activeContact.email && (
-                  <div className="text-[13px] text-fg-3 mt-0.5">
-                    {activeContact.email}
-                  </div>
-                )}
-                {activeContact.storeConnected && (
-                  <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-brand/10 text-brand text-[12.5px] font-medium">
-                    Lifetime value $
-                    {activeContact.lifetimeValue?.toLocaleString()}
-                  </div>
-                )}
-              </div>
-
-              <section className="space-y-2">
-                <h5 className="eyebrow">Labels</h5>
-                {onSetContactLabels ? (
-                  <LabelPicker value={activeContact.labels ?? []} onChange={(ids) => onSetContactLabels(activeContact.id, ids)} />
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {(activeContact.labels ?? []).length === 0 && <span className="text-[13px] text-fg-3">No labels yet</span>}
-                    {(activeContact.labels ?? []).map((l: { id: string; name: string; color: string }) => (
-                      <LabelChip key={l.id} label={l as any} />
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {activeContact.storeConnected && (
-                <section className="space-y-2">
-                  <h5 className="eyebrow flex items-center gap-1.5">
-                    <ShoppingBag className="w-3 h-3" />
-                    Orders
-                  </h5>
-                  {(activeContact.orders || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {(activeContact.orders || []).map((ord: any) => (
-                        <div
-                          key={ord.id}
-                          className="p-3 bg-surface-2 rounded-2xl text-[13px] space-y-1"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-fg num">
-                              {ord.orderNumber}
-                            </span>
-                            <span className="text-brand font-semibold num">
-                              {ord.total} {ord.currency}
-                            </span>
-                          </div>
-                          <div className="text-fg-2 line-clamp-1">
-                            {ord.itemsSummary}
-                          </div>
-                          <div className="flex items-center justify-between text-[12px] text-fg-3">
-                            <span>{ord.date}</span>
-                            <span>{ord.status}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[13px] text-fg-3">
-                      No orders recorded yet.
-                    </p>
-                  )}
-                </section>
-              )}
-
-              {Object.keys(activeContact.customTraits || {}).length > 0 && (
-                <section className="space-y-2">
-                  <h5 className="eyebrow">Details</h5>
-                  <dl className="text-[13.5px] divide-y divide-line">
-                    {Object.entries(activeContact.customTraits || {}).map(
-                      ([key, val]) => (
-                        <div
-                          key={key}
-                          className="flex justify-between gap-4 py-2"
-                        >
-                          <dt className="text-fg-2">{key}</dt>
-                          <dd className="text-fg font-medium text-right">
-                            {String(val)}
-                          </dd>
-                        </div>
-                      ),
-                    )}
-                  </dl>
-                </section>
-              )}
-
-              <section className="space-y-2">
-                <h5 className="eyebrow flex items-center gap-1.5">
-                  <Lock className="w-3 h-3" />
-                  Team notes
-                </h5>
-                {(activeContact.notes || []).length > 0 ? (
-                  <div className="space-y-2">
-                    {activeContact.notes.map((n: any) => (
-                      <div
-                        key={n.id}
-                        className="note-bubble rounded-2xl px-3.5 py-2.5 space-y-1"
-                      >
-                        <div className="flex items-center justify-between text-[12px] text-warn font-medium">
-                          <span>{n.author}</span>
-                          <span className="text-fg-3 font-normal num">
-                            {formatChatTimestamp(n.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-fg text-[13.5px] leading-snug whitespace-pre-wrap">
-                          {n.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[13px] text-fg-3 leading-relaxed">
-                    Switch the composer to “Team note” to leave a private note
-                    only your team can see.
-                  </p>
-                )}
-              </section>
-            </div>
+            {detailsBody}
           </aside>
         </>
       )}
@@ -2050,6 +2272,122 @@ export const Inbox: React.FC<InboxProps> = ({
           }}
           onExpired={onRefreshMedia}
         />
+      )}
+
+      {/* ── Phone: the one main action, the filter sheet and the menus behind a hold ── */}
+      {isPhone && !mobileChatOpen && onNewChat && <Fab label="New chat" icon={MessageSquarePlus} onClick={() => onNewChat("chat")} hidden={searchOpen} />}
+      {isPhone && (
+        <>
+          <Sheet
+            open={filterSheet}
+            onClose={() => setFilterSheet(false)}
+            title="Filters"
+            footer={
+              <button type="button" onClick={() => setFilterSheet(false)} className={btn("primary")}>
+                Show {filteredChats.length} {filteredChats.length === 1 ? "chat" : "chats"}
+              </button>
+            }
+          >
+            <div className="space-y-4">
+              <NumberSwitch sessions={sessions} value={activeNumber} onChange={setNumberFilter} currentUserId={currentUserId} />
+              <InboxFilters labels={labels} teams={teams} value={extra} onChange={setExtra} />
+            </div>
+          </Sheet>
+          <ActionSheet
+            open={menuChat !== null}
+            onClose={() => setMenuChat(null)}
+            title={menuChat ? chatTitle(menuChat.contactName, menuChat.phone, menuChat.isGroup) : undefined}
+            subtitle={menuChat?.assignedTo ? `With ${menuChat.assignedTo}` : undefined}
+            actions={menuChat ? chatMenu(menuChat, rowActions) : []}
+          />
+          {activeChat && (
+            <ActionSheet
+              open={threadMenu}
+              onClose={() => setThreadMenu(false)}
+              title={chatTitle(activeChat.contactName, activeChat.phone, activeChat.isGroup)}
+              actions={[
+                { key: "details", label: "Contact details", icon: Info, onSelect: () => setShowCrmPanel(true) },
+                ...chatMenu(activeChat, rowActions).filter((a) => a.key !== "open" && a.key !== "read"),
+                {
+                  key: "history",
+                  label: "Load earlier messages",
+                  icon: RefreshCw,
+                  hint: "From WhatsApp",
+                  onSelect: async () => {
+                    if (isSyncingChat) return;
+                    setIsSyncingChat(true);
+                    try {
+                      await onOpenChat(activeChat.id, true);
+                    } finally {
+                      setIsSyncingChat(false);
+                    }
+                  },
+                },
+              ]}
+            />
+          )}
+          <ActionSheet
+            open={actionMsg !== null}
+            onClose={() => setActionMsg(null)}
+            title="Message"
+            subtitle={actionMsg?.text ? actionMsg.text.slice(0, 80) : undefined}
+            actions={
+              actionMsg
+                ? [
+                    { key: "reply", label: "Reply", icon: Reply, onSelect: () => { setReplyingTo(quoteOf(actionMsg)); composerInput.current?.focus(); } },
+                    ...(actionMsg.text
+                      ? [{ key: "copy", label: "Copy", icon: Copy, onSelect: () => { void navigator.clipboard?.writeText(actionMsg.text).then(() => toast.show({ text: "Copied" })).catch(() => {}); } }]
+                      : []),
+                    ...(assistant?.available && actionMsg.sender === "customer" && (!actionMsg.type || actionMsg.type === "text") && actionMsg.text.trim().length > 1
+                      ? [{ key: "translate", label: "Translate", icon: Languages, hint: "By Riwo", onSelect: () => setTranslateFor(actionMsg.id) }]
+                      : []),
+                    ...(onDeleteMessage ? [{ key: "delete", label: "Delete", icon: Trash2, tone: "danger" as const, onSelect: () => setDeleteTarget(actionMsg) }] : []),
+                  ]
+                : []
+            }
+          />
+          <Sheet open={quickSheet} onClose={() => setQuickSheet(false)} title="Quick replies" subtitle="Tap one to put it in the message box">
+            {cannedReplies.length === 0 ? (
+              <p className="text-[14.5px] text-fg-2 py-4">No saved replies yet. A manager can add them from the computer.</p>
+            ) : (
+              <ul className="-mx-3">
+                {cannedReplies.map((cr) => (
+                  <li key={cr.shortcut}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleInsertCanned(cr.text);
+                        setQuickSheet(false);
+                        composerInput.current?.focus();
+                      }}
+                      className="hit-none w-full text-left px-3 py-3 rounded-2xl active:bg-surface-2"
+                    >
+                      <span className="flex items-baseline gap-2">
+                        <span className="font-mono text-brand text-[13px] font-semibold">{cr.shortcut}</span>
+                        <span className="font-semibold text-[15.5px] text-fg truncate">{cr.title}</span>
+                      </span>
+                      <span className="block text-[14px] text-fg-2 line-clamp-2 mt-0.5">{cr.text}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Sheet>
+          <ActionSheet
+            open={assignChat !== null}
+            onClose={() => setAssignChat(null)}
+            title="Assign to"
+            subtitle={assignChat ? chatTitle(assignChat.contactName, assignChat.phone, assignChat.isGroup) : undefined}
+            actions={
+              assignChat
+                ? [
+                    ...teammates.map((m) => ({ key: String(m.id), label: m.id === me?.id ? `${m.name} (you)` : m.name, icon: UserCheck, hint: m.name === assignChat.assignedTo ? "Has it now" : undefined, onSelect: () => rowActions.onAssign?.(assignChat, m.name) })),
+                    { key: "none", label: "Unassigned", icon: Users, onSelect: () => rowActions.onAssign?.(assignChat, "Unassigned") },
+                  ]
+                : []
+            }
+          />
+        </>
       )}
 
       {/* Delete Message Confirmation Modal */}

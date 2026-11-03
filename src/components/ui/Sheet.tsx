@@ -22,6 +22,14 @@ function useScrollLock(active: boolean) {
   }, [active]);
 }
 
+// A press that began before a sheet opened (a long-press is what opens a menu) must not click what appears under the finger when it
+// lifts: the browser sends that click to whatever is there by then, which would close the menu it just opened, or pick its first row.
+let lastPress = 0;
+let lastOpened = 0;
+if (typeof document !== "undefined") document.addEventListener("pointerdown", () => (lastPress = performance.now()), true);
+/** True for a click that belongs to a press which started before the newest sheet opened. Keyboard clicks (detail 0) are never stray. */
+export const strayClick = (e: { detail: number }) => e.detail > 0 && lastPress < lastOpened;
+
 export interface SheetDrag {
   /** put these on the part of the sheet the finger may pull: the grabber and the title */
   handlers: Record<string, unknown>;
@@ -113,6 +121,9 @@ export function SheetShell({
   const reduced = usePrefersReducedMotion();
   useBackClose(open && isSheet, onClose);
   useScrollLock(open && isSheet);
+  useEffect(() => {
+    if (open) lastOpened = performance.now();
+  }, [open]);
   const drag = useSheetDrag(open && isSheet, onClose, reduced);
   useEffect(() => {
     if (!open) return;
@@ -127,7 +138,9 @@ export function SheetShell({
     <div className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center sm:p-6">
       <button
         aria-label="Close"
-        onClick={onClose}
+        onClick={(e) => {
+          if (!strayClick(e)) onClose();
+        }}
         className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm animate-fade"
         style={drag.progress ? { opacity: 1 - drag.progress * 0.7 } : undefined}
       />

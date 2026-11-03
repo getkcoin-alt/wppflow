@@ -66,6 +66,7 @@ export function Swipeable({
   trailing = [],
   enabled = true,
   className = "",
+  background = "bg-app",
   onOpenChange,
 }: {
   children: ReactNode;
@@ -75,17 +76,19 @@ export function Swipeable({
   trailing?: SwipeAction[];
   enabled?: boolean;
   className?: string;
+  /** the row's own background, which must match the list it sits in so the trays are what is revealed, nothing else */
+  background?: string;
   onOpenChange?: (open: boolean) => void;
 }) {
   if (!enabled || (!leading.length && !trailing.length)) return <div className={className}>{children}</div>;
   return (
-    <SwipeRow leading={leading} trailing={trailing} className={className} onOpenChange={onOpenChange}>
+    <SwipeRow leading={leading} trailing={trailing} className={className} background={background} onOpenChange={onOpenChange}>
       {children}
     </SwipeRow>
   );
 }
 
-function SwipeRow({ children, leading, trailing, className, onOpenChange }: { children: ReactNode; leading: SwipeAction[]; trailing: SwipeAction[]; className: string; onOpenChange?: (open: boolean) => void }) {
+function SwipeRow({ children, leading, trailing, className, background, onOpenChange }: { children: ReactNode; leading: SwipeAction[]; trailing: SwipeAction[]; className: string; background: string; onOpenChange?: (open: boolean) => void }) {
   const reduced = usePrefersReducedMotion();
   const box = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
@@ -240,7 +243,7 @@ function SwipeRow({ children, leading, trailing, className, onOpenChange }: { ch
                 haptic.success();
                 a.onTrigger();
               }}
-              className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 text-[12px] font-semibold ${TONE[a.tone || "neutral"]}`}
+              className={`hit-none flex-1 min-w-0 flex flex-col items-center justify-center gap-1 text-[12px] font-semibold ${TONE[a.tone || "neutral"]}`}
             >
               {Icon && <Icon className="w-5 h-5" aria-hidden />}
               <span className="truncate max-w-full px-1">{a.label}</span>
@@ -256,7 +259,7 @@ function SwipeRow({ children, leading, trailing, className, onOpenChange }: { ch
       {trayFor(leading, "left")}
       {trayFor(trailing, "right")}
       <div
-        className="relative bg-app"
+        className={`relative ${background}`}
         style={{
           transform: rest ? undefined : `translateX(${offset}px)`,
           transition: dragging || reduced ? "none" : "transform 0.22s cubic-bezier(0.2, 0, 0, 1)",

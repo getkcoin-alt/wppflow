@@ -304,11 +304,11 @@ export function RiwoTray({
 }
 
 // A small "Translate" under a customer's message, so staff can read a language they don't.
-export function TranslateMessage({ text, client = realAiClient }: { text: string; client?: AiClient }) {
+export function TranslateMessage({ text, client = realAiClient, autoStart = false, onHide }: { text: string; client?: AiClient; autoStart?: boolean; onHide?: () => void }) {
   const [language, setLanguage] = useState(preferredLanguage);
   const [state, setState] = useState<
     { status: "idle" } | { status: "working" } | { status: "done"; text: string; target: string } | { status: "error"; message: string }
-  >({ status: "idle" });
+  >(autoStart ? { status: "working" } : { status: "idle" });
   const go = (target = language) => {
     setState({ status: "working" });
     client
@@ -316,6 +316,11 @@ export function TranslateMessage({ text, client = realAiClient }: { text: string
       .then((r) => setState({ status: "done", text: r.text, target }))
       .catch((e: Error) => setState({ status: "error", message: e?.message || "Couldn't translate this." }));
   };
+  // on a phone the translation is asked for from the message's menu, so it starts as soon as it appears
+  useEffect(() => {
+    if (autoStart) go();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (state.status === "done")
     return (
       <div className="mt-1.5 rounded-xl bg-black/5 dark:bg-white/5 px-2.5 py-1.5 text-[13px] leading-relaxed">
@@ -324,7 +329,7 @@ export function TranslateMessage({ text, client = realAiClient }: { text: string
         </p>
         <p className="mt-0.5 text-[11px] text-fg-3">
           Translated into {state.target} by Riwo ·{" "}
-          <button type="button" className="hover:text-fg underline-offset-2 hover:underline" onClick={() => setState({ status: "idle" })}>
+          <button type="button" className="hover:text-fg underline-offset-2 hover:underline" onClick={() => (onHide ? onHide() : setState({ status: "idle" }))}>
             Hide
           </button>
         </p>

@@ -184,6 +184,10 @@
       position: absolute;
       inset: -4px;
     }
+    /* Big rows already are big: they must not reach into their neighbours */
+    .hit-none::after {
+      content: none;
+    }
     /* The finger always sees something happen */
     button:not(:disabled):active,
     [role="button"]:active {
@@ -194,6 +198,25 @@
 
 @layer components {
   /* A pressed control gives a little (touch screens only; a mouse has hover for this) */
+  /* The little point on the first bubble of a run, as in WhatsApp */
+  .bubble-tail-in::before,
+  .bubble-tail-out::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 9px;
+    height: 12px;
+  }
+  .bubble-tail-in::before {
+    left: -6px;
+    background: rgb(var(--c-bubble-in));
+    clip-path: polygon(100% 0, 100% 100%, 0 0);
+  }
+  .bubble-tail-out::before {
+    right: -6px;
+    background: rgb(var(--c-bubble-out));
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
   .press {
     transition:
       transform 0.14s var(--ease-out),

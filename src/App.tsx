@@ -911,7 +911,7 @@ export function App() {
     <ToastProvider>
     <PhoneChromeProvider value={{ bell: bell("tab"), search: () => setPaletteOpen(true) }}>
     <div className="h-app flex flex-col bg-app text-fg overflow-hidden">
-      {user.emailVerified === false && <VerifyEmailBanner email={user.email} />}
+      {user.emailVerified === false && !(phone && inbox && chatOpen) && <VerifyEmailBanner email={user.email} />}
       {user.guideSeen === false && !guideClosed && (
         <WelcomeGuide
           variant={currentVertical()?.key === "homes" ? "homes" : "app"}
@@ -1027,6 +1027,13 @@ export function App() {
           {view === "user" && tab === "inbox" && (
             <Inbox
               onFocusChange={setChatOpen}
+              onRefresh={() => refresh("conversations")}
+              onMarkRead={(id) => {
+                void api
+                  .markConversationRead(id)
+                  .then(() => refresh("conversations"))
+                  .catch(() => {});
+              }}
               chats={chats}
               messages={selected ? { [selected]: visibleMessages } : {}}
               contacts={contacts}
@@ -1064,10 +1071,10 @@ export function App() {
                   await refresh("conversations");
                 }).catch(() => {});
               }}
-              onToggleResolve={(id) => {
+              onToggleResolve={(id, closed) => {
                 void run(async () => {
                   await api.patchChat(id, {
-                    isClosed: !chats.find((c) => c.id === id)?.isClosed,
+                    isClosed: closed ?? !chats.find((c) => c.id === id)?.isClosed,
                   });
                   await refresh("conversations");
                 }).catch(() => {});
