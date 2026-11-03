@@ -21,7 +21,7 @@ export default function WhiteLabelPage() {
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "White-label", path: "/white-label" }]} />
       <PageHero eyebrow={PARTNERS.eyebrow} title={PARTNERS.title} intro={PARTNERS.intro}>
         <Link href="/contact?interest=partner" {...trackAttrs("demo_click", { place: "white-label-hero" })} className="btn-primary">
-          Talk to us about partnering <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          Book a white-label demo <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
         <Link href="/pricing" className="btn-ghost">See the plans</Link>
       </PageHero>

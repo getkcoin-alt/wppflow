@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, PageHero, Crumbs, CtaBand } from "@/components/ui";
 import { trackAttrs } from "@/lib/analytics";
+import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 export const metadata: Metadata = {
   title: "Developers — WhatsApp API, Webhooks and SDK Samples",
@@ -30,7 +31,7 @@ export default function DevelopersPage() {
     <>
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Developers", path: "/developers" }]} />
       <PageHero eyebrow="Developers" title="An open platform, inside the product" intro="API keys, webhooks, an API tester and SDK samples all live in Scriwo. No separate developer portal, no waiting for access.">
-        <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "developers" })} className="btn-primary">Get access</Link>
+        <a href={trialUrl()} {...trackAttrs("trial_click", { place: "developers" })} className="btn-primary">{TRIAL_LABEL}</a>
       </PageHero>
       <Container className="grid gap-5 md:grid-cols-3">
         {[

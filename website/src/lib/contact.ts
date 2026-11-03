@@ -1,12 +1,11 @@
 export const INTERESTS = [
-  { value: "demo", label: "A demo for my team" },
   { value: "free", label: "Start free (1 number)" },
   { value: "pricing", label: "Pricing and a quote" },
   { value: "starter", label: "Start the Starter plan" },
   { value: "growth", label: "Start the Growth plan" },
   { value: "business", label: "Start the Business plan" },
   { value: "enterprise", label: "Enterprise" },
-  { value: "partner", label: "Partnership or reselling" },
+  { value: "partner", label: "White-label demo or reselling" },
   { value: "support", label: "Help with my account" },
   { value: "general", label: "Something else" },
 ] as const;

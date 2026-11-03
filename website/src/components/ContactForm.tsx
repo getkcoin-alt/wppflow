@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { COUNTRIES, INTERESTS, TEAM_SIZES, validateContact, type ContactInput } from "@/lib/contact";
 import { track } from "@/lib/analytics";
 
-const empty: ContactInput = { name: "", email: "", phone: "", company: "", country: "", teamSize: "", interest: "demo", message: "" };
+const empty: ContactInput = { name: "", email: "", phone: "", company: "", country: "", teamSize: "", interest: "pricing", message: "" };
 const field = "mt-1.5 w-full rounded-xl bg-surface-2 px-4 py-3 text-[15px] hairline placeholder:text-fg-3 focus:bg-surface";
 
 export function ContactForm() {

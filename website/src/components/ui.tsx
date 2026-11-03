@@ -5,6 +5,7 @@ import { JsonLd } from "./JsonLd";
 import { breadcrumbs } from "@/lib/jsonld";
 import { trackAttrs } from "@/lib/analytics";
 import type { Faq } from "@/content/faqs";
+import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 export function Container({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`mx-auto max-w-page px-4 sm:px-6 ${className}`}>{children}</div>;
@@ -86,7 +87,7 @@ export function FaqList({ faqs }: { faqs: Faq[] }) {
   );
 }
 
-export function CtaBand({ title = "See Scriwo with your own team", body = "Tell us how many people answer WhatsApp at your company. We will set you up and walk your team through it.", cta = { href: "/contact?interest=demo", label: "Book a demo" } }: { title?: string; body?: string; cta?: { href: string; label: string } }) {
+export function CtaBand({ title = "Try Scriwo with your own team", body = "Start a 14-day free trial of the Growth plan. No card needed: sign up, link your number and invite your team.", cta = { href: trialUrl(), label: TRIAL_LABEL } }: { title?: string; body?: string; cta?: { href: string; label: string } }) {
   return (
     <Container className="mt-24">
       <div data-reveal className="relative overflow-hidden rounded-4xl bg-[#1e2227] px-6 py-14 text-white sm:px-14">
@@ -97,9 +98,9 @@ export function CtaBand({ title = "See Scriwo with your own team", body = "Tell 
           <h2 className="text-3xl sm:text-4xl">{title}</h2>
           <p className="mt-4 text-lg text-white/75">{body}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={cta.href} {...trackAttrs("demo_click", { place: "cta-band" })} className="btn bg-white text-[#0a0b0c] hover:bg-white/90">
+            <a href={cta.href} {...trackAttrs(cta.href.startsWith("/contact") ? "demo_click" : "trial_click", { place: "cta-band" })} className="btn bg-white text-[#0a0b0c] hover:bg-white/90">
               {cta.label} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            </a>
             <Link href="/pricing" className="btn border border-white/20 text-white hover:bg-white/10">See plans</Link>
           </div>
         </div>

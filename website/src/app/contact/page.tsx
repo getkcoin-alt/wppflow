@@ -6,11 +6,12 @@ import { ContactForm } from "@/components/ContactForm";
 import { JsonLd } from "@/components/JsonLd";
 import { absolute, SITE, whatsappHref } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
+import { trialUrl } from "@/lib/signup";
 import { BusinessDetails } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Contact Scriwo — Book a Demo or Start a Plan",
-  description: "Talk to Scriwo about a shared WhatsApp inbox for your team in the UAE or India. Book a demo, ask for pricing or start a plan. A real person replies within one business day.",
+  title: "Contact Scriwo — Pricing, Plans and White-Label Demos",
+  description: "Talk to Scriwo about a shared WhatsApp inbox for your team in the UAE or India: pricing, plans in AED, or a white-label demo for partners. A real person replies within one business day.",
   alternates: { canonical: "/contact" },
 };
 
@@ -24,8 +25,8 @@ export default function ContactPage() {
           <div>
             <p className="eyebrow">Contact</p>
             <h1 className="mt-4 text-4xl leading-tight sm:text-5xl">Let&apos;s get your team on Scriwo</h1>
-            <p className="mt-6 text-lg text-fg-2">Book a demo, ask for a quote or start a plan. In rupees you can also <Link href="/pricing" className="underline">buy a plan online</Link>; for AED or a plan agreed with us first, this form is the fastest way to get started.</p>
-            <a href={whatsappHref("Hi Scriwo, I would like a demo for my team.")} target="_blank" rel="noopener" {...trackAttrs("whatsapp_click", { place: "contact-page" })} className="btn-ghost mt-8">
+            <p className="mt-6 text-lg text-fg-2">The quickest way to see Scriwo is to <a href={trialUrl()} {...trackAttrs("trial_click", { place: "contact-page" })} className="underline">start a 14-day free trial</a>, no card needed. Use this form for a quote, a plan in AED, or a <Link href="/white-label" className="underline">white-label demo</Link> if you want to resell Scriwo under your own brand.</p>
+            <a href={whatsappHref("Hi Scriwo, I have a question about plans for my team.")} target="_blank" rel="noopener" {...trackAttrs("whatsapp_click", { place: "contact-page" })} className="btn-ghost mt-8">
               <MessageCircle className="h-4 w-4 text-brand" aria-hidden="true" /> WhatsApp sales: {SITE.whatsappDisplay}
             </a>
             <ul className="mt-10 space-y-5">

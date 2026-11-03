@@ -6,6 +6,7 @@ import { HtmlLang } from "@/components/HtmlLang";
 import type { Locale } from "@/content/locales";
 import { absolute, whatsappHref } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
+import { trialUrl } from "@/lib/signup";
 
 /** The Arabic and Hindi landing pages: one design, content from content/locales.ts. */
 export function LocalizedLanding({ t }: { t: Locale }) {
@@ -30,7 +31,7 @@ export function LocalizedLanding({ t }: { t: Locale }) {
             </h1>
             <p data-speakable className="rise-3 mt-6 max-w-xl text-lg leading-relaxed text-fg-2">{t.intro}</p>
             <div className="rise-3 mt-8 flex flex-wrap gap-3">
-              <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: `home-${t.lang}` })} className="btn-primary">{t.primary}</Link>
+              <a href={trialUrl()} {...trackAttrs("trial_click", { place: `home-${t.lang}` })} className="btn-primary">{t.primary}</a>
               <a href={whatsappHref(t.whatsappText)} target="_blank" rel="noopener" {...trackAttrs("whatsapp_click", { place: `home-${t.lang}` })} className="btn-ghost">
                 <MessageCircle className="h-4 w-4 text-brand" aria-hidden="true" /> {t.whatsapp}
               </a>
@@ -93,7 +94,7 @@ export function LocalizedLanding({ t }: { t: Locale }) {
         <div data-reveal className="flex flex-col items-start gap-5 rounded-4xl bg-[#1e2227] px-6 py-12 text-white sm:px-12">
           <p className="text-2xl font-semibold">{t.h1[0]} {t.h1[1]}</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: `cta-${t.lang}` })} className="btn bg-white text-[#1e2227] hover:bg-white/90">{t.primary}</Link>
+            <a href={trialUrl()} {...trackAttrs("trial_click", { place: `cta-${t.lang}` })} className="btn bg-white text-[#1e2227] hover:bg-white/90">{t.primary}</a>
             <a href={whatsappHref(t.whatsappText)} target="_blank" rel="noopener" {...trackAttrs("whatsapp_click", { place: `cta-${t.lang}` })} className="btn border border-white/20 text-white hover:bg-white/10">{t.whatsapp}</a>
           </div>
         </div>

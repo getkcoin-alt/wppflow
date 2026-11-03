@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { SITE, whatsappHref } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
+import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 // Floating "chat with sales" button. Uses WhatsApp when a sales number is configured, else the contact form.
 export function WhatsAppButton() {
@@ -13,7 +14,7 @@ export function WhatsAppButton() {
     <Link
       href={href}
       aria-label={label}
-      {...(SITE.whatsappNumber ? trackAttrs("whatsapp_click", { place: "floating" }) : trackAttrs("demo_click", { place: "floating" }))}
+      {...(SITE.whatsappNumber ? trackAttrs("whatsapp_click", { place: "floating" }) : trackAttrs("whatsapp_click", { place: "floating-contact" }))}
       className="fixed bottom-5 right-24 z-40 hidden h-14 w-14 place-items-center rounded-full bg-brand-solid text-white shadow-pop transition-transform hover:scale-105 sm:grid"
       {...(SITE.whatsappNumber ? { target: "_blank", rel: "noopener" } : {})}
     >
@@ -29,7 +30,7 @@ export function MobileCta() {
       <a href={SITE.whatsappNumber ? whatsappHref() : "/pricing"} {...(SITE.whatsappNumber ? trackAttrs("whatsapp_click", { place: "mobile-bar" }) : {})} className="btn-ghost flex-1 !py-2.5 text-sm" {...(SITE.whatsappNumber ? { target: "_blank", rel: "noopener" } : {})}>
         {SITE.whatsappNumber ? "WhatsApp" : "Plans"}
       </a>
-      <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "mobile-bar" })} className="btn-primary flex-[2] !py-2.5 text-sm">Book a demo</Link>
+      <a href={trialUrl()} {...trackAttrs("trial_click", { place: "mobile-bar" })} className="btn-primary flex-[2] !py-2.5 text-sm">{TRIAL_LABEL}</a>
     </div>
   );
 }
