@@ -27,6 +27,8 @@ no dedicated test yet.
 | A new account is asked to confirm its email by a link that works once for 24 hours; the account works meanwhile (the free trial is never blocked); people who proved the inbox by invitation, reset or Google are confirmed at once | Test | `email-verification.test.js`, `welcome_verify.test.tsx` |
 | When an invited teammate signs in for the first time, the owners and administrators get one in-app notice | Test | `email-verification.test.js` |
 | Riwo's welcome guide is shown once per person (one version for Scriwo, one for Scriwo Homes) and can be skipped at any step | Test | `welcome_verify.test.tsx` |
+| New lead, new property and booking forms can be filled from one typed line (price, bedrooms, place, day, time); nothing is saved until the person saves | Test | `quick_fill.test.ts`, `quickfill_settings.test.tsx` |
+| Pipeline and Real estate each have their own settings drawer; Real estate's (viewing length, time zone, listing freshness, lead alerts) saves only what changed and only for owners and administrators | Test | `quickfill_settings.test.tsx` |
 | Scoped API keys; revoke one at a time | Test | `company-staff-flow.test.js`, `runtime-regression.test.js` |
 | Signed webhooks | Code | `webhookService.js` signs every delivery with `X-Scriwo-Signature`; no dedicated test yet |
 | Access tokens kept in memory; refresh cookie is HttpOnly; sign-in attempts rate limited | Code | `api.ts`, `authRoutes.js`, `rateLimiter.js` |

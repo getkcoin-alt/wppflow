@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Loader2, Plus, Search } from "lucide-react";
 import { EmptyState, Field, Notice, Pill } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
+import { QuickFill } from "../ui/QuickFill";
+import { understandProperty, type PropertyFill } from "../../utils/quickFill";
 import { btn, inputCls, selectCls } from "../ui/styles";
 import { formatMoney } from "../../utils/pipeline";
 import {
@@ -359,6 +361,13 @@ function PropertySheet({
       }
     >
       <div className="space-y-4">
+        {!property && (
+          <QuickFill<PropertyFill>
+            example="2 bed furnished apartment in Dubai Marina, AED 120k per year, 1,250 sqft"
+            understand={(t) => understandProperty(t, { propertyTypes: meta.data?.propertyTypes, currency: f.currency })}
+            onApply={(x) => setF((cur) => ({ ...cur, ...x, title: cur.title || x.title || "" }))}
+          />
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Reference" hint="Your own listing number. Unique.">
             <input

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { EmptyState, Page, PageHeader, Segmented } from "../ui/Page";
 import { Building2 } from "lucide-react";
+import { SettingsButton } from "../ui/PanelSettings";
+import { RealEstateSettings } from "./RealEstateSettings";
 import { LeadSheet } from "../pipeline/LeadSheet";
 import { usePipelineSettings } from "../pipeline/usePipelineSettings";
 import { BookViewingSheet } from "./BookViewingSheet";
@@ -26,6 +28,7 @@ export function RealEstateHub({
   onOpenChat: (conversationId: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>("revenue");
+  const [configuring, setConfiguring] = useState(false);
   const [lead, setLead] = useState<string | null>(null);
   const [booking, setBooking] = useState<{
     leadId?: string;
@@ -43,6 +46,8 @@ export function RealEstateHub({
         title="Real estate"
         subtitle="Find the leads that are slipping, keep your listings honest, and run your viewings."
         actions={
+          <>
+          {isManager && <SettingsButton panel="Real estate" onClick={() => setConfiguring(true)} />}
           <Segmented<Tab>
             label="Real estate sections"
             value={tab}
@@ -53,8 +58,10 @@ export function RealEstateHub({
               { key: "viewings", label: "Viewings" },
             ]}
           />
+          </>
         }
       />
+      {isManager && <RealEstateSettings open={configuring} onClose={() => setConfiguring(false)} />}
       {tab === "revenue" && (
         <RevenueView
           isManager={isManager}

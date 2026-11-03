@@ -12,6 +12,8 @@ import {
 } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
+import { QuickFill } from "../ui/QuickFill";
+import { understandLead, type LeadFill } from "../../utils/quickFill";
 import { btn, inputCls, selectCls } from "../ui/styles";
 import { mobileText } from "../../utils/chatName";
 
@@ -172,6 +174,16 @@ function Body({ from, contact, stages, teammates, aiAvailable, onClose, onCreate
             )}
           </div>
         )}
+
+        <QuickFill<LeadFill>
+          example="2 bedroom in Marina, 1.8M, call tomorrow"
+          understand={(t) => understandLead(t)}
+          onApply={(f) => {
+            if (f.title) setTitle(f.title);
+            if (f.value) setValue(f.value);
+            if (f.followDays !== undefined) setDays(f.followDays);
+          }}
+        />
 
         {aiAvailable && from && (
           <button type="button" disabled={thinking} onClick={() => void suggest()} className={btn("secondary", "sm")}>

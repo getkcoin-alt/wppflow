@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { Field, Notice } from "../ui/Page";
 import { Sheet } from "../ui/Sheet";
+import { QuickFill } from "../ui/QuickFill";
+import { understandViewing, type ViewingFill } from "../../utils/quickFill";
 import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
 import { fetchLeads, getStoredTenantId, moveLead } from "../../services/api";
 import { reBook, reProperties } from "../../services/realEstate";
@@ -215,6 +217,16 @@ export function BookViewingSheet({
         </div>
       ) : (
         <div className="space-y-4">
+          <QuickFill<ViewingFill>
+            label="Say when, in one line"
+            example="tomorrow 4pm, 30 min"
+            understand={(t) => understandViewing(t)}
+            onApply={(x) => {
+              if (x.date) setDate(x.date);
+              if (x.time) setTime(x.time);
+              if (x.minutes) setMinutes(x.minutes);
+            }}
+          />
           {!leadId && (
             <Field label="Lead">
               <select

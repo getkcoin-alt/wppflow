@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Funnel, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   applyPipelinePreset,
   getStoredTenantId,
@@ -10,7 +10,7 @@ import {
   type PipelineSettings as Settings,
 } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
-import { Sheet } from "../ui/Sheet";
+import { PanelSettings } from "../ui/PanelSettings";
 import { btn, inputCls, selectCls } from "../ui/styles";
 
 interface Row {
@@ -60,7 +60,7 @@ function Body({ settings, onClose }: { settings: Settings; onClose: () => void }
     rows.length !== open.length || rows.some((r, i) => r.id !== open[i]?.id || r.name !== open[i]?.name) || won !== settings.stages.find((s) => s.kind === "won")?.name || lost !== settings.stages.find((s) => s.kind === "lost")?.name;
 
   return (
-    <Sheet open onClose={onClose} title="Pipeline settings" subtitle="Shape the steps your leads move through." footer={<button type="button" className={btn("ghost")} onClick={onClose}>Done</button>}>
+    <PanelSettings open onClose={onClose} panel="Pipeline" icon={<Funnel className="w-6 h-6" />} accent="gold" subtitle="Shape the steps your leads move through." footer={<button type="button" className={btn("ghost")} onClick={onClose}>Done</button>}>
       {error && (
         <div className="mb-4">
           <Notice tone="error">{error}</Notice>
@@ -172,6 +172,6 @@ function Body({ settings, onClose }: { settings: Settings; onClose: () => void }
           </div>
         </section>
       </div>
-    </Sheet>
+    </PanelSettings>
   );
 }

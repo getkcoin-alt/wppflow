@@ -297,3 +297,7 @@ export const reViewingAction = (
   apiPost(`${base}/viewings/${encodeURIComponent(id)}/${action}`, body);
 export const viewingIcsPath = (id: string) =>
   `${base}/viewings/${encodeURIComponent(id)}/calendar.ics`;
+
+export type ReSettings = ReMeta["settings"];
+export const reSettings = async (): Promise<ReSettings> => (await apiGet(`${base}/settings`)).settings;
+export const reSaveSettings = async (patch: Partial<ReSettings>): Promise<ReSettings> => (await apiPut(`${base}/settings`, patch)).settings;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Funnel, Plus, Search, Settings2, X } from "lucide-react";
+import { Funnel, Plus, Search, X } from "lucide-react";
 import {
   fetchLeadBoard,
   fetchLeadTasks,
@@ -20,6 +20,7 @@ import { LeadList } from "./LeadList";
 import { LeadSheet } from "./LeadSheet";
 import { NewLeadSheet } from "./NewLeadSheet";
 import { PipelineSettings } from "./PipelineSettings";
+import { SettingsButton } from "../ui/PanelSettings";
 import { TodayList } from "./TodayList";
 import { useLeadMover } from "./useLeadMover";
 import { usePipelineSettings } from "./usePipelineSettings";
@@ -132,9 +133,7 @@ export function Pipeline({
         actions={
           <>
             {isManager && (
-              <button className={btn("secondary")} onClick={() => setConfiguring(true)} aria-label="Pipeline settings">
-                <Settings2 className="w-4 h-4" /> Settings
-              </button>
+              <SettingsButton panel="Pipeline" onClick={() => setConfiguring(true)} />
             )}
             <button className={btn("primary")} onClick={() => setAdding(true)}>
               <Plus className="w-4 h-4" /> New lead
