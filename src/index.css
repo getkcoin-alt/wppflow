@@ -266,6 +266,41 @@
   }
 }
 
+@keyframes riwo-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(1.5deg);
+  }
+}
+@keyframes riwo-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes riwo-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

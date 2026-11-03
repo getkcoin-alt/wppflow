@@ -24,6 +24,9 @@ no dedicated test yet.
 | Roles, suspend (live sessions drop at once), audit log | Test | `company-staff-flow.test.js`, `team-management.test.js` |
 | Passwords are never emailed; single-use links that expire | Test | `company-staff-flow.test.js`, `team-management.test.js`, `invite_setup.test.tsx` |
 | "Forgot password?" on the sign-in page emails a one-hour, single-use link; the answer is the same whether or not the address has an account; a reset signs out every device and sends a "password changed" notice | Test | `password-reset.test.js`, `password_reset.test.tsx` |
+| A new account is asked to confirm its email by a link that works once for 24 hours; the account works meanwhile (the free trial is never blocked); people who proved the inbox by invitation, reset or Google are confirmed at once | Test | `email-verification.test.js`, `welcome_verify.test.tsx` |
+| When an invited teammate signs in for the first time, the owners and administrators get one in-app notice | Test | `email-verification.test.js` |
+| Riwo's welcome guide is shown once per person (one version for Scriwo, one for Scriwo Homes) and can be skipped at any step | Test | `welcome_verify.test.tsx` |
 | Scoped API keys; revoke one at a time | Test | `company-staff-flow.test.js`, `runtime-regression.test.js` |
 | Signed webhooks | Code | `webhookService.js` signs every delivery with `X-Scriwo-Signature`; no dedicated test yet |
 | Access tokens kept in memory; refresh cookie is HttpOnly; sign-in attempts rate limited | Code | `api.ts`, `authRoutes.js`, `rateLimiter.js` |

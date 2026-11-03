@@ -29,6 +29,10 @@ import { useBackendHealth } from "./hooks/useBackendHealth";
 import { LogOut, Moon, Plus, RefreshCw, Sun } from "lucide-react";
 import { LoginPage } from "./components/auth/LoginPage";
 import { ChangePassword } from "./components/auth/ChangePassword";
+import { WelcomeGuide } from "./components/onboarding/WelcomeGuide";
+import { VerifyEmailBanner, VerifyEmailPage } from "./components/onboarding/VerifyEmail";
+import { verifyTokenFromUrl } from "./utils/verifyLink";
+import { currentVertical } from "./utils/vertical";
 import { PlatformAdmin } from "./components/platform/PlatformAdmin";
 import { Inbox } from "./components/user/Inbox";
 import { SessionManager } from "./components/user/SessionManager";
@@ -107,6 +111,9 @@ export function App() {
     [ready, setReady] = useState(false),
     [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  // the link in the confirmation email: /?verify=<token>
+  const [verifyToken, setVerifyToken] = useState(verifyTokenFromUrl);
+  const [guideClosed, setGuideClosed] = useState(false);
   const [view, setView] = useState<View>("user");
   const [tab, setTab] = useState<UserSubTab>("dashboard"),
     [adminTab, setAdminTab] = useState<AdminSubTab>("users"),
@@ -717,6 +724,19 @@ export function App() {
         <ScriwoMark size={56} className="animate-pulse" />
       </div>
     );
+  if (verifyToken)
+    return (
+      <VerifyEmailPage
+        token={verifyToken}
+        onContinue={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("verify");
+          window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+          setVerifyToken("");
+          void api.getCurrentUser().then((u) => u && setUser(u));
+        }}
+      />
+    );
   if (!user)
     return (
       <LoginPage
@@ -878,7 +898,20 @@ export function App() {
   return (
     <SolutionsContext.Provider value={solutions}>
       <VerticalOpener solutions={solutions} open={(next) => { setView("user"); setTab(next); }} />
-    <div className="h-dvh flex flex-col lg:flex-row bg-app text-fg overflow-hidden">
+    <div className="h-dvh flex flex-col bg-app text-fg overflow-hidden">
+      {user.emailVerified === false && <VerifyEmailBanner email={user.email} />}
+      {user.guideSeen === false && !guideClosed && (
+        <WelcomeGuide
+          variant={currentVertical()?.key === "homes" ? "homes" : "app"}
+          name={user.name}
+          manager={manager}
+          onDone={() => {
+            setGuideClosed(true);
+            void api.markGuideSeen().catch(() => {});
+          }}
+        />
+      )}
+    <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
       <Dock
         view={view}
         tab={tab}
@@ -1352,6 +1385,7 @@ export function App() {
           void openStartedChat(result);
         }}
       />
+    </div>
     </div>
     </SolutionsContext.Provider>
   );

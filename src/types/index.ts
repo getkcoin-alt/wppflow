@@ -37,6 +37,10 @@ export interface AuthUser {
   status?: AccountStatus;
   membershipRole?: string;
   mustChangePassword?: boolean;
+  /** false until the address is confirmed by the emailed link; the account works meanwhile */
+  emailVerified?: boolean;
+  /** the welcome guide has been shown to this person */
+  guideSeen?: boolean;
   isSuperAdmin?: boolean;
   is_superadmin?: boolean;
   created_at: string;

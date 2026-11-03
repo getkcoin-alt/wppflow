@@ -188,6 +188,9 @@ export const getResetInfo = (token: string) =>
   apiGet(`/api/auth/reset-info?token=${encodeURIComponent(token)}`);
 export const resetPassword = (token: string, password: string) =>
   apiPost("/api/auth/reset-password", { token, password });
+export const verifyEmail = (token: string) => apiPost("/api/auth/verify-email", { token });
+export const resendVerification = () => apiPost("/api/auth/resend-verification", {});
+export const markGuideSeen = () => apiPost("/api/auth/guide-seen", {});
 export const switchWorkspace = (tenantId: string) =>
   auth("/api/auth/switch-tenant", { tenantId });
 export async function getCurrentUser(_token?: string) {
