@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { MoreHorizontal } from "lucide-react";
+import { useIsPhone } from "../../hooks/useMedia";
+import { ActionSheet, type SheetAction } from "../mobile/ActionSheet";
 
 // Every non-inbox screen sits in the same frame: generous margins, one title, calm spacing.
 export function Page({
@@ -10,11 +13,18 @@ export function Page({
 }) {
   return (
     <div
-      className={`mx-auto w-full ${wide ? "max-w-7xl" : "max-w-6xl"} px-4 sm:px-8 pt-6 sm:pt-10 pb-12 animate-rise`}
+      className={`mx-auto w-full ${wide ? "max-w-7xl" : "max-w-6xl"} px-4 sm:px-8 pt-2 sm:pt-10 pb-24 sm:pb-12 animate-rise`}
     >
       {children}
     </div>
   );
+}
+
+/** What a screen's header becomes on a phone: its one main action, and a "⋯" for the rest. */
+export interface PhoneHeader {
+  /** the one thing to do here (a short button); the others go behind the "⋯" */
+  primary?: ReactNode;
+  more?: SheetAction[];
 }
 
 export function PageHeader({
@@ -22,12 +32,36 @@ export function PageHeader({
   subtitle,
   actions,
   eyebrow,
+  phone,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   eyebrow?: string;
+  /** on a phone: replaces `actions` with one main action and a "⋯" menu. Left out, the actions scroll sideways in a single row. */
+  phone?: PhoneHeader;
 }) {
+  const onPhone = useIsPhone();
+  const [more, setMore] = useState(false);
+  if (onPhone) {
+    return (
+      <header className="sticky top-0 z-30 -mx-4 px-4 mb-2 bg-app">
+        <div className="h-12 flex items-center gap-2">
+          <h1 className="flex-1 min-w-0 truncate text-[24px] leading-none font-semibold text-fg">{title}</h1>
+          {phone?.primary}
+          {phone?.more && phone.more.length > 0 && (
+            <>
+              <button type="button" onClick={() => setMore(true)} aria-label="More" className="press h-10 w-10 shrink-0 grid place-items-center rounded-full bg-surface-2 text-fg-2">
+                <MoreHorizontal className="w-5 h-5" aria-hidden />
+              </button>
+              <ActionSheet open={more} onClose={() => setMore(false)} title={title} actions={phone.more} />
+            </>
+          )}
+        </div>
+        {!phone && actions && <div className="chip-row -mx-4 px-4 pb-2">{actions}</div>}
+      </header>
+    );
+  }
   return (
     <header className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
@@ -166,13 +200,13 @@ export function Notice({
   tone,
   children,
 }: {
-  tone: "error" | "success";
+  tone: "error" | "success" | "info";
   children: ReactNode;
 }) {
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={`rounded-2xl px-4 py-3 text-[14px] ${tone === "error" ? "bg-danger/10 text-danger" : "bg-ok/10 text-ok"}`}
+      className={`rounded-2xl px-4 py-3 text-[14px] ${tone === "error" ? "bg-danger/10 text-danger" : tone === "info" ? "bg-info/10 text-info" : "bg-ok/10 text-ok"}`}
     >
       {children}
     </div>

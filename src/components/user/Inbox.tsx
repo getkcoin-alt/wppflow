@@ -54,6 +54,8 @@ import { MIN_SEARCH_CHARS, useDebounced } from "../../utils/searchText";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface InboxProps {
+  /** told when a conversation takes over the screen on a phone (so the tab bar can step aside) */
+  onFocusChange?: (focused: boolean) => void;
   chats: ChatThread[];
   messages: Record<string, ChatMessage[]>;
   contacts: Record<string, any>;
@@ -199,6 +201,7 @@ function getMessageDateGroup(timestampStr?: string): string {
 }
 
 export const Inbox: React.FC<InboxProps> = ({
+  onFocusChange,
   chats,
   messages,
   contacts,
@@ -262,6 +265,10 @@ export const Inbox: React.FC<InboxProps> = ({
   );
   // Phones show the list first and the conversation after a tap; wider screens show both.
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  useEffect(() => {
+    onFocusChange?.(mobileChatOpen);
+    return () => onFocusChange?.(false);
+  }, [mobileChatOpen, onFocusChange]);
 
   // Automatically select and load messages for the active or first chat
   useEffect(() => {

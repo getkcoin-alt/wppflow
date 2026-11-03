@@ -80,6 +80,11 @@ import {
 import { markNotificationsRead, deleteMessageFromCache } from "./services/realtimeCache";
 import type { AppNotification } from "./types";
 import { reconcileMessages } from "./utils/messages";
+import { ToastProvider } from "./components/mobile/Toasts";
+import { PhoneChromeProvider } from "./components/mobile/PhoneChrome";
+import { useIsPhone } from "./hooks/useMedia";
+import { useTyping } from "./hooks/useTyping";
+import { useViewportHeight } from "./hooks/useViewportHeight";
 
 // The palette's chat search is the inbox's own search: names, numbers in any format, and the words in messages. These
 // live outside the component so they stay the same function between renders.
@@ -105,6 +110,11 @@ const askRiwo = (text: string, list: { id: string; label: string; hint?: string 
 export function App() {
   const qc = useQueryClient();
   const theme = useTheme();
+  // phone shell: the visible height follows the keyboard, and the tab bar steps aside while a chat is open or a field is being typed in
+  const phone = useIsPhone();
+  useViewportHeight(phone);
+  const fieldFocused = useTyping();
+  const [chatOpen, setChatOpen] = useState(false);
   const engine = useBackendHealth();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null),
@@ -898,7 +908,9 @@ export function App() {
   return (
     <SolutionsContext.Provider value={solutions}>
       <VerticalOpener solutions={solutions} open={(next) => { setView("user"); setTab(next); }} />
-    <div className="h-dvh flex flex-col bg-app text-fg overflow-hidden">
+    <ToastProvider>
+    <PhoneChromeProvider value={{ bell: bell("tab"), search: () => setPaletteOpen(true) }}>
+    <div className="h-app flex flex-col bg-app text-fg overflow-hidden">
       {user.emailVerified === false && <VerifyEmailBanner email={user.email} />}
       {user.guideSeen === false && !guideClosed && (
         <WelcomeGuide
@@ -1014,6 +1026,7 @@ export function App() {
         >
           {view === "user" && tab === "inbox" && (
             <Inbox
+              onFocusChange={setChatOpen}
               chats={chats}
               messages={selected ? { [selected]: visibleMessages } : {}}
               contacts={contacts}
@@ -1344,33 +1357,41 @@ export function App() {
         manager={manager}
         solutions={solutions}
         isLocked={isLocked}
-        bell={bell("tab")}
-        sheetExtras={
-          <div className="space-y-3">
-            <button
-              onClick={() => setPaletteOpen(true)}
-              className="w-full h-12 rounded-2xl bg-surface-2 text-[14.5px] text-fg-2 text-left px-4"
-            >
-              Search or jump to…
-            </button>
-            <div className="rounded-3xl bg-surface-2 p-4 space-y-3">
+        onSearch={() => setPaletteOpen(true)}
+        hidden={phone && ((inbox && chatOpen) || fieldFocused)}
+        account={{
+          name: user.name,
+          company: user.company_name,
+          panel: (
+            <div className="space-y-4">
               <div>
-                <div className="font-semibold text-[15px]">{user.name}</div>
-                <div className="text-[13px] text-fg-2">{user.email}</div>
-                <div className="text-[12px] text-gold font-medium mt-1">
-                  {user.company_name}
-                </div>
+                <div className="font-semibold text-[16px] text-fg">{user.name}</div>
+                <div className="text-[14px] text-fg-2">{user.email}</div>
+                <div className="text-[13px] text-gold font-medium mt-1">{user.company_name}</div>
               </div>
+              {workspaceList.length > 1 && (
+                <label className="block">
+                  <span className="block text-[13px] font-medium text-fg-2 mb-1.5">Workspace</span>
+                  <select
+                    value={tenant || ""}
+                    onChange={(e) => void switchWorkspace(e.target.value)}
+                    className="w-full h-12 rounded-2xl bg-surface-2 px-4 text-[15px] text-fg"
+                  >
+                    {workspaceList.map((w: { id: string; name: string }) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <ThemeSwitch value={theme.choice} onChange={theme.setChoice} />
-              <button
-                onClick={() => void logout()}
-                className="w-full h-11 rounded-2xl bg-danger/10 text-danger text-[14px] font-medium"
-              >
+              <button onClick={() => void logout()} className="w-full h-12 rounded-2xl bg-danger/10 text-danger text-[15px] font-medium">
                 Sign out
               </button>
             </div>
-          </div>
-        }
+          ),
+        }}
       />
       <NewChatSheet
         open={newChat !== null}
@@ -1387,6 +1408,8 @@ export function App() {
       />
     </div>
     </div>
+    </PhoneChromeProvider>
+    </ToastProvider>
     </SolutionsContext.Provider>
   );
 }

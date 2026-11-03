@@ -114,10 +114,10 @@ describe("the navigation marks what the plan does not include", () => {
     expect(screen.getByRole("button", { name: "Developers" }).getAttribute("title")).toBeNull();
   });
 
-  it("marks it in the phone's More sheet too", () => {
-    render(<TabBar view="user" tab="inbox" onNavigate={() => {}} unreadChats={0} manager bell={null} sheetExtras={null} isLocked={(i) => i.needs?.feature === "api"} />);
-    fireEvent.click(screen.getByRole("button", { name: "More" }));
-    const sheet = within(screen.getByRole("dialog", { name: "More" }));
+  it("marks it in the phone's Menu too", () => {
+    render(<TabBar view="user" tab="inbox" onNavigate={() => {}} unreadChats={0} manager isLocked={(i) => i.needs?.feature === "api"} />);
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    const sheet = within(screen.getByRole("dialog", { name: "Menu" }));
     expect(sheet.getByTestId("locked-developers")).toBeDefined();
     expect(sheet.getByRole("button", { name: /Developers/ }).getAttribute("title")).toBe("Developers is part of the Business plan");
     expect(sheet.queryByTestId("locked-pipeline")).toBeNull();

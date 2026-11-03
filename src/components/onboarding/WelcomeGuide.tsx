@@ -100,8 +100,8 @@ export function WelcomeGuide({
 
   return (
     <div className="fixed inset-0 z-[80] grid place-items-end sm:place-items-center bg-black/55 backdrop-blur-sm p-0 sm:p-6" style={{ animation: "fade .25s ease-out both" }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="guide-title" className="relative w-full sm:max-w-[460px] max-h-dvh overflow-y-auto rounded-t-[32px] sm:rounded-[32px] bg-surface shadow-pop ring-1 ring-line p-6 pb-7" style={{ animation: "rise .4s var(--ease-out) both" }}>
-        <button type="button" onClick={onDone} aria-label="Skip the guide" className="absolute top-4 right-4 h-9 px-3 rounded-full text-[13px] text-fg-3 hover:text-fg hover:bg-surface-2 inline-flex items-center gap-1">
+      <div role="dialog" aria-modal="true" aria-labelledby="guide-title" className="relative w-full sm:max-w-[460px] max-h-dvh overflow-y-auto rounded-t-[32px] sm:rounded-[32px] bg-surface shadow-pop ring-1 ring-line p-6 pt-14 pb-7" style={{ animation: "rise .4s var(--ease-out) both" }}>
+        <button type="button" onClick={onDone} aria-label="Skip the guide" className="absolute z-10 top-3 right-3 h-10 px-3.5 rounded-full text-[13px] text-fg-3 hover:text-fg hover:bg-surface-2 inline-flex items-center gap-1">
           Skip <X className="w-3.5 h-3.5" aria-hidden />
         </button>
 

@@ -79,15 +79,15 @@ describe("an industry solution is part of the navigation only for a company that
     expect(screen.getByRole("button", { name: "Real estate" })).toBeDefined();
   });
 
-  it("is in the phone navigation under More, only when the company has it", () => {
-    const tabs = (solutions?: string[]) => render(<TabBar view="user" tab="inbox" onNavigate={() => {}} unreadChats={0} manager bell={null} sheetExtras={null} solutions={solutions} />);
+  it("is in the phone navigation, only when the company has it", () => {
+    const tabs = (solutions?: string[]) => render(<TabBar view="user" tab="inbox" onNavigate={() => {}} unreadChats={0} manager solutions={solutions} />);
     tabs();
-    fireMore();
+    fireMenu();
     expect(screen.queryByRole("button", { name: /Real estate/ })).toBeNull();
     cleanup();
     tabs(["real_estate"]);
-    fireMore();
-    expect(screen.getByRole("button", { name: /Real estate/ })).toBeDefined();
+    // it takes the third place in the bar, so it is there before the Menu is opened
+    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("button", { name: /Real estate/ })).toBeDefined();
   });
 
   it("the rule itself", () => {
@@ -100,8 +100,8 @@ describe("an industry solution is part of the navigation only for a company that
     expect(navVisible(campaigns, { manager: true })).toBe(true);
   });
 });
-function fireMore() {
-  fireEvent.click(screen.getByRole("button", { name: /More/ }));
+function fireMenu() {
+  fireEvent.click(screen.getByRole("button", { name: "Menu" }));
 }
 
 describe("the lead sheet", () => {

@@ -151,9 +151,93 @@
     background-clip: content-box;
     border: 2px solid transparent;
   }
+
+  /* Touch. No double-tap delay on controls, and no pull-to-reload of the whole page from a chat. */
+  button,
+  [role="button"],
+  a,
+  summary,
+  label,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    touch-action: manipulation;
+  }
+  body {
+    overscroll-behavior-y: none;
+  }
+  @media (pointer: coarse) {
+    /* iOS zooms the whole page when a field under 16px is focused: on touch screens no field is smaller */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+    /* Every small button gets a 44px target without changing the layout around it */
+    button,
+    [role="button"] {
+      position: relative;
+    }
+    button::after,
+    [role="button"]::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+    }
+    /* The finger always sees something happen */
+    button:not(:disabled):active,
+    [role="button"]:active {
+      opacity: 0.82;
+    }
+  }
 }
 
 @layer components {
+  /* A pressed control gives a little (touch screens only; a mouse has hover for this) */
+  .press {
+    transition:
+      transform 0.14s var(--ease-out),
+      opacity 0.14s var(--ease-out),
+      background-color 0.14s var(--ease-out);
+  }
+  @media (hover: none) {
+    .press:active {
+      transform: scale(0.96);
+    }
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  /* A row of chips that scrolls sideways without a scrollbar */
+  .chip-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+  .chip-row > * {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+  /* A scroller that does not hand its overscroll to the page behind it */
+  .scroll-contain {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* The height the keyboard leaves (set by useViewportHeight); the full dynamic viewport otherwise */
+  .h-app {
+    height: 100dvh;
+    height: var(--vvh, 100dvh);
+  }
   /* The left navigation scrolls on a short window; a soft fade at each end shows there is more. */
   .dock-scroll {
     scrollbar-width: none;
