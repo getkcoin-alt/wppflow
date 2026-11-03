@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { trackAttrs } from "@/lib/analytics";
+import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 const NAV = [
   { href: "/features", label: "Features" },
@@ -34,9 +35,7 @@ export function Header() {
         </nav>
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           <ThemeToggle />
-          <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "header" })} className="btn-primary hidden !py-2 text-sm sm:inline-flex">
-            Book a demo
-          </Link>
+          <a href={trialUrl()} {...trackAttrs("trial_click", { place: "header" })} className="btn-primary hidden !py-2 text-sm sm:inline-flex">{TRIAL_LABEL}</a>
           <button
             type="button"
             className="grid h-10 w-10 place-items-center rounded-full hover:bg-surface-2 md:hidden"

@@ -13,6 +13,9 @@ export function signupUrl(plan: string, interval?: "monthly" | "yearly"): string
 
 // "Start 14-day free trial": sign up first, then the Growth plan starts for 14 days with nothing to pay. The person chooses a plan
 // inside the app when the trial is nearly over.
+/** The label every "start" button uses: demos are only for white-label partners. */
+export const TRIAL_LABEL = "Start 14-day free trial";
+
 export function trialUrl(): string {
   const url = new URL(SITE.appUrl);
   url.searchParams.set("signup", "1");

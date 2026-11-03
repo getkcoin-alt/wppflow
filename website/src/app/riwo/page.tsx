@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { RIWO, RIWO_ACTIONS, RIWO_AUTOMATIC, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
 import { faqPage, howTo, speakable } from "@/lib/jsonld";
 import { trackAttrs } from "@/lib/analytics";
+import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 export const metadata: Metadata = {
   title: "Riwo — AI Reply Assistant for WhatsApp Teams",
@@ -27,9 +28,7 @@ export default function RiwoPage() {
             </h1>
             <p data-speakable className="rise-3 mt-6 max-w-xl text-lg leading-relaxed text-fg-2">{RIWO.oneLine}</p>
             <div className="rise-3 mt-8 flex flex-wrap gap-3">
-              <Link href="/contact?interest=demo" {...trackAttrs("demo_click", { place: "riwo-hero" })} className="btn-primary">
-                See Riwo in a demo <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              <a href={trialUrl()} {...trackAttrs("trial_click", { place: "riwo-hero" })} className="btn-primary">{TRIAL_LABEL} <ArrowRight className="h-4 w-4" aria-hidden="true" /></a>
               <Link href="/pricing" className="btn-ghost">Plans with Riwo</Link>
             </div>
           </div>

@@ -1,8 +1,8 @@
 import { track as vercelTrack } from "@vercel/analytics";
 
 // Conversion events, named the same everywhere so reports line up:
-// demo_click, plan_choose, whatsapp_click, contact_submit, checkout_start, checkout_paid.
-export type EventName = "demo_click" | "plan_choose" | "whatsapp_click" | "contact_submit" | "checkout_start" | "checkout_paid";
+// trial_click, demo_click (white-label partners only), plan_choose, whatsapp_click, contact_submit, checkout_start, checkout_paid.
+export type EventName = "trial_click" | "demo_click" | "plan_choose" | "whatsapp_click" | "contact_submit" | "checkout_start" | "checkout_paid";
 export type EventData = Record<string, string | number | boolean | null>;
 
 export function track(name: EventName, data: EventData = {}) {
