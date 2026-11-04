@@ -61,6 +61,7 @@ export default async function PostPage({ params }: Props) {
           <h1 className="mt-4 text-4xl leading-tight sm:text-5xl">{p.title}</h1>
           <p className="mt-4 text-sm text-fg-3">
             By the Scriwo team · <time dateTime={p.published}>{new Date(p.published).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</time> · {p.readingMinutes} min read
+            {p.updated && <> · Updated <time dateTime={p.updated}>{new Date(p.updated).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</time></>}
           </p>
           <div className="mt-10 rounded-3xl bg-surface p-6 hairline">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-gold">The short answer</p>
@@ -71,6 +72,7 @@ export default async function PostPage({ params }: Props) {
               <section key={s.heading} className="mt-10">
                 <h2 className="mb-4 text-2xl">{s.heading}</h2>
                 {s.body.map((b) => <p key={b}>{b}</p>)}
+                {s.links && <ul className="mt-4 space-y-2">{s.links.map((l) => <li key={l.href}><Link href={l.href} className="text-brand hover:underline">{l.label}</Link></li>)}</ul>}
                 {s.list && <ul className="list-disc space-y-2 pl-6">{s.list.map((l) => <li key={l}>{l}</li>)}</ul>}
               </section>
             ))}

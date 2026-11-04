@@ -16,7 +16,7 @@ const FAQS = [
   { q: "What is the best WhatsApp CRM in the UAE?", a: "It depends on how you use WhatsApp. For automated campaigns from one official number, an API platform fits. For teams in Dubai, Abu Dhabi and Sharjah whose staff talk to customers on their own numbers, Scriwo gives one inbox, per-person logins and owner visibility, priced in AED with no per-message fees." },
   { q: "What is the best WhatsApp CRM in India?", a: "For Indian sales and support teams that work from their own WhatsApp numbers, Scriwo is free for one number and team plans start at ₹2,499 a month for three numbers, with no per-message fees. If you need the official API for OTPs or bulk template campaigns, choose an API platform." },
   { q: "Can multiple users use one WhatsApp Business number?", a: "The WhatsApp Business app allows the main phone plus four linked devices, all seeing the same chats. Scriwo takes a different approach: each staff member links their own number and the owner sees every chat in one inbox, with assignment and private notes." },
-  { q: "Is there a free WhatsApp CRM?", a: "Yes. Scriwo is free for one account with one WhatsApp number, set up by our onboarding team." },
+  { q: "Is there a free WhatsApp CRM?", a: "Yes. Scriwo is free for one account with one WhatsApp number. You can create your account online and link your number." },
 ];
 
 export default function LocationsPage() {

@@ -26,7 +26,7 @@ const AI_FIRST = [
 ];
 
 const PILLARS = [
-  { icon: Users, title: "Built for companies with staff", body: "A platform admin creates your company, the owner sets a password from a single-use link, and invites the team. Each person links their own number. Owners see everything; staff see their own chats plus any assigned to them. The server enforces it." },
+  { icon: Users, title: "Built for companies with staff", body: "Create your company online with Google or email, then invite the team. Invited teammates set their own passwords from single-use links. Each person links their own number. Owners see everything; staff see their own chats plus any assigned to them. The server enforces it." },
   { icon: Gauge, title: "Feels like WhatsApp itself", body: "Messages appear live with no refresh, gaps are caught up automatically, and a chat loads its history when you open it. When something fails, Scriwo tells you why." },
   { icon: Sparkles, title: "Real teamwork", body: "Assign and resolve chats, leave private notes the customer never sees, and @mention teammates. In-app and desktop alerts, plus an alert when a phone goes offline." },
   { icon: ShieldCheck, title: "Safe by default", body: "Roles, per-company number limits, suspend, an audit log, scoped API keys and signed webhooks. Passwords are never emailed, only single-use links." },
@@ -129,8 +129,8 @@ export default async function Home() {
             <SectionTitle eyebrow="How it works" title="Live in an afternoon" />
             <ol className="mt-8 space-y-6">
               {[
-                ["Tell us about your team", "Send the contact form. We create your company with the number limit you need."],
-                ["The owner sets a password", "A single-use link arrives by email. No password is ever emailed."],
+                ["Create your workspace", "Start a 14-day Growth trial with Google or email. No card or demo booking is needed."],
+                ["Link your number", "Scan the QR code from WhatsApp’s Linked devices. Send a test enquiry from another number and reply in the inbox."],
                 ["Invite staff", "Each teammate gets their own login and links their own WhatsApp by scanning a QR code."],
                 ["Work together", "Assign, note, @mention and resolve. Owners see everything from day one."],
               ].map(([t, b], i) => (

@@ -1,3 +1,5 @@
+import { GETTING_STARTED } from "./getting-started";
+
 export type Faq = { q: string; a: string };
 
 export const GENERAL_FAQS: Faq[] = [
@@ -5,9 +7,9 @@ export const GENERAL_FAQS: Faq[] = [
   { q: "Who is Scriwo for?", a: "Companies in the UAE and India where several people talk to customers on WhatsApp: real estate brokerages, clinics, coaching institutes, travel agencies, showrooms, retailers and online stores." },
   { q: "Is Scriwo the official WhatsApp Business API?", a: "No. Scriwo is independent and is not affiliated with WhatsApp or Meta. It works with the WhatsApp numbers your team already uses, linked by scanning a QR code like WhatsApp Web." },
   { q: "Can staff see each other's chats?", a: "Staff see the chats on their own number plus any chat assigned to them. Owners see everything. This is enforced by the server, not just hidden on screen." },
-  { q: "How do I get started?", a: "In India you can buy a paid plan in rupees on the pricing page: pay online and your workspace is created as soon as the payment is confirmed. Otherwise send us a message through the contact form and our onboarding team sets up your company. Either way the owner receives a single-use link to choose a password and sign in, and then invites the team." },
+  { q: "How do I get started?", a: GETTING_STARTED.trial },
   { q: "How much does Scriwo cost?", a: "Scriwo is free for one account with one WhatsApp number. Team plans start at AED 299 a month in the UAE and ₹2,499 a month in India for up to 3 WhatsApp numbers, with no per-message fees. Growth (10 numbers) is AED 799 or ₹6,999, and Business (25 numbers) is AED 1,699 or ₹14,999. Prices exclude VAT or GST." },
-  { q: "How do I sign up?", a: "Paid plans can be bought online in rupees from the pricing page, with a GST tax invoice. Free accounts, plans in AED and Enterprise are set up by our onboarding team at the prices on the website: send the contact form or message sales on WhatsApp at +91 91191 12999, and paid plans are invoiced in AED or INR." },
+  { q: "How do I sign up?", a: GETTING_STARTED.payment },
   { q: "What can the AI do for us?", a: "Riwo, the AI assistant, prepares replies on your Today screen, drafts and translates in the inbox, summarises long chats and writes a short morning brief. If you switch it on, it can also qualify new customers by asking your questions, answer short questions from what you wrote about your business, and send your own saved replies for simple questions. Pricing and proposals always go to a person. It is part of the Growth plan and above." },
   { q: "Does the AI reply to customers by itself?", a: "Only if you switch it on, and only in safe cases. By default Riwo writes drafts and a person sends. Autopilot can send your own saved replies, word for word, and the Sales assistant can ask your questions; both are off until an owner turns them on. Everything Riwo sends says it is an automated reply, a customer can write \"human\" to reach a person, and a request for pricing or a proposal is always handed to your team." },
   { q: "Do you offer white-label?", a: "Yes, through a partner programme agreed with our team. We work with agencies, resellers and software companies who want to offer a WhatsApp inbox, AI sales assistant and pipeline to their own clients. Each client is its own company. Branding, domains and billing for partners are agreed with us for each partnership, and we tell you plainly what is available today before you commit. Start from the White-label page." },

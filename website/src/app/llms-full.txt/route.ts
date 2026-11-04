@@ -1,3 +1,4 @@
+import { GETTING_STARTED } from "@/content/getting-started";
 import { SITE, absolute } from "@/lib/site";
 import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
@@ -32,7 +33,9 @@ export async function GET() {
       return `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")} a month${year}` : "custom quote"}. ${p.for}.`;
     }),
     `- ${taxNote(catalogue, "AED")} ${taxNote(catalogue, "INR")}`,
-    "- No per-message fees. Paid plans can be bought online in rupees; free, AED and Enterprise accounts are set up by the onboarding team.",
+    `- No per-message fees. ${GETTING_STARTED.payment}`,
+    `- ${GETTING_STARTED.trial}`,
+    `- ${GETTING_STARTED.free}`,
     "",
     "## Frequently asked questions",
     ...GENERAL_FAQS.flatMap((f) => [`### ${f.q}`, f.a, ""]),
@@ -56,7 +59,7 @@ export async function GET() {
   }
   for (const p of POSTS) {
     out.push(`## ${p.title}`, `URL: ${absolute(`/blog/${p.slug}`)}`, "", p.answer, "");
-    for (const s of p.sections) out.push(`### ${s.heading}`, ...s.body, ...(s.list || []).map((l) => `- ${l}`), "");
+    for (const s of p.sections) out.push(`### ${s.heading}`, ...s.body, ...(s.list || []).map((l) => `- ${l}`), ...(s.links || []).map((l) => `- [${l.label}](${absolute(l.href)})`), "");
   }
   out.push(`## White-label and reseller partnerships`, `URL: ${absolute("/white-label")}`, "", PARTNERS.intro, "", ...PARTNER_STEPS.map(([t, b], i) => `${i + 1}. ${t}: ${b}`), "", "Agreed with our team:", ...PARTNER_TOPICS.map((t) => `- ${t}`), "", ...PARTNER_FAQS.flatMap((q) => [`Q: ${q.q}`, `A: ${q.a}`]), "");
   out.push("## Locations", ...CITIES.map((c) => `- WhatsApp CRM ${c.name} (${c.region}, ${c.country}): ${c.local} ${absolute(`/whatsapp-crm/${c.slug}`)}`), "");
