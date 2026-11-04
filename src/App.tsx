@@ -917,6 +917,14 @@ export function App() {
           variant={currentVertical()?.key === "homes" ? "homes" : "app"}
           name={user.name}
           manager={manager}
+          hasNumber={connected > 0}
+          onStart={() => {
+            setGuideClosed(true);
+            void api.markGuideSeen().catch(() => {});
+            setView("user");
+            if (manager && connected === 0) openPair();
+            else setTab("inbox");
+          }}
           onDone={() => {
             setGuideClosed(true);
             void api.markGuideSeen().catch(() => {});
@@ -1238,7 +1246,7 @@ export function App() {
               onPlan={planAction}
               onSetupStep={(key) => {
                 if (key === "connect") return openPair();
-                if (key === "replies") return setTab("inbox");
+                if (key === "reply" || key === "replies") return setTab("inbox");
                 if (key === "automation") return setTab("automations");
                 setView("admin");
                 setAdminTab("users");

@@ -26,7 +26,7 @@ export interface TodayProps {
   onOpenInbox: () => void;
   onOpenNumbers: () => void;
   onConnectNumber: () => void;
-  onSetupStep: (key: "connect" | "replies" | "automation" | "team") => void;
+  onSetupStep: (key: "connect" | "reply" | "replies" | "automation" | "team") => void;
   /** Opens the plans, for a company whose plan has no Autopilot */
   onPlan?: () => void;
 }
@@ -92,6 +92,9 @@ export function Today(props: TodayProps) {
       </Page>
     );
 
+  // Older backends provide only setup; a completed new setup must not fall back to the legacy checklist.
+  const setup = data.activation?.setup !== undefined ? data.activation.setup : data.setup;
+  const firstEnquiry = setup?.steps.some((s) => s.key === "reply" && !s.done);
   const dayText = props.hasNumber || data.needsYou.length ? dayLine(data.counts, data.replyTargetMinutes) : "Connect your WhatsApp number and your customers' messages will appear here.";
   const shown = phone && !expanded ? data.needsYou.slice(0, 3) : data.needsYou;
   const hiddenHere = data.needsYou.length - shown.length;
@@ -138,6 +141,10 @@ export function Today(props: TodayProps) {
       </header>
       )}
 
+      {firstEnquiry && setup && (
+        <div className="mt-5"><SetupCoach setup={setup} onStep={props.onSetupStep} /></div>
+      )}
+
       {data.brief && (
         <section aria-label="Morning brief" className={`${phone ? "mt-3 px-4 py-3" : "mt-6 px-5 py-4"} rounded-3xl border border-gold/30 bg-gold/[0.06] flex items-start gap-3.5`}>
           <Sparkles className="w-5 h-5 mt-0.5 shrink-0 text-gold" aria-hidden />
@@ -149,7 +156,7 @@ export function Today(props: TodayProps) {
       )}
 
       <div className={`${phone ? "mt-4" : "mt-8"} grid gap-6 lg:grid-cols-[1fr_20rem] items-start`}>
-        <section aria-labelledby="needs-title">
+        {(!firstEnquiry || data.needsYou.length > 0) && <section aria-labelledby="needs-title">
           <h2 id="needs-title" className="eyebrow mb-3">
             Needs you now
           </h2>
@@ -157,7 +164,7 @@ export function Today(props: TodayProps) {
             <div className="rounded-3xl bg-surface border border-line p-8 text-center shadow-card">
               <img src="/brand/riwo-wave.webp" alt="" width={96} height={96} className="mx-auto h-24 w-24 rounded-3xl object-cover" />
               <h3 className="mt-3 text-[20px] font-semibold text-fg">Let's connect your WhatsApp number</h3>
-              <p className="mt-1.5 text-[14.5px] text-fg-2 max-w-md mx-auto">It takes about a minute. Scan one code with your phone, and every conversation lands here, shared with your team.</p>
+              <p className="mt-1.5 text-[14.5px] text-fg-2 max-w-md mx-auto">Scan the code from WhatsApp’s Linked devices. Owners and administrators can see company chats; staff see their own number’s chats and chats assigned to them.</p>
               <button type="button" className={`${btn("primary")} mt-5`} onClick={props.onConnectNumber}>
                 <Smartphone className="w-4 h-4" aria-hidden /> Connect a number
               </button>
@@ -165,8 +172,8 @@ export function Today(props: TodayProps) {
           ) : data.needsYou.length === 0 ? (
             <div className="rounded-3xl bg-surface border border-line p-8 text-center shadow-card">
               <RiwoAvatar size={64} className="mx-auto" />
-              <h3 className="mt-3 text-[20px] font-semibold text-fg">All clear</h3>
-              <p className="mt-1.5 text-[14.5px] text-fg-2 max-w-md mx-auto">Every customer has an answer and no follow-up is due. I'll tell you the moment something needs you.</p>
+              <h3 className="mt-3 text-[20px] font-semibold text-fg">{firstEnquiry ? "Ready for your first enquiry" : "All clear"}</h3>
+              <p className="mt-1.5 text-[14.5px] text-fg-2 max-w-md mx-auto">There are no waiting enquiries or due follow-ups here. New messages will appear as they arrive.</p>
             </div>
           ) : (
             <ul className="space-y-3">
@@ -191,10 +198,10 @@ export function Today(props: TodayProps) {
               And {data.more} more. Open the inbox to see them all.
             </button>
           )}
-        </section>
+        </section>}
         <aside className="space-y-6">
-          {data.setup && <SetupCoach setup={data.setup} onStep={props.onSetupStep} />}
-          <AutopilotPanel onOpenChat={props.onOpenChat} onPlan={props.onPlan} />
+          {!firstEnquiry && setup && <SetupCoach setup={setup} onStep={props.onSetupStep} />}
+          {!firstEnquiry && <AutopilotPanel onOpenChat={props.onOpenChat} onPlan={props.onPlan} />}
         </aside>
       </div>
 
