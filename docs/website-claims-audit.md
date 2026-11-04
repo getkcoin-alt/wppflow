@@ -2,7 +2,8 @@
 
 Checked on 22 October 2026 against the code and the automated tests; updated on 25 October 2026 for task board 1.2. "Test" means a named automated test
 that fails if the behaviour breaks. "Code" means the behaviour is implemented and was read in the code, with
-no dedicated test yet.
+no dedicated test yet. "Measured" means a script checked it in a real browser; the script is in the
+repository but is not part of the automated test run.
 
 ## Features
 
@@ -33,6 +34,8 @@ no dedicated test yet.
 | Every saved change to a rule is kept (the last 20) and the last change can be undone; a workflow shows how many went each way | Test | `workflow-insights.test.js`, `workflow_builder.test.tsx` |
 | New lead, new property and booking forms can be filled from one typed line (price, bedrooms, place, day, time); nothing is saved until the person saves | Test | `quick_fill.test.ts`, `quickfill_settings.test.tsx` |
 | Pipeline and Real estate each have their own settings drawer; Real estate's (viewing length, time zone, listing freshness, lead alerts) saves only what changed and only for owners and administrators | Test | `quickfill_settings.test.tsx` |
+| "Phone-first layout for staff who live on mobile": four fixed tabs (Today, Inbox, the company's pipeline or industry screen, Menu), a chat that takes over the screen with Back returning to the list, swipe and hold on chats and contacts, sheets that can be pulled away | Test | `phone_shell.test.tsx`, `phone_touch.test.tsx`, `inbox_phone.test.tsx`, `phone_screens.test.tsx` |
+| The phone screens do not scroll sideways, every tap target is at least 44 px and every text field at least 16 px, from 320 to 430 px wide; installable to the home screen. Not claimed: push notifications, offline use, native apps | Measured | `scripts/phone-audit.mjs` (a real browser; run it when screens change, it is not part of the test run), `public/manifest.webmanifest`; see `docs/mobile.md` |
 | Scoped API keys; revoke one at a time | Test | `company-staff-flow.test.js`, `runtime-regression.test.js` |
 | Signed webhooks | Code | `webhookService.js` signs every delivery with `X-Scriwo-Signature`; no dedicated test yet |
 | Access tokens kept in memory; refresh cookie is HttpOnly; sign-in attempts rate limited | Code | `api.ts`, `authRoutes.js`, `rateLimiter.js` |

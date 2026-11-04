@@ -173,16 +173,25 @@
     textarea {
       font-size: 16px !important;
     }
-    /* Every small button gets a 44px target without changing the layout around it */
+    /* Every small control gets a 44px target without changing the layout around it: an invisible box that grows each side only as
+       far as it must (a button already 44px or more gets none, so big rows do not reach into their neighbours) */
     button,
-    [role="button"] {
+    [role="button"],
+    [role="tab"],
+    [role="switch"],
+    [role="radio"],
+    summary {
       position: relative;
     }
     button::after,
-    [role="button"]::after {
+    [role="button"]::after,
+    [role="tab"]::after,
+    [role="switch"]::after,
+    [role="radio"]::after,
+    summary::after {
       content: "";
       position: absolute;
-      inset: -4px;
+      inset: calc(-1 * max(0px, (44px - 100%) / 2));
     }
     /* Big rows already are big: they must not reach into their neighbours */
     .hit-none::after {

@@ -62,7 +62,7 @@ export function TodayList({
                   aria-label={`Give “${t.title}” to`}
                   value={t.assignedUserId ?? ""}
                   onChange={(e) => e.target.value && onReassign(t, Number(e.target.value))}
-                  className="h-8 rounded-full bg-surface-2 px-2.5 text-[12.5px] max-w-[110px]"
+                  className="h-11 sm:h-8 rounded-full bg-surface-2 px-2.5 text-[12.5px] max-w-[110px]"
                 >
                   {t.assignedUserId == null && <option value="">Nobody</option>}
                   {teammates.map((m) => (

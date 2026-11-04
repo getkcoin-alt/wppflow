@@ -251,7 +251,7 @@ export function Pipeline({
           </>
         )}
         {view === "today" && isManager && (
-          <label className="flex items-center gap-2 text-[13.5px] text-fg-2">
+          <label className="flex items-center gap-2 text-[13.5px] text-fg-2 min-h-11 sm:min-h-0">
             <input type="checkbox" checked={everyone} onChange={(e) => setEveryone(e.target.checked)} className="h-4 w-4 accent-brand-solid" />
             Show everyone's
           </label>
