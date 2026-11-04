@@ -8,7 +8,7 @@ export type Post = {
   readingMinutes: number;
   /** One-paragraph direct answer at the top: what answer engines quote. */
   answer: string;
-  sections: { heading: string; body: string[]; list?: string[] }[];
+  sections: { heading: string; body: string[]; list?: string[]; links?: { label: string; href: string }[] }[];
   related: string[];
   /** Industry slugs and markets the guide speaks to, used to link it from those pages. */
   industries?: string[];
@@ -222,7 +222,8 @@ export const POSTS: Post[] = [
     description: "A buyer's checklist for WhatsApp CRMs in Dubai, Abu Dhabi, Mumbai, Delhi and Bengaluru: connection type, message fees, team controls, data and price.",
     keyword: "best WhatsApp CRM UAE India",
     published: "2026-10-22",
-    readingMinutes: 5,
+    updated: "2026-11-04",
+    readingMinutes: 6,
     answer:
       "The best WhatsApp CRM depends on how your team uses WhatsApp. If you send automated campaigns from one official number, pick an API platform and budget for Meta's per-message fees. If your staff sell and support customers from their own numbers, pick a team inbox like Scriwo with per-person logins, chat assignment, owner visibility and no per-message fees. Check the price in AED or INR, the free plan and how fast you can go live.",
     sections: [
@@ -252,6 +253,16 @@ export const POSTS: Post[] = [
         body: [
           "Scriwo is a team inbox for the WhatsApp numbers your staff already use, built for companies in the UAE and India. It is free for one account with one number, and team plans start at AED 299 or ₹2,499 a month with no per-message fees.",
           "It is not the WhatsApp Business API, so it does not offer a green tick or approved template campaigns. If you need those, an API platform is the better fit.",
+        ],
+      },
+      {
+        heading: "Prove the workflow before choosing a plan",
+        body: ["Test an enquiry from another number, a delivered human reply, a private note and a handover to a teammate using their own login. A connected phone alone does not prove that your team can handle customers together. Check what an agent can see separately from what an owner can see.", "For property agencies, test the qualification, listing and viewing workflow. For a dealership, confirm how your team will record vehicle requirements and requested test drives. Do not assume that a general inbox includes a portal feed or inventory integration."],
+        links: [
+          { label: "Run the WhatsApp CRM trial checklist", href: "/blog/test-whatsapp-crm-before-buying" },
+          { label: "See current plans and limits", href: "/pricing" },
+          { label: "Review access controls and security", href: "/security" },
+          { label: "Explore the property-agency edition", href: "/homes" },
         ],
       },
     ],
@@ -457,6 +468,83 @@ export const POSTS: Post[] = [
     related: ["chat-assignment", "multiple-whatsapp-numbers", "private-notes-and-mentions"],
     country: "India",
     industries: ["real-estate"],
+  },
+  {
+    slug: "test-whatsapp-crm-before-buying",
+    title: "How to test a WhatsApp CRM before you buy: a team checklist",
+    description: "Test connection, incoming messages, delivery receipts, staff visibility and handover with a real enquiry before choosing a WhatsApp CRM plan.",
+    keyword: "WhatsApp CRM trial checklist",
+    published: "2026-11-04",
+    readingMinutes: 5,
+    answer: "Test a WhatsApp CRM with an enquiry from a second number, a human reply, a private note and a teammate handover. Confirm that the reply reaches the phone, the note stays internal and staff see only the conversations their role permits. A connected number or an AI-generated draft alone does not prove the workflow works.",
+    sections: [
+      {
+        heading: "Prepare a small test before importing your customers",
+        body: ["Choose one company-controlled WhatsApp number, a second number whose owner agrees to help, and one teammate. Use a fictional enquiry such as a request for opening hours. Do not upload a customer list or turn on campaigns just to evaluate the inbox.", "Write down the job you need the CRM to do: assign enquiries while an agent is busy, remember a promised callback, or give a manager visibility. Pick one job for the first session. A feature tour is less useful than completing that job."],
+        links: [{ label: "See Scriwo's shared team inbox", href: "/features/whatsapp-team-inbox" }],
+      },
+      {
+        heading: "Connect, receive and reply",
+        body: ["Create a workspace and link a number using the connection method the provider supports. Scriwo uses a linked-device connection like WhatsApp Web; it is not the official WhatsApp Business API. Keep the phone available and follow the instructions in Numbers.", "Ask the helper to send an enquiry from the second number. Open it in the inbox, type a reply and check the helper's phone. Distinguish a queued send, a sent message and a delivered message. A delivery receipt is stronger evidence than a button that merely accepted a request; it still does not mean the person read or acted on the message.", "If nothing arrives, confirm the linked number is connected and check the displayed error before retrying. Do not repeatedly resend an uncertain message. In Scriwo, first-enquiry setup completes after a human reply is marked delivered or read, rather than after a note or automatic reply."],
+      },
+      {
+        heading: "Prove the team controls with two separate logins",
+        body: ["On a plan that supports teammates, invite the helper and ask them to sign in separately. Assign the test chat to them and confirm they can open it. Sign in as an agent rather than an owner for this check: an owner's broad access cannot prove staff restrictions work.", "Scriwo staff see their own number's chats plus chats assigned to them. Owners and administrators see company chats. Use the test to confirm the arrangement matches your business, especially if staff use numbers containing personal conversations.", "Add a private note saying this is an internal handover test. Check the helper's customer phone: the note must not appear there. Then ask the teammate to reply and resolve the conversation."],
+        links: [{ label: "Private notes and mentions", href: "/features/private-notes-and-mentions" }, { label: "Roles, access and security", href: "/security" }],
+      },
+      {
+        heading: "Check the next day's work, not only the first reply",
+        body: ["If the plan includes a pipeline, add a lead from the chat and create a follow-up. Check who owns it and where it appears. Reopen the conversation after signing out and back in: the context should still be there.", "For a property agency, try a listing and a viewing using test details. Check an intentional booking conflict and make sure a requested meeting is not being presented as a confirmed calendar appointment. Scriwo Homes has viewing tools; a general workflow meeting request is a follow-up request, not external calendar availability."],
+        links: [{ label: "Sales pipeline and follow-ups", href: "/features/whatsapp-sales-pipeline" }, { label: "Scriwo Homes for property agencies", href: "/homes" }],
+      },
+      {
+        heading: "Decide using evidence from the trial",
+        body: ["Record what worked, what failed, how long setup took and what required help. Compare plan limits, ongoing cost, available history and export options before paying. A trial is useful even if it shows that another connection model suits you better.", "Scriwo offers a no-card 14-day Growth trial with up to three linked numbers. Paid Growth has its own number limit; the trial allowance and the paid plan are not identical. The Free plan is for one account and one number. Check the current pricing page for entitlements, taxes and billing options."],
+        links: [{ label: "Current Scriwo plans and trial details", href: "/pricing" }, { label: "What the Free plan includes", href: "/free-whatsapp-crm" }],
+      },
+    ],
+    related: ["whatsapp-team-inbox", "chat-assignment", "private-notes-and-mentions"],
+  },
+  {
+    slug: "whatsapp-car-dealership-lead-follow-up",
+    title: "WhatsApp lead follow-up for car dealerships: enquiry to test drive",
+    description: "A practical dealership workflow for assigning WhatsApp enquiries, recording vehicle requirements, arranging test drives and following up without losing context.",
+    keyword: "WhatsApp for car dealerships",
+    published: "2026-11-04",
+    readingMinutes: 5,
+    industries: ["automobile-dealers"],
+    answer: "Give each dealership WhatsApp enquiry an owner, record the vehicle and buying requirements, agree the next step and create a follow-up. Keep availability, quotations and finance decisions with authorised staff. A shared inbox helps salespeople hand over the conversation; a pipeline makes an unanswered enquiry or overdue callback visible to the manager.",
+    sections: [
+      {
+        heading: "Capture the enquiry without asking the buyer to start again",
+        body: ["A buyer may ask about a vehicle they saw online, send a photo or return to an older conversation. Read the existing chat before asking questions. Record whether they want a new or used vehicle, the model or body type, budget range, location, timeframe and whether a trade-in is involved.", "Collect only information needed for the next step. An early WhatsApp enquiry is not the place to request identity documents or detailed financial records. If finance is discussed, move any application into the dealership's approved process; a chat assistant should not promise approval."],
+      },
+      {
+        heading: "Give the conversation to one salesperson",
+        body: ["Assign an owner as soon as the enquiry arrives. If the person who owns that WhatsApp number is occupied, hand the chat to an available teammate rather than leaving two people to assume the other will answer.", "An internal handover note can be simple: 'Asked about a used automatic SUV; wants to visit Saturday; check current stock before quoting.' Label those details as the buyer's stated requirements, not verified availability. In Scriwo, private notes stay inside the team inbox and are not sent to the customer."],
+        links: [{ label: "Chat assignment for a sales team", href: "/features/chat-assignment" }, { label: "Private notes for handovers", href: "/features/private-notes-and-mentions" }],
+      },
+      {
+        heading: "Confirm the vehicle and test-drive arrangements yourself",
+        body: ["Have an authorised employee confirm that the vehicle is still available, the specification is correct and the quoted price is current. Include the quotation's scope and any conditions using the dealership's approved wording.", "Agree a test-drive time through your existing booking process. Save the agreed next step on the lead and create a reminder. Scriwo's general sales pipeline records leads and follow-ups; it does not provide a dealership inventory feed or a dedicated test-drive booking integration. Do not treat a follow-up task as proof that a vehicle or appointment has been reserved."],
+        links: [{ label: "WhatsApp sales pipeline", href: "/features/whatsapp-sales-pipeline" }],
+      },
+      {
+        heading: "Use AI to prepare, and people to confirm",
+        body: ["Riwo can summarise the conversation, tidy a rough answer or prepare a reply for a salesperson to review. If you enable a qualification workflow, decide which questions it may ask and where a person should take over.", "Keep prices, availability, finance terms and commitments under human control. When a buyer asks for a person, hand over promptly with their requirements and the questions already answered. Test the workflow with a colleague before enabling it for customers."],
+        links: [{ label: "Riwo AI assistant", href: "/riwo" }, { label: "AI handover and disclosure", href: "/features/ai-handoff-and-disclosure" }],
+      },
+      {
+        heading: "Follow up on the promise, not on an arbitrary message schedule",
+        body: ["After the visit, record what the buyer wanted next: another model, a valuation, a quote or time to decide. Assign the task to one person and set the agreed due date. A useful follow-up refers to that request; repeated generic messages add work without answering the buyer's question.", "Separate an individual requested follow-up from a marketing broadcast. Do not assume that enquiring about one car means permission for every future offer. Check recorded marketing permission and honour opt-outs before including a contact in a campaign."],
+      },
+      {
+        heading: "Review the dealership's own numbers each week",
+        body: ["Review waiting enquiries, unassigned conversations, overdue follow-ups and outcomes your team has actually recorded. Choose a reply target appropriate to your opening hours and staffing. Compare the same periods and definitions; there is no universal conversion rate every dealership should expect.", "Record confirmed test drives, quotations and completed sales in the system your team actually uses. Scriwo does not automatically know whether a test drive happened or a vehicle sold. Start with one number and one handover, then expand when staff can complete the workflow reliably."],
+        links: [{ label: "Scriwo for automobile dealers", href: "/industries/automobile-dealers" }, { label: "Trial checklist before you choose a CRM", href: "/blog/test-whatsapp-crm-before-buying" }],
+      },
+    ],
+    related: ["chat-assignment", "whatsapp-sales-pipeline", "ai-handoff-and-disclosure"],
   },
 ];
 
