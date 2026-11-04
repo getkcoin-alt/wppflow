@@ -1,13 +1,14 @@
+import { createPortal } from "react-dom";
 import type { LucideIcon } from "lucide-react";
 
 /**
  * The one main thing to do on a screen (start a chat, add a contact, add a lead), a round button under the thumb. Phones only: on a
  * big screen the same action is in the header. It sits above the tab bar, wherever that is (`--tabbar-h`), and steps aside when
- * the bar does.
+ * the bar does. It is drawn on the page itself (not inside the screen): a screen that animates in would otherwise carry it along.
  */
 export function Fab({ label, icon: Icon, onClick, hidden = false }: { label: string; icon: LucideIcon; onClick: () => void; hidden?: boolean }) {
-  if (hidden) return null;
-  return (
+  if (hidden || typeof document === "undefined") return null;
+  return createPortal(
     <button
       type="button"
       onClick={onClick}
@@ -16,6 +17,7 @@ export function Fab({ label, icon: Icon, onClick, hidden = false }: { label: str
       style={{ bottom: "calc(var(--tabbar-h, 0px) + 16px)" }}
     >
       <Icon className="w-6 h-6" strokeWidth={2} aria-hidden />
-    </button>
+    </button>,
+    document.body,
   );
 }

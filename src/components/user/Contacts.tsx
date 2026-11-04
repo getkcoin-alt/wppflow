@@ -20,7 +20,7 @@ import { LabelPicker } from "../labels/LabelPicker";
 import { useLabels } from "../labels/useLabels";
 import type { NewChatPerson } from "./NewChatSheet";
 import { parseContactsCsv, contactsCsv } from "../../utils/csv";
-import { Download, Funnel, MessageSquare, Plus, Search, Tag, Upload, Users } from "lucide-react";
+import { Download, Funnel, MessageSquare, Pencil, Plus, Search, Tag, Trash2, Upload, Users } from "lucide-react";
 import { NewLeadSheet } from "../pipeline/NewLeadSheet";
 import { usePipelineSettings } from "../pipeline/usePipelineSettings";
 import { Avatar } from "../ui/Avatar";
@@ -28,6 +28,10 @@ import { EmptyState, Field, Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import { Sheet } from "../ui/Sheet";
 import { mobileText } from "../../utils/chatName";
+import { useIsPhone } from "../../hooks/useMedia";
+import { ActionSheet } from "../mobile/ActionSheet";
+import { Fab } from "../mobile/Fab";
+import { ContactRow } from "./contacts/ContactRow";
 export function Contacts({
   onSelectChat,
   pipeline,
@@ -60,7 +64,9 @@ export function Contacts({
     [managing, setManaging] = useState(false),
     [formLabels, setFormLabels] = useState<Label[]>([]),
     [formName, setFormName] = useState(""),
-    [duplicate, setDuplicate] = useState<{ id: string; message: string } | null>(null);
+    [duplicate, setDuplicate] = useState<{ id: string; message: string } | null>(null),
+    [sheetFor, setSheetFor] = useState<any | null>(null);
+  const phone = useIsPhone();
   const labels = useLabels();
   const pipelineSettings = usePipelineSettings(Boolean(pipeline));
   const stages = (pipelineSettings.data?.stages || []).map(({ id, name, kind, position }) => ({ id, name, kind, position }));
@@ -132,6 +138,35 @@ export function Contacts({
     const known: Label[] = qc.getQueryData(["labels", tenant]) ?? labels.data ?? [];
     setFormLabels(ids.map((id) => known.find((l) => l.id === id) ?? formLabels.find((l) => l.id === id)).filter(Boolean) as Label[]);
   };
+  const exportContacts = () =>
+    void run(async () => {
+      const all: any[] = [];
+      let cursor: string | null = null;
+      do {
+        const page = await fetchContacts(cursor ? { cursor } : {});
+        all.push(...page.contacts);
+        cursor = page.nextCursor;
+      } while (cursor);
+      const url = URL.createObjectURL(new Blob([contactsCsv(all)], { type: "text/csv" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "contacts.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  const deleteContact = (c: any) => {
+    if (confirm("Delete this contact? Conversation history will be retained."))
+      void run(async () => {
+        await removeContact(c.id);
+      });
+  };
+  const toggle = (id: string) =>
+    setPicked((p) => {
+      const next = new Set(p);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const bulk = (change: { add?: string[]; remove?: string[] }) =>
     run(async () => {
       const r = await applyLabels({ contactIds: [...picked], ...change });
@@ -143,6 +178,13 @@ export function Contacts({
         eyebrow="People"
         title="Contacts"
         subtitle="Everyone you talk to, with labels and recorded permission for broadcasts."
+        phone={{
+          more: [
+            { key: "import", label: "Import contacts from a CSV file", icon: Upload, disabled: busy, onSelect: () => file.current?.click() },
+            { key: "export", label: "Export all contacts", icon: Download, disabled: busy, onSelect: exportContacts },
+            ...(canManageLabels ? [{ key: "labels", label: "Manage labels", icon: Tag, disabled: busy, onSelect: () => setManaging(true) }] : []),
+          ],
+        }}
         actions={
           <>
             <button
@@ -155,25 +197,7 @@ export function Contacts({
             <button
               disabled={busy}
               className={btn("secondary")}
-              onClick={() =>
-                void run(async () => {
-                  const all: any[] = [];
-                  let cursor: string | null = null;
-                  do {
-                    const page = await fetchContacts(cursor ? { cursor } : {});
-                    all.push(...page.contacts);
-                    cursor = page.nextCursor;
-                  } while (cursor);
-                  const url = URL.createObjectURL(
-                    new Blob([contactsCsv(all)], { type: "text/csv" }),
-                  );
-                  const link = document.createElement("a");
-                  link.href = url;
-                  link.download = "contacts.csv";
-                  link.click();
-                  URL.revokeObjectURL(url);
-                })
-              }
+              onClick={exportContacts}
             >
               <Download className="w-4 h-4" /> Export contacts
             </button>
@@ -371,6 +395,14 @@ export function Contacts({
               : "Add your first contact or import a CSV."
           }
         />
+      ) : phone ? (
+        <ul className="-mx-4 bg-surface">
+          {rows.map((c: any) => (
+            <li key={c.id}>
+              <ContactRow contact={c} selecting={picked.size > 0} selected={picked.has(c.id)} onOpen={() => setSheetFor(c)} onToggle={() => toggle(c.id)} />
+            </li>
+          ))}
+        </ul>
       ) : (
         <ul className="card divide-y divide-line overflow-hidden !rounded-3xl">
           {rows.map((c: any) => (
@@ -445,16 +477,7 @@ export function Contacts({
                 <button
                   className={`${btn("ghost", "sm")} !text-danger`}
                   disabled={busy}
-                  onClick={() => {
-                    if (
-                      confirm(
-                        "Delete this contact? Conversation history will be retained.",
-                      )
-                    )
-                      void run(async () => {
-                        await removeContact(c.id);
-                      });
-                  }}
+                  onClick={() => deleteContact(c)}
                 >
                   Delete
                 </button>
@@ -527,6 +550,27 @@ export function Contacts({
             Load more contacts
           </button>
         </div>
+      )}
+      {phone && (
+        <>
+          <Fab label="New contact" icon={Plus} onClick={() => openForm(null)} hidden={picked.size > 0} />
+          <ActionSheet
+            open={sheetFor !== null}
+            onClose={() => setSheetFor(null)}
+            title={sheetFor?.name}
+            subtitle={sheetFor ? [mobileText(sheetFor.phone), sheetFor.optIn ? "Opted in" : "No permission yet"].join(" · ") : undefined}
+            actions={
+              sheetFor
+                ? [
+                    { key: "chat", label: "Message", icon: MessageSquare, onSelect: () => onSelectChat({ contactId: sheetFor.id, name: sheetFor.name, phone: sheetFor.phone, optIn: Boolean(sheetFor.optIn) }) },
+                    ...(pipeline ? [{ key: "lead", label: "Add to pipeline", icon: Funnel, onSelect: () => setLeadFor(sheetFor) }] : []),
+                    { key: "edit", label: "Edit", icon: Pencil, onSelect: () => openForm(sheetFor) },
+                    { key: "delete", label: "Delete", icon: Trash2, tone: "danger" as const, disabled: busy, onSelect: () => deleteContact(sheetFor) },
+                  ]
+                : []
+            }
+          />
+        </>
       )}
       {canManageLabels && <LabelManager open={managing} onClose={() => setManaging(false)} />}
       {pipeline && (

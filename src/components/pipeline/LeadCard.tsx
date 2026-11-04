@@ -1,6 +1,9 @@
-import { AlertCircle, CalendarClock, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, CalendarClock, ChevronDown, MessageSquare } from "lucide-react";
 import type { Lead, PipelineStage } from "../../services/api";
 import { dueLabel, formatMoney, inStage } from "../../utils/pipeline";
+import { useIsPhone } from "../../hooks/useMedia";
+import { ActionSheet } from "../mobile/ActionSheet";
 
 // One lead on the board. The whole card opens it; the step menu is a real <select>, so it works with a keyboard
 // and brings up the phone's own picker on a phone, where dragging a card is awkward.
@@ -26,6 +29,8 @@ export function LeadCard({
   onDropBefore?: () => void;
 }) {
   const due = lead.nextTask ? dueLabel(lead.nextTask.dueAt) : null;
+  const phone = useIsPhone();
+  const [picking, setPicking] = useState(false);
   return (
     <article
       draggable={Boolean(onDragStart)}
@@ -86,6 +91,21 @@ export function LeadCard({
         <span className="text-[12px] text-fg-3 truncate" title={lead.ownerName ? `Owned by ${lead.ownerName}` : "Nobody owns this yet"}>
           {lead.ownerName || "Unowned"}
         </span>
+        {phone ? (
+          <>
+            <button type="button" aria-label={`Move ${lead.contactName} to another step`} onClick={() => setPicking(true)} className="press h-9 rounded-full bg-surface-2 pl-3.5 pr-2.5 text-[13.5px] font-medium text-fg-2 inline-flex items-center gap-1">
+              Move to
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden />
+            </button>
+            <ActionSheet
+              open={picking}
+              onClose={() => setPicking(false)}
+              title="Move to"
+              subtitle={lead.contactName}
+              actions={stages.filter((s) => s.id !== lead.stageId).map((s) => ({ key: s.id, label: s.name, onSelect: () => onMove(s) }))}
+            />
+          </>
+        ) : (
         <select
           aria-label={`Move ${lead.contactName} to another step`}
           value=""
@@ -104,6 +124,7 @@ export function LeadCard({
               </option>
             ))}
         </select>
+        )}
       </div>
     </article>
   );

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useIsPhone } from "../../hooks/useMedia";
 import { useQuery } from "@tanstack/react-query";
 import { Bot, Briefcase, Globe2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import {
@@ -86,6 +87,7 @@ export function Automations({
     [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const phone = useIsPhone();
   const templates = useQuery({
     queryKey: ["automation-templates"],
     queryFn: fetchAutomationTemplates,
@@ -161,6 +163,148 @@ export function Automations({
         ))}
       </div>
     </section>
+  );
+
+  // the ideas (describe it, the knowledge base, ready-made helpers) and the rules the company already has: on a phone the rules come first
+  const ideas = (
+    <>
+      {!automations.some((a) => a.actionType === "workflow") && (
+        <section aria-label="Describe a workflow in your own words" className="card p-6 mb-8 flex flex-wrap items-center gap-5 bg-gradient-to-br from-brand/5 via-transparent to-gold/10">
+          <img src="/brand/riwo-wave.webp" alt="" width={84} height={84} className="h-[84px] w-[84px] rounded-3xl object-cover shrink-0" />
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[18px] font-semibold">Just tell Riwo what you want</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              Write it the way you would tell a new team member, in any language. Riwo builds the whole workflow for you, adds the safety, shows it back in plain steps and lets you try it as a customer before anyone real sees it.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setBuilder({ initial: null })}>
+            <Sparkles className="w-4 h-4" aria-hidden /> Describe it
+          </button>
+        </section>
+      )}
+
+      <KnowledgeCard />
+
+      {!automations.some(isAgent) && (
+        <section aria-label="Riwo sales agent" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
+          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-gold/15 text-gold">
+            <Sparkles className="w-5 h-5" aria-hidden />
+          </div>
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[17px] font-semibold">Riwo sales agent</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              Describe in your own words how you want customers handled. Riwo talks to every new customer from your knowledge base, finds out what they need, recommends the right product and moves them to the next step. It never invents a price, and a person takes over when the customer is ready.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setAgentRecipe({ rule: agentStart() })}>
+            <Plus className="w-4 h-4" aria-hidden /> Set it up
+          </button>
+        </section>
+      )}
+
+      {!automations.some(isSales) && (
+        <section aria-label="Sales assistant" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
+          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
+            <Briefcase className="w-5 h-5" aria-hidden />
+          </div>
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[17px] font-semibold">Sales assistant</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              Riwo asks new customers your questions and keeps the answers. When they ask for pricing or a proposal, it sends your formal message, hands the chat to an executive with a summary, and adds them to your pipeline.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setSalesRecipe({ rule: salesStart() })}>
+            <Plus className="w-4 h-4" aria-hidden /> Set it up
+          </button>
+        </section>
+      )}
+
+      {!automations.some((a) => a.triggerType === "foreign_number") && (
+        <section aria-label="Welcome people from other countries" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
+          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
+            <Globe2 className="w-5 h-5" aria-hidden />
+          </div>
+          <div className="flex-1 min-w-[16rem]">
+            <h2 className="text-[17px] font-semibold">Welcome people from other countries</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
+              When a number from abroad writes to you for the first time, send a warm welcome, ask where they found you, and let Riwo answer their short questions until your team replies.
+            </p>
+          </div>
+          <button type="button" className={btn("primary")} onClick={() => setRecipe({ rule: abroadStart() })}>
+            <Plus className="w-4 h-4" aria-hidden /> Set it up
+          </button>
+        </section>
+      )}
+
+      <AssignmentRule />
+    </>
+  );
+  const rules = (
+    <>
+      {!automations.length ? (
+        <div className="card p-6 mb-8 flex items-start gap-4">
+          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
+            <Bot className="w-5 h-5" aria-hidden />
+          </div>
+          <div>
+            <h2 className="text-[17px] font-semibold">No rules yet</h2>
+            <p className="text-[14px] text-fg-2 mt-1 max-w-xl">
+              Start with the recommended ones below: a welcome for new customers, an away message after hours, and the STOP and SUBSCRIBE replies that let customers manage their own broadcast permission.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {automations.map((a) => {
+            const sentence = describeRule(ruleOf(a), countryName);
+            return (
+              <article key={a.id} className="card p-6 flex flex-col">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-[18px] font-semibold">{a.name}</h2>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {a.config?.pilot?.enabled && <Pill tone="gold">Test mode</Pill>}
+                    <Pill tone={a.isEnabled ? "ok" : "neutral"} dot>
+                      {a.isEnabled ? "Live" : "Paused"}
+                    </Pill>
+                  </div>
+                </div>
+                <p className="mt-3 text-[14px] text-fg-2">{sentence.when},</p>
+                <p className="mt-1 text-[15px] text-fg leading-relaxed">{endSentence(sentence.then)}</p>
+                {a.actionType === "workflow" && <Insights id={a.id} />}
+                <p className="mt-4 text-[12.5px] text-fg-3">
+                  Completed executions: {a.executionsCount}
+                  {a.config?.cooldownHours ? ` · waits ${a.config.cooldownHours} h before repeating` : ""}
+                </p>
+                <div className="mt-5 pt-4 border-t border-line flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <button disabled={busy} onClick={() => void run(() => toggleAutomationApi(a.id))} className={btn("secondary", "sm")}>
+                      {a.isEnabled ? "Pause" : "Enable"}
+                    </button>
+                    <button disabled={busy} onClick={() => edit(a)} className={btn("ghost", "sm")} aria-label={`Edit ${a.name}`}>
+                      <Pencil className="w-4 h-4" /> Edit
+                    </button>
+                    {a.config?.pilot?.enabled && (
+                      <button disabled={busy} onClick={() => void switchOnForEveryone(a)} className={btn("ghost", "sm")} aria-label={`Run ${a.name} for everyone`}>
+                        For everyone
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    disabled={busy}
+                    aria-label={`Delete ${a.name}`}
+                    className="h-9 w-9 grid place-items-center rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
+                    onClick={() => void run(() => removeAutomation(a.id))}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+    </>
   );
 
   return (
@@ -290,137 +434,16 @@ export function Automations({
         }}
       />
 
-      {!automations.some((a) => a.actionType === "workflow") && (
-        <section aria-label="Describe a workflow in your own words" className="card p-6 mb-8 flex flex-wrap items-center gap-5 bg-gradient-to-br from-brand/5 via-transparent to-gold/10">
-          <img src="/brand/riwo-wave.webp" alt="" width={84} height={84} className="h-[84px] w-[84px] rounded-3xl object-cover shrink-0" />
-          <div className="flex-1 min-w-[16rem]">
-            <h2 className="text-[18px] font-semibold">Just tell Riwo what you want</h2>
-            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
-              Write it the way you would tell a new team member, in any language. Riwo builds the whole workflow for you, adds the safety, shows it back in plain steps and lets you try it as a customer before anyone real sees it.
-            </p>
-          </div>
-          <button type="button" className={btn("primary")} onClick={() => setBuilder({ initial: null })}>
-            <Sparkles className="w-4 h-4" aria-hidden /> Describe it
-          </button>
-        </section>
-      )}
-
-      <KnowledgeCard />
-
-      {!automations.some(isAgent) && (
-        <section aria-label="Riwo sales agent" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
-          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-gold/15 text-gold">
-            <Sparkles className="w-5 h-5" aria-hidden />
-          </div>
-          <div className="flex-1 min-w-[16rem]">
-            <h2 className="text-[17px] font-semibold">Riwo sales agent</h2>
-            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
-              Describe in your own words how you want customers handled. Riwo talks to every new customer from your knowledge base, finds out what they need, recommends the right product and moves them to the next step. It never invents a price, and a person takes over when the customer is ready.
-            </p>
-          </div>
-          <button type="button" className={btn("primary")} onClick={() => setAgentRecipe({ rule: agentStart() })}>
-            <Plus className="w-4 h-4" aria-hidden /> Set it up
-          </button>
-        </section>
-      )}
-
-      {!automations.some(isSales) && (
-        <section aria-label="Sales assistant" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
-          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
-            <Briefcase className="w-5 h-5" aria-hidden />
-          </div>
-          <div className="flex-1 min-w-[16rem]">
-            <h2 className="text-[17px] font-semibold">Sales assistant</h2>
-            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
-              Riwo asks new customers your questions and keeps the answers. When they ask for pricing or a proposal, it sends your formal message, hands the chat to an executive with a summary, and adds them to your pipeline.
-            </p>
-          </div>
-          <button type="button" className={btn("primary")} onClick={() => setSalesRecipe({ rule: salesStart() })}>
-            <Plus className="w-4 h-4" aria-hidden /> Set it up
-          </button>
-        </section>
-      )}
-
-      {!automations.some((a) => a.triggerType === "foreign_number") && (
-        <section aria-label="Welcome people from other countries" className="card p-6 mb-8 flex flex-wrap items-start gap-4">
-          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
-            <Globe2 className="w-5 h-5" aria-hidden />
-          </div>
-          <div className="flex-1 min-w-[16rem]">
-            <h2 className="text-[17px] font-semibold">Welcome people from other countries</h2>
-            <p className="text-[14px] text-fg-2 mt-1 max-w-2xl">
-              When a number from abroad writes to you for the first time, send a warm welcome, ask where they found you, and let Riwo answer their short questions until your team replies.
-            </p>
-          </div>
-          <button type="button" className={btn("primary")} onClick={() => setRecipe({ rule: abroadStart() })}>
-            <Plus className="w-4 h-4" aria-hidden /> Set it up
-          </button>
-        </section>
-      )}
-
-      <AssignmentRule />
-
-      {!automations.length ? (
-        <div className="card p-6 mb-8 flex items-start gap-4">
-          <div className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
-            <Bot className="w-5 h-5" aria-hidden />
-          </div>
-          <div>
-            <h2 className="text-[17px] font-semibold">No rules yet</h2>
-            <p className="text-[14px] text-fg-2 mt-1 max-w-xl">
-              Start with the recommended ones below: a welcome for new customers, an away message after hours, and the STOP and SUBSCRIBE replies that let customers manage their own broadcast permission.
-            </p>
-          </div>
-        </div>
+      {phone ? (
+        <>
+          {rules}
+          {ideas}
+        </>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {automations.map((a) => {
-            const sentence = describeRule(ruleOf(a), countryName);
-            return (
-              <article key={a.id} className="card p-6 flex flex-col">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-[18px] font-semibold">{a.name}</h2>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {a.config?.pilot?.enabled && <Pill tone="gold">Test mode</Pill>}
-                    <Pill tone={a.isEnabled ? "ok" : "neutral"} dot>
-                      {a.isEnabled ? "Live" : "Paused"}
-                    </Pill>
-                  </div>
-                </div>
-                <p className="mt-3 text-[14px] text-fg-2">{sentence.when},</p>
-                <p className="mt-1 text-[15px] text-fg leading-relaxed">{endSentence(sentence.then)}</p>
-                {a.actionType === "workflow" && <Insights id={a.id} />}
-                <p className="mt-4 text-[12.5px] text-fg-3">
-                  Completed executions: {a.executionsCount}
-                  {a.config?.cooldownHours ? ` · waits ${a.config.cooldownHours} h before repeating` : ""}
-                </p>
-                <div className="mt-5 pt-4 border-t border-line flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <button disabled={busy} onClick={() => void run(() => toggleAutomationApi(a.id))} className={btn("secondary", "sm")}>
-                      {a.isEnabled ? "Pause" : "Enable"}
-                    </button>
-                    <button disabled={busy} onClick={() => edit(a)} className={btn("ghost", "sm")} aria-label={`Edit ${a.name}`}>
-                      <Pencil className="w-4 h-4" /> Edit
-                    </button>
-                    {a.config?.pilot?.enabled && (
-                      <button disabled={busy} onClick={() => void switchOnForEveryone(a)} className={btn("ghost", "sm")} aria-label={`Run ${a.name} for everyone`}>
-                        For everyone
-                      </button>
-                    )}
-                  </div>
-                  <button
-                    disabled={busy}
-                    aria-label={`Delete ${a.name}`}
-                    className="h-9 w-9 grid place-items-center rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
-                    onClick={() => void run(() => removeAutomation(a.id))}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <>
+          {ideas}
+          {rules}
+        </>
       )}
       {gallery}
     </Page>

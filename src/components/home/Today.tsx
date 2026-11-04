@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
 import { Search, Smartphone, Sparkles } from "lucide-react";
@@ -11,6 +11,8 @@ import { Performance } from "./Performance";
 import { SetupCoach } from "./SetupCoach";
 import { AutopilotPanel } from "./AutopilotPanel";
 import { dayLine, endOfToday, greetingFor } from "./greeting";
+import { useIsPhone } from "../../hooks/useMedia";
+import { usePhoneChrome } from "../mobile/PhoneChrome";
 
 export interface TodayProps {
   workspaceName: string;
@@ -40,6 +42,10 @@ export function Today(props: TodayProps) {
   });
   const data = home.data;
   const refresh = () => qc.invalidateQueries({ queryKey: ["home", tenant] });
+  const phone = useIsPhone();
+  const chrome = usePhoneChrome();
+  // on a phone the list is the first three things; the rest is one tap away
+  const [expanded, setExpanded] = useState(false);
 
   // a small celebration when the last waiting thing is dealt with, never on first load
   const total = data ? data.counts.waiting + data.counts.tasksDue + data.counts.numbersNeedingCare : null;
@@ -86,8 +92,30 @@ export function Today(props: TodayProps) {
       </Page>
     );
 
+  const dayText = props.hasNumber || data.needsYou.length ? dayLine(data.counts, data.replyTargetMinutes) : "Connect your WhatsApp number and your customers' messages will appear here.";
+  const shown = phone && !expanded ? data.needsYou.slice(0, 3) : data.needsYou;
+  const hiddenHere = data.needsYou.length - shown.length;
+
   return (
     <Page>
+      {phone ? (
+        // A phone gets a greeting, one line of what is going on, and the alerts: the work starts right under it.
+        <header className="pt-1">
+          <div className="flex items-center gap-1">
+            <h1 className="flex-1 min-w-0 font-serif text-[27px] leading-[1.15] text-fg tracking-tight">
+              {greetingFor()}
+              {data.firstName ? `, ${data.firstName}` : ""}
+            </h1>
+            <button type="button" onClick={props.onSearch} aria-label="Search and commands" className="press h-11 w-11 shrink-0 grid place-items-center rounded-full text-fg-2">
+              <Search className="w-[22px] h-[22px]" strokeWidth={1.9} aria-hidden />
+            </button>
+            {chrome?.bell}
+          </div>
+          <p className="mt-0.5 text-[14.5px] leading-snug text-fg-2" aria-live="polite">
+            {dayText}
+          </p>
+        </header>
+      ) : (
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-4 min-w-0">
           <RiwoAvatar size={52} className="mt-1" />
@@ -98,7 +126,7 @@ export function Today(props: TodayProps) {
               {data.firstName ? `, ${data.firstName}` : ""}
             </h1>
             <p className="mt-2 text-[15.5px] text-fg-2 max-w-2xl" aria-live="polite">
-              {props.hasNumber || data.needsYou.length ? dayLine(data.counts, data.replyTargetMinutes) : "Connect your WhatsApp number and your customers' messages will appear here."}
+              {dayText}
             </p>
           </div>
         </div>
@@ -108,9 +136,10 @@ export function Today(props: TodayProps) {
           <kbd className="ml-3 hidden sm:inline-block rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-fg-3">⌘K</kbd>
         </button>
       </header>
+      )}
 
       {data.brief && (
-        <section aria-label="Morning brief" className="mt-6 rounded-3xl border border-gold/30 bg-gold/[0.06] px-5 py-4 flex items-start gap-3.5">
+        <section aria-label="Morning brief" className={`${phone ? "mt-3 px-4 py-3" : "mt-6 px-5 py-4"} rounded-3xl border border-gold/30 bg-gold/[0.06] flex items-start gap-3.5`}>
           <Sparkles className="w-5 h-5 mt-0.5 shrink-0 text-gold" aria-hidden />
           <div className="min-w-0">
             <p className="eyebrow">Morning brief</p>
@@ -119,7 +148,7 @@ export function Today(props: TodayProps) {
         </section>
       )}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_20rem] items-start">
+      <div className={`${phone ? "mt-4" : "mt-8"} grid gap-6 lg:grid-cols-[1fr_20rem] items-start`}>
         <section aria-labelledby="needs-title">
           <h2 id="needs-title" className="eyebrow mb-3">
             Needs you now
@@ -141,7 +170,7 @@ export function Today(props: TodayProps) {
             </div>
           ) : (
             <ul className="space-y-3">
-              {data.needsYou.map((item) =>
+              {shown.map((item) =>
                 item.kind === "chat" ? (
                   <ChatCard key={item.id} item={item} ai={props.ai} onOpenChat={props.onOpenChat} onSend={props.onSend} onSent={() => void refresh()} />
                 ) : item.kind === "task" ? (
@@ -151,6 +180,11 @@ export function Today(props: TodayProps) {
                 ),
               )}
             </ul>
+          )}
+          {phone && hiddenHere > 0 && (
+            <button type="button" className={`${btn("secondary")} mt-3 w-full`} onClick={() => setExpanded(true)}>
+              Show {hiddenHere} more
+            </button>
           )}
           {data.more > 0 && (
             <button type="button" className={`${btn("ghost", "sm")} mt-3`} onClick={props.onOpenInbox}>

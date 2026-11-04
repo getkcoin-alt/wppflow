@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Funnel, Plus, Search, X } from "lucide-react";
+import { Funnel, Plus, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
 import {
   fetchLeadBoard,
   fetchLeadTasks,
@@ -22,6 +22,9 @@ import { NewLeadSheet } from "./NewLeadSheet";
 import { PipelineSettings } from "./PipelineSettings";
 import { SettingsButton } from "../ui/PanelSettings";
 import { TodayList } from "./TodayList";
+import { Sheet } from "../ui/Sheet";
+import { Fab } from "../mobile/Fab";
+import { useIsPhone } from "../../hooks/useMedia";
 import { useLeadMover } from "./useLeadMover";
 import { usePipelineSettings } from "./usePipelineSettings";
 
@@ -46,6 +49,8 @@ export function Pipeline({
   const tenant = getStoredTenantId();
   const qc = useQueryClient();
   const [view, setView] = useState<View>("board");
+  const phone = useIsPhone();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [input, setInput] = useState(""),
     [q, setQ] = useState(""),
     [owner, setOwner] = useState(""),
@@ -122,6 +127,7 @@ export function Pipeline({
     setView("list");
   };
 
+  const filterCount = (owner ? 1 : 0) + (number ? 1 : 0) + (overdue ? 1 : 0);
   const empty = view === "board" && board.data && board.data.stages.every((c) => c.count === 0) && !q && !owner && !number && !overdue;
 
   return (
@@ -130,6 +136,7 @@ export function Pipeline({
         eyebrow="Sell"
         title="Pipeline"
         subtitle="Every customer you are selling to, step by step. Open a lead to set a follow-up so nobody is forgotten."
+        phone={{ more: isManager ? [{ key: "settings", label: "Pipeline settings", icon: Settings2, onSelect: () => setConfiguring(true) }] : undefined }}
         actions={
           <>
             {isManager && (
@@ -152,7 +159,12 @@ export function Pipeline({
           <Notice tone="success">{notice}</Notice>
         </div>
       )}
-      {totals && view === "board" && (
+      {totals && view === "board" && phone && (
+        <p className="mb-3 text-[14px] text-fg-2" aria-label="Pipeline totals">
+          <b className="font-semibold text-fg num">{totals.open}</b> open · <b className="font-semibold text-fg num">{currency} {shortMoney(totals.openValue)}</b> in play · <b className="font-semibold text-fg num">{shortMoney(totals.won)}</b> won in 30 days
+        </p>
+      )}
+      {totals && view === "board" && !phone && (
         <dl className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
           {[
             { label: "Open leads", short: "Open", full: String(totals.open), compact: String(totals.open) },
@@ -187,7 +199,25 @@ export function Pipeline({
             { key: "today", label: tasks.length ? `Today (${tasks.length})` : "Today" },
           ]}
         />
-        {view !== "today" && (
+        {phone && view !== "today" && (
+          <div className="flex w-full items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-3" aria-hidden />
+              <input aria-label="Search leads" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Search name or number" className={`${inputCls} !h-11 pl-11`} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-label={`Filters${filterCount ? `, ${filterCount} on` : ""}`}
+              className={`press h-11 shrink-0 rounded-full px-4 inline-flex items-center gap-1.5 text-[14px] font-medium ${filterCount ? "bg-fg text-app" : "bg-surface-2 text-fg-2"}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" aria-hidden />
+              Filters
+              {filterCount > 0 && <span className="num opacity-80">{filterCount}</span>}
+            </button>
+          </div>
+        )}
+        {!phone && view !== "today" && (
           <>
             <div className="relative flex-1 min-w-[180px] max-w-xs">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-3" aria-hidden />
@@ -252,6 +282,69 @@ export function Pipeline({
       {view === "list" && list.error && <Notice tone="error">{(list.error as Error).message}</Notice>}
       {view === "today" && <TodayList tasks={tasks} onDone={(t) => void doneTask(t)} onSnooze={(t) => void snooze(t)} onOpenLead={setOpenId} onOpenChat={onOpenChat} teammates={teammates} onReassign={isManager ? (t, id) => void reassign(t, id) : undefined} />}
 
+      {phone && <Fab label="New lead" icon={Plus} onClick={() => setAdding(true)} />}
+      {phone && (
+        <Sheet
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          title="Filters"
+          footer={
+            <>
+              {filterCount > 0 && (
+                <button
+                  type="button"
+                  className={btn("ghost")}
+                  onClick={() => {
+                    setOwner("");
+                    setNumber("");
+                    setOverdue(false);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+              <button type="button" className={btn("primary")} onClick={() => setFiltersOpen(false)}>
+                Done
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-5">
+            <FilterGroup title="Whose leads">
+              {[
+                { key: "", label: "Everyone's" },
+                { key: "me", label: "Mine" },
+                { key: "none", label: "Unowned" },
+                ...teammates.filter((m) => m.id !== currentUserId).map((m) => ({ key: String(m.id), label: m.name })),
+              ].map((o) => (
+                <FilterChip key={o.key || "all"} on={owner === o.key} onClick={() => setOwner(o.key)}>
+                  {o.label}
+                </FilterChip>
+              ))}
+            </FilterGroup>
+            {sessions.length > 1 && (
+              <FilterGroup title="Number">
+                <FilterChip on={number === ""} onClick={() => setNumber("")}>
+                  All numbers
+                </FilterChip>
+                {sessions.map((x) => (
+                  <FilterChip key={x.id} on={number === x.sessionKey} onClick={() => setNumber(x.sessionKey)}>
+                    {x.displayName}
+                  </FilterChip>
+                ))}
+              </FilterGroup>
+            )}
+            <FilterGroup title="Follow-ups">
+              <FilterChip on={!overdue} onClick={() => setOverdue(false)}>
+                Any
+              </FilterChip>
+              <FilterChip on={overdue} onClick={() => setOverdue(true)}>
+                Late follow-ups
+              </FilterChip>
+            </FilterGroup>
+          </div>
+        </Sheet>
+      )}
       <LeadSheet leadId={openId} currency={currency} stages={stages} teammates={teammates} isManager={isManager} aiAvailable={aiAvailable} currentUserId={currentUserId} onClose={() => setOpenId(null)} onOpenChat={(id) => { setOpenId(null); onOpenChat(id); }} />
       <NewLeadSheet
         open={adding}
@@ -268,5 +361,22 @@ export function Pipeline({
       <PipelineSettings open={configuring} settings={settings.data} onClose={() => setConfiguring(false)} />
       {mover.dialog}
     </Page>
+  );
+}
+
+function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2" role="group" aria-label={title}>
+      <p className="eyebrow">{title}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" aria-pressed={on} onClick={onClick} className={`press h-10 px-4 rounded-full text-[14px] font-medium ${on ? "bg-fg text-app" : "bg-surface-2 text-fg-2"}`}>
+      {children}
+    </button>
   );
 }

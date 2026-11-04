@@ -3,6 +3,8 @@ import { Copy, Megaphone, Pause, Play, Plus } from "lucide-react";
 import type { WhatsAppSession } from "../../types";
 import { EmptyState, Notice, Page, PageHeader, Pill } from "../ui/Page";
 import { btn } from "../ui/styles";
+import { useIsPhone } from "../../hooks/useMedia";
+import { Fab } from "../mobile/Fab";
 import { BroadcastWizard, type BroadcastRequest } from "./BroadcastWizard";
 
 const STATUS_TONE: Record<
@@ -72,6 +74,7 @@ export function Campaigns({
 }) {
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const phone = useIsPhone();
   const act = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError("");
@@ -85,9 +88,11 @@ export function Campaigns({
   };
   return (
     <Page>
+      {phone && campaigns.length > 0 && <Fab label="New broadcast" icon={Plus} onClick={() => setIsCreateModalOpen(true)} />}
       <PageHeader
         eyebrow="Reach"
         title="Broadcasts"
+        phone={{}}
         subtitle="Send one message to many customers, only to people who agreed to hear from you. Stopping prevents new sends; messages already sent cannot be recalled."
         actions={
           <button

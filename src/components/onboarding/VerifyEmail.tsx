@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2, MailCheck, X } from "lucide-react";
 import { resendVerification, verifyEmail } from "../../services/api";
+import { useIsPhone } from "../../hooks/useMedia";
 
 // Confirming an email address. The account works straight away; this is a reminder, never a wall.
 
@@ -59,6 +60,7 @@ export function VerifyEmailPage({ token, onContinue }: { token: string; onContin
 export function VerifyEmailBanner({ email }: { email: string }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "limited" | "failed">("idle");
   const [hidden, setHidden] = useState(false);
+  const phone = useIsPhone();
   if (hidden) return null;
   const resend = async () => {
     setState("sending");
@@ -70,9 +72,9 @@ export function VerifyEmailBanner({ email }: { email: string }) {
     }
   };
   return (
-    <div role="status" className="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-gold/15 text-[13px] px-4 py-2">
+    <div role="status" className={phone ? "shrink-0 flex items-center gap-2 bg-gold/15 text-[13.5px] pl-4 pr-1 min-h-11" : "shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-gold/15 text-[13px] px-4 py-2"}>
       <MailCheck className="w-4 h-4 text-gold shrink-0" aria-hidden />
-      <span className="flex-1 min-w-[200px]">
+      <span className={phone ? "flex-1 min-w-0 line-clamp-2 py-1" : "flex-1 min-w-[200px]"} title={phone ? `Please confirm your email (${email}). We sent you a link.` : undefined}>
         {state === "sent" ? (
           <>
             <Check className="inline w-3.5 h-3.5 mr-1" aria-hidden />A new link is on its way to {email}.
@@ -82,15 +84,15 @@ export function VerifyEmailBanner({ email }: { email: string }) {
         ) : state === "failed" ? (
           "That did not send. Please try again."
         ) : (
-          <>Please confirm your email ({email}). We sent you a link.</>
+          <>{phone ? "Confirm your email" : `Please confirm your email (${email}). We sent you a link.`}</>
         )}
       </span>
       {state !== "sent" && (
-        <button type="button" onClick={() => void resend()} disabled={state === "sending"} className="font-semibold text-brand underline-offset-2 hover:underline disabled:opacity-50">
-          Send it again
+        <button type="button" onClick={() => void resend()} disabled={state === "sending"} className="font-semibold text-brand underline-offset-2 hover:underline disabled:opacity-50 shrink-0">
+          {phone ? "Send again" : "Send it again"}
         </button>
       )}
-      <button type="button" onClick={() => setHidden(true)} aria-label="Hide this reminder" className="h-6 w-6 grid place-items-center rounded-full text-fg-3 hover:text-fg">
+      <button type="button" onClick={() => setHidden(true)} aria-label="Hide this reminder" className={`${phone ? "h-9 w-9" : "h-6 w-6"} shrink-0 grid place-items-center rounded-full text-fg-3 hover:text-fg`}>
         <X className="w-3.5 h-3.5" aria-hidden />
       </button>
     </div>
