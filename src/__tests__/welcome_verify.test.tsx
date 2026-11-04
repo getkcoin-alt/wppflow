@@ -23,6 +23,23 @@ describe("welcome guide", () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it("lets a new owner start connecting immediately without completing the tour", () => {
+    const start = vi.fn(), done = vi.fn();
+    render(<WelcomeGuide onDone={done} onStart={start} hasNumber={false} />);
+    fireEvent.click(screen.getByRole("button", { name: "Connect my WhatsApp number" }));
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(done).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Show me around" })).toBeTruthy();
+  });
+
+  it("takes staff and already connected owners to their inbox", () => {
+    const start = vi.fn();
+    render(<WelcomeGuide manager={false} onDone={() => {}} onStart={start} />);
+    expect(screen.queryByRole("button", { name: "Connect my WhatsApp number" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open my inbox" }));
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
   it("can be skipped at any step, and goes back", () => {
     const done = vi.fn();
     render(<WelcomeGuide onDone={done} />);

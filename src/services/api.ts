@@ -1098,6 +1098,8 @@ export type HomeItem =
   | { kind: "task"; id: string; taskId: string; conversationId: string | null; title: string; who: string; dueAt: string; overdue: boolean; escalated: boolean }
   | { kind: "number"; id: string; sessionName: string; title: string; level: "down" | "warn" | "unpaired"; problem: string };
 export interface HomeData {
+  /** Derived from saved delivery receipts; available to managers only. */
+  activation?: { hasDeliveredReply: boolean; firstReplyAt: string | null; setup?: HomeData["setup"] } | null;
   firstName: string;
   counts: { waiting: number; overdue: number; tasksDue: number; tasksOverdue: number; numbersNeedingCare: number; askedForPerson?: number };
   replyTargetMinutes: number;
@@ -1106,7 +1108,7 @@ export interface HomeData {
   /** Owners and administrators of a workspace that is not set up yet */
   /** The morning brief, for owners and administrators */
   brief?: { day: string; text: string; source: "ai" | "rules" } | null;
-  setup: { steps: { key: "connect" | "replies" | "automation" | "team"; label: string; done: boolean }[]; done: number; total: number } | null;
+  setup: { steps: { key: "connect" | "reply" | "replies" | "automation" | "team"; label: string; done: boolean }[]; done: number; total: number } | null;
 }
 // ── Autopilot: what Riwo may do by itself ─────────────────────────────────────────────────────────
 export interface AutopilotEntry {

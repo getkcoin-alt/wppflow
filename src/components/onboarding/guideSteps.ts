@@ -17,7 +17,7 @@ export interface GuideStep {
 export const APP_GUIDE: GuideStep[] = [
   {
     title: "Hi, I'm Riwo",
-    say: "I'll show you around in a minute. Scriwo puts your whole team on one WhatsApp inbox, and I help with the busy work. You can try everything free.",
+    say: "I'll show you around in a minute. Scriwo puts your whole team on one WhatsApp inbox, and I help with the busy work. Start by handling one enquiry.",
     where: "This takes about a minute. Skip any time.",
     scene: "hello",
   },
@@ -30,7 +30,7 @@ export const APP_GUIDE: GuideStep[] = [
   },
   {
     title: "Reply together, never double-reply",
-    say: "Everyone sees the same chats. Give a chat to a teammate, leave a private note, and tap Ask Riwo for a draft. You read it, change it, and send it.",
+    say: "Owners and administrators see company chats. Staff see their own number’s chats and chats assigned to them. Give a chat to a teammate, leave a private note, and tap Ask Riwo for a draft. You read it, change it, and send it.",
     where: "Inbox",
     scene: "chat",
   },
