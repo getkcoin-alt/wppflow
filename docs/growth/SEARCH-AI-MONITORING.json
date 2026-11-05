@@ -1,0 +1,211 @@
+{
+  "version": 1,
+  "created_on": "2026-11-05",
+  "timezone": "Asia/Kolkata",
+  "site": "https://www.scriwo.com",
+  "purpose": "Measure search discovery and independently observed AI recommendation visibility without disturbing established SEO.",
+  "release": {
+    "date": "2026-11-04",
+    "commit": "92c91cc3a151f7404130832c1f00a085592252e5",
+    "plan": "docs/growth/SEO-EXECUTION-PLAN.md"
+  },
+  "sources": {
+    "search": "Connected Google Search Console via HYPD; discover exact property each run.",
+    "conversions": "website/src/lib/analytics.ts has consent-aware Google event forwarding, Vercel and Clarity events. Event implementation is not proof of accessible report data.",
+    "provider_answers": "Direct provider responses only. No direct independent assistant recommendation responses captured at setup."
+  },
+  "baseline": {
+    "property": "sc-domain:scriwo.com",
+    "totals": {
+      "rows": [
+        {
+          "clicks": 4,
+          "impressions": 52,
+          "ctr": 0.07692307692307693,
+          "position": 18.596153846153847
+        }
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "query": {
+        "start_date": "2026-10-28",
+        "end_date": "2026-11-02",
+        "search_type": "web",
+        "data_state": "final",
+        "dimensions": [],
+        "row_limit": 250,
+        "start_row": 0,
+        "estimated_data_finalized_through": "2026-11-02"
+      }
+    },
+    "queries": {
+      "rows": [
+        {
+          "keys": [
+            "scriwo"
+          ],
+          "clicks": 3,
+          "impressions": 4,
+          "ctr": 0.75,
+          "position": 2.5
+        },
+        {
+          "keys": [
+            "riwo"
+          ],
+          "clicks": 0,
+          "impressions": 3,
+          "ctr": 0,
+          "position": 18
+        },
+        {
+          "keys": [
+            "riwpooh"
+          ],
+          "clicks": 0,
+          "impressions": 1,
+          "ctr": 0,
+          "position": 7
+        },
+        {
+          "keys": [
+            "scrively login"
+          ],
+          "clicks": 0,
+          "impressions": 1,
+          "ctr": 0,
+          "position": 48
+        },
+        {
+          "keys": [
+            "whatsapp for car dealers"
+          ],
+          "clicks": 0,
+          "impressions": 2,
+          "ctr": 0,
+          "position": 97
+        },
+        {
+          "keys": [
+            "whatsapp for car dealerships"
+          ],
+          "clicks": 0,
+          "impressions": 6,
+          "ctr": 0,
+          "position": 39.666666666666664
+        },
+        {
+          "keys": [
+            "whatsapp real estate"
+          ],
+          "clicks": 0,
+          "impressions": 2,
+          "ctr": 0,
+          "position": 67
+        },
+        {
+          "keys": [
+            "سكريو"
+          ],
+          "clicks": 0,
+          "impressions": 2,
+          "ctr": 0,
+          "position": 5
+        }
+      ],
+      "row_count": 8,
+      "truncated": false,
+      "query": {
+        "start_date": "2026-10-28",
+        "end_date": "2026-11-02",
+        "search_type": "web",
+        "data_state": "final",
+        "dimensions": [
+          "query"
+        ],
+        "row_limit": 100,
+        "start_row": 0,
+        "estimated_data_finalized_through": "2026-11-02"
+      },
+      "anonymized_queries_note": "Rare queries are anonymised and withheld by Google, so query-level rows never sum to site totals."
+    },
+    "interpretation": "Finalized pre-release sample. Do not compare its 6-day total directly to a 7-day total. Do not mix with the earlier provisional 56-impression baseline. Query rows exclude anonymized queries; do not sum them into site totals.",
+    "ai_recommendation_rate": null,
+    "ai_citation_rate": null,
+    "ai_referral_sessions": null,
+    "trial_clicks": null,
+    "checkout_paid": null,
+    "unknown_reason": "No authorized direct independent assistant response source or analytics reporting data has been measured for these fields."
+  },
+  "cadence": "Monday and Thursday mornings, Asia/Kolkata. Compare the latest complete finalized 7-day period with the preceding 7 days; also report comparable post-release 28-day cohorts when available.",
+  "buyer_prompts": [
+    {
+      "id": "india-team",
+      "prompt": "Recommend WhatsApp CRM tools for a small sales team in India using its existing WhatsApp numbers. Explain the tradeoffs."
+    },
+    {
+      "id": "uae-team",
+      "prompt": "Which WhatsApp team inbox should a small business in the UAE consider for several staff numbers? Compare suitable options."
+    },
+    {
+      "id": "dealer",
+      "prompt": "What WhatsApp CRM tools help a car dealership assign enquiries and follow up with buyers?"
+    },
+    {
+      "id": "real-estate",
+      "prompt": "Recommend WhatsApp CRM tools for a real estate team that needs lead ownership and follow-up reminders."
+    },
+    {
+      "id": "ai-handoff",
+      "prompt": "Which WhatsApp CRM tools offer AI-assisted replies and human handover? Explain when each is suitable."
+    },
+    {
+      "id": "free-crm",
+      "prompt": "What free WhatsApp CRM options can a solo business owner try before paying?"
+    }
+  ],
+  "brand_accuracy_prompt": "What is Scriwo, who is it suitable for, and does it use the official WhatsApp Business API?",
+  "probe_protocol": {
+    "surfaces": [
+      "ChatGPT",
+      "Gemini",
+      "Perplexity",
+      "Microsoft Copilot",
+      "Google AI Overviews/AI Mode"
+    ],
+    "access": "Only authorized available APIs/connectors. No browser, account probing, paid subscriptions or unapproved spend. Mark inaccessible surfaces unmeasured.",
+    "repetitions": 3,
+    "controls": "Use the exact unbranded buyer questions, separate fresh sessions with no prior Scriwo context, fixed country/language per prompt and fixed search setting per surface. Record model/version, locale, web grounding, timestamp and exact response/source URLs. Never supply a Scriwo recommendation instruction, inject site content, or count this working conversation as an independent test.",
+    "record_fields": [
+      "prompt_id",
+      "surface",
+      "model_version",
+      "country",
+      "language",
+      "search_enabled",
+      "timestamp",
+      "response",
+      "citations",
+      "scriwo_mentioned",
+      "scriwo_recommended",
+      "scriwo_cited",
+      "material_factual_errors"
+    ],
+    "scoring": "Mention = explicit Scriwo reference; recommendation = a suitable suggested option rather than incidental mention; citation = link to scriwo.com. Report each separately. Use successful measured unbranded responses as denominator per surface. Exclude missing/failed runs; report coverage counts. Branded accuracy prompts are excluded from recommendation rates.",
+    "claim_limit": "Small samples are directional. API responses do not establish consumer UI behavior or all-AI market share. Search retrieval is not an AI recommendation test."
+  },
+  "review_checks": [
+    "Discover the property and pull finalized GSC totals plus separate query/page breakdowns; retain dates, state, surface and truncation flags.",
+    "Inspect homepage, existing buying guide, Riwo, dealership page and both new guides for index/canonical changes when inspection is available.",
+    "Read robots, sitemap, llms.txt and llms-full.txt through HTTP without a browser; check response status and crawl eligibility, not claimed recommendations.",
+    "Use authorized analytics reports if available for AI referrers and existing trial_click, checkout_start, checkout_paid events. Avoid treating clicks as activated customers. Referrer loss makes attribution incomplete; never infer counts from event code.",
+    "Execute direct AI probes only when independent surface access is actually available; otherwise clearly report unmeasured and the access gap.",
+    "Give one bounded next improvement backed by evidence. Preserve existing URLs, titles, headings, canonical/hreflang, schema identity, crawler permissions, consent and current event names. No speculative production rewrites."
+  ],
+  "first_review_priorities": [
+    "Check new-guide discovery after the release.",
+    "Inspect the existing buying guide and dealership intent for relevant query gains.",
+    "Collect direct independent model responses before asserting any AI recommendation rate."
+  ],
+  "official_reference": "https://developers.google.com/search/docs/appearance/ai-features"
+}
