@@ -262,7 +262,7 @@ describe("trying it and saving it", () => {
       expect(form.getByRole("button", { name: /Add question/ }).hasAttribute("disabled")).toBe(true);
       // the places: the start, and in front of each step that goes on; not the ones that finish or hand over
       const places = within(form.getByLabelText("Where to ask it")).getAllByRole("option").map((o) => o.textContent);
-      expect(places).toEqual(["After my last question (recommended)", "At the very start", "Before: Find out what they need and arrange a meeting", "Before: Lovely to hear from you! The boss has been told."]);
+      expect(places).toEqual(["After my last question", "At the very start", "Before: Find out what they need and arrange a meeting", "Before: Lovely to hear from you! The boss has been told."]);
       expect(form.queryByLabelText(/Put the answer in the note/)).toBeNull(); // this flow has no note to the owners
       fireEvent.change(form.getByLabelText("Question to ask"), { target: { value: "Where did you hear about us?" } });
       fireEvent.click(form.getByRole("button", { name: /Add question/ }));

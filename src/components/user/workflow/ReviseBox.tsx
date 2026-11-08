@@ -102,7 +102,7 @@ export function ReviseBox({ rule, outline = [], onApply }: { rule: RuleDraft; ou
           <input aria-label="Question to ask" value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={300} placeholder="Where did you hear about us?" className={`${inputCls} !h-11 !bg-surface`} dir="auto" />
           {places.length > 0 && (
             <select aria-label="Where to ask it" value={where} onChange={(e) => setWhere(e.target.value)} className={`${selectCls} !h-11 !bg-surface`}>
-              <option value="">After my last question (recommended)</option>
+              <option value="">After my last question</option>
               {places.map((o, i) => (
                 <option key={o.id} value={o.id}>
                   {i === 0 ? "At the very start" : `Before: ${short(o.summary)}`}
