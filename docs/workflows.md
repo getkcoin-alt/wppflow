@@ -11,8 +11,11 @@ engine that decides everything except two things the model may do (read an answe
 2. Riwo asks at most three questions, only if it cannot decide, with answers to tap.
 3. **Check**: what Riwo understood, when it starts, the steps in the order a customer meets them (words can be changed in place),
    the safety that was added, and anything still needed (words for Riwo to talk from, home countries, opening hours).
-4. **Change something** in words ("also ask which city"): Riwo returns the whole flow and the lines that changed; nothing is replaced
-   until the owner says so.
+4. **Change something** in words ("also ask which city"): Riwo answers with a short list of edits (add a step, change a step, take one
+   out, point one at another), the app applies them to the flow as it is, so whatever was not mentioned stays exactly as it was, and
+   the lines that changed are shown; nothing is replaced until the owner says so. When Riwo cannot read the request, or is not
+   available, an **Add a question** form opens: the question, where to ask it (after the last question, at the very start, or before
+   any step) and whether the answer goes in the note the owners get. It makes the same kind of change without Riwo.
 5. **Try it as a customer**: the same engine, with nothing sent to WhatsApp and nothing saved. It shows how Riwo read each answer and
    what would happen (labels, notes to the owner, follow-ups, the hand-over).
 6. **Save** paused, or **turn on in test mode** (it runs only for the numbers the owner lists). "For everyone" is a separate tap on
@@ -66,3 +69,8 @@ Backend: `src/services/workflow/` (`schema.js` checks and completes, `core.js` d
 `compile.js` and `recipes.js` build from words, `simulate.js` tries), `personGuard.js` (the safety rules), `autoChat.js` (chat state),
 migration `049_workflow.js`. Routes: `/api/automations/workflow/{draft,revise,check,simulate,recipes}`, `/:id/insights`,
 `/:id/versions`. App: `src/components/user/workflow/`.
+
+`/workflow/revise` takes `{rule, instruction}` (words) or `{rule, addQuestion: {question, before?, tell?}}` (no model). The edits are
+applied by `workflow/edits.js` (`applyEdits`, `questionEdits`); the reader in `aiService.js` accepts the shapes a model gives back (the
+edits, the whole `{name, trigger, workflow}`, a bare `{start, nodes}`, JSON in a code fence or with a trailing comma). A change the
+model got wrong is sent back once with the exact problem and the list of steps that exist.

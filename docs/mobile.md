@@ -83,6 +83,9 @@ Everything is under `src/components/mobile/`, `src/hooks/` and `src/utils/haptic
 - **`scripts/phone-audit.mjs`** walks 16 screens and sheets at 320, 360, 375, 390 and 430 px and reports sideways scrolling,
   targets under 44 px, fields under 16 px and unnamed buttons. On 4 November 2026 it found none. Before the touch rules it
   found 47 targets under 44 px.
+- **First-run screens** (the welcome guide and Today for a company with no number, which the audit script skips past): on
+  8 November 2026 they were checked at 320x568, 360x640, 375x667, 390x844 and 430x932 with the same measurements. The guide's Skip
+  was out of reach at 320x568; fixed (see below). Everything else was clean.
 - **Pictures**: `docs/mobile/before-after-*.png`, the same seeded company before and after.
 
 ## Things that went wrong once (so nobody learns them again)
@@ -97,6 +100,9 @@ Everything is under `src/components/mobile/`, `src/hooks/` and `src/utils/haptic
 - An Undo must say what it wants ("open again"), not "flip": a flip applied to a list that had not caught up yet did nothing.
 - `button::after` is used for the tap target, so a button cannot use `::after` for anything else.
 - The first-run guide's Skip button was under the chat bubble on a phone.
+- A dialog that scrolls as a whole lets the autofocus on its main button scroll everything else out of sight: when the guide
+  got a second big button it was taller than a 320x568 screen and Skip ended up 120 px above the top. Pin the header and the
+  buttons and let only the middle scroll.
 - `tsc --noEmit -p .` checks nothing here (the root config has `files: []`); use `tsc -b`, which is what the build runs.
 
 ## Not included
