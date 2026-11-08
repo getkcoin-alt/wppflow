@@ -1,3 +1,4 @@
+import { GETTING_STARTED } from "@/content/getting-started";
 import { SITE, absolute } from "@/lib/site";
 import { FEATURES } from "@/content/features";
 import { INDUSTRIES } from "@/content/industries";
@@ -21,11 +22,11 @@ export async function GET() {
     `> ${SITE.description}`,
     "",
     "Scriwo is independent and not affiliated with WhatsApp or Meta. It connects WhatsApp numbers as linked devices (like WhatsApp Web); it is not the WhatsApp Business API.",
-    `Markets: United Arab Emirates and India. Free for one account with one WhatsApp number; paid plans billed in AED or INR. Paid plans can be bought online in rupees at ${absolute("/pricing")}; other accounts (free, AED, Enterprise) are set up by the onboarding team via the contact form or WhatsApp.`,
+    `Markets: United Arab Emirates and India. Free for one account with one WhatsApp number; paid plans billed in AED or INR. ${GETTING_STARTED.trial} ${GETTING_STARTED.payment} Plan details: ${absolute("/pricing")}.`,
     "",
     `Full text of every page: ${absolute("/llms-full.txt")}`,
     "",
-    "## Pricing (monthly, before VAT/GST, no per-message fees; plans in rupees can be bought online, others are set up by the onboarding team)",
+    "## Pricing (monthly; see the pricing page for VAT/GST and current limits; no per-message fees)",
     ...plans.map((p) => `- ${p.name} (${p.numbers}): ${p.price.AED === 0 ? "free" : p.price.AED ? `AED ${p.price.AED.toLocaleString("en-US")} / ₹${p.price.INR?.toLocaleString("en-IN")}` : "custom quote"}`),
     `- Sales on WhatsApp: ${SITE.whatsappDisplay}`,
     "",

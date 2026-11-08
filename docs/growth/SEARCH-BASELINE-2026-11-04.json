@@ -1,0 +1,370 @@
+{
+  "capturedOn": "2026-11-04",
+  "property": "sc-domain:scriwo.com",
+  "source": "Google Search Console via HYPD, read-only",
+  "window": {
+    "start": "2026-10-28",
+    "end": "2026-11-04",
+    "dataState": "all",
+    "estimatedFinalizedThrough": "2026-11-01"
+  },
+  "caveats": [
+    "Recent data is provisional and may change.",
+    "Query rows exclude anonymized searches and are not property totals.",
+    "The sitemap indexed-count field is not a reliable index-coverage total; URL inspection confirms the homepage and buying guide are indexed.",
+    "No historical launch date or AI recommendation visibility is established by these data."
+  ],
+  "totals": {
+    "rows": [
+      {
+        "clicks": 4,
+        "impressions": 56,
+        "ctr": 0.07142857142857142,
+        "position": 19.910714285714285
+      }
+    ],
+    "row_count": 1,
+    "truncated": false,
+    "query": {
+      "start_date": "2026-10-28",
+      "end_date": "2026-11-04",
+      "search_type": "web",
+      "data_state": "all",
+      "dimensions": [],
+      "row_limit": 100,
+      "start_row": 0,
+      "estimated_data_finalized_through": "2026-11-01"
+    }
+  },
+  "topPages": {
+    "rows": [
+      {
+        "keys": [
+          "https://www.scriwo.com/"
+        ],
+        "clicks": 4,
+        "impressions": 5,
+        "ctr": 0.8,
+        "position": 3.2
+      },
+      {
+        "keys": [
+          "https://app.scriwo.com/"
+        ],
+        "clicks": 0,
+        "impressions": 3,
+        "ctr": 0,
+        "position": 20.666666666666668
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/about"
+        ],
+        "clicks": 0,
+        "impressions": 3,
+        "ctr": 0,
+        "position": 1.3333333333333333
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/ar"
+        ],
+        "clicks": 0,
+        "impressions": 2,
+        "ctr": 0,
+        "position": 5
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/blog"
+        ],
+        "clicks": 0,
+        "impressions": 3,
+        "ctr": 0,
+        "position": 1.3333333333333333
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/blog/best-whatsapp-crm-uae-india"
+        ],
+        "clicks": 0,
+        "impressions": 23,
+        "ctr": 0,
+        "position": 9.304347826086957
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/blog/whatsapp-for-clinics-uae"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 10
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/contact"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 2
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/developers"
+        ],
+        "clicks": 0,
+        "impressions": 2,
+        "ctr": 0,
+        "position": 1
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/features"
+        ],
+        "clicks": 0,
+        "impressions": 3,
+        "ctr": 0,
+        "position": 1.3333333333333333
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/features/private-notes-and-mentions"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 1
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/industries"
+        ],
+        "clicks": 0,
+        "impressions": 3,
+        "ctr": 0,
+        "position": 1.3333333333333333
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/industries/automobile-dealers"
+        ],
+        "clicks": 0,
+        "impressions": 10,
+        "ctr": 0,
+        "position": 56.4
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/industries/jewellery-and-retail"
+        ],
+        "clicks": 0,
+        "impressions": 2,
+        "ctr": 0,
+        "position": 1.5
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/industries/real-estate"
+        ],
+        "clicks": 0,
+        "impressions": 2,
+        "ctr": 0,
+        "position": 67
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/privacy"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 10
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/riwo"
+        ],
+        "clicks": 0,
+        "impressions": 6,
+        "ctr": 0,
+        "position": 13.833333333333334
+      },
+      {
+        "keys": [
+          "https://www.scriwo.com/whatsapp-crm/ras-al-khaimah"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 10
+      }
+    ],
+    "row_count": 18,
+    "truncated": false,
+    "query": {
+      "start_date": "2026-10-28",
+      "end_date": "2026-11-04",
+      "search_type": "web",
+      "data_state": "all",
+      "dimensions": [
+        "page"
+      ],
+      "row_limit": 100,
+      "start_row": 0,
+      "estimated_data_finalized_through": "2026-11-01"
+    }
+  },
+  "topQueries": {
+    "rows": [
+      {
+        "keys": [
+          "scriwo"
+        ],
+        "clicks": 3,
+        "impressions": 4,
+        "ctr": 0.75,
+        "position": 2.5
+      },
+      {
+        "keys": [
+          "riwo"
+        ],
+        "clicks": 0,
+        "impressions": 4,
+        "ctr": 0,
+        "position": 17.25
+      },
+      {
+        "keys": [
+          "riwpooh"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 7
+      },
+      {
+        "keys": [
+          "scrively login"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 48
+      },
+      {
+        "keys": [
+          "what is their business"
+        ],
+        "clicks": 0,
+        "impressions": 1,
+        "ctr": 0,
+        "position": 1
+      },
+      {
+        "keys": [
+          "whatsapp for car dealers"
+        ],
+        "clicks": 0,
+        "impressions": 3,
+        "ctr": 0,
+        "position": 96
+      },
+      {
+        "keys": [
+          "whatsapp for car dealerships"
+        ],
+        "clicks": 0,
+        "impressions": 7,
+        "ctr": 0,
+        "position": 39.42857142857143
+      },
+      {
+        "keys": [
+          "whatsapp real estate"
+        ],
+        "clicks": 0,
+        "impressions": 2,
+        "ctr": 0,
+        "position": 67
+      },
+      {
+        "keys": [
+          "سكريو"
+        ],
+        "clicks": 0,
+        "impressions": 2,
+        "ctr": 0,
+        "position": 5
+      }
+    ],
+    "row_count": 9,
+    "truncated": false,
+    "query": {
+      "start_date": "2026-10-28",
+      "end_date": "2026-11-04",
+      "search_type": "web",
+      "data_state": "all",
+      "dimensions": [
+        "query"
+      ],
+      "row_limit": 100,
+      "start_row": 0,
+      "estimated_data_finalized_through": "2026-11-01"
+    },
+    "anonymized_queries_note": "Rare queries are anonymised and withheld by Google, so query-level rows never sum to site totals."
+  },
+  "sitemaps": {
+    "sitemaps": [
+      {
+        "path": "https://www.scriwo.com/sitemap.xml",
+        "lastSubmitted": "2026-10-24T17:21:48.671Z",
+        "isPending": false,
+        "isSitemapsIndex": false,
+        "type": "sitemap",
+        "lastDownloaded": "2026-11-03T06:18:39.258Z",
+        "warnings": "0",
+        "errors": "0",
+        "contents": [
+          {
+            "type": "web",
+            "submitted": "79",
+            "indexed": "0"
+          }
+        ]
+      },
+      {
+        "path": "https://www.scriwo.com/sitemap.xml.",
+        "lastSubmitted": "2026-10-22T14:42:22.414Z",
+        "isPending": true,
+        "isSitemapsIndex": false,
+        "warnings": "0",
+        "errors": "1"
+      }
+    ]
+  },
+  "homepageInspection": {
+    "inspection_result": {
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:scriwo.com&id=0AgtIxudy5ddIBsZtb0OIA&utm_medium=link&utm_source=api",
+      "indexStatusResult": {
+        "verdict": "PASS",
+        "coverageState": "Submitted and indexed",
+        "robotsTxtState": "ALLOWED",
+        "indexingState": "INDEXING_ALLOWED",
+        "lastCrawlTime": "2026-11-03T10:57:51Z",
+        "pageFetchState": "SUCCESSFUL",
+        "googleCanonical": "https://www.scriwo.com/",
+        "userCanonical": "https://www.scriwo.com/",
+        "referringUrls": [
+          "https://www.scriwo.com/forgotPassword"
+        ],
+        "crawledAs": "MOBILE"
+      },
+      "mobileUsabilityResult": {
+        "verdict": "VERDICT_UNSPECIFIED"
+      }
+    }
+  }
+}

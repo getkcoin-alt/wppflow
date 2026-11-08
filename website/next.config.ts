@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   // https://scriwo.com/?invite=...; send them to the app so those links keep working.
   async redirects() {
     return [
+      { source: "/sitemap.xml.", destination: "/sitemap.xml", permanent: true },
       {
         source: "/",
         has: [{ type: "query", key: "invite" }],

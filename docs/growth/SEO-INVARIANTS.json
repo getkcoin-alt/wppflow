@@ -1,0 +1,3030 @@
+{
+  "/_not-found": {
+    "title": [
+      "Scriwo — WhatsApp CRM & Shared Team Inbox for UAE and India"
+    ],
+    "h1": [
+      "This page has moved or never existed"
+    ],
+    "canonical": [
+      "https://www.scriwo.com"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ],
+      [
+        "robots",
+        "noindex"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "ContactPoint",
+      "Country",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/about": {
+    "title": [
+      "About Scriwo | Scriwo"
+    ],
+    "h1": [
+      "Conversations, thoughtfully handled"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/about"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/ar": {
+    "title": [
+      "سكريو — صندوق واتساب مشترك ونظام CRM لفرق العمل في الإمارات"
+    ],
+    "h1": [
+      "كل محادثات واتساب لفريقك، في مكان واحد هادئ."
+    ],
+    "canonical": [
+      "https://www.scriwo.com/ar"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [
+      [
+        "ar-AE",
+        "https://www.scriwo.com/ar"
+      ],
+      [
+        "en",
+        "https://www.scriwo.com"
+      ],
+      [
+        "hi-IN",
+        "https://www.scriwo.com/hi"
+      ],
+      [
+        "x-default",
+        "https://www.scriwo.com"
+      ]
+    ],
+    "schema_types": [
+      "Answer",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/avoid-whatsapp-number-ban-broadcasts": {
+    "title": [
+      "How to send WhatsApp broadcasts without getting your number banned | Scriwo"
+    ],
+    "h1": [
+      "How to send WhatsApp broadcasts without getting your number banned"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/avoid-whatsapp-number-ban-broadcasts"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/best-whatsapp-crm-uae-india": {
+    "title": [
+      "How to choose the best WhatsApp CRM in the UAE and India | Scriwo"
+    ],
+    "h1": [
+      "How to choose the best WhatsApp CRM in the UAE and India"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/best-whatsapp-crm-uae-india"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/dpdp-act-whatsapp-marketing-consent-india": {
+    "title": [
+      "India's DPDP Act and WhatsApp: what businesses should do about consent | Scriwo"
+    ],
+    "h1": [
+      "India's DPDP Act and WhatsApp: what businesses should do about consent"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/dpdp-act-whatsapp-marketing-consent-india"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/festive-season-whatsapp-broadcasts-india": {
+    "title": [
+      "Diwali and festive season WhatsApp broadcasts: an opt-in playbook for Indian businesses | Scriwo"
+    ],
+    "h1": [
+      "Diwali and festive season WhatsApp broadcasts: an opt-in playbook for Indian businesses"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/festive-season-whatsapp-broadcasts-india"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/how-to-manage-whatsapp-for-a-sales-team": {
+    "title": [
+      "How to manage WhatsApp for a sales team (without sharing one phone) | Scriwo"
+    ],
+    "h1": [
+      "How to manage WhatsApp for a sales team (without sharing one phone)"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/how-to-manage-whatsapp-for-a-sales-team"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/whatsapp-business-multiple-users": {
+    "title": [
+      "WhatsApp Business with multiple users: the options for teams in 2026 | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp Business with multiple users: the options for teams in 2026"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/whatsapp-business-multiple-users"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/whatsapp-crm-for-real-estate-dubai": {
+    "title": [
+      "WhatsApp CRM for real estate agents in Dubai: a practical playbook | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for real estate agents in Dubai: a practical playbook"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/whatsapp-crm-for-real-estate-dubai"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/whatsapp-crm-for-real-estate-india": {
+    "title": [
+      "WhatsApp CRM for real estate in India: from portal lead to site visit | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for real estate in India: from portal lead to site visit"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/whatsapp-crm-for-real-estate-india"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/whatsapp-customer-service-ramadan-uae": {
+    "title": [
+      "WhatsApp customer service during Ramadan: a playbook for UAE teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp customer service during Ramadan: a playbook for UAE teams"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/whatsapp-customer-service-ramadan-uae"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/whatsapp-for-clinics-uae": {
+    "title": [
+      "WhatsApp for clinics in the UAE: appointments, reminders and patient privacy | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp for clinics in the UAE: appointments, reminders and patient privacy"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/whatsapp-for-clinics-uae"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog/whatsapp-response-time-benchmarks": {
+    "title": [
+      "WhatsApp response time: what customers in the UAE and India expect | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp response time: what customers in the UAE and India expect"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog/whatsapp-response-time-benchmarks"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Article",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/blog": {
+    "title": [
+      "Guides — Running WhatsApp as a Team in the UAE and India | Scriwo"
+    ],
+    "h1": [
+      "Run WhatsApp like a well-managed team"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/blog"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/checkout/success": {
+    "title": [
+      "Order confirmation | Scriwo"
+    ],
+    "h1": [
+      "Confirming your payment…"
+    ],
+    "canonical": [
+      "https://www.scriwo.com"
+    ],
+    "robots": [
+      [
+        "robots",
+        "noindex, nofollow"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "ContactPoint",
+      "Country",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/checkout": {
+    "title": [
+      "Buy a Scriwo plan | Scriwo"
+    ],
+    "h1": [
+      "Start your Scriwo workspace"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/checkout"
+    ],
+    "robots": [
+      [
+        "robots",
+        "noindex, nofollow"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare/aisensy-alternative": {
+    "title": [
+      "AiSensy alternative for WhatsApp teams: Scriwo vs AiSensy | Scriwo"
+    ],
+    "h1": [
+      "AiSensy alternative for WhatsApp teams: Scriwo vs AiSensy"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare/aisensy-alternative"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare/interakt-alternative": {
+    "title": [
+      "Interakt alternative for WhatsApp teams: Scriwo vs Interakt | Scriwo"
+    ],
+    "h1": [
+      "Interakt alternative for WhatsApp teams: Scriwo vs Interakt"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare/interakt-alternative"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare/scriwo-vs-sharing-one-phone": {
+    "title": [
+      "Scriwo vs sharing one office phone | Scriwo"
+    ],
+    "h1": [
+      "Scriwo vs sharing one office phone"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare/scriwo-vs-sharing-one-phone"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare/scriwo-vs-whatsapp-api-platforms": {
+    "title": [
+      "Scriwo vs WhatsApp Business API platforms | Scriwo"
+    ],
+    "h1": [
+      "Scriwo vs WhatsApp Business API platforms"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare/scriwo-vs-whatsapp-api-platforms"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare/scriwo-vs-whatsapp-business-app": {
+    "title": [
+      "Scriwo vs the WhatsApp Business app | Scriwo"
+    ],
+    "h1": [
+      "Scriwo vs the WhatsApp Business app"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare/scriwo-vs-whatsapp-business-app"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare/wati-alternative": {
+    "title": [
+      "Wati alternative for WhatsApp teams: Scriwo vs Wati | Scriwo"
+    ],
+    "h1": [
+      "Wati alternative for WhatsApp teams: Scriwo vs Wati"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare/wati-alternative"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/compare": {
+    "title": [
+      "Compare Scriwo — Wati, Interakt & AiSensy Alternative, WhatsApp Business App | Scriwo"
+    ],
+    "h1": [
+      "Is Scriwo the right fit?"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/compare"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/contact": {
+    "title": [
+      "Contact Scriwo — Pricing, Plans and White-Label Demos | Scriwo"
+    ],
+    "h1": [
+      "Let's get your team on Scriwo"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/contact"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPage",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/developers": {
+    "title": [
+      "Developers — WhatsApp API, Webhooks and SDK Samples | Scriwo"
+    ],
+    "h1": [
+      "An open platform, inside the product"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/developers"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/ai-handoff-and-disclosure": {
+    "title": [
+      "Customers always know when it is an assistant, and can ask for a person | Scriwo"
+    ],
+    "h1": [
+      "Customers always know when it is an assistant, and can ask for a person"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/ai-handoff-and-disclosure"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/ai-sales-assistant": {
+    "title": [
+      "Qualify every new WhatsApp lead, then hand the sale to an executive | Scriwo"
+    ],
+    "h1": [
+      "Qualify every new WhatsApp lead, then hand the sale to an executive"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/ai-sales-assistant"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/ai-today-home": {
+    "title": [
+      "Open Scriwo and see what needs you, with the reply already prepared | Scriwo"
+    ],
+    "h1": [
+      "Open Scriwo and see what needs you, with the reply already prepared"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/ai-today-home"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/chat-assignment": {
+    "title": [
+      "Assign every WhatsApp chat to the right person, then resolve it | Scriwo"
+    ],
+    "h1": [
+      "Assign every WhatsApp chat to the right person, then resolve it"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/chat-assignment"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/multiple-whatsapp-numbers": {
+    "title": [
+      "Every staff WhatsApp number in one company dashboard | Scriwo"
+    ],
+    "h1": [
+      "Every staff WhatsApp number in one company dashboard"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/multiple-whatsapp-numbers"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/private-notes-and-mentions": {
+    "title": [
+      "Private notes and @mentions inside WhatsApp chats | Scriwo"
+    ],
+    "h1": [
+      "Private notes and @mentions inside WhatsApp chats"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/private-notes-and-mentions"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/riwo-autopilot": {
+    "title": [
+      "Let Riwo handle the safe, repetitive replies, and nothing else | Scriwo"
+    ],
+    "h1": [
+      "Let Riwo handle the safe, repetitive replies, and nothing else"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/riwo-autopilot"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/riwo-knowledge-agent": {
+    "title": [
+      "An AI sales agent that knows your whole website | Scriwo"
+    ],
+    "h1": [
+      "An AI sales agent that knows your whole website"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/riwo-knowledge-agent"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/security-and-roles": {
+    "title": [
+      "Safe by default: roles, audit log and no emailed passwords | Scriwo"
+    ],
+    "h1": [
+      "Safe by default: roles, audit log and no emailed passwords"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/security-and-roles"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/team-notifications": {
+    "title": [
+      "Notifications that reach the right person | Scriwo"
+    ],
+    "h1": [
+      "Notifications that reach the right person"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/team-notifications"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/team-reports-and-assignment": {
+    "title": [
+      "Know how fast your team replies, and share new chats fairly | Scriwo"
+    ],
+    "h1": [
+      "Know how fast your team replies, and share new chats fairly"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/team-reports-and-assignment"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/whatsapp-api-and-webhooks": {
+    "title": [
+      "A WhatsApp API, webhooks and SDK samples built into the product | Scriwo"
+    ],
+    "h1": [
+      "A WhatsApp API, webhooks and SDK samples built into the product"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/whatsapp-api-and-webhooks"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/whatsapp-automation": {
+    "title": [
+      "Keyword automations and quick replies for WhatsApp | Scriwo"
+    ],
+    "h1": [
+      "Keyword automations and quick replies for WhatsApp"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/whatsapp-automation"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/whatsapp-broadcast": {
+    "title": [
+      "WhatsApp broadcasts that respect your customers and protect your number | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp broadcasts that respect your customers and protect your number"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/whatsapp-broadcast"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/whatsapp-contacts-crm": {
+    "title": [
+      "A WhatsApp CRM your whole team can use without training | Scriwo"
+    ],
+    "h1": [
+      "A WhatsApp CRM your whole team can use without training"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/whatsapp-contacts-crm"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/whatsapp-sales-pipeline": {
+    "title": [
+      "A sales pipeline that lives inside your WhatsApp conversations | Scriwo"
+    ],
+    "h1": [
+      "A sales pipeline that lives inside your WhatsApp conversations"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/whatsapp-sales-pipeline"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features/whatsapp-team-inbox": {
+    "title": [
+      "A shared WhatsApp inbox that feels like WhatsApp itself | Scriwo"
+    ],
+    "h1": [
+      "A shared WhatsApp inbox that feels like WhatsApp itself"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features/whatsapp-team-inbox"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/features": {
+    "title": [
+      "Features — Shared WhatsApp Inbox, Assignment, Notes, Broadcasts | Scriwo"
+    ],
+    "h1": [
+      "Everything your team needs to run WhatsApp together"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/features"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/free-whatsapp-crm": {
+    "title": [
+      "Free WhatsApp CRM for UAE and India — 1 Number, No Per-Message Fees | Scriwo"
+    ],
+    "h1": [
+      "A free WhatsApp CRM for your business number"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/free-whatsapp-crm"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/hi": {
+    "title": [
+      "Scriwo — टीमों के लिए शेयर्ड WhatsApp इनबॉक्स और CRM | भारत"
+    ],
+    "h1": [
+      "आपकी टीम की हर WhatsApp चैट, एक ही शांत जगह पर।"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/hi"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [
+      [
+        "ar-AE",
+        "https://www.scriwo.com/ar"
+      ],
+      [
+        "en",
+        "https://www.scriwo.com"
+      ],
+      [
+        "hi-IN",
+        "https://www.scriwo.com/hi"
+      ],
+      [
+        "x-default",
+        "https://www.scriwo.com"
+      ]
+    ],
+    "schema_types": [
+      "Answer",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/homes": {
+    "title": [
+      "Scriwo Homes — WhatsApp CRM for Property Agencies in Dubai and the UAE | Scriwo"
+    ],
+    "h1": [
+      "The AI CRM built for property agencies"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/homes"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/": {
+    "title": [
+      "Scriwo — WhatsApp CRM & Shared Team Inbox for UAE and India"
+    ],
+    "h1": [
+      "Every WhatsApp chat your team has, in one calm place."
+    ],
+    "canonical": [
+      "https://www.scriwo.com"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [
+      [
+        "ar-AE",
+        "https://www.scriwo.com/ar"
+      ],
+      [
+        "en",
+        "https://www.scriwo.com"
+      ],
+      [
+        "hi-IN",
+        "https://www.scriwo.com/hi"
+      ],
+      [
+        "x-default",
+        "https://www.scriwo.com"
+      ]
+    ],
+    "schema_types": [
+      "AggregateOffer",
+      "Answer",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SoftwareApplication",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/automobile-dealers": {
+    "title": [
+      "WhatsApp for car dealers, showrooms and service centres | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp for car dealers, showrooms and service centres"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/automobile-dealers"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/clinics-and-healthcare": {
+    "title": [
+      "WhatsApp for clinics, dental and aesthetic centres | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp for clinics, dental and aesthetic centres"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/clinics-and-healthcare"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/ecommerce-and-d2c": {
+    "title": [
+      "WhatsApp customer support for e-commerce and D2C brands | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp customer support for e-commerce and D2C brands"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/ecommerce-and-d2c"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/education-and-coaching": {
+    "title": [
+      "WhatsApp for schools, coaching institutes and training centres | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp for schools, coaching institutes and training centres"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/education-and-coaching"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/insurance-and-finance": {
+    "title": [
+      "WhatsApp CRM for insurance and financial advisers | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for insurance and financial advisers"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/insurance-and-finance"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/jewellery-and-retail": {
+    "title": [
+      "WhatsApp for jewellery stores and premium retail | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp for jewellery stores and premium retail"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/jewellery-and-retail"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/real-estate": {
+    "title": [
+      "WhatsApp CRM for real estate agencies in Dubai and India | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for real estate agencies in Dubai and India"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/real-estate"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries/travel-agencies": {
+    "title": [
+      "WhatsApp CRM for travel agencies and tour operators | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for travel agencies and tour operators"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries/travel-agencies"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/industries": {
+    "title": [
+      "WhatsApp CRM by Industry — Real Estate, Clinics, Education, Retail | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp, the way your industry sells"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/industries"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/pricing": {
+    "title": [
+      "Pricing — Free for One WhatsApp Number, Teams from AED 299 / ₹2,499 | Scriwo"
+    ],
+    "h1": [
+      "Plans that grow with your team"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/pricing"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/privacy": {
+    "title": [
+      "Privacy Policy | Scriwo"
+    ],
+    "h1": [
+      "Privacy policy"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/privacy"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/refund-policy": {
+    "title": [
+      "Refund and Cancellation Policy | Scriwo"
+    ],
+    "h1": [
+      "Refund and cancellation policy"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/refund-policy"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/riwo": {
+    "title": [
+      "Riwo — AI Reply Assistant for WhatsApp Teams | Scriwo"
+    ],
+    "h1": [
+      "The AI assistant that helps your team reply like your best salesperson."
+    ],
+    "canonical": [
+      "https://www.scriwo.com/riwo"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "HowTo",
+      "HowToStep",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/security": {
+    "title": [
+      "Security — Roles, Audit Log, Signed Webhooks, No Emailed Passwords | Scriwo"
+    ],
+    "h1": [
+      "Safe by default, not by configuration"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/security"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/shipping-policy": {
+    "title": [
+      "Shipping and Delivery Policy | Scriwo"
+    ],
+    "h1": [
+      "Shipping and delivery policy"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/shipping-policy"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/terms": {
+    "title": [
+      "Terms and Conditions | Scriwo"
+    ],
+    "h1": [
+      "Terms and conditions"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/terms"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/abu-dhabi": {
+    "title": [
+      "WhatsApp CRM Abu Dhabi — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Abu Dhabi"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/abu-dhabi"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/ahmedabad": {
+    "title": [
+      "WhatsApp CRM Ahmedabad — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Ahmedabad"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/ahmedabad"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/ajman": {
+    "title": [
+      "WhatsApp CRM Ajman — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Ajman"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/ajman"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/bengaluru": {
+    "title": [
+      "WhatsApp CRM Bengaluru — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Bengaluru"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/bengaluru"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/chennai": {
+    "title": [
+      "WhatsApp CRM Chennai — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Chennai"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/chennai"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/delhi-ncr": {
+    "title": [
+      "WhatsApp CRM Delhi NCR — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Delhi NCR"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/delhi-ncr"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/dubai": {
+    "title": [
+      "WhatsApp CRM Dubai — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Dubai"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/dubai"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/hyderabad": {
+    "title": [
+      "WhatsApp CRM Hyderabad — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Hyderabad"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/hyderabad"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/jaipur": {
+    "title": [
+      "WhatsApp CRM Jaipur — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Jaipur"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/jaipur"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/kolkata": {
+    "title": [
+      "WhatsApp CRM Kolkata — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Kolkata"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/kolkata"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/mumbai": {
+    "title": [
+      "WhatsApp CRM Mumbai — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Mumbai"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/mumbai"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/pune": {
+    "title": [
+      "WhatsApp CRM Pune — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Pune"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/pune"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/ras-al-khaimah": {
+    "title": [
+      "WhatsApp CRM Ras Al Khaimah — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Ras Al Khaimah"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/ras-al-khaimah"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/sharjah": {
+    "title": [
+      "WhatsApp CRM Sharjah — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Sharjah"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/sharjah"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/surat": {
+    "title": [
+      "WhatsApp CRM Surat — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Surat"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/surat"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm/udaipur": {
+    "title": [
+      "WhatsApp CRM Udaipur — Shared WhatsApp Inbox for Teams | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams in Udaipur"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm/udaipur"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "City",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "GeoCoordinates",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "Service",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/whatsapp-crm": {
+    "title": [
+      "WhatsApp CRM UAE & India — Dubai, Abu Dhabi, Mumbai, Delhi, Bengaluru | Scriwo"
+    ],
+    "h1": [
+      "WhatsApp CRM for teams across the UAE and India"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/whatsapp-crm"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "SpeakableSpecification",
+      "WebPage",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  },
+  "/white-label": {
+    "title": [
+      "White-label WhatsApp CRM — Partner With Scriwo | Scriwo"
+    ],
+    "h1": [
+      "Offer WhatsApp CRM to your clients, under your own name"
+    ],
+    "canonical": [
+      "https://www.scriwo.com/white-label"
+    ],
+    "robots": [
+      [
+        "robots",
+        "index, follow, max-image-preview:large, max-snippet:-1"
+      ]
+    ],
+    "hreflang": [],
+    "schema_types": [
+      "Answer",
+      "BreadcrumbList",
+      "ContactPoint",
+      "Country",
+      "FAQPage",
+      "ListItem",
+      "Organization",
+      "PostalAddress",
+      "PropertyValue",
+      "Question",
+      "WebSite"
+    ],
+    "schema_ids": [
+      "https://www.scriwo.com/#organization",
+      "https://www.scriwo.com/#website"
+    ]
+  }
+}

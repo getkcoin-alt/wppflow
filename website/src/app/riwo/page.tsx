@@ -41,6 +41,18 @@ export default function RiwoPage() {
       </section>
 
       <Container className="mt-16">
+        <section className="card p-6 sm:p-8" aria-labelledby="riwo-chatbot-fit">
+          <h2 id="riwo-chatbot-fit" className="text-2xl">Is Riwo an AI WhatsApp chatbot or a reply assistant?</h2>
+          <p className="mt-4 leading-relaxed text-fg-2">Riwo does both, with different levels of control. By default it prepares a draft for a person to review and send. Owners can separately enable qualification workflows or limited automatic replies. A customer can ask for a person, and pricing or proposals go to your team. Scriwo connects through linked devices; it is not the official WhatsApp Business API.</p>
+          <ul className="mt-5 space-y-2 text-sm">
+            <li><Link href="/features/ai-sales-assistant" className="text-brand hover:underline">See the lead-qualification workflow</Link></li>
+            <li><Link href="/features/ai-handoff-and-disclosure" className="text-brand hover:underline">Understand human handover and disclosure</Link></li>
+            <li><Link href="/blog/test-whatsapp-crm-before-buying" className="text-brand hover:underline">Test a real enquiry before choosing a plan</Link></li>
+          </ul>
+        </section>
+      </Container>
+
+      <Container className="mt-16">
         <SectionTitle eyebrow="What Riwo does" title="Five things, done well" />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           {RIWO_ACTIONS.map((a) => (

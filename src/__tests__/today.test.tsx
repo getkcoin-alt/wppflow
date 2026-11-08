@@ -236,6 +236,28 @@ describe("Today", () => {
     expect(props.onSetupStep).toHaveBeenCalledWith("automation");
   });
 
+  it("takes a connected workspace straight to its first enquiry, ahead of optional automation", async () => {
+    show(home({ setup: { done: 1, total: 3, steps: [
+      { key: "connect", label: "Connect your WhatsApp number", done: true },
+      { key: "reply", label: "Handle your first enquiry", done: false },
+      { key: "team", label: "Bring a teammate into the inbox", done: false },
+    ] } }));
+    fireEvent.click(await screen.findByRole("button", { name: "Open inbox and reply" }));
+    expect(props.onSetupStep).toHaveBeenCalledWith("reply");
+    expect(screen.getByText(/when WhatsApp reports delivery/)).toBeDefined();
+    expect(screen.queryByText("All clear")).toBeNull();
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("1");
+  });
+
+  it("does not resurrect the old feature checklist after first-enquiry setup is finished", async () => {
+    show(home({ activation: { hasDeliveredReply: true, firstReplyAt: "2026-11-04T09:00:00Z", setup: null },
+      setup: { done: 1, total: 4, steps: [{ key: "automation", label: "Turn on a welcome message", done: false }] } }));
+    await screen.findByText("All clear");
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Turn on a welcome message" })).toBeNull();
+  });
+
   it("counts what does not fit, and the rest of the old Overview is below", async () => {
     show(home({ needsYou: [chat()], more: 4 }));
     fireEvent.click(await screen.findByRole("button", { name: /And 4 more/ }));

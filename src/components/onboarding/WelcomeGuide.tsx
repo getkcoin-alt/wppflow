@@ -69,6 +69,8 @@ export function WelcomeGuide({
   name,
   manager = true,
   onDone,
+  onStart,
+  hasNumber = false,
 }: {
   variant?: "app" | "homes";
   /** the person's first name, used once in the greeting */
@@ -77,6 +79,9 @@ export function WelcomeGuide({
   manager?: boolean;
   /** called when the guide ends, finished or skipped; the app records that it has been seen */
   onDone: () => void;
+  /** Start the real task now; the tour is optional. */
+  onStart?: () => void;
+  hasNumber?: boolean;
 }) {
   const steps = (variant === "homes" ? HOMES_GUIDE : APP_GUIDE).filter((s) => manager || !s.managerOnly);
   const [i, setI] = useState(0);
@@ -133,6 +138,11 @@ export function WelcomeGuide({
           <Scene kind={step.scene} />
         </div>
 
+        {onStart && (
+          <button type="button" onClick={onStart} className="mt-5 min-h-11 w-full rounded-full bg-brand-solid px-5 py-3 text-white font-semibold">
+            {manager && !hasNumber ? "Connect my WhatsApp number" : "Open my inbox"}
+          </button>
+        )}
         <div className="mt-5 flex items-center justify-between gap-3">
           <ol className="flex items-center gap-1.5" aria-label={`Step ${i + 1} of ${steps.length}`}>
             {steps.map((s, n) => (
@@ -148,7 +158,7 @@ export function WelcomeGuide({
               </button>
             )}
             <button ref={primary} type="button" onClick={() => (last ? onDone() : setI(i + 1))} className="h-11 px-5 rounded-full bg-brand-solid text-white text-[14.5px] font-semibold inline-flex items-center gap-2 hover:bg-brand-hover transition-colors">
-              {last ? "Start using Scriwo" : "Next"}
+              {last ? "Start using Scriwo" : onStart && i === 0 ? "Show me around" : "Next"}
               {last ? <Check className="w-4 h-4" aria-hidden /> : <ArrowRight className="w-4 h-4" aria-hidden />}
             </button>
           </div>
