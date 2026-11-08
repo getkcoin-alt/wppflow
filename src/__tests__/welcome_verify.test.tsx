@@ -40,6 +40,15 @@ describe("welcome guide", () => {
     expect(start).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps Skip and the buttons out of the part that scrolls, so a short phone can always reach them", () => {
+    render(<WelcomeGuide onDone={() => {}} onStart={() => {}} />);
+    const scroller = document.querySelector('[role="dialog"] .overflow-y-auto');
+    expect(scroller).not.toBeNull();
+    expect(scroller!.contains(screen.getByRole("heading", { name: "Hi, I'm Riwo" }))).toBe(true);
+    for (const name of ["Skip the guide", "Connect my WhatsApp number", "Show me around"])
+      expect(scroller!.contains(screen.getByRole("button", { name }))).toBe(false);
+  });
+
   it("can be skipped at any step, and goes back", () => {
     const done = vi.fn();
     render(<WelcomeGuide onDone={done} />);

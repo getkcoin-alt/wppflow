@@ -105,62 +105,67 @@ export function WelcomeGuide({
 
   return (
     <div className="fixed inset-0 z-[80] grid place-items-end sm:place-items-center bg-black/55 backdrop-blur-sm p-0 sm:p-6" style={{ animation: "fade .25s ease-out both" }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="guide-title" className="relative w-full sm:max-w-[460px] max-h-dvh overflow-y-auto rounded-t-[32px] sm:rounded-[32px] bg-surface shadow-pop ring-1 ring-line p-6 pt-14 pb-7" style={{ animation: "rise .4s var(--ease-out) both" }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="guide-title" className="relative flex w-full flex-col sm:max-w-[460px] max-h-dvh overflow-hidden rounded-t-[32px] sm:rounded-[32px] bg-surface shadow-pop ring-1 ring-line" style={{ animation: "rise .4s var(--ease-out) both" }}>
         <button type="button" onClick={onDone} aria-label="Skip the guide" className="absolute z-10 top-3 right-3 h-10 px-3.5 rounded-full text-[13px] text-fg-3 hover:text-fg hover:bg-surface-2 inline-flex items-center gap-1">
           Skip <X className="w-3.5 h-3.5" aria-hidden />
         </button>
 
-        <div className="flex items-end gap-3">
-          <div className="relative shrink-0">
-            <div className="absolute inset-2 rounded-full bg-gold/25 blur-xl" style={{ animation: "riwo-glow 4s ease-in-out infinite" }} aria-hidden />
-            <img
-              key={i === 0 || last ? "wave" : "still"}
-              src={i === 0 || last ? "/brand/riwo-wave.webp" : "/brand/riwo.webp"}
-              alt="Riwo, your assistant"
-              width={112}
-              height={112}
-              className="relative h-28 w-28 rounded-[28px] object-cover select-none shadow-card"
-              style={{ animation: "riwo-float 5s ease-in-out infinite" }}
-              draggable={false}
-            />
+        {/* On a short phone only this part scrolls: Skip above and the buttons below stay where a thumb can reach them. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-14 pb-1">
+          <div className="flex items-end gap-3">
+            <div className="relative shrink-0">
+              <div className="absolute inset-2 rounded-full bg-gold/25 blur-xl" style={{ animation: "riwo-glow 4s ease-in-out infinite" }} aria-hidden />
+              <img
+                key={i === 0 || last ? "wave" : "still"}
+                src={i === 0 || last ? "/brand/riwo-wave.webp" : "/brand/riwo.webp"}
+                alt="Riwo, your assistant"
+                width={112}
+                height={112}
+                className="relative h-28 w-28 rounded-[28px] object-cover select-none shadow-card"
+                style={{ animation: "riwo-float 5s ease-in-out infinite" }}
+                draggable={false}
+              />
+            </div>
+            <div key={i} className="relative mb-3 flex-1 rounded-2xl rounded-bl-md bg-bubble-out px-4 py-3 text-[14px] leading-relaxed" style={{ animation: "riwo-pop .45s var(--ease-out) both" }}>
+              {i === 0 && first ? <b>Hi {first}. </b> : null}
+              {step.say}
+            </div>
           </div>
-          <div key={i} className="relative mb-3 flex-1 rounded-2xl rounded-bl-md bg-bubble-out px-4 py-3 text-[14px] leading-relaxed" style={{ animation: "riwo-pop .45s var(--ease-out) both" }}>
-            {i === 0 && first ? <b>Hi {first}. </b> : null}
-            {step.say}
+
+          <h2 id="guide-title" className="mt-5 text-[19px] font-semibold tracking-tight">
+            {step.title}
+          </h2>
+          <p className="text-[12.5px] text-gold font-medium mt-0.5">{step.where}</p>
+          <div className="mt-4" key={`scene-${i}`}>
+            <Scene kind={step.scene} />
           </div>
         </div>
 
-        <h2 id="guide-title" className="mt-5 text-[19px] font-semibold tracking-tight">
-          {step.title}
-        </h2>
-        <p className="text-[12.5px] text-gold font-medium mt-0.5">{step.where}</p>
-        <div className="mt-4" key={`scene-${i}`}>
-          <Scene kind={step.scene} />
-        </div>
-
-        {onStart && (
-          <button type="button" onClick={onStart} className="mt-5 min-h-11 w-full rounded-full bg-brand-solid px-5 py-3 text-white font-semibold">
-            {manager && !hasNumber ? "Connect my WhatsApp number" : "Open my inbox"}
-          </button>
-        )}
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <ol className="flex items-center gap-1.5" aria-label={`Step ${i + 1} of ${steps.length}`}>
-            {steps.map((s, n) => (
-              <li key={s.title}>
-                <button type="button" onClick={() => setI(n)} aria-label={`Go to step ${n + 1}`} aria-current={n === i ? "step" : undefined} className={`block h-2 rounded-full transition-all ${n === i ? "w-6 bg-brand-solid" : "w-2 bg-surface-3 hover:bg-fg-3"}`} />
-              </li>
-            ))}
-          </ol>
-          <div className="flex gap-2">
-            {i > 0 && (
-              <button type="button" onClick={() => setI(i - 1)} aria-label="Back" className="h-11 w-11 rounded-full bg-surface-2 text-fg-2 hover:text-fg grid place-items-center">
-                <ArrowLeft className="w-4 h-4" aria-hidden />
-              </button>
-            )}
-            <button ref={primary} type="button" onClick={() => (last ? onDone() : setI(i + 1))} className="h-11 px-5 rounded-full bg-brand-solid text-white text-[14.5px] font-semibold inline-flex items-center gap-2 hover:bg-brand-hover transition-colors">
-              {last ? "Start using Scriwo" : onStart && i === 0 ? "Show me around" : "Next"}
-              {last ? <Check className="w-4 h-4" aria-hidden /> : <ArrowRight className="w-4 h-4" aria-hidden />}
+        <div className="shrink-0 px-6 pb-7">
+          {onStart && (
+            <button type="button" onClick={onStart} className="mt-5 min-h-11 w-full rounded-full bg-brand-solid px-5 py-3 text-white font-semibold">
+              {manager && !hasNumber ? "Connect my WhatsApp number" : "Open my inbox"}
             </button>
+          )}
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <ol className="flex items-center gap-1.5" aria-label={`Step ${i + 1} of ${steps.length}`}>
+              {steps.map((s, n) => (
+                <li key={s.title}>
+                  <button type="button" onClick={() => setI(n)} aria-label={`Go to step ${n + 1}`} aria-current={n === i ? "step" : undefined} className={`block h-2 rounded-full transition-all ${n === i ? "w-6 bg-brand-solid" : "w-2 bg-surface-3 hover:bg-fg-3"}`} />
+                </li>
+              ))}
+            </ol>
+            <div className="flex gap-2">
+              {i > 0 && (
+                <button type="button" onClick={() => setI(i - 1)} aria-label="Back" className="h-11 w-11 rounded-full bg-surface-2 text-fg-2 hover:text-fg grid place-items-center">
+                  <ArrowLeft className="w-4 h-4" aria-hidden />
+                </button>
+              )}
+              <button ref={primary} type="button" onClick={() => (last ? onDone() : setI(i + 1))} className="h-11 px-5 rounded-full bg-brand-solid text-white text-[14.5px] font-semibold inline-flex items-center gap-2 hover:bg-brand-hover transition-colors">
+                {last ? "Start using Scriwo" : onStart && i === 0 ? "Show me around" : "Next"}
+                {last ? <Check className="w-4 h-4" aria-hidden /> : <ArrowRight className="w-4 h-4" aria-hidden />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
