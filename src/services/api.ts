@@ -594,6 +594,8 @@ export const draftAgent = (
 export const draftWorkflow = (body: { instruction?: string; answers?: { question: string; answer: string }[]; recipe?: string }): Promise<{ clarify?: WorkflowQuestion[]; draft?: WorkflowDraft | null; message?: string; recipes?: WorkflowRecipe[] }> =>
   apiPost("/api/automations/workflow/draft", body);
 export const reviseWorkflow = (rule: RuleDraft, instruction: string): Promise<{ clarify?: WorkflowQuestion[]; draft?: WorkflowDraft; diff?: string[] }> => apiPost("/api/automations/workflow/revise", { rule, instruction });
+/** "Add a question" without Riwo: the question, the step it goes in front of (or after the last question), and whether the answer goes into the note to the owners */
+export const addWorkflowQuestion = (rule: RuleDraft, addQuestion: { question: string; before?: string; tell?: boolean }): Promise<{ draft: WorkflowDraft; diff: string[] }> => apiPost("/api/automations/workflow/revise", { rule, addQuestion });
 /** The workflow as the screen has it, checked and completed by the server: the same view as a draft */
 export const checkWorkflow = (rule: RuleDraft): Promise<{ draft: WorkflowDraft }> => apiPost("/api/automations/workflow/check", { rule });
 export const fetchWorkflowRecipes = (): Promise<{ recipes: WorkflowRecipe[] }> => apiGet("/api/automations/workflow/recipes");

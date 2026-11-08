@@ -6,6 +6,7 @@ import React from "react";
 const api = vi.hoisted(() => ({
   draftWorkflow: vi.fn(),
   reviseWorkflow: vi.fn(),
+  addWorkflowQuestion: vi.fn(),
   checkWorkflow: vi.fn(),
   fetchWorkflowRecipes: vi.fn(),
   simulateWorkflow: vi.fn(),
@@ -244,6 +245,73 @@ describe("trying it and saving it", () => {
     expect(api.reviseWorkflow.mock.calls[0][1]).toBe("make the friend note shorter");
     fireEvent.click(screen.getByRole("button", { name: /Use this/ }));
     await waitFor(() => expect(screen.queryByText("Here is what would change:")).toBeNull());
+  });
+
+  describe("adding a question yourself", () => {
+    const withQuestion = () => {
+      const base = draft();
+      const nodes = { ...flow().nodes, n4: { type: "collect" as const, question: "Where did you hear about us?", saveAs: "hear", next: "end_auto" } };
+      return draft({ rule: { ...base.rule, config: { ...base.rule.config, workflow: { ...flow(), nodes } } } });
+    };
+    it("is behind a link from the start, offers the steps that carry on as places, and needs no Riwo", async () => {
+      api.addWorkflowQuestion.mockResolvedValue({ draft: withQuestion(), diff: ["Added: Where did you hear about us?"] });
+      await built();
+      expect(screen.queryByRole("form", { name: "Add a question" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Or add a question yourself" }));
+      const form = within(screen.getByRole("form", { name: "Add a question" }));
+      expect(form.getByRole("button", { name: /Add question/ }).hasAttribute("disabled")).toBe(true);
+      // the places: the start, and in front of each step that goes on; not the ones that finish or hand over
+      const places = within(form.getByLabelText("Where to ask it")).getAllByRole("option").map((o) => o.textContent);
+      expect(places).toEqual(["After my last question (recommended)", "At the very start", "Before: Find out what they need and arrange a meeting", "Before: Lovely to hear from you! The boss has been told."]);
+      expect(form.queryByLabelText(/Put the answer in the note/)).toBeNull(); // this flow has no note to the owners
+      fireEvent.change(form.getByLabelText("Question to ask"), { target: { value: "Where did you hear about us?" } });
+      fireEvent.click(form.getByRole("button", { name: /Add question/ }));
+      expect(await screen.findByText("Added: Where did you hear about us?")).toBeTruthy();
+      expect(api.reviseWorkflow).not.toHaveBeenCalled();
+      expect(api.addWorkflowQuestion).toHaveBeenCalledWith(expect.objectContaining({ name: "Work or family" }), { question: "Where did you hear about us?", tell: false });
+      fireEvent.click(screen.getByRole("button", { name: /Use this/ }));
+      await waitFor(() => expect(screen.queryByText("Here is what would change:")).toBeNull());
+      expect(screen.queryByRole("form", { name: "Add a question" })).toBeNull();
+    });
+
+    it("puts it where it was asked, and offers the owners' note when the flow has one", async () => {
+      api.addWorkflowQuestion.mockResolvedValue({ draft: withQuestion(), diff: [] });
+      const base = draft();
+      const outline = [...base.outline.slice(0, 3), { id: "n9", via: "", type: "notify" as const, summary: "Tell the owners: someone wrote", goes: [{ label: "", to: "end_auto" }] }, ...base.outline.slice(3)];
+      api.checkWorkflow.mockResolvedValue({ draft: { ...base, outline } });
+      api.draftWorkflow.mockResolvedValue({ draft: { ...base, outline } });
+      await built();
+      fireEvent.click(screen.getByRole("button", { name: "Or add a question yourself" }));
+      const form = within(screen.getByRole("form", { name: "Add a question" }));
+      fireEvent.change(form.getByLabelText("Question to ask"), { target: { value: "Which city are you in?" } });
+      fireEvent.change(form.getByLabelText("Where to ask it"), { target: { value: "n3" } });
+      const note = form.getByLabelText(/Put the answer in the note the owners get/) as HTMLInputElement;
+      expect(note.checked).toBe(true);
+      fireEvent.click(form.getByRole("button", { name: /Add question/ }));
+      await waitFor(() => expect(api.addWorkflowQuestion).toHaveBeenCalledWith(expect.anything(), { question: "Which city are you in?", before: "n3", tell: true }));
+      expect(await screen.findByText("Nothing in the steps changes.")).toBeTruthy();
+    });
+
+    it("opens by itself when Riwo could not make the change, with what went wrong and what to do", async () => {
+      api.reviseWorkflow.mockRejectedValue(new Error("Riwo couldn't turn that into a change this time. Say it another way, or add the question yourself below."));
+      await built();
+      fireEvent.change(screen.getByLabelText("What to change"), { target: { value: "Also ask from user about from where they got the reference.." } });
+      fireEvent.click(screen.getByRole("button", { name: "Change it" }));
+      expect(await screen.findByText(/Riwo couldn't turn that into a change this time\. Say it another way, or add the question yourself below\./)).toBeTruthy();
+      expect(screen.getByRole("form", { name: "Add a question" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Or add a question yourself" })).toBeNull();
+    });
+
+    it("says what is wrong when the question cannot be added, and keeps what was typed", async () => {
+      api.addWorkflowQuestion.mockRejectedValue(new Error('There is no step to put it before "zzz". The steps are: n1 (Hi)'));
+      await built();
+      fireEvent.click(screen.getByRole("button", { name: "Or add a question yourself" }));
+      const form = within(screen.getByRole("form", { name: "Add a question" }));
+      fireEvent.change(form.getByLabelText("Question to ask"), { target: { value: "Which city are you in?" } });
+      fireEvent.click(form.getByRole("button", { name: /Add question/ }));
+      expect(await screen.findByText(/There is no step to put it before/)).toBeTruthy();
+      expect((form.getByLabelText("Question to ask") as HTMLInputElement).value).toBe("Which city are you in?");
+    });
   });
 
   it("opens a saved workflow already built, and saves changes to it", async () => {

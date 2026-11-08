@@ -350,7 +350,7 @@ function Body({ onClose, onSaved, initial }: { onClose: () => void; onSaved: (me
             <FlowView draft={draft} active={active} onEdit={editStep} />
             <NeedsPanel needs={draft.needs} rule={draft.rule} onChange={patchConfig} />
             <SafetyChips lines={draft.guardrails} />
-            <ReviseBox rule={draft.rule} onApply={accept} />
+            <ReviseBox rule={draft.rule} outline={draft.outline} onApply={accept} />
           </div>
           <div className="lg:sticky lg:top-0 self-start">
             <Simulator key={version} rule={draft.rule} known={known} onStep={setActive} />
