@@ -705,12 +705,23 @@ export async function uploadAttachment(
     mimeType,
     byteSize: file.size,
   });
-  const uploaded = await fetch(prepared.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": mimeType },
-    body: file,
-  });
-  if (!uploaded.ok) throw new Error("File upload failed");
+  let uploaded: Response;
+  try {
+    uploaded = await fetch(prepared.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": mimeType },
+      body: file,
+    });
+  } catch {
+    // When the file storage will not take an upload from this address (its CORS rules), a browser says no more than "Failed to fetch".
+    throw new Error(
+      typeof navigator !== "undefined" && navigator.onLine === false
+        ? "You seem to be offline. Check the connection and send the file again."
+        : "The file could not be uploaded: the browser was not allowed to reach the file storage from this address. This is a setting on Scriwo's side, not a problem with your file. Please tell Scriwo support.",
+    );
+  }
+  if (!uploaded.ok)
+    throw new Error(`The file could not be uploaded (the storage answered ${uploaded.status}). Try again, and tell Scriwo support if it keeps happening.`);
   return apiPost(`/api/attachments/${prepared.attachmentId}/send`, {
     idempotencyKey: crypto.randomUUID(),
   });

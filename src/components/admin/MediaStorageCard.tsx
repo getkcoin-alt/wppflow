@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { apiGet, getStoredTenantId } from "../../services/api";
 import { runMediaCheck, type MediaCheck } from "../../services/mediaCheck";
 import { Pill } from "../ui/Page";
+import { CodeBlock } from "../developer/otp/CodeBlock";
 import { btn } from "../ui/styles";
 
 function Row({ ok, note }: { ok: boolean; note: string }) {
@@ -78,6 +79,17 @@ export function MediaStorageCard() {
             <Row ok={result.browser.ok} note={result.browser.note} />
           )}
         </ul>
+      )}
+      {result?.browser?.corsRule && (
+        <div className="mt-4 space-y-3" role="group" aria-label="How to fix the storage rules">
+          <p className="text-[14px] font-medium">How to fix it (about a minute)</p>
+          <ol className="list-decimal pl-5 space-y-1 text-[14px] text-fg-2">
+            <li>Open the bucket's settings at your storage provider. On Cloudflare R2: R2 object storage, your bucket, Settings, CORS Policy, Add CORS policy, the JSON tab.</li>
+            <li>Paste this rule and save. It lists every address the app is opened from, so Scriwo and Scriwo Homes both work.</li>
+            <li>Come back here and press Run test again.</li>
+          </ol>
+          <CodeBlock code={result.browser.corsRule} label="CORS rule for the storage bucket" />
+        </div>
       )}
     </section>
   );
