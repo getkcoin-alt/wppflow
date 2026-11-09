@@ -72,7 +72,7 @@
       var ov = el("div", { class: "ov" }), card = el("div", { class: "card", role: "dialog", "aria-modal": "true", "aria-labelledby": "t" });
       try {
         var sheet = new CSSStyleSheet(); sheet.replaceSync(CSS); root.adoptedStyleSheets = [sheet];
-      } catch (e) { root.appendChild(el("style", { text: CSS })); }
+      } catch (e) { root.appendChild(el("style", { text: CSS })); } // eslint-disable-line no-unused-vars -- optional catch binding is not understood by older browsers
       root.appendChild(ov); ov.appendChild(card);
       document.body.appendChild(host);
       var t = function (k, n) { return (T[lang][k] || T.en[k] || k).replace("{n}", n); };
@@ -80,7 +80,7 @@
       function close(result) {
         if (finished) return; finished = true; open = null;
         clearInterval(timer); document.removeEventListener("keydown", onKey, true); host.remove();
-        if (previous && previous.focus) try { previous.focus(); } catch (e) { /* the page moved on */ }
+        if (previous && previous.focus) try { previous.focus(); } catch (e) { /* the page moved on */ } // eslint-disable-line no-unused-vars
         if (typeof opts.onClose === "function") opts.onClose({ verified: Boolean(result) });
         resolve(result || null);
       }

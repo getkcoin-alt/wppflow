@@ -160,7 +160,7 @@ Checked again on 25 October 2026 (first on 22 October, after the platform admin 
 | Growth: up to 10 numbers; adds broadcasts, automations, audit log | Test | Limit of 10 set from the plan; the three are open on Growth and above |
 | Growth: saved replies, desktop and offline alerts | Code | Built and working, but deliberately open on **every** plan: alerts protect customers from a missed message, and saved replies are a small convenience. The page lists them under Growth, so Free and Starter get more than it promises |
 | Business: up to 25 numbers; scoped API keys, signed webhooks | Test | Limit of 25 set from the plan; keys and webhooks are locked below Business |
-| Business: API keys, webhooks, API tester and SDK samples | Test | The whole Developers module is locked on Free, Starter and Growth: it stays in the navigation with a lock, opens a page that names the Business plan and what it adds, and nothing behind it is shown or asked of the server. Owners and administrators get "See the plans"; other teammates are told to ask the owner. Pipeline, Broadcasts and Automations carry the same lock in the navigation on plans without them. `developer_lock.test.tsx` |
+| Business: API keys, webhooks, API tester and SDK samples | Test | Locked on Free, Starter and Growth, as one note under the Free OTP page (which is open to every plan, see below): none of the tools is shown or asked of the server. Owners and administrators get "See the plans"; other teammates are told to ask the owner. The Developers item in the navigation is not marked as locked; Pipeline, Broadcasts and Automations carry the lock on plans without them. `developer_lock.test.tsx` |
 | Enterprise: custom number limit | Test | The platform admin must type the limit; no default is guessed |
 | Onboarding call, dedicated onboarding, help connecting your systems | Service | Not software |
 | The platform admin chooses the plan when creating a company, and can change it later | Test | Required, one of the five, with the plan's number limit filled in and editable; changing it takes effect at once, removes nothing, and says what a smaller plan leaves the company with (`plans-admin.test.js`, `platform_plans.test.tsx`) |
@@ -396,3 +396,34 @@ a real provider or a real company website.
 **Not claimed.** That Riwo "closes sales" by itself: it moves the customer to the next step and a person finishes the sale. That it
 "learns" or "trains" from chats: it reads the website and notes, nothing else. That it works for any website: sites that only show
 their words after loading scripts cannot be read.
+
+
+## Free OTP in Developers (9 November 2026)
+
+In the app only, under Developers; the website does not mention it yet. Built and tested with WhatsApp replaced by a stand-in:
+nothing here has been seen with a real WhatsApp number, so "WhatsApp may restrict a number that sends many automated messages" is
+said to the customer in the page, and nothing says it is the official WhatsApp Business API. Details in `docs/otp.md`.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| Free on every plan, Free included: 100 codes a day and 1,000 a month per company | Test | `otp-service.test.js` (the Free plan sets up and sends; the limit is counted and refused with the reset time) |
+| Sent from the company's own linked number; a number that is linked but offline is told apart from none linked | Test | `otp-service.test.js` |
+| Two calls: send a code, check a code; a code works once, a newer code replaces the older, a locked code stays locked, an expired code is refused | Test | `otp-service.test.js` |
+| The code is never stored (only an HMAC, dropped once the code is used), never returned by a live send, never in the status answer or in any webhook event | Test | `otp-service.test.js`, `otp-webhooks.test.js` |
+| A number cannot be flooded: 3 codes in 10 minutes, 10 a day, a wait before another | Test | `otp-service.test.js` |
+| A number that is not on WhatsApp is told so, and that attempt does not use the allowance | Test | `otp-service.test.js` |
+| A send WhatsApp does not confirm is 202, the code stays valid, and Scriwo never sends it twice; the same Idempotency-Key is the same code | Test | `otp-service.test.js` |
+| Test keys send nothing, always use 123456, use none of the allowance, and cannot touch live codes | Test | `otp-service.test.js`, `otp-widget.test.js` |
+| An OTP key can do nothing else in Scriwo, and no other key can use the OTP API; a company only ever sees its own codes | Test | `otp-service.test.js` |
+| People who got a code do not appear in the inbox or the contacts, and the code is not stored in a chat (echo, history, chat list); a person who replies is an ordinary customer | Test | `otp-guard.test.js`; in a real browser: no chat and no contact after a test, an API send and a widget check |
+| Delivery receipts for codes update the OTP log and leave no unmatched receipts | Test | `otp-guard.test.js` |
+| The wording is fixed: only the company's name and the code change; a name with a link, dots or symbols is refused | Test | `otp-templates.test.js`, `otp-service.test.js`; English, Hindi and Arabic read in the person's own language |
+| Choosing a use case sets its digits, time and tries; each can be changed | Test | `otp-service.test.js`, `otp_studio.test.tsx` |
+| Webhook events for any plan, to one signed HTTPS address on a public host; the Business webhooks hear nothing new and do not list it | Test | `otp-webhooks.test.js` |
+| The web widget: a public key works only from the websites listed on it (a test key from anywhere); 12 codes an hour per visitor; a proof the company's server confirms once, within ten minutes, only for its own company | Test | `otp-widget.test.js`; in a real browser from other origins, in English, Hindi and Arabic, on a phone, and under a page policy that forbids styles (`otp-widget-e2e`) |
+| Owners and administrators set it up; other teammates are told who does; the rest of Developers stays on the Business plan | Test | `otp-service.test.js`, `otp_studio.test.tsx`, `developer_lock.test.tsx` |
+| The page works on a phone: nothing scrolls sideways, targets are 44 px, fields 16 px | Measured | `scripts/phone-audit.mjs` and the Free OTP run at 390 and 320 px |
+
+**Not claimed.** That the code exists nowhere else: it is in the message text, so it is in the sending number's own WhatsApp app and in WhatsApp's systems; that codes are always delivered (WhatsApp may refuse or delay them, and a number may be restricted); that the
+origin check stops a determined abuser of a public key (it keeps honest mistakes out; the limits per phone, device, key and company
+do the rest); SMS or voice fallback; plugins and SDK packages; anything about it on the website.

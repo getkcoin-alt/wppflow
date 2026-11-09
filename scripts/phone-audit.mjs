@@ -143,7 +143,7 @@ for (const width of WIDTHS) {
     }
   }
   for (const tab of ["Pipeline", "Contacts", "Real estate"]) if (await go(tab) && tab === "Pipeline") await sheet("Pipeline filters", () => page.getByRole("button", { name: /^Filters/ }).click({ timeout: 3000 }));
-  for (const item of ["Contacts", "Automations", "Numbers", "Reports", "Broadcasts", "Team"]) await fromMenu(item);
+  for (const item of ["Contacts", "Automations", "Numbers", "Reports", "Broadcasts", "Team", "Developers"]) await fromMenu(item);
   await sheet("Menu", () => bar.getByRole("button", { name: "Menu" }).click({ timeout: 3000 }));
   await context.close();
 }

@@ -80,12 +80,14 @@ Everything is under `src/components/mobile/`, `src/hooks/` and `src/utils/haptic
 - **Real browser, touch input** (Chromium with touch emulation and raw touch events): sheet drag and flick, Back closing a
   sheet and then the chat, the tab bar stepping away, swipes with Undo, holding a row, pull to refresh, the jump button, the
   keyboard (visible height shrunk), dark theme and reduced motion.
-- **`scripts/phone-audit.mjs`** walks 16 screens and sheets at 320, 360, 375, 390 and 430 px and reports sideways scrolling,
-  targets under 44 px, fields under 16 px and unnamed buttons. On 4 November 2026 it found none. Before the touch rules it
-  found 47 targets under 44 px.
+- **`scripts/phone-audit.mjs`** walks 17 screens and sheets at 320, 360, 375, 390 and 430 px and reports sideways scrolling,
+  targets under 44 px, fields under 16 px and unnamed buttons. On 4 November 2026 it found none (16 screens); on 9 November 2026,
+  with Developers (Free OTP) added to the walk, it found none in 17. Before the touch rules it found 47 targets under 44 px.
 - **First-run screens** (the welcome guide and Today for a company with no number, which the audit script skips past): on
   8 November 2026 they were checked at 320x568, 360x640, 375x667, 390x844 and 430x932 with the same measurements. The guide's Skip
   was out of reach at 320x568; fixed (see below). Everything else was clean.
+- **Free OTP** (Developers): the whole journey, and the drop-in widget on a customer's website, at 390 px with the same measurements
+  after each step: nothing scrolls sideways, every target 44 px or more, every field 16 px or more.
 - **Pictures**: `docs/mobile/before-after-*.png`, the same seeded company before and after.
 
 ## Things that went wrong once (so nobody learns them again)
