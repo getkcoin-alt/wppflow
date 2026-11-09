@@ -200,13 +200,13 @@ export function Notice({
   tone,
   children,
 }: {
-  tone: "error" | "success" | "info";
+  tone: "error" | "success" | "info" | "warn";
   children: ReactNode;
 }) {
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={`rounded-2xl px-4 py-3 text-[14px] ${tone === "error" ? "bg-danger/10 text-danger" : tone === "info" ? "bg-info/10 text-info" : "bg-ok/10 text-ok"}`}
+      className={`rounded-2xl px-4 py-3 text-[14px] ${tone === "error" ? "bg-danger/10 text-danger" : tone === "info" ? "bg-info/10 text-info" : tone === "warn" ? "bg-warn/10 text-warn" : "bg-ok/10 text-ok"}`}
     >
       {children}
     </div>

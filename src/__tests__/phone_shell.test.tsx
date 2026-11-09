@@ -161,9 +161,9 @@ describe("the Menu", () => {
 
   it("marks what the plan does not include, and the item still opens", () => {
     const onNavigate = vi.fn();
-    const { sheet } = open({ onNavigate, isLocked: (i) => i.needs?.feature === "automations" || i.needs?.feature === "api" });
+    const { sheet } = open({ onNavigate, isLocked: (i) => Boolean(i.needs) && i.needs?.feature !== "broadcasts" });
     expect(sheet.getByTestId("locked-automations")).toBeDefined();
-    expect(sheet.getByTestId("locked-developers")).toBeDefined();
+    expect(sheet.queryByTestId("locked-developers"), "Free OTP is open to every plan").toBeNull();
     expect(sheet.queryByTestId("locked-campaigns")).toBeNull();
     fireEvent.click(sheet.getByRole("button", { name: /Automations/ }));
     expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ key: "automations" }));

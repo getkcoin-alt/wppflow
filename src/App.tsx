@@ -127,7 +127,7 @@ export function App() {
   const [view, setView] = useState<View>("user");
   const [tab, setTab] = useState<UserSubTab>("dashboard"),
     [adminTab, setAdminTab] = useState<AdminSubTab>("users"),
-    [devTab, setDevTab] = useState<DevSubTab>("docs");
+    [devTab, setDevTab] = useState<DevSubTab>("otp");
   const [pairOpen, setPairOpen] = useState(false),
     [campaignOpen, setCampaignOpen] = useState(false),
     [selected, setSelected] = useState<string | null>(null);
@@ -1354,6 +1354,7 @@ export function App() {
               apiPlan={locked("api") ? planName : undefined}
               lapsed={lapsed}
               onOpenPlan={planAction}
+              onConnectNumber={openPair}
               activeDevTab={
                 !manager && (devTab === "keys" || devTab === "webhooks")
                   ? "docs"

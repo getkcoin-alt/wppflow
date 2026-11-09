@@ -24,7 +24,7 @@ export type UserSubTab =
   | "reports"
   | "realestate";
 export type AdminSubTab = "users" | "billing" | "cluster" | "audit";
-export type DevSubTab = "docs" | "webhooks" | "sdks" | "keys";
+export type DevSubTab = "otp" | "docs" | "webhooks" | "sdks" | "keys";
 export type View = "user" | "admin" | "developer";
 
 export interface NavItem {
@@ -120,8 +120,8 @@ export const NAV_SECONDARY: NavItem[] = [
     key: "developers",
     label: "Developers",
     icon: Code2,
+    // Free OTP is open to every plan, so the item is never locked; the tools that need Business are marked inside it
     view: "developer",
-    needs: { feature: "api", plan: "Business" },
   },
 ];
 
@@ -133,6 +133,7 @@ export const ADMIN_TABS: { key: AdminSubTab; label: string }[] = [
 ];
 export const DEV_TABS: { key: DevSubTab; label: string; manager?: boolean }[] =
   [
+    { key: "otp", label: "Free OTP" },
     { key: "docs", label: "API tester" },
     { key: "sdks", label: "SDKs" },
     { key: "webhooks", label: "Webhooks", manager: true },

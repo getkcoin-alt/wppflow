@@ -9,11 +9,11 @@ import {
   resolveEndpoint,
 } from "../../services/api";
 import type { DevSubTab } from "../layout/navigation";
-import { Copy } from "lucide-react";
+import { Copy, Lock } from "lucide-react";
 import { DEV_TABS } from "../layout/navigation";
 import { Field, Notice, Page, PageHeader, Pill, Segmented } from "../ui/Page";
 import { btn, inputCls, textareaCls } from "../ui/styles";
-import { FeatureLocked } from "../ui/FeatureLocked";
+import { OtpStudio } from "./otp/OtpStudio";
 export function DeveloperGuide({
   activeDevTab,
   onSelectDevTab,
@@ -21,6 +21,7 @@ export function DeveloperGuide({
   apiPlan,
   lapsed = false,
   onOpenPlan,
+  onConnectNumber,
 }: {
   canManage?: boolean;
   /** Set when the company's plan doesn't include the developer tools (Business and above): the plan's name. The whole module is shown locked. */
@@ -29,6 +30,8 @@ export function DeveloperGuide({
   lapsed?: boolean;
   /** Takes an owner or administrator to the plan and billing screen */
   onOpenPlan?: () => void;
+  /** Opens the screen that links a WhatsApp number (Free OTP sends from one) */
+  onConnectNumber?: () => void;
   activeDevTab: DevSubTab;
   onSelectDevTab: (tab: DevSubTab) => void;
 }) {
@@ -61,35 +64,28 @@ export function DeveloperGuide({
       setBusy(false);
     }
   };
-  const tabs = DEV_TABS.filter((t) => !t.manager || canManage);
+  // Free OTP is for every plan; the API tester, SDKs, keys and webhooks are the Business plan's, and say so instead of showing
+  const tabs = DEV_TABS.filter((t) => (!t.manager || canManage) && (t.key === "otp" || !apiPlan));
+  const tab = apiPlan ? "otp" : activeDevTab;
   const card = "card p-5 sm:p-7";
-  if (apiPlan)
-    return (
-      <FeatureLocked
-        feature="Developer access"
-        plan={apiPlan}
-        needs="Business"
-        includes="It adds API keys, signed webhooks, the API tester and SDK samples for connecting your own systems."
-        lapsed={lapsed}
-        onOpenPlan={onOpenPlan}
-      />
-    );
   return (
     <Page>
       <PageHeader
         eyebrow="Developers"
-        title="Build on Scriwo"
-        subtitle="Try the API, copy ready-made examples, and connect your own systems."
+        title={tab === "otp" ? "Free OTP" : "Build on Scriwo"}
+        subtitle={tab === "otp" ? "One-time codes on WhatsApp, sent from your own number. Free on every plan, and set up in about two minutes." : "Try the API, copy ready-made examples, and connect your own systems."}
         actions={
-          <Segmented
-            label="Developer sections"
-            items={tabs.map((t) => ({ key: t.key, label: t.label }))}
-            value={activeDevTab}
-            onChange={(t) => {
-              setSecret("");
-              onSelectDevTab(t);
-            }}
-          />
+          tabs.length > 1 ? (
+            <Segmented
+              label="Developer sections"
+              items={tabs.map((t) => ({ key: t.key, label: t.label }))}
+              value={tab}
+              onChange={(t) => {
+                setSecret("");
+                onSelectDevTab(t);
+              }}
+            />
+          ) : undefined
         }
       />
       <section className="space-y-5">
@@ -112,7 +108,9 @@ export function DeveloperGuide({
           </div>
         )}
 
-        {activeDevTab === "docs" && (
+        {tab === "otp" && <OtpStudio canManage={canManage} onConnectNumber={onConnectNumber} />}
+
+        {tab === "docs" && (
           <div className={`${card} space-y-5`}>
             <p className="text-[14.5px] text-fg-2">
               Requests below run against your workspace. POST requests can
@@ -191,7 +189,7 @@ export function DeveloperGuide({
           </div>
         )}
 
-        {activeDevTab === "keys" && (
+        {tab === "keys" && (
           <div className="space-y-4">
             <form
               className={`${card} grid gap-3 md:grid-cols-[1fr_200px_auto]`}
@@ -264,7 +262,7 @@ export function DeveloperGuide({
           </div>
         )}
 
-        {activeDevTab === "webhooks" && (
+        {tab === "webhooks" && (
           <div className="space-y-4">
             <form
               className={`${card} space-y-3`}
@@ -370,7 +368,7 @@ export function DeveloperGuide({
           </div>
         )}
 
-        {activeDevTab === "sdks" && (
+        {tab === "sdks" && (
           <div className={`${card} space-y-4`}>
             <h2 className="text-[20px] font-semibold">
               Authenticated API examples
@@ -380,6 +378,31 @@ export function DeveloperGuide({
               examples, not executed requests.
             </p>
             <pre className="overflow-auto rounded-2xl bg-surface-2 p-4 font-mono text-[12.5px] text-fg-2">{`curl '${resolveEndpoint("/api/contacts")}' \\\n  -H 'Authorization: Bearer YOUR_CONTACTS_API_KEY'\n\nconst response = await fetch('${resolveEndpoint("/api/contacts")}', {\n  headers: {Authorization: 'Bearer YOUR_CONTACTS_API_KEY'}\n});\nconst contacts = await response.json();`}</pre>
+          </div>
+        )}
+        {apiPlan && (
+          <div className="card p-5 sm:p-6 flex flex-wrap items-center gap-4">
+            <span className="h-11 w-11 shrink-0 rounded-full bg-surface-2 text-gold grid place-items-center" aria-hidden>
+              <Lock className="w-5 h-5" />
+            </span>
+            <div className="flex-1 min-w-[14rem]">
+              <h2 className="text-[16px] font-semibold text-fg">{lapsed ? "The other developer tools are off until the payment is received" : "More developer tools are part of the Business plan"}</h2>
+              <p className="text-[14px] text-fg-2 mt-0.5">
+                {lapsed
+                  ? `Payment for your ${apiPlan} plan is overdue, so API keys, webhooks, the API tester and SDK samples are switched off. Nothing has been deleted. Free OTP keeps working.`
+                  : `Your company is on the ${apiPlan} plan. Business adds API keys, signed webhooks, the API tester and SDK samples for connecting your own systems. Free OTP works on every plan.`}
+                {onOpenPlan ? "" : " Ask your company's owner or an administrator to change the plan."}
+              </p>
+            </div>
+            {onOpenPlan ? (
+              <button type="button" onClick={onOpenPlan} className={btn("secondary")}>
+                {lapsed ? "Pay now" : "See the plans"}
+              </button>
+            ) : (
+              <a href="https://www.scriwo.com/pricing" target="_blank" rel="noopener noreferrer" className={btn("secondary")}>
+                See the plans
+              </a>
+            )}
           </div>
         )}
       </section>

@@ -1572,3 +1572,103 @@ export const listCompanySolutions = async (companyId: string): Promise<SolutionC
   (await apiGet(`/api/admin/companies/${encodeURIComponent(companyId)}/solutions`)).solutions;
 export const setCompanySolution = async (companyId: string, key: string, enabled: boolean): Promise<{ changed: boolean; solutions: SolutionChoice[] }> =>
   apiPut(`/api/admin/companies/${encodeURIComponent(companyId)}/solutions/${encodeURIComponent(key)}`, { enabled });
+
+// ── Free OTP (Developers): one-time codes on WhatsApp from the company's own number ─────────────────────────────────────────────
+export interface OtpTemplate {
+  key: string;
+  title: string;
+  blurb: string;
+  defaults: { codeLength: number; ttlSeconds: number; maxAttempts: number; resendSeconds: number };
+}
+export interface OtpSettings {
+  enabled: boolean;
+  template: string;
+  /** what was typed; empty means "use the company's name" */
+  brand: string;
+  brandResolved: string;
+  locale: string;
+  codeLength: number;
+  ttlSeconds: number;
+  maxAttempts: number;
+  resendSeconds: number;
+  sessionName: string | null;
+  suspended: boolean;
+}
+export interface OtpKey {
+  id: string;
+  name: string;
+  kind: "secret" | "public";
+  mode: "live" | "test";
+  prefix: string;
+  allowedOrigins: string[];
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+}
+export interface OtpRequest {
+  id: string;
+  status: string;
+  mode: "live" | "test";
+  source: "api" | "widget" | "dashboard";
+  /** the number, masked */
+  to: string;
+  template: string;
+  locale: string;
+  reference: string | null;
+  attempts: number;
+  maxAttempts: number;
+  createdAt: string;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  verifiedAt: string | null;
+  expiresAt: string;
+  error: string | null;
+  secondsToVerify: number | null;
+}
+export interface OtpOverview {
+  available: boolean;
+  settings: OtpSettings;
+  templates: OtpTemplate[];
+  locales: { key: string; name: string }[];
+  numbers: { sessionName: string; phone: string | null; connected: boolean }[];
+  keys: OtpKey[];
+  usage: { today: { used: number; limit: number; resets: string }; month: { used: number; limit: number; resets: string } };
+  stats: { days: number; sent: number; delivered: number; verified: number; failed: number; verifiedRate: number | null; medianSecondsToVerify: number | null };
+  webhook: { id: string; url: string; createdAt: string } | null;
+  limits: { perPhoneWindow: number; perPhoneWindowMinutes: number; perPhoneDay: number };
+  ready: { number: boolean; tested: boolean; key: boolean };
+}
+export type OtpSettingsPatch = Partial<Pick<OtpSettings, "enabled" | "template" | "brand" | "locale" | "codeLength" | "ttlSeconds" | "maxAttempts" | "resendSeconds" | "sessionName">>;
+export interface OtpSent {
+  id: string;
+  state: string;
+  channel: string;
+  to: string;
+  expiresIn: number;
+  resendAfter?: number;
+  note?: string;
+}
+export interface OtpChecked {
+  valid: boolean;
+  id: string;
+  reason?: string;
+  attemptsLeft?: number;
+  secondsToVerify?: number | null;
+}
+export const getOtp = (): Promise<OtpOverview> => apiGet("/api/otp-setup");
+export const saveOtpSettings = async (patch: OtpSettingsPatch): Promise<OtpSettings> => (await apiPut("/api/otp-setup/settings", patch)).settings;
+export const getOtpPreview = async (p: { template?: string; locale?: string; brand?: string; codeLength?: number; ttlSeconds?: number }): Promise<string> => {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(p)) if (v !== undefined && v !== "") q.set(k, String(v));
+  return (await apiGet(`/api/otp-setup/preview?${q}`)).text;
+};
+export const createOtpKey = async (body: { name: string; kind: "secret" | "public"; mode: "live" | "test"; origins?: string[] }): Promise<OtpKey & { key: string }> => (await apiPost("/api/otp-setup/keys", body)).key;
+export const revokeOtpKey = (id: string) => apiDelete(`/api/otp-setup/keys/${encodeURIComponent(id)}`);
+export const otpTestSend = (phone: string): Promise<OtpSent> => apiPost("/api/otp-setup/test/send", { phone });
+export const otpTestCheck = (id: string, code: string): Promise<OtpChecked> => apiPost("/api/otp-setup/test/verify", { id, code });
+export const otpTestStatus = async (id: string): Promise<OtpRequest> => (await apiGet(`/api/otp-setup/test/${encodeURIComponent(id)}`)).request;
+export const getOtpLog = async (): Promise<OtpRequest[]> => (await apiGet("/api/otp-setup/log")).requests;
+export const setOtpWebhook = (url: string): Promise<{ webhook: { id: string; url: string }; secret: string }> => apiPut("/api/otp-setup/webhook", { url });
+export const removeOtpWebhook = () => apiDelete("/api/otp-setup/webhook");
+export const testOtpWebhook = () => apiPost("/api/otp-setup/webhook/test", {});
+export const getOtpWebhookDeliveries = async (): Promise<{ id: string; event: string; status: string; attempts: number; response_status: number | null; error: string | null; created_at: string }[]> => (await apiGet("/api/otp-setup/webhook/deliveries")).deliveries;
