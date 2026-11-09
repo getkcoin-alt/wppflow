@@ -8,7 +8,7 @@ says it is.
 
 ## The page
 
-One page, four cards, in the order a person needs them:
+One page, five cards, in the order a person needs them. A choice shows at once (the page works out what the server will answer, starts the preview at the same time as the save, and puts the old values back with the reason if the save is refused):
 
 1. **What is the code for?** Sign in, Sign up, Password reset, Payment, Delivery, Booking, Account change, Verify my number. One tap
    sets the wording and the usual digits, time and tries. *Fine-tune* holds the name in the message (the company's name unless
@@ -20,6 +20,9 @@ One page, four cards, in the order a person needs them:
 4. **Connect your site.** *Your server*: a secret key (shown once), the code to paste (Node.js, Python, PHP, Java, cURL, or the fields
    of a no-code HTTP step) with the real key and address filled in. *Web widget*: the websites it may run on, a public key, one
    script tag, and the server's check of the proof. Optional *Get notified*: one webhook address.
+
+5. **Or let your coding agent do it.** One tap copies a prompt for Claude Code, Cursor, Copilot or any coding agent, with everything chosen
+   above in it (see *The prompt for a coding agent*). The same button sits at the top of the page.
 
 Below: the free allowance used, what became of the latest codes (numbers masked), and a switch that pauses all codes.
 Owners and administrators only; other teammates are told who sets it up. The rest of Developers (API tester, SDK samples, API keys,
@@ -33,7 +36,7 @@ Base address: the app's own (`https://app.scriwo.com/api/otp`), which forwards t
 | Call | Body | Answer |
 |---|---|---|
 | `POST /send` | `{ phone, reference?, template?, locale? }`, optional `Idempotency-Key` header | `201 { id, state: "sent", expiresIn, resendAfter, to }` (the number masked); `202` with `state: "uncertain"` when WhatsApp did not confirm (the code is still valid, and is never sent twice by Scriwo) |
-| `POST /verify` | `{ id, code }` or `{ phone, code }` (the latest code for that number) | `200 { valid: true, id, phone, reference, secondsToVerify }` or `200 { valid: false, reason, attemptsLeft? }`; a wrong, late or repeated code is an answer, not an error |
+| `POST /verify` | `{ id, code }` or `{ phone, code }` (the latest code for that number) | `200 { valid: true, id, phone, reference, verifiedAt, secondsToVerify }` or `200 { valid: false, id, reason, attemptsLeft? }`; a wrong, late or repeated code is an answer, not an error |
 | `GET /requests/:id` | | what became of a code (never the code) |
 | `POST /proof/verify` | `{ proof }` | `{ valid, id, phone, reference, mode }` once; see the widget |
 
@@ -85,6 +88,30 @@ One address per company, set up in the Free OTP page: HTTPS on a public address.
 `{ id, phone, phoneMasked, reference, template, mode, source, ... }`. **The code is never in an event.** The full phone number is,
 because it goes only to the company's own address and the company needs to know which of its users it is about.
 An OTP address hears only `otp.*`; the Business-plan webhooks hear everything else and nothing new, and do not list OTP addresses.
+
+## The prompt for a coding agent
+
+Step 5 of the page builds a prompt from the page's own data (`components/developer/otp/agentPrompt.ts`, a pure function with tests). The
+person pastes it into their coding agent while it is working in their project, and the agent adds the OTP step: a small server module,
+the two endpoints the front end calls, the screens, tests, `.env.example` and a README note.
+
+**What is in it:** the use case and where it belongs in a project (each of the eight differs: a sign-in creates the session only after
+`valid: true`; a payment checks that the `reference` that comes back is this payment's; an account change sends the code to the current
+number); the name in the message, language, digits, expiry, tries and resend wait; the free allowance and the per-phone limits; whether a
+number is linked and what is still to do (with an instruction to build against a test key meanwhile); the keys on the account by name
+and start only; the exact `send` and `verify` calls with their answers; what to do for every error code; how to build it; the web widget
+with the websites the key works on; the webhook address, its headers and how to verify its signature; the rules (server-side check
+only, no secrets in code, no codes or full numbers in logs, no retry loops, rate-limit your own endpoint); and how to test with a test
+key and when it is done.
+
+**What is never in it: a secret key.** A key pasted into a chat stays in its history, and agents write what they are given into source
+files. The prompt tells the agent to read `SCRIWO_OTP_SECRET_KEY` from the environment (and `SCRIWO_OTP_WEBHOOK_SECRET`, which was also
+shown once), and the card tells the person to put the key they copied in step 4 there. A widget key made during the visit may be in it,
+because a public key is meant to be in a web page; a revoked one is not. A test in the suite fails if a secret key ever appears.
+
+The prompt can be copied at any time. While the setup is incomplete the card lists what is left, and the prompt itself says so and tells
+the agent to use a test key; when a number is linked, a real code has worked and a key exists, the prompt says the setup is complete. If
+the browser will not let the page use the clipboard, the button says so and the prompt is opened for selecting.
 
 ## The web widget
 
@@ -152,4 +179,4 @@ platform admin console, custom message text, a marketing page on the website.
 Backend `src/services/otp/` (`templates`, `otpService`, `keys`, `guard`, `events`, `proof`, `config`), `src/routes/otpRoutes.js` (the
 API), `otpWidgetRoutes.js` (the widget), `otpSetupRoutes.js` (the page), migration `050_otp.js`. App `src/components/developer/otp/`,
 `public/otp.js`. Tests: backend `otp-templates`, `otp-service`, `otp-guard`, `otp-webhooks`, `otp-widget`; app `otp_studio`,
-`otp_snippets`, `developer_lock`.
+`otp_snippets`, `agent_prompt`, `predict`, `developer_lock`.

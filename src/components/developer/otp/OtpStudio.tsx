@@ -10,8 +10,11 @@ import { NotifyCard } from "./NotifyCard";
 import { NumberCard } from "./NumberCard";
 import { OtpPreview } from "./OtpPreview";
 import { StepCard } from "./StepCard";
+import { AgentPromptCard, QuickCopyPrompt } from "./AgentPromptCard";
+import { buildAgentPrompt, whatIsMissing } from "./agentPrompt";
 import { TestCard } from "./TestCard";
 import { brandProblem } from "./brand";
+import { predictSettings } from "./predict";
 import { FineTune, UseCaseTiles } from "./UseCase";
 
 const problem = (e: any): string => `${e?.message || "Something went wrong."}${e?.data?.fix ? ` ${e.data.fix}` : ""}`;
@@ -33,6 +36,7 @@ export function OtpStudio({ canManage, onConnectNumber }: { canManage: boolean; 
   const phone = useIsPhone();
   const [error, setError] = useState("");
   const [brand, setBrand] = useState<string | null>(null); // what is being typed; null means what is saved
+  const [widgetKey, setWidgetKey] = useState(""); // a widget key made on this visit: public by design, so the agent prompt may carry it
   const overview = useQuery({
     queryKey: ["otp", tenant],
     queryFn: getOtp,
@@ -44,14 +48,32 @@ export function OtpStudio({ canManage, onConnectNumber }: { canManage: boolean; 
   const settings = data?.settings;
   const refresh = () => qc.invalidateQueries({ queryKey: ["otp", tenant] });
 
+  // A change shows at once, and the preview for it is fetched at the same time as the change is saved, instead of after it. The server's
+  // answer then replaces what was shown (it is the same unless the guess was wrong); a refusal puts the old values back and says why.
+  // Only the latest change's answer is used, so a slow earlier one cannot undo a later choice.
+  const latest = useRef(0);
   const save = async (patch: OtpSettingsPatch) => {
     setError("");
-    try {
-      const next = await saveOtpSettings(patch);
-      qc.setQueryData<OtpOverview>(["otp", tenant], (old) => (old ? { ...old, settings: next } : old));
-      void qc.invalidateQueries({ queryKey: ["otp-preview", tenant] });
-    } catch (e) {
-      setError(problem(e));
+    const mine = ++latest.current;
+    const key = ["otp", tenant];
+    // the request is on its way before anything else happens
+    const answer = saveOtpSettings(patch).then(
+      (next) => ({ next }),
+      (e: unknown) => ({ e }),
+    );
+    // a refresh that is already on its way could otherwise land after this and put the old values back
+    await qc.cancelQueries({ queryKey: key });
+    const before = qc.getQueryData<OtpOverview>(key);
+    if (before) qc.setQueryData<OtpOverview>(key, { ...before, settings: predictSettings(before.settings, patch, before.templates) });
+    const done = await answer;
+    if ("next" in done) {
+      if (mine === latest.current) qc.setQueryData<OtpOverview>(key, (old) => (old ? { ...old, settings: done.next } : old));
+      return;
+    }
+    setError(problem(done.e));
+    if (mine === latest.current) {
+      if (before) qc.setQueryData<OtpOverview>(key, (old) => (old ? { ...old, settings: before.settings } : before));
+      void qc.invalidateQueries({ queryKey: key });
     }
   };
   // the name is saved a moment after the typing stops; a name that cannot be used is explained and never sent
@@ -87,6 +109,7 @@ export function OtpStudio({ canManage, onConnectNumber }: { canManage: boolean; 
   // the address the code is sent to: the API's own (a hosted app forwards /api, so that is the app's address), and the app's, for the script
   const appBase = typeof window === "undefined" ? "" : window.location.origin;
   const base = (getBaseBackendUrl() || appBase).replace(/\/$/, "");
+  const prompt = buildAgentPrompt({ overview: data, base, appBase, publicKey: widgetKey });
   const previewBox = (
     <div className="space-y-2">
       <h2 className="eyebrow">What people receive</h2>
@@ -109,13 +132,16 @@ export function OtpStudio({ canManage, onConnectNumber }: { canManage: boolean; 
           </button>
         </Notice>
       )}
-      <div className="card p-4 sm:p-5">
-        <p className="text-[15px] font-semibold text-fg">{doneCount === 3 ? "Ready for real codes" : `${doneCount} of 3 steps done`}</p>
-        <ol className="mt-2 flex flex-wrap gap-2" aria-label="Setup progress">
-          <Milestone done={ready.number}>Number linked</Milestone>
-          <Milestone done={ready.tested}>Test passed</Milestone>
-          <Milestone done={ready.key}>Key created</Milestone>
-        </ol>
+      <div className="card p-4 sm:p-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-fg">{doneCount === 3 ? "Ready for real codes" : `${doneCount} of 3 steps done`}</p>
+          <ol className="mt-2 flex flex-wrap gap-2" aria-label="Setup progress">
+            <Milestone done={ready.number}>Number linked</Milestone>
+            <Milestone done={ready.tested}>Test passed</Milestone>
+            <Milestone done={ready.key}>Key created</Milestone>
+          </ol>
+        </div>
+        <QuickCopyPrompt prompt={prompt} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] items-start">
@@ -133,9 +159,12 @@ export function OtpStudio({ canManage, onConnectNumber }: { canManage: boolean; 
           </StepCard>
           <StepCard n={4} id="otp-step-connect" title="Connect your site" done={ready.key} next={next === 4}>
             <div className="space-y-5">
-              <ConnectCard keys={data.keys} base={base} appBase={appBase} onChanged={() => void refresh()} />
+              <ConnectCard keys={data.keys} base={base} appBase={appBase} onChanged={() => void refresh()} onKey={(kind, key) => kind === "public" && setWidgetKey(key)} />
               <NotifyCard webhook={data.webhook} tenant={tenant} onChanged={() => void refresh()} />
             </div>
+          </StepCard>
+          <StepCard n={5} id="otp-step-agent" title="Or let your coding agent do it">
+            <AgentPromptCard prompt={prompt} missing={whatIsMissing(ready)} />
           </StepCard>
         </div>
         {!phone && <aside className="lg:sticky lg:top-6 space-y-5">{previewBox}<p className="text-[13px] text-fg-3 leading-relaxed">Free for every plan: {data.usage.today.limit} codes a day and {data.usage.month.limit.toLocaleString()} a month, sent from your own WhatsApp number. One phone number can be sent {data.limits.perPhoneWindow} codes every {data.limits.perPhoneWindowMinutes} minutes.</p></aside>}

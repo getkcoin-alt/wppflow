@@ -406,3 +406,167 @@ describe("Free OTP: the whole picture", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("Sign in again.");
   });
 });
+
+describe("Free OTP: hand it to a coding agent", () => {
+  const clipboard = () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    return writeText;
+  };
+  const readTheText = async () => {
+    const box = await screen.findByLabelText("Prompt for your coding agent");
+    return box.textContent || "";
+  };
+
+  it("step 5 copies a prompt that carries the person's choices, in one tap", async () => {
+    show({ settings: { ...overview().settings, template: "delivery", codeLength: 4, ttlSeconds: 3600, maxAttempts: 3, resendSeconds: 60, locale: "hi", brandResolved: "Noor Clinic" } });
+    const writeText = clipboard();
+    studio();
+    expect(await screen.findByRole("heading", { name: "Or let your coding agent do it" })).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompt for my agent" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const prompt = writeText.mock.calls[0][0] as string;
+    expect(prompt).toContain("Noor Clinic");
+    expect(prompt).toContain("**Delivery**");
+    expect(prompt).toContain("**4 digits**");
+    expect(prompt).toContain("**1 hour**");
+    expect(prompt).toContain("**3 tries**");
+    expect(prompt).toContain("**1 minute**");
+    expect(prompt).toContain("हिन्दी (hi)");
+    expect(prompt).toContain(`${getBaseBackendUrl() || window.location.origin}/api/otp/send`);
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeDefined();
+  });
+
+  it("the same prompt is one tap away at the top of the page", async () => {
+    const writeText = clipboard();
+    studio();
+    fireEvent.click(await screen.findByRole("button", { name: "Copy agent prompt" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const top = writeText.mock.calls[0][0] as string;
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompt for my agent" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
+    expect(writeText.mock.calls[1][0]).toBe(top);
+    expect(await readTheText()).toBe(top);
+  });
+
+  it("says what is still to do while the setup is not complete, and when it is complete", async () => {
+    studio();
+    const note = await screen.findByText(/Still to do above:/);
+    expect(note.textContent).toContain("link a WhatsApp number to send the codes from");
+    expect(note.textContent).toContain("try one real code from the page");
+    expect(note.textContent).toContain("create a key");
+    expect(await readTheText()).toContain("Not complete yet.");
+    cleanup();
+    show({ ready: { number: true, tested: true, key: true }, keys: [KEY()] });
+    studio();
+    expect(await screen.findByText("Your setup is complete, so the prompt is too.")).toBeDefined();
+    expect(screen.queryByText(/Still to do above:/)).toBeNull();
+    expect(await readTheText()).toContain("Complete. A number is linked");
+  });
+
+  it("never carries the secret key, not even right after it was made, and says where it goes instead", async () => {
+    const secret = `otp_sk_live_${"c".repeat(40)}`;
+    api.createOtpKey.mockResolvedValue({ ...KEY({ id: "k9", prefix: "otp_sk_live_cccc" }), key: secret });
+    show({ keys: [KEY({ id: "k9", prefix: "otp_sk_live_cccc" })], ready: { number: false, tested: false, key: true } });
+    const writeText = clipboard();
+    studio();
+    fireEvent.click(await screen.findByRole("button", { name: "Create my key" }));
+    expect((await screen.findByLabelText("Your new key")).textContent).toBe(secret);
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompt for my agent" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const prompt = writeText.mock.calls[0][0] as string;
+    expect(prompt).not.toContain(secret);
+    expect(prompt).not.toMatch(/otp_sk_(live|test)_[0-9a-f]{40}/);
+    expect(prompt).toContain("SCRIWO_OTP_SECRET_KEY");
+    expect(screen.getByText(/Your secret key is not inside it, on purpose/)).toBeDefined();
+  });
+
+  it("a widget key made on this visit goes in, with the websites it is for; a secret one never does", async () => {
+    const pub = `otp_pk_live_${"a".repeat(40)}`;
+    api.createOtpKey.mockResolvedValue({ ...KEY({ id: "k7", kind: "public", prefix: "otp_pk_live_aaaa", allowedOrigins: ["https://shop.example.com"] }), key: pub });
+    show({ keys: [KEY({ id: "k7", kind: "public", prefix: "otp_pk_live_aaaa", allowedOrigins: ["https://shop.example.com"] })] });
+    const writeText = clipboard();
+    studio();
+    fireEvent.click(await screen.findByRole("tab", { name: "Web widget" }));
+    fireEvent.change(screen.getByLabelText("Websites where the widget will run"), { target: { value: "https://shop.example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create widget key" }));
+    await screen.findByLabelText("Widget code");
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompt for my agent" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const prompt = writeText.mock.calls[0][0] as string;
+    expect(prompt).toContain(`key: "${pub}"`);
+    expect(prompt).toContain("`https://shop.example.com`");
+  });
+
+  it("when the browser will not copy, it says so and opens the prompt so it can be selected", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("denied"));
+    Object.assign(navigator, { clipboard: { writeText } });
+    studio();
+    fireEvent.click(await screen.findByRole("button", { name: "Copy prompt for my agent" }));
+    expect(await screen.findByRole("button", { name: "Could not copy" })).toBeDefined();
+    const details = screen.getByText("Read the prompt").closest("details") as HTMLDetailsElement;
+    await waitFor(() => expect(details.open).toBe(true));
+    expect((await readTheText()).length).toBeGreaterThan(2000);
+  });
+});
+
+describe("Free OTP: a choice shows at once", () => {
+  const digits = () => (screen.getByLabelText("Digits in the code") as HTMLInputElement).value;
+  const checked = (name: RegExp) => screen.getByRole("radio", { name }).getAttribute("aria-checked");
+
+  it("shows the chosen use case, its usual numbers and its preview before the server has answered", async () => {
+    api.saveOtpSettings.mockReturnValue(new Promise(() => {})); // a slow server
+    studio();
+    fireEvent.click(await screen.findByRole("radio", { name: /Delivery/ }));
+    await waitFor(() => expect(checked(/Delivery/)).toBe("true"));
+    expect(checked(/Sign in/)).toBe("false");
+    expect(digits()).toBe("4");
+    // the preview is asked for at the same time as the change is saved, not after it
+    await waitFor(() => expect(api.getOtpPreview).toHaveBeenCalledWith(expect.objectContaining({ template: "delivery", codeLength: 4, ttlSeconds: 3600 })));
+    expect(api.saveOtpSettings).toHaveBeenCalledWith({ template: "delivery" });
+  });
+
+  it("a change to a setting shows at once too", async () => {
+    api.saveOtpSettings.mockReturnValue(new Promise(() => {}));
+    studio();
+    await screen.findByRole("radio", { name: /Sign in/ });
+    fireEvent.change(screen.getByLabelText("Digits in the code"), { target: { value: "8" } });
+    await waitFor(() => expect(digits()).toBe("8"));
+    fireEvent.click(screen.getByRole("tab", { name: "हिन्दी" }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: "हिन्दी" }).getAttribute("aria-selected")).toBe("true"));
+  });
+
+  it("when the server refuses, the page goes back to what it was and says why", async () => {
+    api.saveOtpSettings.mockRejectedValue(problem("That use case does not exist.", "Choose one of: login, signup."));
+    studio();
+    fireEvent.click(await screen.findByRole("radio", { name: /Delivery/ }));
+    expect((await screen.findByRole("alert")).textContent).toContain("That use case does not exist.");
+    await waitFor(() => expect(checked(/Sign in/)).toBe("true"));
+    expect(checked(/Delivery/)).toBe("false");
+    expect(digits()).toBe("6");
+  });
+
+  it("a slow answer to an earlier choice cannot undo a later one", async () => {
+    let finishFirst!: (s: unknown) => void;
+    api.saveOtpSettings
+      .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+      .mockImplementationOnce(async (patch) => ({ ...overview().settings, ...patch, codeLength: 6, ttlSeconds: 600, maxAttempts: 5, resendSeconds: 30 }));
+    studio();
+    fireEvent.click(await screen.findByRole("radio", { name: /Delivery/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Sign up/ }));
+    await waitFor(() => expect(checked(/Sign up/)).toBe("true"));
+    // the first answer comes in last, still saying delivery
+    finishFirst({ ...overview().settings, template: "delivery", codeLength: 4, ttlSeconds: 3600, maxAttempts: 5, resendSeconds: 60 });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(checked(/Sign up/)).toBe("true");
+    expect(checked(/Delivery/)).toBe("false");
+    expect(digits()).toBe("6");
+  });
+
+  it("the server's answer is what stays, if it differs from the guess", async () => {
+    api.saveOtpSettings.mockResolvedValue({ ...overview().settings, template: "delivery", codeLength: 5, ttlSeconds: 1800, maxAttempts: 4, resendSeconds: 90 });
+    studio();
+    fireEvent.click(await screen.findByRole("radio", { name: /Delivery/ }));
+    await waitFor(() => expect(digits()).toBe("5"));
+  });
+});

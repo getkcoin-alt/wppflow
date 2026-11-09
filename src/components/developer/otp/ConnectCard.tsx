@@ -28,7 +28,7 @@ function KeyRow({ k, onRevoke, busy }: { k: OtpKey; onRevoke: () => void; busy: 
 }
 
 /** Get the key, and the code to paste: on a server, or in a web page with the drop-in widget. */
-export function ConnectCard({ keys, base, appBase, onChanged }: { keys: OtpKey[]; base: string; appBase: string; onChanged: () => void }) {
+export function ConnectCard({ keys, base, appBase, onChanged, onKey }: { keys: OtpKey[]; base: string; appBase: string; onChanged: () => void; onKey?: (kind: "secret" | "public", key: string) => void }) {
   const [tab, setTab] = useState<"server" | "widget">("server");
   const [lang, setLang] = useState<Lang>("node");
   const [name, setName] = useState("My website");
@@ -47,6 +47,7 @@ export function ConnectCard({ keys, base, appBase, onChanged }: { keys: OtpKey[]
       setFresh(created.key);
       if (kind === "secret") setSecret(created.key);
       else setPub(created.key);
+      onKey?.(kind, created.key);
       onChanged();
     } catch (e) {
       setError(problem(e));
