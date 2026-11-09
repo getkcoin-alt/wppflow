@@ -20,7 +20,7 @@ It exists mainly to clear out test companies; it works on any company that is al
    the same button can be pressed again.
 6. **In one step:** the eight tables that refer to a company without cascading are cleared (`webhook_deliveries`, `webhook_endpoints`,
    `automation_executions`, `api_keys`, `canned_replies`, `early_receipts`, `invitations`, `refresh_tokens`); a record of the deletion is
-   written; the company's row is deleted, which removes the other fifty-seven tables that have a company column (contacts,
+   written; the company's row is deleted, which removes the other fifty-eight tables that have a company column (contacts,
    conversations, messages, attachments, broadcasts, automations, leads, pipelines, labels, notes, AI usage, knowledge, real-estate
    data, Free OTP settings, keys and requests, audit events, and so on); and the people who belonged to no other company are deleted
    with their sign-ins, Google links and mail links. Someone who is also in another company stays, in that company.
