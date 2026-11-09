@@ -7,8 +7,19 @@ Google's client id and secret. Without them the button is hidden and nothing els
 
 Client type **Web application**.
 
-- Authorised JavaScript origins: `https://www.scriwo.com`, `https://scriwo.com`, `https://app.scriwo.com`
-- Authorised redirect URI: `https://app.scriwo.com/api/auth/google/callback`
+- Authorised JavaScript origins: `https://www.scriwo.com`, `https://scriwo.com`, `https://app.scriwo.com`, `https://homes.scriwo.com`
+- Authorised redirect URIs: `https://app.scriwo.com/api/auth/google/callback` and `https://homes.scriwo.com/api/auth/google/callback`
+
+A sign-in comes back to the address it started on, because the cookies that tie the return to the start (and, afterwards, the
+person's signed-in session) belong to that address only. So **every address that has a "Continue with Google" button needs its own
+redirect URI**: the app, and each industry address (homes.). Until `homes.` is registered, Google shows "Error 400:
+redirect_uri_mismatch" there; the app is not affected. A new industry address `x.scriwo.com` needs `https://x.scriwo.com` as an
+origin and `https://x.scriwo.com/api/auth/google/callback` as a redirect URI, and a vertical of that name on the server. The server only
+accepts its own addresses (the app's and the industries'), so nothing a person types can send them or Google anywhere else.
+
+To add one: Google Cloud console, the project that owns the client (APIs & Services, Credentials), open the web client, **Add URI**
+under both lists, **Save**. Google says it can take a few minutes, sometimes longer, to apply. The client id and secret do not change,
+and the server needs no new settings.
 
 ## Put the two secrets on the server
 
@@ -40,9 +51,9 @@ The website and the app on Vercel need **no** settings for this: the secret live
 
 ## What it does
 
-1. The button goes to `/api/auth/google/start`, which sets a short-lived cookie (one-time state, nonce, PKCE secret) and sends
-   the person to Google.
-2. Google returns the person to `/api/auth/google/callback`, which swaps the code for the person's identity with the client
+1. The button goes to `/api/auth/google/start` (with the address the person is on), which sets a short-lived cookie (one-time state,
+   nonce, PKCE secret, and that address) and sends the person to Google, telling it to come back to that address.
+2. Google returns the person to `/api/auth/google/callback` on that address, which swaps the code for the person's identity with the client
    secret, checks it (state, nonce, audience, issuer, expiry, verified e-mail), and signs them in with the same cookie a
    password sign-in uses.
 3. A person Google already knows to us is signed in. Someone with a password account and the same **verified** e-mail is

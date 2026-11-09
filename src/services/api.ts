@@ -62,6 +62,9 @@ export const googleSignInUrl = (intent?: { plan?: string; interval?: string; tri
   if (vertical) q.set("vertical", vertical);
   if (intent?.plan) q.set("plan", intent.plan);
   if (intent?.interval) q.set("interval", intent.interval);
+  // The sign-in comes back to the address it started on (app. or homes.), where the person's sign-in cookies are. The server only
+  // accepts the app's own addresses, so this cannot send anyone elsewhere.
+  if (typeof window !== "undefined" && window.location?.origin) q.set("origin", window.location.origin);
   return resolveEndpoint(`/api/auth/google/start${q.toString() ? `?${q}` : ""}`);
 };
 export async function refreshSession() {
