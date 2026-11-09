@@ -1,8 +1,9 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { ArrowUp, FileText, Lock, MessageSquareText, Plus, Reply, Sparkles, StickyNote, X } from "lucide-react";
 import { ActionSheet, type SheetAction } from "../../mobile/ActionSheet";
 import { RiwoAvatar } from "../Riwo";
 import { haptic } from "../../../utils/haptics";
+import { useAutoGrow } from "../../../hooks/useAutoGrow";
 
 /**
  * The reply box on a phone: one row. A "+" for everything that is not words (a file, a saved reply, a private note, Riwo), a box
@@ -42,14 +43,7 @@ export function PhoneComposer({
   const [tray, setTray] = useState(false);
   const textarea = inputRef as RefObject<HTMLTextAreaElement>;
   // the box grows with what is written, up to five lines, then scrolls
-  useEffect(() => {
-    const el = textarea.current;
-    if (!el) return;
-    el.style.height = "auto";
-    // measured only when it can be (a box inside a hidden screen measures 0 and would stay collapsed once shown)
-    const h = el.scrollHeight;
-    el.style.height = h > 0 ? `${Math.min(h, 132)}px` : "";
-  }, [value, textarea]);
+  useAutoGrow(textarea, value, 132);
 
   const has = value.trim().length > 0;
   const send = () => {

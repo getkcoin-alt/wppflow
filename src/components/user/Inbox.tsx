@@ -70,6 +70,7 @@ import { PhoneListTop } from "./inbox/PhoneListTop";
 import { chatMenu, leadingSwipes, trailingSwipes, type ChatActionHandlers } from "./inbox/chatActions";
 import { PhoneThreadHeader } from "./inbox/PhoneThreadHeader";
 import { PhoneComposer } from "./inbox/PhoneComposer";
+import { ComposerBox } from "./inbox/ComposerBox";
 import { chatSignal, waitingCount } from "../../utils/chatSignal";
 
 interface InboxProps {
@@ -2181,32 +2182,17 @@ export const Inbox: React.FC<InboxProps> = ({
                   <Paperclip className="w-5 h-5" />
                 </button>
 
-                <div className="flex-1 relative">
-                  <input
-                    ref={composerInput as React.RefObject<HTMLInputElement>}
-                    type="text"
+                <div className="flex-1 relative min-w-0">
+                  <ComposerBox
+                    inputRef={composerInput}
                     value={inputText}
-                    onChange={(e) => {
-                      setInputText(e.target.value);
-                      if (e.target.value === "/") setShowCannedMenu(true);
+                    onChange={(v) => {
+                      setInputText(v);
+                      if (v === "/") setShowCannedMenu(true);
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    aria-label={
-                      isNoteMode
-                        ? "Write a private team note"
-                        : "Write a message"
-                    }
-                    placeholder={
-                      isNoteMode
-                        ? "Private note for your team… type @Name to notify someone"
-                        : "Write a message"
-                    }
-                    className="w-full bg-transparent h-10 px-2 text-[15px] focus:outline-none"
+                    onSend={handleSend}
+                    label={isNoteMode ? "Write a private team note" : "Write a message"}
+                    placeholder={isNoteMode ? "Private note for your team… type @Name to notify someone" : "Write a message"}
                   />
                 </div>
 

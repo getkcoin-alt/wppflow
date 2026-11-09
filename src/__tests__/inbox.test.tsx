@@ -195,6 +195,35 @@ describe("Inbox component", () => {
     );
   });
 
+  it("sends a message of several lines exactly as written: Shift+Enter is a new line, Enter sends", () => {
+    const handleSendMessage = vi.fn();
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={mockMessages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId="conv_1"
+        onSendMessage={handleSendMessage}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+      />,
+    );
+    const input = screen.getByPlaceholderText("Write a message");
+    expect(input.tagName).toBe("TEXTAREA");
+    fireEvent.change(input, { target: { value: "Please send:\n\n1. Business name\n2. City" } });
+    // not prevented: the browser adds the new line itself
+    expect(fireEvent.keyDown(input, { key: "Enter", code: "Enter", shiftKey: true })).toBe(true);
+    expect(handleSendMessage).not.toHaveBeenCalled();
+    expect(fireEvent.keyDown(input, { key: "Enter", code: "Enter" })).toBe(false);
+    expect(handleSendMessage).toHaveBeenCalledTimes(1);
+    expect(handleSendMessage).toHaveBeenCalledWith("conv_1", "Please send:\n\n1. Business name\n2. City", false);
+  });
+
   describe("a chat whose messages are not saved yet", () => {
     const base = (extra: Record<string, unknown>, onOpenChat = vi.fn()) =>
       render(
