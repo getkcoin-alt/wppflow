@@ -350,8 +350,10 @@ sign-up sets up. New: `/homes` on the website (header, footer, `llms.txt`), `web
 
 **Known limits.** The vertical is chosen by the address the visitor signs up on (and by a field the browser sends), so anyone can
 ask for the trial from any address: it is a free trial for everyone who asks, rate-limited like any sign-up. "Continue with
-Google" is hidden on `homes.scriwo.com` until that address is registered as a redirect URI with Google (Google returns to one
-registered address). Not seen with a real agency yet. `/homes` says "we are onboarding our first agencies".
+Google" is offered on `homes.scriwo.com` and brings the person back to it (`google_on_homes.test.tsx`, `google-auth.test.js`); it
+only works once `https://homes.scriwo.com` and `https://homes.scriwo.com/api/auth/google/callback` are saved with Google
+(`docs/google-signin.md`), so that address is not to be launched before. Not seen with a real agency yet. `/homes` says "we are
+onboarding our first agencies".
 
 
 ### Scriwo Homes: 14-day trial, sign-up first, and the real-estate dashboard (update, 2 November 2026)

@@ -1,9 +1,10 @@
 # Google sign-in: what it is and how to switch it on
 
-"Continue with Google" appears on the app's sign-in and sign-up pages (`https://app.scriwo.com`) once the server knows
-Google's client id and secret. Without them the button is hidden and nothing else changes.
+"Continue with Google" appears on the sign-in and sign-up pages of the app (`https://app.scriwo.com`) and of each industry
+address (`https://homes.scriwo.com`) once the server knows Google's client id and secret. Without them the button is hidden
+everywhere and nothing else changes.
 
-## Google Cloud settings (already done by the owner)
+## Google Cloud settings
 
 Client type **Web application**.
 
@@ -12,10 +13,15 @@ Client type **Web application**.
 
 A sign-in comes back to the address it started on, because the cookies that tie the return to the start (and, afterwards, the
 person's signed-in session) belong to that address only. So **every address that has a "Continue with Google" button needs its own
-redirect URI**: the app, and each industry address (homes.). Until `homes.` is registered, Google shows "Error 400:
-redirect_uri_mismatch" there; the app is not affected. A new industry address `x.scriwo.com` needs `https://x.scriwo.com` as an
-origin and `https://x.scriwo.com/api/auth/google/callback` as a redirect URI, and a vertical of that name on the server. The server only
-accepts its own addresses (the app's and the industries'), so nothing a person types can send them or Google anywhere else.
+redirect URI**: the app, and each industry address (homes.). The button is offered on all of them, so an industry's address must have
+its two entries saved **before that address is launched**. Until it is, Google answers the person with "Access blocked: This app's
+request is invalid" (detail: "Error 400: redirect_uri_mismatch"); the other addresses are not affected. A new industry address
+`x.scriwo.com` needs `https://x.scriwo.com` as an origin and `https://x.scriwo.com/api/auth/google/callback` as a redirect URI, and a
+vertical of that name on the server. The server only accepts its own addresses (the app's and the industries'), so nothing a person
+types can send them or Google anywhere else.
+
+To check an address before launch: open its sign-in page, press "Continue with Google". Google's account chooser means the entries are
+in place; "Access blocked" means they are not saved yet (or Google is still applying them).
 
 To add one: Google Cloud console, the project that owns the client (APIs & Services, Credentials), open the web client, **Add URI**
 under both lists, **Save**. Google says it can take a few minutes, sometimes longer, to apply. The client id and secret do not change,

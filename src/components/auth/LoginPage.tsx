@@ -13,7 +13,7 @@ import {
   googleSignInUrl,
 } from "../../services/api";
 import { readIntent, startup } from "../../utils/signupIntent";
-import { currentVertical, verticalOfHostname } from "../../utils/vertical";
+import { currentVertical } from "../../utils/vertical";
 import { AuthUser } from "../../types";
 import { AuthNote, AuthShell } from "./AuthShell";
 import { btn, inputCls } from "../ui/styles";
@@ -51,9 +51,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     let live = true;
     Promise.resolve()
       .then(fetchAuthProviders)
-      // Google returns to one registered address (the main app), so on an industry's own address it is hidden until that
-      // address is registered with Google; email and password work there as they do everywhere
-      .then((p) => live && setGoogleOn(Boolean(p.google) && !verticalOfHostname(window.location.hostname)))
+      // The button is offered on every address, an industry's own (homes.) included: the server brings the person back to the address
+      // they started on. Each such address has to be registered with Google first (docs/google-signin.md); until it is, Google
+      // refuses the request, so an industry's address must not be launched before that is done.
+      .then((p) => live && setGoogleOn(Boolean(p.google)))
       .catch(() => {});
     return () => {
       live = false;
