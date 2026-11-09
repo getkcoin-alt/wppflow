@@ -20,6 +20,7 @@ import {
   getLiveSessionStatus,
 } from "../../services/api";
 import { getSocket } from "../../services/socket";
+import { CHECK_EVERY_MS, SCANNED_MESSAGE, giveUpAfter } from "../../utils/pairingProgress";
 import { friendlyPairingError } from "../../utils/pairingError";
 import { EmptyState, Field, Page, PageHeader, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
@@ -81,7 +82,17 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   const startingAttemptsRef = useRef(0);
   // Track whether QR is currently visible — used to suppress stale FAILED events
   const qrVisibleRef = useRef(false);
-  const MAX_STARTING_ATTEMPTS = 120; // 180s
+  // The code has been scanned: the number is loading its chats, which can take minutes (see utils/pairingProgress)
+  const scannedRef = useRef(false);
+  const markScanned = () => {
+    if (scannedRef.current) return;
+    scannedRef.current = true;
+    startingAttemptsRef.current = 0;
+    qrVisibleRef.current = false;
+    setLiveQrImage(null);
+    setPairingPhase("starting");
+    setStatusMessage(SCANNED_MESSAGE);
+  };
 
   const stopPolling = () => {
     if (pollTimerRef.current) {
@@ -98,6 +109,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     const onQr = ({ session, qrcode }: any) => {
       if (session !== activeSessionKey.current || !qrcode) return;
       console.log("⚡ QR via socket:", session);
+      scannedRef.current = false; // a new code means pairing began again
       setLiveQrImage(qrcode);
       qrVisibleRef.current = true;
       setPairingPhase("qr");
@@ -127,6 +139,12 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         return;
       }
 
+      // The code was scanned: the number is loading its chats
+      if (status === "AUTHENTICATING") {
+        markScanned();
+        return;
+      }
+
       // QR coming — switch to QR phase
       if (
         status === "QRCODE" ||
@@ -148,6 +166,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         setErrorMessage(
           "QR code expired — not scanned in time. Click Try Again for a new QR.",
         );
+        // the server knows the real cause (the code was not scanned, or the phone unlinked the number)
+        getLiveSessionStatus(session)
+          .then((res) => res?.error && setErrorMessage(res.error))
+          .catch(() => {});
         return;
       }
 
@@ -214,6 +236,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     activeSessionKey.current = cleanKey;
     startingAttemptsRef.current = 0;
     qrVisibleRef.current = false;
+    scannedRef.current = false;
     stopPolling();
     setPairingPhase("starting");
     setLiveQrImage(null);
@@ -241,6 +264,18 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
           const statusRes = await getLiveSessionStatus(cleanKey);
           const s = statusRes?.sessionStatus;
+
+          if (s === "AUTHENTICATING") markScanned();
+
+          // Scanned, but WhatsApp had not finished loading the chats when the server's time ran out: the server says so in its own words
+          // (and tries again by itself); this is not an unscanned code, and scanning again would only add another linked device.
+          if (s === "DISCONNECTED" && statusRes.error) {
+            stopPolling();
+            qrVisibleRef.current = false;
+            setPairingPhase("error");
+            setErrorMessage(statusRes.error);
+            return;
+          }
 
           if (s === "CONNECTED") {
             stopPolling();
@@ -286,26 +321,28 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
           setPairingPhase((current) => {
             if (current === "starting") {
               startingAttemptsRef.current += 1;
-              if (startingAttemptsRef.current >= MAX_STARTING_ATTEMPTS) {
+              if (startingAttemptsRef.current >= giveUpAfter(scannedRef.current)) {
                 stopPolling();
                 setErrorMessage("Starting took too long. Please try again.");
                 return "error";
               }
-              if (startingAttemptsRef.current === 10)
-                setStatusMessage("Still preparing…");
-              if (startingAttemptsRef.current === 25)
-                setStatusMessage(
-                  "Almost there. The first connection can take up to a minute.",
-                );
-              if (startingAttemptsRef.current === 60)
-                setStatusMessage("Still working. Thanks for your patience.");
+              if (!scannedRef.current) {
+                if (startingAttemptsRef.current === 10)
+                  setStatusMessage("Still preparing…");
+                if (startingAttemptsRef.current === 25)
+                  setStatusMessage(
+                    "Almost there. The first connection can take up to a minute.",
+                  );
+                if (startingAttemptsRef.current === 60)
+                  setStatusMessage("Still working. Thanks for your patience.");
+              }
             }
             return current;
           });
         } catch (e: any) {
           console.warn("Poll error:", e.message);
         }
-      }, 1500);
+      }, CHECK_EVERY_MS);
     } catch (err: any) {
       stopPolling();
       setPairingPhase("error");
