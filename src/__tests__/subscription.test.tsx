@@ -5,6 +5,7 @@ import React from "react";
 
 const api = vi.hoisted(() => ({
   listCompanies: vi.fn(),
+  listDeletedCompanies: vi.fn(),
   listPlans: vi.fn(),
   createCompany: vi.fn(),
   updateCompany: vi.fn(),
@@ -136,6 +137,7 @@ describe("the platform admin's subscriptions", () => {
   ];
   beforeEach(() => {
     for (const fn of Object.values(api)) fn.mockReset();
+    api.listDeletedCompanies.mockResolvedValue([]);
     api.listPlans.mockResolvedValue(PLANS);
     api.listCompanies.mockResolvedValue(LIST());
     api.listPayments.mockResolvedValue([]);

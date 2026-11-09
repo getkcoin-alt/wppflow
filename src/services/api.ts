@@ -933,6 +933,37 @@ export const clearSubscriptionChange = (id: string) =>
   apiDelete(subscriptionUrl(id, "/subscription/schedule"));
 export const updateCompany = (id: string, data: Record<string, unknown>) =>
   apiPatch(`/api/admin/companies/${encodeURIComponent(id)}`, data);
+/** What deleting a company would remove, and whether it may be deleted at all. Asking changes nothing. */
+export interface CompanyDeletion {
+  company: { id: string; name: string; plan: string; status: string; createdAt: string; owner: { name: string; email: string } | null };
+  counts: { people: number; numbers: number; connectedNumbers: number; contacts: number; conversations: number; messages: number; files: number; campaigns: number; automations: number; leads: number };
+  /** why it must not be deleted, in words; empty when it may be */
+  blockers: string[];
+  canDelete: boolean;
+}
+export interface CompanyDeleted {
+  deleted: { id: string; name: string };
+  removed: CompanyDeletion["counts"];
+  peopleRemoved: number;
+  /** numbers that could not be unlinked from their phones (the phone still lists them under Linked devices) */
+  numbersNotUnlinked: string[];
+}
+export const getCompanyDeletion = (id: string): Promise<CompanyDeletion> => apiGet(`/api/admin/companies/${encodeURIComponent(id)}/deletion`);
+/** Deletes a company and everything of it, once its name has been typed. */
+export const deleteCompany = (id: string, confirmName: string): Promise<CompanyDeleted> =>
+  apiPost(`/api/admin/companies/${encodeURIComponent(id)}/delete`, { confirmName });
+export interface DeletedCompany {
+  id: number;
+  companyId: string;
+  name: string;
+  plan: string | null;
+  owner: { name: string; email: string } | null;
+  createdAt: string | null;
+  counts: Partial<CompanyDeletion["counts"]>;
+  deletedBy: string | null;
+  deletedAt: string;
+}
+export const listDeletedCompanies = async (): Promise<DeletedCompany[]> => (await apiGet("/api/admin/deleted-companies")).companies;
 export const resendOwnerCredentials = (id: string) =>
   apiPost(
     `/api/admin/companies/${encodeURIComponent(id)}/resend-credentials`,

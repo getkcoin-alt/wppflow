@@ -16,6 +16,7 @@ const api = vi.hoisted(() => ({
   fetchSupportSection: vi.fn(),
   fetchSupportAccess: vi.fn(),
   listCompanies: vi.fn(),
+  listDeletedCompanies: vi.fn(),
   listPlans: vi.fn(),
   fetchAdminPayments: vi.fn(),
 }));
@@ -47,6 +48,7 @@ const manager = (health: Record<string, NumberHealthRow>) =>
 
 beforeEach(() => {
   for (const fn of Object.values(api)) if (typeof fn === "function" && "mockReset" in fn) (fn as any).mockReset();
+  api.listDeletedCompanies.mockResolvedValue([]);
 });
 afterEach(cleanup);
 

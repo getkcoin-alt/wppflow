@@ -21,6 +21,8 @@ import {
 import type { Company } from "./types";
 import { PaymentSheet, ScheduleSheet } from "./SubscriptionSheets";
 import { SolutionsSheet } from "./SolutionsSheet";
+import { DeleteCompanySheet } from "./DeleteCompanySheet";
+import { DeletedCompanies } from "./DeletedCompanies";
 import { SubscriptionsModule } from "./SubscriptionsModule";
 import { OnlinePayments, useOnlinePayments } from "./OnlinePayments";
 import { BillingAuditSheet, NumberHealthSheet, OverviewSheet, SupportSheet } from "./PlatformConsole";
@@ -170,6 +172,7 @@ export function PlatformAdmin({
   };
   // Recording a payment, and scheduling a change for the end of the period
   const [payFor, setPayFor] = useState<Company | null>(null),
+    [deleteFor, setDeleteFor] = useState<Company | null>(null),
     [scheduleFor, setScheduleFor] = useState<Company | null>(null),
     [attention, setAttention] = useState<Attention>("all");
   const [notice, setNotice] = useState(""),
@@ -632,6 +635,9 @@ export function PlatformAdmin({
                   <button disabled={busy} className={btn("ghost", "sm")} aria-label={`Support access for ${c.name}`} onClick={() => setSupportFor(c)}>
                     Support access
                   </button>
+                  <button disabled={busy} className={`${btn("ghost", "sm")} !text-danger`} aria-label={`Delete ${c.name}`} onClick={() => setDeleteFor(c)}>
+                    Delete…
+                  </button>
                 </div>
               </div>
               <dl className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -677,6 +683,7 @@ export function PlatformAdmin({
             </li>
           ))}
         </ul>
+        <DeletedCompanies />
         </>
         )}
       </main>
@@ -685,6 +692,26 @@ export function PlatformAdmin({
       <BillingAuditSheet open={console_ === "audit"} onClose={() => setConsole(null)} />
       <SupportSheet company={supportFor} onClose={() => setSupportFor(null)} />
       <SolutionsSheet company={solutionsFor} plans={plans.data || []} onClose={() => setSolutionsFor(null)} />
+      <DeleteCompanySheet
+        key={deleteFor?.id ?? "closed"}
+        company={deleteFor}
+        onClose={() => setDeleteFor(null)}
+        onDeleted={(done) => {
+          setDeleteFor(null);
+          setFailure("");
+          const r = done.removed;
+          setNotice(
+            [
+              `${done.deleted.name} was deleted: ${r.people} ${r.people === 1 ? "person" : "people"}, ${r.contacts} contacts, ${r.messages.toLocaleString()} messages, ${r.files} files.`,
+              done.numbersNotUnlinked.length ? `These numbers could not be unlinked from their phones, so remove them under Linked devices in WhatsApp: ${done.numbersNotUnlinked.join(", ")}.` : "",
+            ]
+              .filter(Boolean)
+              .join(" "),
+          );
+          void qc.invalidateQueries({ queryKey: ["companies"] });
+          void qc.invalidateQueries({ queryKey: ["deleted-companies"] });
+        }}
+      />
     </div>
   );
 }

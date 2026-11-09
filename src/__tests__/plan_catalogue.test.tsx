@@ -5,6 +5,7 @@ import React from "react";
 
 const api = vi.hoisted(() => ({
   listCompanies: vi.fn(),
+  listDeletedCompanies: vi.fn(),
   listPlans: vi.fn(),
   fetchPublicPlans: vi.fn(),
   updatePlan: vi.fn(),
@@ -46,6 +47,7 @@ const wrap = (ui: React.ReactElement) => render(<QueryClientProvider client={new
 
 beforeEach(() => {
   for (const fn of Object.values(api)) fn.mockReset();
+  api.listDeletedCompanies.mockResolvedValue([]);
   api.fetchPublicPlans.mockResolvedValue(PUBLIC);
   api.listPlans.mockResolvedValue(ADMIN_PLANS);
   api.listCompanies.mockResolvedValue([]);
