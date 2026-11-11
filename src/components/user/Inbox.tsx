@@ -578,13 +578,15 @@ export const Inbox: React.FC<InboxProps> = ({
   const handleSync = async () => {
     if (isSyncing || connectedSessions.length === 0) return;
     setIsSyncing(true);
-    setSyncStatus("Syncing WhatsApp chats…");
+    setSyncStatus("Starting the sync…");
     try {
+      // The server starts the sync and answers at once (it can take minutes); the "Syncing your WhatsApp…" banner follows it
+      // and the lists refresh by themselves when it is done.
       for (const s of connectedSessions) {
         await onSyncInbox(s.sessionKey);
       }
-      setSyncStatus("Synced! Refreshing…");
-      setTimeout(() => setSyncStatus(""), 3000);
+      setSyncStatus("Sync started. Chats appear as they load.");
+      setTimeout(() => setSyncStatus(""), 4000);
     } catch {
       setSyncStatus("Sync failed");
       setTimeout(() => setSyncStatus(""), 3000);

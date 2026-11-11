@@ -1,4 +1,5 @@
 import { backendBaseFor } from "../utils/backendBase";
+import { notDataMessage } from "./retryPolicy";
 export { backendBaseFor };
 export const socketUrlFor = (
   hostname: string,
@@ -113,7 +114,7 @@ export async function apiRequest(
   }
   const data = await res
     .json()
-    .catch(() => ({ message: "The server returned an invalid response" }));
+    .catch(() => ({ message: notDataMessage(res.status) }));
   if (!res.ok) {
     const error = new Error(data.message || `HTTP ${res.status}`) as Error & {
       status: number;
