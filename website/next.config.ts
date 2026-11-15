@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 // The contact form posts to /api/public/contact on this site; Vercel forwards it to the
 // Scriwo backend, so the browser never needs a cross-site request.
-const BACKEND_URL = (process.env.BACKEND_URL || "https://srv1628639.hstgr.cloud").replace(/\/+$/, "");
+const BACKEND_URL = (process.env.BACKEND_URL || "https://api.scriwo.com").replace(/\/+$/, "");
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://app.scriwo.com").replace(/\/+$/, "");
 

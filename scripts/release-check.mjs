@@ -8,7 +8,7 @@ export const backendReady = (health) =>
 // machine can be refused by the server's firewall while the app address still answers, and the app
 // address is the very path people use, so reading the contract through it is just as true.
 export const HEALTH_URLS = [
-  "https://srv1628639.hstgr.cloud/health",
+  "https://api.scriwo.com/health",
   "https://app.scriwo.com/health",
 ];
 const ATTEMPTS = 3;

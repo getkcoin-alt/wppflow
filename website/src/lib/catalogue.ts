@@ -15,7 +15,7 @@ export type Catalogue = {
   live: boolean;
 };
 
-const BACKEND_URL = (process.env.BACKEND_URL || "https://srv1628639.hstgr.cloud").replace(/\/+$/, "");
+const BACKEND_URL = (process.env.BACKEND_URL || "https://api.scriwo.com").replace(/\/+$/, "");
 
 const FALLBACK_GST = 18;
 const yearlyMonthsOf = (plans: Plan[]): number | null => {
