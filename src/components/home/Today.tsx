@@ -12,6 +12,7 @@ import { SetupCoach } from "./SetupCoach";
 import { AutopilotPanel } from "./AutopilotPanel";
 import { dayLine, endOfToday, greetingFor } from "./greeting";
 import { useIsPhone } from "../../hooks/useMedia";
+import { pollInterval } from "../../services/polling";
 import { usePhoneChrome } from "../mobile/PhoneChrome";
 
 export interface TodayProps {
@@ -38,7 +39,8 @@ export function Today(props: TodayProps) {
   const home = useQuery({
     queryKey: ["home", tenant],
     queryFn: () => fetchHome(endOfToday()),
-    refetchInterval: 30_000,
+    // the live updates ("home:changed") push what changes; this is the safety net behind them
+    refetchInterval: () => pollInterval(60_000),
   });
   const data = home.data;
   const refresh = () => qc.invalidateQueries({ queryKey: ["home", tenant] });

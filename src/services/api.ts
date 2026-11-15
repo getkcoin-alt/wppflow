@@ -1,5 +1,6 @@
 import { backendBaseFor } from "../utils/backendBase";
 import { notDataMessage } from "./retryPolicy";
+import { noteResponse } from "./polling";
 export { backendBaseFor };
 export const socketUrlFor = (
   hostname: string,
@@ -90,6 +91,10 @@ export async function refreshSession() {
     });
   return refreshPromise;
 }
+// What tells how the server is doing (services/polling.ts) is how long a plain read takes. Requests that are slow by nature (an AI answer,
+// a file, a history sync) say nothing about it.
+const SLOW_BY_NATURE = /^\/api\/(ai|attachments|export|knowledge|email|mail)\b|[?&]sync=true/;
+const isMeasured = (path: string, method?: string): boolean => (!method || method === "GET") && !SLOW_BY_NATURE.test(path);
 export async function apiRequest(
   path: string,
   init: RequestInit = {},
@@ -102,12 +107,20 @@ export async function apiRequest(
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   const tenant = getStoredTenantId();
   if (tenant) headers["X-Tenant-Id"] = tenant;
-  const res = await fetch(resolveEndpoint(path), {
-    ...init,
-    headers,
-    credentials: "include",
-    cache: "no-store",
-  });
+  const started = performance.now();
+  let res: Response;
+  try {
+    res = await fetch(resolveEndpoint(path), {
+      ...init,
+      headers,
+      credentials: "include",
+      cache: "no-store",
+    });
+  } catch (error) {
+    if (isMeasured(path, init.method)) noteResponse(performance.now() - started, false);
+    throw error;
+  }
+  if (isMeasured(path, init.method)) noteResponse(performance.now() - started, res.status < 500);
   if (res.status === 401 && retry && !path.startsWith("/api/auth/")) {
     const refreshed = await refreshSession();
     if (refreshed) return apiRequest(path, init, false);

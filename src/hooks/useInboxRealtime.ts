@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { getSocket } from "../services/socket";
 import { fetchConversationChanges } from "../services/api";
+import { pollInterval } from "../services/polling";
 import {
   applyConversationChanges,
   patchMessageStatus,
@@ -205,13 +206,19 @@ export function useInboxRealtime({
     for (const [event, fn] of Object.entries(handlers)) socket.on(event, fn);
     document.addEventListener("visibilitychange", onBack);
     window.addEventListener("online", onBack);
-    const poll = setInterval(onWake, 60000);
+    // the safety net behind the live updates: a minute apart while a person is here, less when they are away or the server is struggling
+    let wake: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      onWake();
+      wake = setTimeout(tick, pollInterval(60000));
+    };
+    wake = setTimeout(tick, pollInterval(60000));
 
     return () => {
       for (const [event, fn] of Object.entries(handlers)) socket.off(event, fn);
       document.removeEventListener("visibilitychange", onBack);
       window.removeEventListener("online", onBack);
-      clearInterval(poll);
+      clearTimeout(wake);
       clearTimeout(clearTimer);
     };
   }, [enabled, qc, tenant]);

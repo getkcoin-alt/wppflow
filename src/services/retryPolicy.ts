@@ -8,11 +8,15 @@ export const isTransient = (error: unknown): boolean => {
   return status === undefined || status >= 500 || status === 429 || status === 408;
 };
 
-/** used as the `retry` of the query client: three more tries for a transient failure, none for a refusal */
-export const shouldRetry = (failures: number, error: unknown): boolean => failures < 3 && isTransient(error);
+// A server that is struggling is not helped by being asked again at once: two more tries, a few seconds apart, then the screen shows it
+// (and the person can press Retry). Each wait differs a little so that many screens do not ask again in the same second.
+const JITTER_MS = import.meta.env.MODE === "test" ? 0 : 1000;
 
-/** one second, then two, then four (never more than eight) */
-export const retryDelay = (failures: number): number => Math.min(1000 * 2 ** failures, 8000);
+/** used as the `retry` of the query client: two more tries for a transient failure, none for a refusal */
+export const shouldRetry = (failures: number, error: unknown): boolean => failures < 2 && isTransient(error);
+
+/** three seconds, then six (never more than ten), each with up to a second more */
+export const retryDelay = (failures: number): number => Math.min(3000 * 2 ** failures, 10_000) + Math.random() * JITTER_MS;
 
 /** what is said when the server answered with something that is not data (a gateway error page, usually) */
 export const notDataMessage = (status: number): string =>

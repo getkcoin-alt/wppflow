@@ -26,6 +26,7 @@ import { Page, PageHeader, Segmented } from "./components/ui/Page";
 import { ScriwoMark } from "./components/brand/Logo";
 import { useTheme } from "./hooks/useTheme";
 import { useBackendHealth } from "./hooks/useBackendHealth";
+import { pollInterval, released, startInputTracking, useStage } from "./services/polling";
 import { LogOut, Moon, Plus, RefreshCw, Sun } from "lucide-react";
 import { LoginPage } from "./components/auth/LoginPage";
 import { ChangePassword } from "./components/auth/ChangePassword";
@@ -150,6 +151,13 @@ export function App() {
     platformAdmin = user?.role === "superadmin",
     enabled = Boolean(user) && !platformAdmin && !user?.mustChangePassword,
     manager = user?.role === "admin";
+  // A gentler sign-in (services/polling.ts): on the Today screen, what it does not need yet waits a few seconds (step 1: the chat list
+  // and the notifications; 2: the team, saved replies, labels; 3: contacts, campaigns, automations) instead of fifteen requests at
+  // once. The moment a person goes anywhere else, nothing is held back. Also noticed here: whether a person is at the page, so that
+  // the timers below slow down when nobody is.
+  const stage = useStage(enabled);
+  const early = (step: number) => enabled && released(step, stage, tab === "dashboard" && view === "user");
+  useEffect(() => startInputTracking(), []);
   useEffect(() => {
     let active = true;
     api.getCurrentUser().then((u) => {
@@ -178,14 +186,15 @@ export function App() {
     queryKey: ["sessions", tenant],
     queryFn: api.getLiveSessions,
     enabled,
-    refetchInterval: 30000,
+    // the live updates ("session:status") push changes; this is the safety net behind them
+    refetchInterval: () => pollInterval(90000),
   });
   // How each number is doing, while the Numbers screen is open
   const numberHealth = useQuery({
     queryKey: ["number-health", tenant],
     queryFn: api.fetchNumberHealth,
     enabled: enabled && view === "user" && tab === "sessions",
-    refetchInterval: 30000,
+    refetchInterval: () => pollInterval(30000),
   });
   // The person's own "I'm taking new chats" switch, shown only if the company put them in its rotation
   const myAvailability = useQuery({
@@ -200,7 +209,7 @@ export function App() {
   const workspaces = useQuery({
     queryKey: ["workspaces", user?.id],
     queryFn: () => api.apiGet("/api/auth/workspaces"),
-    enabled,
+    enabled: early(1),
   });
   const capabilities = useQuery({
     queryKey: ["capabilities", tenant],
@@ -210,12 +219,12 @@ export function App() {
   const team = useQuery({
     queryKey: ["team", tenant],
     queryFn: () => api.apiGet("/api/workspace/team"),
-    enabled,
+    enabled: early(2),
   });
   const replies = useQuery({
     queryKey: ["replies", tenant],
     queryFn: () => api.apiGet("/api/workspace/canned-replies"),
-    enabled,
+    enabled: early(2),
   });
   const conversations = useInfiniteQuery({
     queryKey: ["conversations", tenant, filter],
@@ -223,16 +232,16 @@ export function App() {
       api.fetchConversations({ ...filter, cursor: pageParam, limit: 50 }),
     initialPageParam: null as string | null,
     getNextPageParam: (p) => p.nextCursor || undefined,
-    enabled,
+    enabled: early(1),
   });
-  const labelList = useLabels(enabled);
+  const labelList = useLabels(early(2));
   const contactQuery = useInfiniteQuery({
     queryKey: ["contacts", tenant],
     queryFn: ({ pageParam }) =>
       api.fetchContacts(pageParam ? { cursor: pageParam } : {}),
     initialPageParam: null as string | null,
     getNextPageParam: (p) => p.nextCursor || undefined,
-    enabled,
+    enabled: early(3),
   });
   const history = useInfiniteQuery({
     queryKey: ["messages", tenant, selected],
@@ -268,12 +277,12 @@ export function App() {
   const campaigns = useQuery({
     queryKey: ["campaigns", tenant],
     queryFn: api.fetchCampaigns,
-    enabled: enabled && manager,
+    enabled: early(3) && manager,
   });
   const automations = useQuery({
     queryKey: ["automations", tenant],
     queryFn: api.fetchAutomations,
-    enabled: enabled && manager,
+    enabled: early(3) && manager,
   });
   const sessions = (sessionsQuery.data || []) as WhatsAppSession[];
   const chats = useMemo(() => {
@@ -377,8 +386,9 @@ export function App() {
   const notificationsQuery = useQuery({
     queryKey: ["notifications", tenant],
     queryFn: api.fetchNotifications,
-    enabled,
-    refetchInterval: 120000,
+    enabled: early(1),
+    // new ones are pushed live ("notification:new"); this is the safety net behind that
+    refetchInterval: () => pollInterval(180000),
   });
   const [toasts, setToasts] = useState<AppNotification[]>([]),
     [desktop, setDesktop] = useState(desktopPermission());

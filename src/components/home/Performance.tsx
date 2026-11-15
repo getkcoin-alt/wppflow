@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, getStoredTenantId } from "../../services/api";
+import { pollInterval, useStage } from "../../services/polling";
 
 const fmt = (n: unknown) => Number(n || 0).toLocaleString();
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
@@ -24,10 +25,13 @@ function Meter({ label, value, of }: { label: string; value: number; of: number 
 
 /** The long-run numbers, kept below what needs doing: the old Overview, quieter. */
 export function Performance() {
+  // long-run totals: they wait a moment at sign-in (the first screen is what needs the person) and change slowly after
+  const stage = useStage();
   const { data } = useQuery({
     queryKey: ["summary", getStoredTenantId()],
     queryFn: () => apiGet("/api/workspace/summary"),
-    refetchInterval: 30000,
+    enabled: stage >= 1,
+    refetchInterval: () => pollInterval(120_000),
   });
   const s = data?.summary;
   if (!s) return null;

@@ -8,13 +8,13 @@ describe("which failed requests are tried again", () => {
     expect(isTransient(new TypeError("Failed to fetch"))).toBe(true); // no answer at all
     for (const status of [400, 401, 403, 404, 409, 422]) expect(isTransient({ status }), `${status}`).toBe(false);
   });
-  it("gives a transient failure three more tries, then shows it", () => {
+  it("gives a transient failure two more tries, then shows it (a struggling server is not helped by being asked again at once)", () => {
     const busy = { status: 504 };
-    expect([0, 1, 2, 3, 4].map((n) => shouldRetry(n, busy))).toEqual([true, true, true, false, false]);
+    expect([0, 1, 2, 3, 4].map((n) => shouldRetry(n, busy))).toEqual([true, true, false, false, false]);
     expect(shouldRetry(0, { status: 403 })).toBe(false);
   });
-  it("waits 1, 2, 4 seconds and never more than 8", () => {
-    expect([0, 1, 2, 3, 4, 9].map(retryDelay)).toEqual([1000, 2000, 4000, 8000, 8000, 8000]);
+  it("waits 3 seconds, then 6, and never more than 10 (the browser adds up to a second, so that many screens do not ask together)", () => {
+    expect([0, 1, 2, 3, 9].map(retryDelay)).toEqual([3000, 6000, 10_000, 10_000, 10_000]); // tests: no random part
   });
 });
 

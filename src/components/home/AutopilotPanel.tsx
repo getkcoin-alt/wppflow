@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock, Undo2 } from "lucide-react";
 import { fetchAutopilot, getStoredTenantId, setAutopilotRule, undoAutopilot, type AutopilotEntry } from "../../services/api";
+import { pollInterval, useStage } from "../../services/polling";
 import { RiwoAvatar } from "../user/Riwo";
 import { btn } from "../ui/styles";
 
@@ -31,7 +32,9 @@ function Switch({ checked, label, disabled, onChange }: { checked: boolean; labe
 export function AutopilotPanel({ onOpenChat, onPlan }: { onOpenChat: (conversationId: string) => void; onPlan?: () => void }) {
   const tenant = getStoredTenantId();
   const qc = useQueryClient();
-  const state = useQuery({ queryKey: ["autopilot", tenant], queryFn: fetchAutopilot, refetchInterval: 45_000 });
+  // Riwo's rules and log: asked for a few seconds after the first screen, and every two minutes (a change made here refreshes it at once)
+  const stage = useStage();
+  const state = useQuery({ queryKey: ["autopilot", tenant], queryFn: fetchAutopilot, enabled: stage >= 2, refetchInterval: () => pollInterval(120_000) });
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const data = state.data;
