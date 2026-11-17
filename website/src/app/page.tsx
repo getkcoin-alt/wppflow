@@ -17,6 +17,8 @@ import { formatMoney } from "@/lib/money";
 import { SITE } from "@/lib/site";
 import { trackAttrs } from "@/lib/analytics";
 import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
+import { CASE_STUDIES } from "@/content/caseStudies";
+import { OTP_LIMITS } from "@/content/otp";
 
 const AI_FIRST = [
   { icon: Sunrise, title: "Today: open it, and the work is prepared", body: "Waiting chats come first, each with the customer's mood, a one-line summary and a reply Riwo has already drafted. Read it, tap send.", href: "/features/ai-today-home" },
@@ -211,6 +213,32 @@ export default async function Home() {
       <Container className="mt-24">
         <SectionTitle eyebrow="Questions" title="What people ask before they start" />
         <div className="mt-10"><FaqList faqs={GENERAL_FAQS} /></div>
+      </Container>
+
+      <Container className="mt-24">
+        <div className="card flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="eyebrow">New · Free WhatsApp OTP</p>
+            <h2 className="mt-3 text-2xl">Send verification codes on WhatsApp, free</h2>
+            <p className="mt-2 max-w-2xl text-fg-2">{OTP_LIMITS.perDay} codes a day on every plan, from your own number. Sign in, sign up, payments, deliveries and more, with copy-paste code for Node.js, Python, PHP, Java and cURL.</p>
+          </div>
+          <Link href="/free-whatsapp-otp" className="btn-primary shrink-0">Set up free OTP <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+        </div>
+      </Container>
+
+      <Container className="mt-24">
+        <SectionTitle eyebrow="Case studies" title="Results from the team behind Scriwo" intro="Scriwo is built by Scriza Private Limited. A few of the projects Scriza has delivered in the UAE and India." />
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {["from-missed-appointments-to-10-000-confirmed-bookings", "driving-luxury-real-estate-growth", "from-empty-beds-to-full-occupancy"].map((s) => CASE_STUDIES.find((c) => c.slug === s)).filter((c) => !!c).map((c) => (
+            <Link key={c.slug} href={`/case-studies/${c.slug}`} className="card lift p-6">
+              <p className="font-display text-3xl font-bold text-gold">{c.metrics[0].value}</p>
+              <p className="text-sm text-fg-3">{c.metrics[0].label}</p>
+              <h3 className="mt-3 text-lg leading-snug">{c.title}</h3>
+              <p className="mt-2 text-xs text-fg-3">{c.location} · {c.industry}</p>
+            </Link>
+          ))}
+        </div>
+        <Link href="/case-studies" className="btn-ghost mt-8">All case studies <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
       </Container>
 
       <CtaBand />
