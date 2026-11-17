@@ -32,6 +32,7 @@ export default function DevelopersPage() {
       <Crumbs items={[{ name: "Home", path: "/" }, { name: "Developers", path: "/developers" }]} />
       <PageHero eyebrow="Developers" title="An open platform, inside the product" intro="API keys, webhooks, an API tester and SDK samples all live in Scriwo. No separate developer portal, no waiting for access.">
         <a href={trialUrl()} {...trackAttrs("trial_click", { place: "developers" })} className="btn-primary">{TRIAL_LABEL}</a>
+        <Link href="/free-whatsapp-otp" className="btn-ghost">Free WhatsApp OTP</Link>
       </PageHero>
       <Container className="grid gap-5 md:grid-cols-3">
         {[

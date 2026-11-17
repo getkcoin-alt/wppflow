@@ -1,3 +1,5 @@
+import { CASE_STUDIES } from "@/content/caseStudies";
+import { OTP_USES } from "@/content/otp";
 import { guidesFor } from "@/content/blog";
 import { AR, HI, LANGUAGE_ALTERNATES } from "@/content/locales";
 import { POLICY_LINKS } from "@/lib/legal";
@@ -176,5 +178,15 @@ describe("pricing", () => {
     for (const v of Object.values(LANGUAGE_ALTERNATES)) expect(paths).toContain(v);
     expect(AR.dir).toBe("rtl");
     expect(HI.faqs.length).toBe(AR.faqs.length);
+  });
+  it("lists every scriza.in case study once, with its source and metrics", () => {
+    expect(new Set(CASE_STUDIES.map((c) => c.slug)).size).toBe(CASE_STUDIES.length);
+    for (const c of CASE_STUDIES) {
+      expect(c.source).toMatch(/^https:\/\/www\.scriza\.in\/portfolio\/case-studies\/\d+$/);
+      expect(c.metrics.length).toBeGreaterThan(0);
+    }
+  });
+  it("describes the eight OTP uses the app offers", () => {
+    expect(OTP_USES.map((u) => u.key)).toEqual(["login", "signup", "reset", "payment", "delivery", "booking", "change", "verify"]);
   });
 });
