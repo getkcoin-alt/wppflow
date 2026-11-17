@@ -14,6 +14,7 @@ import { DEV_TABS } from "../layout/navigation";
 import { Field, Notice, Page, PageHeader, Pill, Segmented } from "../ui/Page";
 import { btn, inputCls, textareaCls } from "../ui/styles";
 import { OtpStudio } from "./otp/OtpStudio";
+import { AgentsStudio } from "./agents/AgentsStudio";
 export function DeveloperGuide({
   activeDevTab,
   onSelectDevTab,
@@ -72,8 +73,8 @@ export function DeveloperGuide({
     <Page>
       <PageHeader
         eyebrow="Developers"
-        title={tab === "otp" ? "Free OTP" : "Build on Scriwo"}
-        subtitle={tab === "otp" ? "One-time codes on WhatsApp, sent from your own number. Free on every plan, and set up in about two minutes." : "Try the API, copy ready-made examples, and connect your own systems."}
+        title={tab === "otp" ? "Free OTP" : tab === "agents" ? "AI agents" : "Build on Scriwo"}
+        subtitle={tab === "otp" ? "One-time codes on WhatsApp, sent from your own number. Free on every plan, and set up in about two minutes." : tab === "agents" ? "Let Claude, ChatGPT, Cursor or an agent of your own work your WhatsApp inbox: read chats, answer customers, hand chats over. Only what you allow." : "Try the API, copy ready-made examples, and connect your own systems."}
         actions={
           tabs.length > 1 ? (
             <Segmented
@@ -109,6 +110,7 @@ export function DeveloperGuide({
         )}
 
         {tab === "otp" && <OtpStudio canManage={canManage} onConnectNumber={onConnectNumber} />}
+        {tab === "agents" && <AgentsStudio canManage={canManage} />}
 
         {tab === "docs" && (
           <div className={`${card} space-y-5`}>
@@ -389,8 +391,8 @@ export function DeveloperGuide({
               <h2 className="text-[16px] font-semibold text-fg">{lapsed ? "The other developer tools are off until the payment is received" : "More developer tools are part of the Business plan"}</h2>
               <p className="text-[14px] text-fg-2 mt-0.5">
                 {lapsed
-                  ? `Payment for your ${apiPlan} plan is overdue, so API keys, webhooks, the API tester and SDK samples are switched off. Nothing has been deleted. Free OTP keeps working.`
-                  : `Your company is on the ${apiPlan} plan. Business adds API keys, signed webhooks, the API tester and SDK samples for connecting your own systems. Free OTP works on every plan.`}
+                  ? `Payment for your ${apiPlan} plan is overdue, so AI agent access, API keys, webhooks, the API tester and SDK samples are switched off. Nothing has been deleted. Free OTP keeps working.`
+                  : `Your company is on the ${apiPlan} plan. Business adds AI agent access, API keys, signed webhooks, the API tester and SDK samples for connecting your own systems. Free OTP works on every plan.`}
                 {onOpenPlan ? "" : " Ask your company's owner or an administrator to change the plan."}
               </p>
             </div>

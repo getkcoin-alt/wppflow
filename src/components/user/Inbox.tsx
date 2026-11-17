@@ -1820,6 +1820,10 @@ export const Inbox: React.FC<InboxProps> = ({
                           ? msg.agentName && (
                               <div className="text-[12px] font-semibold text-brand leading-tight">
                                 {msg.agentName}
+                                {/* a message an AI agent sent through Scriwo's MCP server or API says so, so the team can tell */}
+                                {msg.sentVia === "ai_agent" && (
+                                  <span className="ml-1.5 rounded px-1.5 py-px text-[10.5px] font-semibold bg-gold/15 text-gold align-middle">AI agent</span>
+                                )}
                               </div>
                             )
                           : activeChat.isGroup &&

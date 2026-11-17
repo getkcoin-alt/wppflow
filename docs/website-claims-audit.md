@@ -431,3 +431,36 @@ said to the customer in the page, and nothing says it is the official WhatsApp B
 **Not claimed.** That the code exists nowhere else: it is in the message text, so it is in the sending number's own WhatsApp app and in WhatsApp's systems; that codes are always delivered (WhatsApp may refuse or delay them, and a number may be restricted); that the
 origin check stops a determined abuser of a public key (it keeps honest mistakes out; the limits per phone, device, key and company
 do the rest); that an agent will always build it correctly (the prompt is a brief, not a guarantee: the person reviews what the agent writes); SMS or voice fallback; plugins and SDK packages; anything about it on the website.
+
+
+## AI agents in Developers (17 November 2026)
+
+In the app only, under Developers; the website does not mention it yet. Built and tested with WhatsApp replaced by a stand-in, and driven by
+the official MCP client library: nothing here has been seen with a real WhatsApp number, or with Claude Desktop, Cursor, VS Code or ChatGPT
+themselves. Details in `docs/agents.md`.
+
+| Behaviour | Status | Evidence |
+|---|---|---|
+| An owner or administrator makes an agent (read, read and reply, or full control) and gets a key once; only its hash is kept; the list never shows it again | Test | `agent-access.test.js`, `agents_studio.test.tsx` |
+| Part of the Business plan (the plans that have API keys): a lower plan cannot make one, and an agent whose company is moved to a lower plan stops, with nothing deleted | Test | `agent-access.test.js`, `developer_lock.test.tsx` |
+| The key is no other door: an agent key is refused by every other route, an API key or an OTP key is not an agent key, a teammate who is not an owner or administrator cannot manage agents | Test | `agent-access.test.js` |
+| A wrong, revoked or expired key, a suspended company, each refused with its own reason; revoking stops the agent at once; guessing keys is slowed down per address | Test | `agent-access.test.js` |
+| An agent sees only the numbers it was given, no group chats and no phone numbers unless allowed (an unnamed customer is hidden too); nothing of another company can be reached | Test | `agent-read.test.js` |
+| An agent can only do what its level says; a read-only agent is not even shown the tools that change things; nothing on offer deletes, broadcasts, bills or changes settings | Test | `agent-write.test.js`, `agent-mcp.test.js` |
+| A reply goes out as the agent, with a line saying it is an AI (unless switched off), is queued as a team message is, ends the customer's wait, and is written word for word to the AI accountability record | Test | `agent-write.test.js` |
+| The same message twice, or the same key, is one message and uses no allowance; a quoted message must be in the same chat | Test | `agent-write.test.js` |
+| Limits per chat, hour and day hold, also against eight calls at once; a send that fails (number offline, person opted out) costs nothing and is told apart | Test | `agent-write.test.js` |
+| A customer who answers an AI agent with "human" is handed to a person; an AI agent cannot end that request, a teammate can; Riwo and the automations stay silent after an agent answered | Test | `agent-write.test.js` |
+| Notes are for the team only and tell the people named; assigning, closing, labelling (existing labels only) and follow-ups tell the right person | Test | `agent-write.test.js` |
+| What each agent did is listed for the owner, without the words of any message, and can be narrowed; a test is marked as one | Test | `agent-access.test.js`, `agents_studio.test.tsx` |
+| The MCP server agrees a protocol version, hands over the rules, answers errors the agent can act on, and works for the official MCP client library, with a Bearer key and with the secret link | Test | `agent-mcp.test.js`; a run of `@modelcontextprotocol/sdk` 1.32.2 against the running server (27 checks) |
+| The REST mirror gives the same tools; the OpenAPI description is public, valid OpenAPI 3.1, within ChatGPT's limits, and marks what changes something | Test | `agent-mcp.test.js`; validated with `@apidevtools/swagger-parser` |
+| Messages an AI agent sent are tagged in the inbox thread | Test | `inbox.test.tsx` |
+| The page works on a phone: nothing scrolls sideways, targets are 44 px, fields 16 px (light and dark) | Measured | `scripts/phone-audit.mjs`, 26 screens including nine for AI agents, at 320 and 390 px |
+| The unsafe behaviour put back is caught: 18 mutation checks on the server (numbers, groups, level, company isolation, quoting, hand-off, number hiding, limits and their lock, key states, plan, AI line, accountability record) and 7 in the app (key shown once and not leaked to another agent, AI line on by default, revoke asks first, expiry kept on edit) | Test | each one makes a test fail |
+
+**Not claimed.** That an agent cannot be misled by what a customer writes: the rules and the notice lower the risk, and the level, the numbers,
+the limits, the AI line, the record and the switch-off bound the damage; that what an agent reads stays private (it goes to the AI service it
+is connected to); that it works with any particular program (steps for Claude Desktop, Cursor, VS Code and ChatGPT are written from their
+documentation, not tried in them); one-click "Connect Scriwo" (OAuth is not built: a key, or an address that holds the key); that messages are
+delivered; anything about it on the website.

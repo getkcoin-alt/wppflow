@@ -33,10 +33,10 @@ describe("the Developers module on a plan without the API tools", () => {
   it("keeps Free OTP open and says the rest is a Business-plan tool, without showing any of it", async () => {
     guide({ apiPlan: "Growth", onOpenPlan: vi.fn() });
     expect(screen.getByText("More developer tools are part of the Business plan")).toBeDefined();
-    expect(screen.getByText(/Your company is on the Growth plan\. Business adds API keys, signed webhooks, the API tester and SDK samples/)).toBeDefined();
+    expect(screen.getByText(/Your company is on the Growth plan\. Business adds AI agent access, API keys, signed webhooks, the API tester and SDK samples/)).toBeDefined();
     expect(await screen.findByRole("heading", { name: "What is the code for?" })).toBeDefined();
     // none of the Business tools or their tabs
-    for (const name of ["API tester", "SDKs", "API keys", "Webhooks"]) expect(screen.queryByText(name)).toBeNull();
+    for (const name of ["API tester", "SDKs", "API keys", "Webhooks", "AI agents"]) expect(screen.queryByText(name)).toBeNull();
     expect(screen.queryByRole("tablist", { name: "Developer sections" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Execute request" })).toBeNull();
   });
@@ -73,6 +73,7 @@ describe("the Developers module on a plan without the API tools", () => {
     expect(screen.getByText("Free OTP")).toBeDefined();
     expect(screen.getByText("API tester")).toBeDefined();
     expect(screen.getByText("API keys")).toBeDefined();
+    expect(screen.getByRole("tab", { name: "AI agents" })).toBeDefined();
     expect(screen.queryByText(/More developer tools are part/)).toBeNull();
   });
 });

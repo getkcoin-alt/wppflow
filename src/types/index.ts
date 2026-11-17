@@ -134,6 +134,8 @@ export interface ChatMessage {
   chatId: string;
   sender: "customer" | "agent" | "bot";
   agentName?: string;
+  /** "ai_agent" when an AI agent (Developers, AI agents) sent it through Scriwo's MCP server or API */
+  sentVia?: string | null;
   text: string;
   type:
     | "text"

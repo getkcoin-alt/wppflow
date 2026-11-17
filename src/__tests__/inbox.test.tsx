@@ -625,3 +625,36 @@ describe("the sales bar under a chat's header", () => {
     }
   });
 });
+
+describe("messages an AI agent sent through Scriwo's MCP server or API", () => {
+  const messages = {
+    conv_1: [
+      { id: "m1", chatId: "conv_1", sender: "customer", text: "Do you deliver on Friday?", type: "text", timestamp: "10:30 AM", status: "delivered" },
+      { id: "m2", chatId: "conv_1", sender: "agent", agentName: "Claude helper", sentVia: "ai_agent", text: "Yes, on Fridays.", type: "text", timestamp: "10:31 AM", status: "sent" },
+      { id: "m3", chatId: "conv_1", sender: "agent", agentName: "Sam", text: "I will call you this evening.", type: "text", timestamp: "10:35 AM", status: "read" },
+    ] as ChatMessage[],
+  };
+
+  it("say so next to the agent's name, so the team can tell them from a teammate's", () => {
+    render(
+      <Inbox
+        chats={mockChats}
+        messages={messages}
+        contacts={mockContacts}
+        cannedReplies={[]}
+        sessions={mockSessions}
+        selectedChatId="conv_1"
+        onSendMessage={vi.fn()}
+        onSendAttachment={vi.fn()}
+        onAssignAgent={vi.fn()}
+        onToggleResolve={vi.fn()}
+        onOpenChat={vi.fn()}
+        onSyncInbox={vi.fn()}
+      />,
+    );
+    const label = screen.getByText("AI agent");
+    expect(label.parentElement?.textContent).toBe("Claude helperAI agent");
+    expect(screen.getAllByText("AI agent"), "only the agent's own message carries it").toHaveLength(1);
+    expect(screen.getByText("Sam").textContent, "a teammate's message is not labelled").toBe("Sam");
+  });
+});

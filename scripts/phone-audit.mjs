@@ -8,6 +8,7 @@
 //
 //   APP_URL=http://localhost:5173 AUDIT_EMAIL=me@example.com AUDIT_PASSWORD=... node scripts/phone-audit.mjs
 //   WIDTHS=320,390 THEME=dark node scripts/phone-audit.mjs      (fewer widths, or the dark theme)
+//   LIST_SCREENS=1 node scripts/phone-audit.mjs                 (also names every screen it looked at)
 import { createRequire } from "node:module";
 const { chromium, devices } = createRequire(import.meta.url)("playwright");
 
@@ -144,6 +145,35 @@ for (const width of WIDTHS) {
   }
   for (const tab of ["Pipeline", "Contacts", "Real estate"]) if (await go(tab) && tab === "Pipeline") await sheet("Pipeline filters", () => page.getByRole("button", { name: /^Filters/ }).click({ timeout: 3000 }));
   for (const item of ["Contacts", "Automations", "Numbers", "Reports", "Broadcasts", "Team", "Developers"]) await fromMenu(item);
+  // Developers, AI agents: the first visit, the form, an agent with its connect lines for each program, its settings and the revoke question.
+  // The agent is made for the audit and revoked at the end, so the company is left as it was.
+  try {
+    await bar.getByRole("button", { name: "Menu" }).click({ timeout: 3000 });
+    await page.waitForTimeout(450);
+    await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /Developers/ }).click({ timeout: 3000 });
+    await page.waitForTimeout(500);
+    await page.getByRole("tab", { name: "AI agents" }).click({ timeout: 3000 });
+    await look("AI agents");
+    await page.getByRole("button", { name: /Make an agent/ }).click({ timeout: 3000 });
+    await look("AI agents: new agent");
+    await page.getByLabel(/^Name/).fill("Audit agent");
+    await page.getByRole("button", { name: "Make agent" }).click({ timeout: 3000 });
+    await page.getByText("Copy the key now").waitFor({ timeout: 8000 });
+    await look("AI agents: key and connect");
+    for (const tab of ["Claude Desktop", "ChatGPT", "Just a link", "Any agent"]) {
+      await page.getByRole("tab", { name: tab }).click({ timeout: 3000 });
+      await look(`AI agents: ${tab}`);
+    }
+    await page.getByRole("button", { name: "Settings for Audit agent" }).click({ timeout: 3000 });
+    await look("AI agents: settings");
+    await page.getByRole("button", { name: "Cancel" }).click({ timeout: 3000 });
+    await page.getByRole("button", { name: "Revoke Audit agent" }).click({ timeout: 3000 });
+    await look("AI agents: revoke asks");
+    await page.getByRole("button", { name: "Yes, revoke it" }).click({ timeout: 3000 });
+    await page.waitForTimeout(600);
+  } catch {
+    /* this company's plan has no AI agents screen */
+  }
   await sheet("Menu", () => bar.getByRole("button", { name: "Menu" }).click({ timeout: 3000 }));
   await context.close();
 }
@@ -161,6 +191,7 @@ for (const { width, screen, found } of results)
     }
 const screens = new Set(results.map((r) => r.screen));
 console.log(`Looked at ${screens.size} screens and sheets at ${WIDTHS.join(", ")} px (${THEME}).`);
+if (process.env.LIST_SCREENS) console.log([...screens].join(" | "));
 if (!merged.size) {
   console.log("Nothing to fix: no sideways scrolling, every target is 44 px or more, every field is 16 px or more.");
 } else {

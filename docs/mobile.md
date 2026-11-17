@@ -82,7 +82,9 @@ Everything is under `src/components/mobile/`, `src/hooks/` and `src/utils/haptic
   keyboard (visible height shrunk), dark theme and reduced motion.
 - **`scripts/phone-audit.mjs`** walks 17 screens and sheets at 320, 360, 375, 390 and 430 px and reports sideways scrolling,
   targets under 44 px, fields under 16 px and unnamed buttons. On 4 November 2026 it found none (16 screens); on 9 November 2026,
-  with Developers (Free OTP) added to the walk, it found none in 17. Before the touch rules it found 47 targets under 44 px.
+  with Developers (Free OTP) added to the walk, it found none in 17; on 17 November 2026, with Developers, AI agents added (the first
+  visit, the form, the key with each program's connect lines, the settings and the revoke question: nine screens), it found none in 26,
+  at all five widths in light and at 390 px in dark. Before the touch rules it found 47 targets under 44 px.
 - **First-run screens** (the welcome guide and Today for a company with no number, which the audit script skips past): on
   8 November 2026 they were checked at 320x568, 360x640, 375x667, 390x844 and 430x932 with the same measurements. The guide's Skip
   was out of reach at 320x568; fixed (see below). Everything else was clean.

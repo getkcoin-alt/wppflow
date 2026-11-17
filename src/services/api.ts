@@ -1731,3 +1731,95 @@ export const setOtpWebhook = (url: string): Promise<{ webhook: { id: string; url
 export const removeOtpWebhook = () => apiDelete("/api/otp-setup/webhook");
 export const testOtpWebhook = () => apiPost("/api/otp-setup/webhook/test", {});
 export const getOtpWebhookDeliveries = async (): Promise<{ id: string; event: string; status: string; attempts: number; response_status: number | null; error: string | null; created_at: string }[]> => (await apiGet("/api/otp-setup/webhook/deliveries")).deliveries;
+
+// ── AI agents (Developers → AI agents) ───────────────────────────────────────────────────────────
+// A company lets an AI agent (Claude, ChatGPT, Cursor, a script) work its WhatsApp inbox through Scriwo's MCP server or REST API. See docs/agents.md.
+export type AgentLevel = "read" | "reply" | "full";
+export interface AgentUsage {
+  sentLastHour: number;
+  sentLast24h: number;
+  callsLast24h: number;
+}
+export interface Agent {
+  id: string;
+  name: string;
+  level: AgentLevel;
+  /** the first characters of the key, to tell keys apart */
+  prefix: string;
+  state: "active" | "expired" | "revoked";
+  /** the numbers it may use; an empty list is every number */
+  numbers: string[];
+  allowGroups: boolean;
+  sharePhones: boolean;
+  disclose: boolean;
+  limits: { perHour: number; perDay: number; perChatHour: number };
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastUsedAt: string | null;
+  lastClient: string | null;
+  revokedAt: string | null;
+  usage?: AgentUsage;
+  /** only in the answer to making an agent, and only once */
+  key?: string;
+}
+export interface AgentsOverview {
+  allowed: boolean;
+  reason: string | null;
+  agents: Agent[];
+  numbers: { name: string; phone: string | null; connected: boolean }[];
+  levels: { key: AgentLevel; label: string; blurb: string; tools: string[] }[];
+  tools: { name: string; title: string; level: AgentLevel; readOnly: boolean }[];
+  defaults: { perHour: number; perDay: number; perChatHour: number; expiresInDays: number };
+  bounds: { perHour: [number, number]; perDay: [number, number]; perChatHour: [number, number]; expiresInDays: [number, number] };
+  maxAgents: number;
+  endpoints: { mcp: string; rest: string; openapi: string };
+}
+export interface AgentInput {
+  name: string;
+  level: AgentLevel;
+  numbers: string[];
+  allowGroups: boolean;
+  sharePhones: boolean;
+  disclose: boolean;
+  perHour: number;
+  perDay: number;
+  perChatHour: number;
+  /** days until the key stops working; null: never; left out: the default (a new agent) or no change (an edit) */
+  expiresInDays?: number | null;
+}
+export interface AgentEvent {
+  id: number;
+  at: string;
+  agentId: string;
+  agent: string;
+  tool: string;
+  /** null while a send is still being made */
+  ok: boolean | null;
+  chatId: string | null;
+  chat: string | null;
+  summary: string;
+  errorCode: string | null;
+  ms: number | null;
+  via: "mcp" | "rest" | "test";
+}
+export interface AgentOverviewTest {
+  company: string;
+  you: { name: string; level: AgentLevel; numbers: string[] | "all"; groupChats: boolean; customerPhoneNumbers: string };
+  numbers: { name: string; connected: boolean; phone: string | null }[];
+  inbox: { openChats: number; unreadChats: number; waitingForReply: number; waitingLongerThanTarget: number; askedForAPerson: number; replyTargetMinutes: number };
+}
+export const getAgents = (): Promise<AgentsOverview> => apiGet("/api/agents");
+export const createAgent = async (body: AgentInput): Promise<Agent & { key: string }> => (await apiPost("/api/agents", body)).agent;
+export const updateAgent = async (id: string, patch: Partial<AgentInput>): Promise<Agent> => (await apiPatch(`/api/agents/${encodeURIComponent(id)}`, patch)).agent;
+export const revokeAgent = (id: string) => apiDelete(`/api/agents/${encodeURIComponent(id)}`);
+export const getAgentActivity = async (p: { agentId?: string; changes?: boolean; limit?: number; beforeId?: number } = {}): Promise<AgentEvent[]> => {
+  const q = new URLSearchParams();
+  if (p.agentId) q.set("agentId", p.agentId);
+  if (p.changes) q.set("changes", "true");
+  if (p.limit) q.set("limit", String(p.limit));
+  if (p.beforeId) q.set("beforeId", String(p.beforeId));
+  return (await apiGet(`/api/agents/activity?${q}`)).events;
+};
+export const getAgentPrompt = async (id: string, mode: "mcp" | "rest"): Promise<string> => (await apiGet(`/api/agents/${encodeURIComponent(id)}/prompt?mode=${mode}`)).prompt;
+export const testAgent = async (id: string): Promise<AgentOverviewTest> => (await apiPost(`/api/agents/${encodeURIComponent(id)}/test`, {})).overview;

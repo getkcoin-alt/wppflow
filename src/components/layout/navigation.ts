@@ -24,7 +24,7 @@ export type UserSubTab =
   | "reports"
   | "realestate";
 export type AdminSubTab = "users" | "billing" | "cluster" | "audit";
-export type DevSubTab = "otp" | "docs" | "webhooks" | "sdks" | "keys";
+export type DevSubTab = "otp" | "agents" | "docs" | "webhooks" | "sdks" | "keys";
 export type View = "user" | "admin" | "developer";
 
 export interface NavItem {
@@ -134,6 +134,7 @@ export const ADMIN_TABS: { key: AdminSubTab; label: string }[] = [
 export const DEV_TABS: { key: DevSubTab; label: string; manager?: boolean }[] =
   [
     { key: "otp", label: "Free OTP" },
+    { key: "agents", label: "AI agents", manager: true },
     { key: "docs", label: "API tester" },
     { key: "sdks", label: "SDKs" },
     { key: "webhooks", label: "Webhooks", manager: true },
