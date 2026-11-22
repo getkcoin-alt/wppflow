@@ -18,7 +18,7 @@ DNS for scriwo.com is on Cloudflare; the Vercel team is `gitkcoin`. Today the `w
 1. **Vercel → project `wppflow` → Settings → Domains → Add** `app.scriwo.com`.
 2. **Cloudflare → scriwo.com → DNS → Add record:** type `CNAME`, name `app`, target `cname.vercel-dns.com`, proxy status **DNS only** (grey cloud). Wait until Vercel shows the domain as valid, then sign in at https://app.scriwo.com to check.
 3. **Backend:** deploy this branch's backend, or set `APP_URL=https://app.scriwo.com` on the server and restart. New invite and set-password emails then link to the app. The backend already accepts requests from `app.scriwo.com`.
-4. **Website:** in Vercel, create a project from `getkcoin-alt/wppflow` with **Root Directory** `website`, after this branch is merged to `main`. Set `NEXT_PUBLIC_SITE_URL=https://www.scriwo.com`, `NEXT_PUBLIC_APP_URL=https://app.scriwo.com` and `BACKEND_URL=https://srv1628639.hstgr.cloud`. Check the preview URL.
+4. **Website:** in Vercel, create a project from `getkcoin-alt/wppflow` with **Root Directory** `website`, after this branch is merged to `main`. Set `NEXT_PUBLIC_SITE_URL=https://www.scriwo.com`, `NEXT_PUBLIC_APP_URL=https://app.scriwo.com` and `BACKEND_URL=https://api.scriwo.com`. Check the preview URL.
 5. **Switch:** remove `www.scriwo.com` and `scriwo.com` from `wppflow`, then add them to the website project (`scriwo.com` redirecting to `www.scriwo.com`). Old emailed links (`/?invite=...`) are forwarded to `app.scriwo.com` by the website.
 
 ## 3. Information architecture

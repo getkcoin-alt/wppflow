@@ -18,7 +18,7 @@ export function Footer() {
           <p className="mt-4 text-sm text-fg-2">The shared WhatsApp inbox for teams in the UAE and India.</p>
           <Link href="/contact" className="btn-primary mt-6 !py-2 text-sm">Contact sales</Link>
         </div>
-        <FooterCol title="Product" items={[...FEATURES.slice(0, 6).map((f) => ({ href: `/features/${f.slug}`, label: f.name })), { href: "/riwo", label: "Riwo AI assistant" }, { href: "/pricing", label: "Pricing" }, { href: "/security", label: "Security" }, { href: "/developers", label: "API and webhooks" }]} />
+        <FooterCol title="Product" items={[...FEATURES.slice(0, 6).map((f) => ({ href: `/features/${f.slug}`, label: f.name })), { href: "/riwo", label: "Riwo AI assistant" }, { href: "/pricing", label: "Pricing" }, { href: "/security", label: "Security" }, { href: "/free-whatsapp-otp", label: "Free WhatsApp OTP" }, { href: "/developers", label: "API and webhooks" }]} />
         <FooterCol title="Industries" items={INDUSTRIES.map((i) => ({ href: `/industries/${i.slug}`, label: i.name }))} />
         <FooterCol
           title="Locations"
@@ -33,6 +33,7 @@ export function Footer() {
           items={[
             { href: "/about", label: "About" },
             { href: "/blog", label: "Guides" },
+            { href: "/case-studies", label: "Case studies" },
             { href: "/homes", label: "Scriwo Homes for property agencies" },
             { href: "/white-label", label: "White-label and partners" },
             { href: "/free-whatsapp-crm", label: "Free WhatsApp CRM" },

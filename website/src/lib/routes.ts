@@ -3,6 +3,7 @@ import { INDUSTRIES } from "@/content/industries";
 import { CITIES } from "@/content/cities";
 import { COMPARISONS } from "@/content/compare";
 import { POSTS } from "@/content/blog";
+import { CASE_STUDIES } from "@/content/caseStudies";
 
 /** Every public page, used by the sitemap, llms.txt and the route tests. */
 export type Route = { path: string; priority: number; modified?: string };
@@ -16,6 +17,8 @@ export function allRoutes(): Route[] {
     { path: "/industries", priority: 0.8 },
     { path: "/whatsapp-crm", priority: 0.8 },
     { path: "/riwo", priority: 0.8 },
+    { path: "/free-whatsapp-otp", priority: 0.8 },
+    { path: "/case-studies", priority: 0.7 },
     { path: "/white-label", priority: 0.7 },
     { path: "/homes", priority: 0.9 },
     { path: "/ar", priority: 0.8 },
@@ -34,6 +37,7 @@ export function allRoutes(): Route[] {
     ...INDUSTRIES.map((i) => ({ path: `/industries/${i.slug}`, priority: 0.8 })),
     ...CITIES.map((c) => ({ path: `/whatsapp-crm/${c.slug}`, priority: 0.7 })),
     ...COMPARISONS.map((c) => ({ path: `/compare/${c.slug}`, priority: 0.6 })),
+    ...CASE_STUDIES.map((c) => ({ path: `/case-studies/${c.slug}`, priority: 0.5 })),
     ...POSTS.map((p) => ({ path: `/blog/${p.slug}`, priority: 0.6, modified: p.updated || p.published })),
   ];
 }

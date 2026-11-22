@@ -9,7 +9,7 @@ export const socketUrlFor = (
   configured.socket ||
   configured.backend ||
   backendBaseFor(hostname) ||
-  "https://srv1628639.hstgr.cloud";
+  "https://api.scriwo.com";
 const currentHost = () =>
   typeof window !== "undefined" ? window.location.hostname : "";
 export const getBaseBackendUrl = () =>

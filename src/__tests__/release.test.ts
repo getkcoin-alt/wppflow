@@ -79,20 +79,20 @@ it("reads the contract through the app's own address when the server refuses the
       prod,
       async (url: string) => {
         asked.push(url);
-        if (url.includes("hstgr.cloud")) throw Object.assign(new Error("fetch failed"), { cause: { code: "ECONNRESET" } });
+        if (url.includes("api.scriwo.com")) throw Object.assign(new Error("fetch failed"), { cause: { code: "ECONNRESET" } });
         return new Response(READY);
       },
       (line: string) => lines.push(line),
     ),
   ).toBe(1);
-  expect(asked).toEqual(["https://srv1628639.hstgr.cloud/health", "https://app.scriwo.com/health"]);
+  expect(asked).toEqual(["https://api.scriwo.com/health", "https://app.scriwo.com/health"]);
   expect(lines[0]).toContain("ECONNRESET");
   expect(lines[1]).toContain("answered: ready");
 });
 it("a backend that is not ready through the app's address holds the release too", async () => {
   expect(
     await releaseExitCode(prod, async (url: string) => {
-      if (url.includes("hstgr.cloud")) return new Response("forbidden", { status: 403 });
+      if (url.includes("api.scriwo.com")) return new Response("forbidden", { status: 403 });
       return new Response(JSON.stringify({ status: "ok", apiContract: 2 }));
     }),
   ).toBe(0);

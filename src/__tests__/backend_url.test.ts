@@ -26,9 +26,9 @@ describe("which address the app uses to reach the backend", () => {
 
   it("live updates connect to the real backend, never to the visitor's own computer", () => {
     expect(socketUrlFor("www.scriwo.com")).toBe(
-      "https://srv1628639.hstgr.cloud",
+      "https://api.scriwo.com",
     );
-    expect(socketUrlFor("scriwo.com")).toBe("https://srv1628639.hstgr.cloud");
+    expect(socketUrlFor("scriwo.com")).toBe("https://api.scriwo.com");
     expect(
       socketUrlFor("www.scriwo.com", { socket: "https://sock.example.com" }),
     ).toBe("https://sock.example.com");

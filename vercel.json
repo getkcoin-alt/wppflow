@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/health",
-      "destination": "https://srv1628639.hstgr.cloud/health"
+      "destination": "https://api.scriwo.com/health"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://srv1628639.hstgr.cloud/api/:path*"
+      "destination": "https://api.scriwo.com/api/:path*"
     },
     {
       "source": "/(.*)",
