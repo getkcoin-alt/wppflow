@@ -23,8 +23,9 @@ be given an address (see *The secret link*).
 1. **First visit**: what this is, three steps (make an agent, connect it, ask it), and what keeps it safe, including that what the agent
    reads goes to the AI service it is connected to.
 2. **Make an agent**: a name; **what it may do** (three levels, below); **which numbers** (all, or chosen ones); **what it may see and
-   say** (tell customers it is an AI: on; show phone numbers and emails: off; allow group chats: off); **limits and expiry** (30 messages
-   an hour, 200 in 24 hours, 6 to one chat an hour; the key stops working after 90 days, or 30 days, a year, never).
+   say** (tell customers it is an AI: on; show phone numbers and emails: off; allow group chats: off; **allow starting chats with new
+   numbers: off**); **limits and expiry** (30 messages an hour, 200 in 24 hours, 6 to one chat an hour, 10 new chats a day; the key stops
+   working after 90 days, or 30 days, a year, never).
 3. **The key**, shown once ("Copy the key now"). Scriwo keeps only its hash and cannot show it again; the page does not keep it either. A lost
    key means a new agent and revoking the old one.
 4. **Connect**: one block per program with the key and address already in it: Claude Code (one command), Claude Desktop (JSON for
@@ -45,12 +46,29 @@ Each level includes the one before it. A key can only call the tools of its leve
 | Level | Tools |
 |---|---|
 | **Read only** (11) | `get_overview` (start here: who it is, its numbers and limits, how many chats wait), `list_numbers`, `list_conversations` (filters: open, unread, waiting for reply, overdue, needs a person, unassigned, closed, all; by number, teammate, label, search), `get_conversation` (the chat, labels, lead, follow-ups, latest messages; does **not** mark it read), `get_messages` (older pages), `search_messages`, `list_labels`, `list_saved_replies`, `list_team`, `search_knowledge` (the company's own overview, products, notes and website pages), `list_tasks` |
-| **Read and reply** (+3) | `send_message` (an existing chat, from the number it is on; optional quote and idempotency key), `add_note` (team only), `mark_read` |
+| **Read and reply** (+3) | `send_message` (an existing chat, from the number it is on; optional quote and idempotency key), `add_note` (team only), `mark_read`. Plus, **only for an agent whose owner switched on "allow starting chats with new numbers"**, `message_new_number` (below) |
 | **Full inbox control** (+5) | `assign_conversation` (to a teammate by name, or to nobody), `set_status` (close or reopen), `update_labels` (existing labels only), `create_task`, `complete_task` |
 
 **Never on offer**, at any level: deleting anything, broadcasts and campaigns, automations, billing and plans, the team and roles, linking
-or unlinking numbers, keys and settings, exports, starting a chat with a new number (an agent answers and manages the chats that exist),
-sending or reading files and images (a media message shows as its type, file name and caption), and changing contacts, leads or the pipeline.
+or unlinking numbers, keys and settings, exports, sending or reading files and images (a media message shows as its type, file name and caption), and changing contacts, leads or the pipeline.
+
+## Starting a chat with a new number (`message_new_number`)
+
+Off for every agent until its owner switches on **Allow starting chats with new numbers**, because messaging people who have not written first is
+what gets a WhatsApp number reported. An agent without the switch is not shown the tool, and calling it is refused. With the switch:
+
+- the agent gives a phone number **the user gave it** (the rules say never a guessed number or a list), a first message, and, when more than one number
+  is connected, which number to send from (only one of the numbers it may use);
+- the same checks as the inbox's "new chat" run (`services/newChat.js`, shared): the number must be connected, the person must be on WhatsApp (a number
+  that is not on WhatsApp makes no contact and uses no allowance), and the company's contact limit applies; it is refused for one of the company's own
+  numbers and for a person who opted out, before anything is made;
+- a number the company already has a chat with on that number gets the message in that chat, like any reply, and uses no new-chat allowance;
+- the message then goes through the ordinary send: the AI line, the per-chat, hourly and daily message limits, one message for a repeated try, the
+  AI accountability record and the activity list (as "Started a chat with a new number" and "Sent a message");
+- its own cap, **new chats a day** (10 by default, 1 to 200), counted over 24 hours under a lock, so a rush of calls cannot pass it; a try that fails
+  uses none of it; the answer says when to try again and tells the agent not to look for another way to reach new people;
+- the answer reminds it that WhatsApp may restrict a number that messages people who have not written first, and to send nothing more unless the
+  person answers or the user asks.
 
 ## What keeps it safe
 
@@ -111,9 +129,10 @@ the defaults and limits are in the same file.
 ## Tests
 
 `agent-access.test.js` (keys, plans, who may manage, states, guessing, activity), `agent-read.test.js` (what an agent sees and does not),
-`agent-write.test.js` (sending, limits, notes, full-level changes, the hand-off), `agent-mcp.test.js` (protocol, tool lists, errors, CORS,
+`agent-write.test.js` (sending, limits, notes, full-level changes, the hand-off), `agent-new-chats.test.js` (starting chats with new numbers),
+`agent-mcp.test.js` (protocol, tool lists, errors, CORS,
 REST, OpenAPI, the prompt) in the backend; `agents_studio.test.tsx`, `agent_connect.test.ts` and the lock and inbox tests in the app.
-Mutation checks (the unsafe behaviour put back, a test must fail): 18 on the server and 7 in the app, all caught. The server was also driven
+Mutation checks (the unsafe behaviour put back, a test must fail): 25 on the server and 7 in the app, all caught. The server was also driven
 by the official MCP client library (`@modelcontextprotocol/sdk`) with a real handshake, tools, prompts, errors, the secret link, a real send
 and revoking, and the OpenAPI description was validated as OpenAPI 3.1.
 

@@ -70,8 +70,8 @@ describe("what the form sends", () => {
   const fill = (over = {}) => ({ ...draftOf(o), name: "  Claude   helper ", ...over });
 
   it("a new agent starts as read and reply, on every number, with the AI line on and the usual limits and 90 days", () => {
-    expect(draftOf(o)).toMatchObject({ level: "reply", allNumbers: true, allowGroups: false, sharePhones: false, disclose: true, perHour: "30", perDay: "200", perChatHour: "6", expiry: "90" });
-    expect(buildInput(o, fill(), false).value).toEqual({ name: "Claude helper", level: "reply", numbers: [], allowGroups: false, sharePhones: false, disclose: true, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
+    expect(draftOf(o)).toMatchObject({ level: "reply", allNumbers: true, allowGroups: false, sharePhones: false, disclose: true, perHour: "30", perDay: "200", perChatHour: "6", expiry: "90", allowNewChats: false, newChatsPerDay: "10" });
+    expect(buildInput(o, fill(), false).value).toEqual({ name: "Claude helper", level: "reply", numbers: [], allowGroups: false, sharePhones: false, disclose: true, allowNewChats: false, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
   });
 
   it("picked numbers are sent, 'never' becomes null, and the numbers on the screen are numbers", () => {
@@ -86,10 +86,16 @@ describe("what the form sends", () => {
     expect(buildInput(o, fill({ perDay: "1.5" }), false).problem).toMatch(/Messages a day must be a whole number from 1 to 10000/);
     expect(buildInput(o, fill({ perChatHour: "abc" }), false).problem).toMatch(/Messages to one chat an hour/);
     expect(buildInput(o, fill({ allNumbers: false, picked: [] }), false).problem).toMatch(/Pick at least one number/);
+    expect(buildInput(o, fill({ newChatsPerDay: "0" }), false).problem).toBe("New chats a day must be a whole number from 1 to 200.");
+    expect(buildInput(o, fill({ newChatsPerDay: "201" }), false).problem).toMatch(/from 1 to 200/);
+  });
+
+  it("starting chats with new numbers is off unless chosen, with its own cap", () => {
+    expect(buildInput(o, fill({ allowNewChats: true, newChatsPerDay: "25" }), false).value).toMatchObject({ allowNewChats: true, newChatsPerDay: 25 });
   });
 
   it("editing keeps the key's expiry unless a new one is chosen", () => {
-    const a = agent({ numbers: ["main-line"], allowGroups: true, limits: { perHour: 12, perDay: 90, perChatHour: 3 } });
+    const a = agent({ numbers: ["main-line"], allowGroups: true, limits: { perHour: 12, perDay: 90, perChatHour: 3, newChatsPerDay: 10 } });
     const d = draftOf(o, a);
     expect(d).toMatchObject({ name: "Claude helper", allNumbers: false, picked: ["main-line"], allowGroups: true, perHour: "12", expiry: "keep" });
     const kept = buildInput(o, d, true).value!;

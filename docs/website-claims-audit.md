@@ -457,7 +457,10 @@ themselves. Details in `docs/agents.md`.
 | The REST mirror gives the same tools; the OpenAPI description is public, valid OpenAPI 3.1, within ChatGPT's limits, and marks what changes something | Test | `agent-mcp.test.js`; validated with `@apidevtools/swagger-parser` |
 | Messages an AI agent sent are tagged in the inbox thread | Test | `inbox.test.tsx` |
 | The page works on a phone: nothing scrolls sideways, targets are 44 px, fields 16 px (light and dark) | Measured | `scripts/phone-audit.mjs`, 26 screens including nine for AI agents, at 320 and 390 px |
-| The unsafe behaviour put back is caught: 18 mutation checks on the server (numbers, groups, level, company isolation, quoting, hand-off, number hiding, limits and their lock, key states, plan, AI line, accountability record) and 7 in the app (key shown once and not leaked to another agent, AI line on by default, revoke asks first, expiry kept on edit) | Test | each one makes a test fail |
+| Starting a chat with a new number is off for every agent until the owner switches it on; an agent without the switch is not shown the tool and is refused if it calls it | Test | `agent-new-chats.test.js` |
+| With the switch: the same checks as the inbox's new chat (number connected, person on WhatsApp, contact limit), refused for the company's own number and for a person who opted out before anything is made, a number already in a chat gets the message there, and the message goes through the ordinary send (AI line, limits, accountability record) | Test | `agent-new-chats.test.js` |
+| A daily cap on new chats (10 by default) holds, also for a rush at once; failed tries use none of it | Test | `agent-new-chats.test.js` |
+| The unsafe behaviour put back is caught: 25 mutation checks on the server (numbers, groups, level, company isolation, quoting, hand-off, number hiding, limits and their lock, key states, plan, AI line, accountability record) and 7 in the app (key shown once and not leaked to another agent, AI line on by default, revoke asks first, expiry kept on edit) | Test | each one makes a test fail |
 
 **Not claimed.** That an agent cannot be misled by what a customer writes: the rules and the notice lower the risk, and the level, the numbers,
 the limits, the AI line, the record and the switch-off bound the damage; that what an agent reads stays private (it goes to the AI service it

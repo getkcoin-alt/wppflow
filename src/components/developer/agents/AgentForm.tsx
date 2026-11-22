@@ -94,12 +94,15 @@ export function AgentForm({ overview, initial, busy, onSubmit, onCancel }: { ove
           <Check checked={d.allowGroups} onChange={(v) => set({ allowGroups: v })} title="Allow group chats">
             Off: the agent does not see groups at all.
           </Check>
+          <Check checked={d.allowNewChats} onChange={(v) => set({ allowNewChats: v })} title="Allow starting chats with new numbers">
+            Off: the agent answers and manages the chats that exist. On: it may message a number you give it, up to the daily limit below. WhatsApp can restrict a number that messages people who have not written first.
+          </Check>
         </div>
       </fieldset>
 
       <details className="rounded-2xl bg-surface-2 px-4 py-3" open={editing}>
         <summary className="cursor-pointer select-none text-[14.5px] font-medium text-fg min-h-11 flex items-center">Limits and expiry</summary>
-        <div className="mt-3 grid gap-4 sm:grid-cols-3">
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Messages an hour">
             <input className={inputCls} inputMode="numeric" value={d.perHour} onChange={(e) => set({ perHour: e.target.value })} />
           </Field>
@@ -108,6 +111,9 @@ export function AgentForm({ overview, initial, busy, onSubmit, onCancel }: { ove
           </Field>
           <Field label="To one chat, an hour">
             <input className={inputCls} inputMode="numeric" value={d.perChatHour} onChange={(e) => set({ perChatHour: e.target.value })} />
+          </Field>
+          <Field label="New chats a day">
+            <input className={inputCls} inputMode="numeric" value={d.newChatsPerDay} onChange={(e) => set({ newChatsPerDay: e.target.value })} />
           </Field>
         </div>
         <p className="mt-2 text-[13px] text-fg-3">The agent is stopped when it reaches a limit, and told when to try again. A message that failed does not count.</p>
