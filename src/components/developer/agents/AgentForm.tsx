@@ -85,8 +85,8 @@ export function AgentForm({ overview, initial, busy, onSubmit, onCancel }: { ove
       <fieldset>
         <legend className="block text-[13px] font-medium text-fg-2 mb-1 ml-1">What may it see and say?</legend>
         <div className="rounded-2xl bg-surface-2 px-4 py-2 divide-y divide-line">
-          <Check checked={d.disclose} onChange={(v) => set({ disclose: v })} title="Tell customers it is an AI (recommended)">
-            Adds a short line to what the agent sends: it came from an AI assistant, and "human" brings a person. The customer's "human" reaches your team.
+          <Check checked={d.disclose} onChange={(v) => set({ disclose: v })} title="Add an AI line to the agent's messages">
+            Off: customers see exactly what the agent wrote, and your team still sees the "AI agent" tag. On: a short line is added saying it came from an AI assistant, and "human" brings a person.
           </Check>
           <Check checked={d.sharePhones} onChange={(v) => set({ sharePhones: v })} title="Show customers' phone numbers and email addresses">
             Off: the agent sees names, and numbers with the middle hidden. What it reads goes to the AI service you connect it to.

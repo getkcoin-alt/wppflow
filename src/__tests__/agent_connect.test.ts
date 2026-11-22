@@ -69,9 +69,9 @@ describe("what the form sends", () => {
   const o = agentsOverview();
   const fill = (over = {}) => ({ ...draftOf(o), name: "  Claude   helper ", ...over });
 
-  it("a new agent starts as read and reply, on every number, with the AI line on and the usual limits and 90 days", () => {
-    expect(draftOf(o)).toMatchObject({ level: "reply", allNumbers: true, allowGroups: false, sharePhones: false, disclose: true, perHour: "30", perDay: "200", perChatHour: "6", expiry: "90", allowNewChats: false, newChatsPerDay: "10" });
-    expect(buildInput(o, fill(), false).value).toEqual({ name: "Claude helper", level: "reply", numbers: [], allowGroups: false, sharePhones: false, disclose: true, allowNewChats: false, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
+  it("a new agent starts as read and reply, on every number, with no AI line added and the usual limits and 90 days", () => {
+    expect(draftOf(o)).toMatchObject({ level: "reply", allNumbers: true, allowGroups: false, sharePhones: false, disclose: false, perHour: "30", perDay: "200", perChatHour: "6", expiry: "90", allowNewChats: false, newChatsPerDay: "10" });
+    expect(buildInput(o, fill(), false).value).toEqual({ name: "Claude helper", level: "reply", numbers: [], allowGroups: false, sharePhones: false, disclose: false, allowNewChats: false, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
   });
 
   it("picked numbers are sent, 'never' becomes null, and the numbers on the screen are numbers", () => {

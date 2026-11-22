@@ -82,7 +82,7 @@ describe("making an agent", () => {
     fireEvent.click(screen.getByRole("button", { name: "Make agent" }));
 
     await waitFor(() => expect(api.createAgent).toHaveBeenCalledTimes(1));
-    expect(api.createAgent).toHaveBeenCalledWith({ name: "Support bot", level: "full", numbers: ["main-line"], allowGroups: false, sharePhones: false, disclose: true, allowNewChats: false, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
+    expect(api.createAgent).toHaveBeenCalledWith({ name: "Support bot", level: "full", numbers: ["main-line"], allowGroups: false, sharePhones: false, disclose: false, allowNewChats: false, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
 
     // the key, once, and the lines that use it
     expect(await screen.findByText("Copy the key now")).toBeDefined();

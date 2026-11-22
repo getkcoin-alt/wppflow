@@ -34,7 +34,7 @@ export function AgentCard({
   const level = levels.find((l) => l.key === agent.level)?.label ?? agent.level;
   const live = agent.state !== "revoked";
   const used = agent.usage;
-  const flags = [agent.allowGroups && "groups allowed", agent.sharePhones && "sees phone numbers", agent.allowNewChats && `may start chats (${agent.limits.newChatsPerDay} a day)`, !agent.disclose && "no AI line"].filter(Boolean) as string[];
+  const flags = [agent.allowGroups && "groups allowed", agent.sharePhones && "sees phone numbers", agent.allowNewChats && `may start chats (${agent.limits.newChatsPerDay} a day)`, agent.disclose && "AI line added"].filter(Boolean) as string[];
   return (
     <li className={`card p-5 sm:p-6 ${live ? "" : "opacity-70"}`} aria-label={`Agent ${agent.name}`}>
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3">

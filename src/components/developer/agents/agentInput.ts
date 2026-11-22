@@ -25,7 +25,7 @@ export const draftOf = (o: AgentsOverview, a?: Agent): Draft => ({
   picked: a?.numbers ?? [],
   allowGroups: a?.allowGroups ?? false,
   sharePhones: a?.sharePhones ?? false,
-  disclose: a?.disclose ?? true,
+  disclose: a?.disclose ?? false,
   allowNewChats: a?.allowNewChats ?? false,
   newChatsPerDay: String(a?.limits.newChatsPerDay ?? o.defaults.newChatsPerDay),
   perHour: String(a?.limits.perHour ?? o.defaults.perHour),

@@ -31,7 +31,7 @@ export const agent = (over: Partial<Agent> = {}): Agent => ({
   numbers: [],
   allowGroups: false,
   sharePhones: false,
-  disclose: true,
+  disclose: false,
   allowNewChats: false,
   limits: { perHour: 30, perDay: 200, perChatHour: 6, newChatsPerDay: 10 },
   expiresAt: new Date(Date.now() + 40 * 86_400_000).toISOString(),
