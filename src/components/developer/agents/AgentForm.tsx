@@ -95,26 +95,44 @@ export function AgentForm({ overview, initial, busy, onSubmit, onCancel }: { ove
             Off: the agent does not see groups at all.
           </Check>
           <Check checked={d.allowNewChats} onChange={(v) => set({ allowNewChats: v })} title="Allow starting chats with new numbers">
-            Off: the agent answers and manages the chats that exist. On: it may message a number you give it, up to the daily limit below. WhatsApp can restrict a number that messages people who have not written first.
+            Off: the agent answers and manages the chats that exist. On: it may message a number you give it, up to the new-number limits below. WhatsApp can restrict a number that messages people who have not written first.
           </Check>
         </div>
       </fieldset>
 
       <details className="rounded-2xl bg-surface-2 px-4 py-3" open={editing}>
         <summary className="cursor-pointer select-none text-[14.5px] font-medium text-fg min-h-11 flex items-center">Limits and expiry</summary>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Messages an hour">
-            <input className={inputCls} inputMode="numeric" value={d.perHour} onChange={(e) => set({ perHour: e.target.value })} />
-          </Field>
-          <Field label="Messages in 24 hours">
-            <input className={inputCls} inputMode="numeric" value={d.perDay} onChange={(e) => set({ perDay: e.target.value })} />
-          </Field>
-          <Field label="To one chat, an hour">
-            <input className={inputCls} inputMode="numeric" value={d.perChatHour} onChange={(e) => set({ perChatHour: e.target.value })} />
-          </Field>
-          <Field label="New chats a day">
-            <input className={inputCls} inputMode="numeric" value={d.newChatsPerDay} onChange={(e) => set({ newChatsPerDay: e.target.value })} />
-          </Field>
+        <div className="mt-3 space-y-5">
+          <div role="group" aria-label="Limits for existing customers">
+            <h4 className="text-[13.5px] font-semibold text-fg">Existing customers</h4>
+            <p className="text-[13px] text-fg-3">Replies and messages in chats your company already has.</p>
+            <div className="mt-2 grid gap-4 sm:grid-cols-3">
+              <Field label="Messages an hour">
+                <input className={inputCls} inputMode="numeric" value={d.perHour} onChange={(e) => set({ perHour: e.target.value })} />
+              </Field>
+              <Field label="Messages in 24 hours">
+                <input className={inputCls} inputMode="numeric" value={d.perDay} onChange={(e) => set({ perDay: e.target.value })} />
+              </Field>
+              <Field label="To one chat, an hour">
+                <input className={inputCls} inputMode="numeric" value={d.perChatHour} onChange={(e) => set({ perChatHour: e.target.value })} />
+              </Field>
+            </div>
+          </div>
+          <div role="group" aria-label="Limits for new numbers">
+            <h4 className="text-[13.5px] font-semibold text-fg">New numbers</h4>
+            <p className="text-[13px] text-fg-3">
+              Chats the agent starts with a number you have not messaged before; the first message counts here and not above.
+              {d.allowNewChats ? "" : " Used only when starting chats with new numbers is allowed (above)."}
+            </p>
+            <div className="mt-2 grid gap-4 sm:grid-cols-3">
+              <Field label="New chats an hour">
+                <input className={inputCls} inputMode="numeric" value={d.newChatsPerHour} onChange={(e) => set({ newChatsPerHour: e.target.value })} />
+              </Field>
+              <Field label="New chats in 24 hours">
+                <input className={inputCls} inputMode="numeric" value={d.newChatsPerDay} onChange={(e) => set({ newChatsPerDay: e.target.value })} />
+              </Field>
+            </div>
+          </div>
         </div>
         <p className="mt-2 text-[13px] text-fg-3">The agent is stopped when it reaches a limit, and told when to try again. A message that failed does not count.</p>
         <div className="mt-4 max-w-xs">

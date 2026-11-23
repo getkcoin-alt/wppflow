@@ -10,6 +10,7 @@ export type Draft = {
   sharePhones: boolean;
   disclose: boolean;
   allowNewChats: boolean;
+  newChatsPerHour: string;
   newChatsPerDay: string;
   perHour: string;
   perDay: string;
@@ -27,6 +28,7 @@ export const draftOf = (o: AgentsOverview, a?: Agent): Draft => ({
   sharePhones: a?.sharePhones ?? false,
   disclose: a?.disclose ?? false,
   allowNewChats: a?.allowNewChats ?? false,
+  newChatsPerHour: String(a?.limits.newChatsPerHour ?? o.defaults.newChatsPerHour),
   newChatsPerDay: String(a?.limits.newChatsPerDay ?? o.defaults.newChatsPerDay),
   perHour: String(a?.limits.perHour ?? o.defaults.perHour),
   perDay: String(a?.limits.perDay ?? o.defaults.perDay),
@@ -46,8 +48,9 @@ export function buildInput(o: AgentsOverview, d: Draft, editing: boolean): { val
   const perHour = whole(d.perHour, o.bounds.perHour, "Messages an hour");
   const perDay = whole(d.perDay, o.bounds.perDay, "Messages a day");
   const perChatHour = whole(d.perChatHour, o.bounds.perChatHour, "Messages to one chat an hour");
+  const newChatsPerHour = whole(d.newChatsPerHour, o.bounds.newChatsPerHour, "New chats an hour");
   const newChatsPerDay = whole(d.newChatsPerDay, o.bounds.newChatsPerDay, "New chats a day");
-  for (const x of [perHour, perDay, perChatHour, newChatsPerDay]) if (typeof x === "string") return { problem: x };
+  for (const x of [perHour, perDay, perChatHour, newChatsPerHour, newChatsPerDay]) if (typeof x === "string") return { problem: x };
   if (!d.allNumbers && !d.picked.length) return { problem: "Pick at least one number, or choose all numbers." };
   const base = {
     name,
@@ -57,6 +60,7 @@ export function buildInput(o: AgentsOverview, d: Draft, editing: boolean): { val
     sharePhones: d.sharePhones,
     disclose: d.disclose,
     allowNewChats: d.allowNewChats,
+    newChatsPerHour: newChatsPerHour as number,
     newChatsPerDay: newChatsPerDay as number,
     perHour: perHour as number,
     perDay: perDay as number,

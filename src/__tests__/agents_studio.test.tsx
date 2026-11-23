@@ -82,7 +82,7 @@ describe("making an agent", () => {
     fireEvent.click(screen.getByRole("button", { name: "Make agent" }));
 
     await waitFor(() => expect(api.createAgent).toHaveBeenCalledTimes(1));
-    expect(api.createAgent).toHaveBeenCalledWith({ name: "Support bot", level: "full", numbers: ["main-line"], allowGroups: false, sharePhones: false, disclose: false, allowNewChats: false, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
+    expect(api.createAgent).toHaveBeenCalledWith({ name: "Support bot", level: "full", numbers: ["main-line"], allowGroups: false, sharePhones: false, disclose: false, allowNewChats: false, newChatsPerHour: 5, newChatsPerDay: 10, perHour: 30, perDay: 200, perChatHour: 6, expiresInDays: 90 });
 
     // the key, once, and the lines that use it
     expect(await screen.findByText("Copy the key now")).toBeDefined();
@@ -101,7 +101,7 @@ describe("making an agent", () => {
   });
 
   it("starting chats with new numbers is a switch of its own, off at first, with a cap, and the card says when it is on", async () => {
-    const made2 = agent({ id: "agk_nn", name: "Outreach bot", allowNewChats: true, limits: { perHour: 30, perDay: 200, perChatHour: 6, newChatsPerDay: 5 } });
+    const made2 = agent({ id: "agk_nn", name: "Outreach bot", allowNewChats: true, limits: { perHour: 30, perDay: 200, perChatHour: 6, newChatsPerHour: 2, newChatsPerDay: 5 } });
     api.getAgents.mockResolvedValueOnce(agentsOverview()).mockResolvedValue(agentsOverview({ agents: [made2] }));
     api.createAgent.mockResolvedValue({ ...made2, key: KEY });
     studio();
@@ -111,11 +111,17 @@ describe("making an agent", () => {
     expect(screen.getByText(/WhatsApp can restrict a number that messages people who have not written first/)).toBeDefined();
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: "Outreach bot" } });
     fireEvent.click(box);
-    fireEvent.change(screen.getByLabelText("New chats a day"), { target: { value: "5" } });
+    // the limits are two sets: existing customers, and new numbers
+    expect(within(screen.getByRole("group", { name: "Limits for existing customers" })).getByLabelText("Messages an hour")).toBeDefined();
+    const newSet = within(screen.getByRole("group", { name: "Limits for new numbers" }));
+    expect(newSet.queryByLabelText("Messages an hour")).toBeNull();
+    fireEvent.change(newSet.getByLabelText("New chats an hour"), { target: { value: "2" } });
+    fireEvent.change(newSet.getByLabelText("New chats in 24 hours"), { target: { value: "5" } });
     fireEvent.click(screen.getByRole("button", { name: "Make agent" }));
     await waitFor(() => expect(api.createAgent).toHaveBeenCalledTimes(1));
-    expect(api.createAgent.mock.calls[0][0]).toMatchObject({ allowNewChats: true, newChatsPerDay: 5 });
-    expect(within(await screen.findByRole("listitem", { name: "Agent Outreach bot" })).getByText(/may start chats \(5 a day\)/)).toBeDefined();
+    expect(api.createAgent.mock.calls[0][0]).toMatchObject({ allowNewChats: true, newChatsPerHour: 2, newChatsPerDay: 5 });
+    expect(within(await screen.findByRole("listitem", { name: "Agent Outreach bot" })).getByText(/may start chats with new numbers/)).toBeDefined();
+    expect(within(screen.getByRole("listitem", { name: "Agent Outreach bot" })).getByText(/new numbers: 2 chats an hour, 5 a day/)).toBeDefined();
   });
 
   it("a name that is missing or a limit that is out of range is explained, and nothing is sent", async () => {

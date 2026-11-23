@@ -1754,7 +1754,7 @@ export interface Agent {
   disclose: boolean;
   /** may start a chat with a number the company has not messaged (message_new_number) */
   allowNewChats: boolean;
-  limits: { perHour: number; perDay: number; perChatHour: number; newChatsPerDay: number };
+  limits: { perHour: number; perDay: number; perChatHour: number; newChatsPerHour: number; newChatsPerDay: number };
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1772,8 +1772,8 @@ export interface AgentsOverview {
   numbers: { name: string; phone: string | null; connected: boolean }[];
   levels: { key: AgentLevel; label: string; blurb: string; tools: string[] }[];
   tools: { name: string; title: string; level: AgentLevel; readOnly: boolean }[];
-  defaults: { perHour: number; perDay: number; perChatHour: number; expiresInDays: number; newChatsPerDay: number };
-  bounds: { perHour: [number, number]; perDay: [number, number]; perChatHour: [number, number]; expiresInDays: [number, number]; newChatsPerDay: [number, number] };
+  defaults: { perHour: number; perDay: number; perChatHour: number; expiresInDays: number; newChatsPerHour: number; newChatsPerDay: number };
+  bounds: { perHour: [number, number]; perDay: [number, number]; perChatHour: [number, number]; expiresInDays: [number, number]; newChatsPerHour: [number, number]; newChatsPerDay: [number, number] };
   maxAgents: number;
   endpoints: { mcp: string; rest: string; openapi: string };
 }
@@ -1785,6 +1785,7 @@ export interface AgentInput {
   sharePhones: boolean;
   disclose: boolean;
   allowNewChats: boolean;
+  newChatsPerHour: number;
   newChatsPerDay: number;
   perHour: number;
   perDay: number;

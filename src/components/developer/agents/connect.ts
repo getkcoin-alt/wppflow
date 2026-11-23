@@ -47,8 +47,9 @@ export function lastUse(lastUsedAt: string | null, client: string | null, ago: (
   return `Last used ${ago(lastUsedAt)}${who}`;
 }
 
-/** "30 an hour, 200 a day, 6 per chat" */
-export const limitsText = (l: { perHour: number; perDay: number; perChatHour: number }) => `${l.perHour} messages an hour, ${l.perDay} a day, ${l.perChatHour} to one chat an hour`;
+/** "30 messages an hour, 200 a day, 6 to one chat an hour" (existing customers); with new chats: "..., and 5 new chats an hour, 10 a day" */
+export const limitsText = (l: { perHour: number; perDay: number; perChatHour: number; newChatsPerHour?: number; newChatsPerDay?: number }, withNewChats = false) =>
+  `${l.perHour} messages an hour, ${l.perDay} a day, ${l.perChatHour} to one chat an hour` + (withNewChats && l.newChatsPerHour && l.newChatsPerDay ? `; new numbers: ${l.newChatsPerHour} chats an hour, ${l.newChatsPerDay} a day` : "");
 
 /** "Never expires", "Expires in 12 days", "Expired" */
 export function expiryText(expiresAt: string | null, now = Date.now()): string {

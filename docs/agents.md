@@ -24,7 +24,7 @@ be given an address (see *The secret link*).
    reads goes to the AI service it is connected to.
 2. **Make an agent**: a name; **what it may do** (three levels, below); **which numbers** (all, or chosen ones); **what it may see and
    say** (tell customers it is an AI: on; show phone numbers and emails: off; allow group chats: off; **allow starting chats with new
-   numbers: off**); **limits and expiry** (30 messages an hour, 200 in 24 hours, 6 to one chat an hour, 10 new chats a day; the key stops
+   numbers: off**); **limits and expiry** (30 messages an hour, 200 in 24 hours, 6 to one chat an hour for existing customers, and 5 new chats an hour and 10 a day for new numbers; the key stops
    working after 90 days, or 30 days, a year, never).
 3. **The key**, shown once ("Copy the key now"). Scriwo keeps only its hash and cannot show it again; the page does not keep it either. A lost
    key means a new agent and revoking the old one.
@@ -62,10 +62,10 @@ what gets a WhatsApp number reported. An agent without the switch is not shown t
 - the same checks as the inbox's "new chat" run (`services/newChat.js`, shared): the number must be connected, the person must be on WhatsApp (a number
   that is not on WhatsApp makes no contact and uses no allowance), and the company's contact limit applies; it is refused for one of the company's own
   numbers and for a person who opted out, before anything is made;
-- a number the company already has a chat with on that number gets the message in that chat, like any reply, and uses no new-chat allowance;
-- the message then goes through the ordinary send: the AI line (only if the owner switched it on), the per-chat, hourly and daily message limits, one message for a repeated try, the
+- a number the company already has a chat with on that number gets the message in that chat, like any reply, and uses the existing-customer limits, not the new-number ones;
+- the message then goes through the ordinary send: the AI line (only if the owner switched it on), one message for a repeated try, the
   AI accountability record and the activity list (as "Started a chat with a new number" and "Sent a message");
-- its own cap, **new chats a day** (10 by default, 1 to 200), counted over 24 hours under a lock, so a rush of calls cannot pass it; a try that fails
+- its own caps, **new chats an hour** (5 by default, 1 to 100) and **new chats a day** (10 by default, 1 to 200), counted under a lock, so a rush of calls cannot pass it; a try that fails
   uses none of it; the answer says when to try again and tells the agent not to look for another way to reach new people;
 - the answer reminds it that WhatsApp may restrict a number that messages people who have not written first, and to send nothing more unless the
   person answers or the user asks.
@@ -78,7 +78,7 @@ what gets a WhatsApp number reported. An agent without the switch is not shown t
 | Revoking stops it at once | Checked on every call: revoked, expired, company suspended and plan no longer including agents each have their own refusal. Nothing is deleted when a plan is lowered |
 | Only its numbers | An empty list is every number. A chat on another number is "not allowed" for reads and writes alike; lists, searches, counts and follow-ups leave it out |
 | No groups, no phone numbers by default | Groups are invisible unless allowed. Phone numbers (and emails) show with the middle hidden, and a customer WhatsApp has no name for, who would be called by their number, is called by the hidden number too |
-| Limits it cannot exceed | Per chat, per hour and per 24 hours, counted under a lock per agent, so a rush of parallel calls cannot slip past (a test sends eight at once with room for three). A send that fails, or is a repeat, uses none of the allowance. The answer says when to try again (`Retry-After`) and tells the agent not to keep messaging the same customer |
+| Limits it cannot exceed | Two sets, each counted under a lock per agent: for **existing customers** (per chat, per hour and per 24 hours) and for **new numbers** (new chats per hour and per 24 hours). The first message to a new number counts only in the second set, so a low limit for one never stops the other, so a rush of parallel calls cannot slip past (a test sends eight at once with room for three). A send that fails, or is a repeat, uses none of the allowance. The answer says when to try again (`Retry-After`) and tells the agent not to keep messaging the same customer |
 | A retry is not a second message | The same words to the same chat in the same minute, or the same `idempotency_key`, are one message |
 | An optional AI line | **Off by default**: customers see exactly what the agent wrote. The owner can switch the AI line on per agent, and then a line is added to what it sends ("AI assistant reply. Reply "human" to talk to a person"). Either way the team's inbox shows an **AI agent** tag, and the rules tell the agent never to deny being an AI if a customer sincerely asks. A customer who writes "human" is handed to a person exactly as with Riwo: the chat jumps to the top for the team, they are notified, and an AI agent answering again **cannot** clear the request, only a teammate can. Riwo and the automations stay silent in a chat an agent has answered. Riwo's and the automations' own disclosure line is unchanged |
 | It is on the record | The message is saved as sent by the agent's name with `sent_via = ai_agent` (the inbox shows an **AI agent** tag next to the name), and written, word for word, to the append-only AI accountability record (`automation_audit`, source `external_agent`, the agent's name and id, provider "MCP" or "agent API"). Each tool call is in the activity list (30 days; no message text). Making, changing and revoking an agent is in the audit log |
