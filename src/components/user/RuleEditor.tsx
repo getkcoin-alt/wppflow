@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { RuleAction, RuleDraft, RuleTrigger } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
+import { MoreOptions } from "../ui/MoreOptions";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
 import {
@@ -133,6 +134,7 @@ function EditorBody({
   return (
     <Sheet
       open
+      medium
       onClose={onClose}
       title={editing ? "Edit rule" : "New rule"}
       subtitle={editing ? "Changes apply to new messages straight away." : "It starts paused, so you can check it before it goes live."}
@@ -272,6 +274,7 @@ function EditorBody({
           </div>
         )}
 
+        <MoreOptions title="More options" hint="Wait before repeating" defaultOpen={rule.config.cooldownHours != null}>
         <Field label="Wait before repeating (hours)" hint="Leave empty to act on every matching message. A customer is never answered more than six times an hour.">
           <input
             aria-label="Wait before repeating"
@@ -283,6 +286,7 @@ function EditorBody({
             className={inputCls}
           />
         </Field>
+        </MoreOptions>
       </div>
     </Sheet>
   );

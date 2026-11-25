@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bot, Loader2, Sparkles } from "lucide-react";
 import { draftAgent, fetchKnowledge, type AgentClose, type RuleDraft } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
+import { MoreOptions } from "../ui/MoreOptions";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
 
@@ -127,6 +128,7 @@ function Body({ initial, editing, onClose, onSave }: { initial: RuleDraft; editi
   return (
     <Sheet
       open
+      medium
       onClose={onClose}
       title="Riwo sales agent"
       subtitle={editing ? "Changes apply to new messages straight away." : "It starts paused, unless you choose to turn it on."}
@@ -255,6 +257,9 @@ function Body({ initial, editing, onClose, onSave }: { initial: RuleDraft; editi
           <Field label="This formal message is sent" hint="Word for word. {{executive}} becomes the name of the teammate the chat is with.">
             <textarea aria-label="Message when a person takes over" rows={3} value={formal} onChange={(e) => setFormal(e.target.value)} className={textareaCls} placeholder="Thank you for your interest, {{first_name}}. Our executive {{executive}} has been assigned…" />
           </Field>
+        </div>
+
+        <MoreOptions title="Follow-up and fallback" hint="Pipeline step, team reminder, and what Riwo says when it can't help">
           <Field label="Pipeline step for the lead" hint="Leave empty to use the step named Proposal or Quote.">
             <input aria-label="Pipeline step" value={stageName} maxLength={40} onChange={(e) => setStageName(e.target.value)} className={inputCls} />
           </Field>
@@ -264,7 +269,7 @@ function Body({ initial, editing, onClose, onSave }: { initial: RuleDraft; editi
           <Field label="When Riwo can't help, it says" hint="Sent word for word, once, and your team is told.">
             <textarea aria-label="When Riwo can't help" rows={2} value={handoff} onChange={(e) => setHandoff(e.target.value)} className={textareaCls} />
           </Field>
-        </div>
+        </MoreOptions>
       </div>
     </Sheet>
   );

@@ -167,6 +167,7 @@ export function Sheet({
   children,
   footer,
   wide = false,
+  medium = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -176,9 +177,11 @@ export function Sheet({
   footer?: ReactNode;
   /** a big dialog for screens with two columns */
   wide?: boolean;
+  /** a roomier dialog for long forms: wider than the default, narrower than wide */
+  medium?: boolean;
 }) {
   return (
-    <SheetShell open={open} onClose={onClose} label={title} className={wide ? "sm:max-w-5xl" : "sm:max-w-lg"}>
+    <SheetShell open={open} onClose={onClose} label={title} className={wide ? "sm:max-w-5xl" : medium ? "sm:max-w-2xl" : "sm:max-w-lg"}>
       {(drag) => (
         <>
           <div {...drag.handlers} className="shrink-0" style={{ touchAction: "none" }}>

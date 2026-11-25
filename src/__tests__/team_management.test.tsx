@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
+  cleanup,
   render,
   screen,
   fireEvent,
@@ -9,7 +10,9 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import {
+  SEARCH_FROM,
   choiceOf,
+  filterMembers,
   mailLine,
   parseChoice,
   roleText,
@@ -243,6 +246,52 @@ describe("Team screen", () => {
     fireEvent.click(within(row).getByRole("button", { name: "Cancel the invitation for meera@acme.test" }));
     fireEvent.click(within(row).getByRole("button", { name: "Yes, cancel it" }));
     await waitFor(() => expect(api.cancelInvitation).toHaveBeenCalledWith("i1"));
+  });
+
+  it("finds people by any word of their name, email or role, in any order and case", () => {
+    const team = [
+      { name: "Amar Singh", email: "amar@scriza.in", membershipRole: "agent", category: "sales" },
+      { name: "Anshu", email: "anshu@scriza.in", membershipRole: "agent", category: "operations" },
+      { name: "Laxman", email: "laxman@scriza.in", membershipRole: "owner", category: "general" },
+    ];
+    expect(filterMembers(team, "").length).toBe(3);
+    expect(filterMembers(team, "   ").length).toBe(3);
+    expect(filterMembers(team, "AMAR").map((m) => m.name)).toEqual(["Amar Singh"]);
+    expect(filterMembers(team, "singh amar").map((m) => m.name)).toEqual(["Amar Singh"]);
+    expect(filterMembers(team, "operations").map((m) => m.name)).toEqual(["Anshu"]);
+    expect(filterMembers(team, "owner").map((m) => m.name)).toEqual(["Laxman"]);
+    expect(filterMembers(team, "scriza.in").length).toBe(3);
+    expect(filterMembers(team, "amar anshu")).toEqual([]);
+  });
+
+  it("a small team has no search box; a larger one can be searched, and the search can be cleared", async () => {
+    view();
+    await screen.findByText("sam@acme.test");
+    expect(SEARCH_FROM).toBeGreaterThan(members.length);
+    expect(screen.queryByLabelText("Search people")).toBeNull();
+    cleanup();
+    const many = Array.from({ length: SEARCH_FROM + 1 }, (_, i) => ({
+      id: String(100 + i),
+      name: `Person ${i}`,
+      email: `p${i}@acme.test`,
+      status: "active",
+      membershipRole: "agent",
+      category: i === 2 ? "billing" : "sales",
+      canRename: false,
+    }));
+    api.getTenantUsers.mockResolvedValue({ users: many, invitations: [] });
+    view();
+    const box = await screen.findByLabelText("Search people");
+    expect(screen.getByText(`${many.length} people`)).toBeTruthy();
+    fireEvent.change(box, { target: { value: "billing" } });
+    expect(screen.getByText("Person 2")).toBeTruthy();
+    expect(screen.queryByText("Person 3")).toBeNull();
+    expect(screen.getByText(`1 of ${many.length}`)).toBeTruthy();
+    fireEvent.change(box, { target: { value: "nobody here" } });
+    expect(screen.getByText(/No one matches “nobody here”/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Clear the search" }));
+    expect((box as HTMLInputElement).value).toBe("");
+    expect(screen.getByText("Person 3")).toBeTruthy();
   });
 
   it("changes a teammate's category from their role dropdown", async () => {

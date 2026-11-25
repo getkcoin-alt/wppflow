@@ -175,6 +175,24 @@ describe("the sales assistant", () => {
     await waitFor(() => expect(api.updateAutomation).toHaveBeenCalledWith("s1", expect.objectContaining({ config: expect.objectContaining({ sales: expect.objectContaining({ followUpHours: 0 }) }) })));
   });
 
+  it("is roomy, shows how it works while making one, and tucks follow-up and fallback into one fold that still saves", async () => {
+    const form = await open();
+    expect(screen.getByRole("dialog", { name: "Sales assistant" }).className).toContain("sm:max-w-2xl");
+    expect((form.getByText("How this works").closest("details") as HTMLDetailsElement).open).toBe(true);
+    const fold = form.getByText("Follow-up and fallback").closest("details") as HTMLDetailsElement;
+    expect(fold.open).toBe(false);
+    for (const label of ["Pipeline step", "Remind your team after", "When Riwo can't help"]) expect(fold.contains(form.getByLabelText(label))).toBe(true);
+    // the formal message is not tucked away: it is the point of this step
+    expect(fold.contains(form.getByLabelText("Message for pricing and proposals"))).toBe(false);
+  });
+
+  it("a saved rule opens with the steps folded away, because the person already knows them", async () => {
+    wrap([saved()]);
+    fireEvent.click(await screen.findByRole("button", { name: /Edit/ }));
+    const form = await sheet();
+    expect((form.getByText("How this works").closest("details") as HTMLDetailsElement).open).toBe(false);
+  });
+
   it("the ready-made rule opens the same form", async () => {
     wrap();
     const article = (await screen.findByRole("heading", { name: /Sales assistant: ask the right questions/ })).closest("article") as HTMLElement;

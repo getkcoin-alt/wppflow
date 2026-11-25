@@ -252,6 +252,21 @@ describe("welcoming people from other countries", () => {
     expect(form.getByText("United Arab Emirates (+971)")).toBeDefined();
   });
 
+  it("is roomy, with the steps open for a new rule and the limits and fallback tucked into one fold that still holds the fields", async () => {
+    wrap();
+    const card = (await screen.findByRole("region", { name: "Welcome people from other countries" })) as HTMLElement;
+    fireEvent.click(within(card).getByRole("button", { name: /Set it up/ }));
+    const form = await sheet();
+    expect(screen.getByRole("dialog", { name: "Welcome people from other countries" }).className).toContain("sm:max-w-2xl");
+    expect((form.getByText("How this works").closest("details") as HTMLDetailsElement).open).toBe(true);
+    const fold = form.getByText("Limits and fallback").closest("details") as HTMLDetailsElement;
+    expect(fold.open).toBe(false);
+    expect(fold.contains(form.getByLabelText("Riwo answers at most"))).toBe(true);
+    expect(fold.contains(form.getByLabelText("When Riwo can't help"))).toBe(true);
+    // the words the customer sees stay out in the open
+    expect(fold.contains(form.getByLabelText("Your welcome message"))).toBe(false);
+  });
+
   it("describes a saved rule in plain words, with the country's name, and edits it in the same form", async () => {
     wrap([saved({ isEnabled: true })]);
     const article = (await screen.findByRole("heading", { name: "Welcome people from other countries", level: 2 })).closest("article")!;

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Briefcase, Loader2, Plus, X } from "lucide-react";
 import { fetchAutomationContext, fetchKnowledge, type AutomationContext, type RuleDraft } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
+import { HowItWorks, MoreOptions } from "../ui/MoreOptions";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, textareaCls } from "../ui/styles";
 import { WebsiteReader } from "./WebsiteReader";
@@ -143,6 +144,7 @@ function Body({
   return (
     <Sheet
       open
+      medium
       onClose={onClose}
       title="Sales assistant"
       subtitle={editing ? "Changes apply to new messages straight away." : "It starts paused, unless you choose to turn it on."}
@@ -171,11 +173,13 @@ function Body({
         </>
       }
     >
-      <ol className="rounded-2xl bg-surface-2 ring-1 ring-line px-4 py-3 mb-5 text-[14px] leading-relaxed space-y-1 list-decimal list-inside" aria-label="What this does">
+      <HowItWorks open={!editing}>
+      <ol className="rounded-2xl bg-surface-2 ring-1 ring-line px-4 py-3 text-[14px] leading-relaxed space-y-1 list-decimal list-inside" aria-label="What this does">
         <li>Someone writes to you for the first time. Riwo welcomes them and asks your first question.</li>
         <li>Riwo asks the rest one at a time, keeps what they say, and answers short questions from what you wrote about your business.</li>
         <li>When they ask for pricing or a proposal, Riwo sends your formal message, the chat goes to an executive with a summary, and the customer is added to your pipeline.</li>
       </ol>
+      </HowItWorks>
       {!ctx.riwo.available && (
         <p role="status" className="mb-4 rounded-2xl bg-surface-2 ring-1 ring-line px-4 py-3 text-[13.5px] text-fg-2">
           Riwo can't read or answer messages right now, so each reply is taken as the answer to the question just asked. The questions and the pricing hand-off still work.
@@ -308,17 +312,19 @@ function Body({
               ))}
             </div>
           </div>
+        </div>
+
+        <MoreOptions title="Follow-up and fallback" hint="Pipeline step, team reminder, and what Riwo says when it can't help">
           <Field label="Pipeline step for the lead" hint="Leave empty to use the step named Proposal or Quote (or the second step). Leads are never moved backwards.">
             <input aria-label="Pipeline step" value={stageName} maxLength={40} placeholder="Proposal" onChange={(e) => setStageName(e.target.value)} className={inputCls} />
           </Field>
           <Field label="Remind your team after (hours)" hint="A follow-up task is made for the teammate, so the customer is not left waiting. 0 for none.">
             <input aria-label="Remind your team after" type="number" min={0} max={72} value={followUp} onChange={(e) => setFollowUp(Number(e.target.value))} className={inputCls} />
           </Field>
-        </div>
-
-        <Field label="When Riwo can't help, it says" hint="Sent word for word, once, and your team is told.">
-          <textarea aria-label="When Riwo can't help" rows={2} value={handoff} onChange={(e) => setHandoff(e.target.value)} className={textareaCls} />
-        </Field>
+          <Field label="When Riwo can't help, it says" hint="Sent word for word, once, and your team is told.">
+            <textarea aria-label="When Riwo can't help" rows={2} value={handoff} onChange={(e) => setHandoff(e.target.value)} className={textareaCls} />
+          </Field>
+        </MoreOptions>
       </div>
     </Sheet>
   );

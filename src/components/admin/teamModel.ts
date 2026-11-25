@@ -30,6 +30,19 @@ export const roleText = (role: string, category?: string) =>
       ? "Administrator"
       : `Agent · ${categoryLabel(category)}`;
 
+/** A team with at least this many people gets a search box; a small team is easier to read than to search. */
+export const SEARCH_FROM = 6;
+
+/** The people whose name, email or role contains every word typed (any order, any case). An empty search keeps everyone. */
+export function filterMembers<T extends { name: string; email: string; membershipRole: string; category?: string }>(members: T[], term: string): T[] {
+  const words = term.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return members;
+  return members.filter((m) => {
+    const text = `${m.name} ${m.email} ${roleText(m.membershipRole, m.category)}`.toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+}
+
 export interface InviteMail {
   status: "sent" | "failed" | "not_configured" | "unknown";
   sentAt?: string | null;

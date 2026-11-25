@@ -63,7 +63,8 @@ describe("the knowledge base", () => {
     api.addKnowledgeSource.mockResolvedValue({ ...EMPTY, sources: [{ id: "s1", url: "https://scriza.example", status: "reading", error: "", pages: 0, autoRefresh: true, lastReadAt: null, lastChangedAt: null }] });
     wrap();
     const card = within(await screen.findByRole("region", { name: "Knowledge base" }));
-    fireEvent.change(card.getByLabelText("Website address"), { target: { value: "scriza.example" } });
+    // with no website yet the whole card is open to start with
+    fireEvent.change(await card.findByLabelText("Website address"), { target: { value: "scriza.example" } });
     fireEvent.click(card.getByRole("button", { name: /Add website/ }));
     await waitFor(() => expect(api.addKnowledgeSource).toHaveBeenCalledWith("scriza.example"));
     expect(await card.findByText("Riwo is reading this website…")).toBeDefined();
@@ -77,6 +78,10 @@ describe("the knowledge base", () => {
     api.removeKnowledgeSource.mockResolvedValue(EMPTY);
     wrap();
     const card = within(await screen.findByRole("region", { name: "Knowledge base" }));
+    // a company with a website sees one calm line, and opens the card to manage it
+    expect(await card.findByText("1 website · up to date · your notes added")).toBeDefined();
+    expect(card.queryByLabelText("Website address")).toBeNull();
+    fireEvent.click(card.getByRole("button", { name: /Manage/ }));
     expect(await card.findByText(/24 pages · read /)).toBeDefined();
     expect(card.getByText("Up to date")).toBeDefined();
     expect(card.getByText(/Scriza builds business software/)).toBeDefined();
@@ -93,6 +98,9 @@ describe("the knowledge base", () => {
     api.saveKnowledgeNotes.mockResolvedValue({ ...READY, notes: "We never discount." });
     wrap();
     const card = within(await screen.findByRole("region", { name: "Knowledge base" }));
+    expect(await card.findByText("1 website · 1 could not be read · your notes added")).toBeDefined();
+    expect(card.getByText("Needs a look")).toBeDefined();
+    fireEvent.click(card.getByRole("button", { name: /Manage/ }));
     expect(await card.findByText("We couldn't open that website.")).toBeDefined();
     expect(card.getByText("Couldn't read")).toBeDefined();
     fireEvent.change(card.getByLabelText("Notes for Riwo"), { target: { value: "We never discount." } });
@@ -100,11 +108,23 @@ describe("the knowledge base", () => {
     await waitFor(() => expect(api.saveKnowledgeNotes).toHaveBeenCalledWith("We never discount."));
   });
 
+  it("can be closed again to its one line, and says when Riwo is reading or the owner's notes are there", async () => {
+    api.fetchKnowledge.mockResolvedValue({ ...READY, notes: "We never discount." });
+    wrap();
+    const card = within(await screen.findByRole("region", { name: "Knowledge base" }));
+    expect(await card.findByText("1 website · up to date · your notes added")).toBeDefined();
+    fireEvent.click(card.getByRole("button", { name: /Manage/ }));
+    expect(card.getByLabelText("Notes for Riwo")).toBeDefined();
+    fireEvent.click(card.getByRole("button", { name: /Hide/ }));
+    expect(card.queryByLabelText("Notes for Riwo")).toBeNull();
+    expect(card.getByRole("button", { name: /Manage/ }).getAttribute("aria-expanded")).toBe("false");
+  });
+
   it("shows a refusal, such as an address that is not a public website", async () => {
     api.addKnowledgeSource.mockRejectedValue(new Error("That address isn't a public website."));
     wrap();
     const card = within(await screen.findByRole("region", { name: "Knowledge base" }));
-    fireEvent.change(card.getByLabelText("Website address"), { target: { value: "http://10.0.0.1" } });
+    fireEvent.change(await card.findByLabelText("Website address"), { target: { value: "http://10.0.0.1" } });
     fireEvent.click(card.getByRole("button", { name: /Add website/ }));
     expect(await card.findByText("That address isn't a public website.")).toBeDefined();
   });

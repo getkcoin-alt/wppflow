@@ -15,7 +15,9 @@ import { Notice, Pill } from "../ui/Page";
 import { btn, inputCls } from "../ui/styles";
 import {
   CATEGORIES,
+  SEARCH_FROM,
   choiceOf,
+  filterMembers,
   mailLine,
   parseChoice,
   roleText,
@@ -103,8 +105,10 @@ export function UserManagement({
     [draft, setDraft] = useState(""),
     [inviteChoice, setInviteChoice] = useState("agent:general"),
     // which "are you sure?" is open: "remove:<member id>" or "cancel:<invitation id>"
-    [asking, setAsking] = useState<string | null>(null);
+    [asking, setAsking] = useState<string | null>(null),
+    [find, setFind] = useState("");
   const members: Member[] = data?.users || [];
+  const shown = filterMembers(members, find);
   const invitations: Invitation[] = data?.invitations || [];
   const run = async (fn: () => Promise<any>) => {
     setBusy(true);
@@ -315,6 +319,21 @@ export function UserManagement({
         {invitations.length > 0 && (
           <h2 className="text-[16px] font-semibold mb-3 px-1">Team</h2>
         )}
+        {members.length >= SEARCH_FROM && (
+          <div className="mb-3 flex items-center gap-3">
+            <input
+              type="search"
+              aria-label="Search people"
+              placeholder="Search by name, email or role"
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+              className={inputCls}
+            />
+            <p className="shrink-0 text-[13.5px] text-fg-3" aria-live="polite">
+              {find.trim() ? `${shown.length} of ${members.length}` : `${members.length} people`}
+            </p>
+          </div>
+        )}
         <div className="card overflow-hidden !rounded-3xl">
           {isPending && (
             <div className="p-6 space-y-3" aria-busy>
@@ -323,8 +342,16 @@ export function UserManagement({
               ))}
             </div>
           )}
+          {find.trim() && !shown.length && members.length > 0 && (
+            <p className="px-5 sm:px-6 py-6 text-[14.5px] text-fg-2">
+              No one matches “{find.trim()}”.{" "}
+              <button type="button" className="underline text-fg" onClick={() => setFind("")}>
+                Clear the search
+              </button>
+            </p>
+          )}
           <ul className="divide-y divide-line">
-            {members.map((u) => (
+            {shown.map((u) => (
               <li
                 key={u.id}
                 className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 sm:px-6 py-4"

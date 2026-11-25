@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Globe2, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { BookOpen, ChevronUp, Globe2, Loader2, Plus, RefreshCw, Settings2, Trash2 } from "lucide-react";
 import {
   addKnowledgeSource,
   fetchKnowledge,
@@ -15,6 +15,15 @@ import { btn, inputCls, textareaCls } from "../ui/styles";
 import { timeAgo } from "../../utils/timeAgo";
 
 const KEY = ["knowledge"];
+
+/** One line for the closed card: "2 websites · up to date · your notes added" */
+export function knowledgeSummary(data: KnowledgeStatus): string {
+  const n = data.sources.length;
+  const reading = data.sources.some((x) => x.status === "queued" || x.status === "reading");
+  const failed = data.sources.filter((x) => x.status === "failed").length;
+  const state = reading ? "Riwo is reading" : failed ? `${failed} could not be read` : "up to date";
+  return [`${n} ${n === 1 ? "website" : "websites"}`, state, data.notes?.trim() ? "your notes added" : ""].filter(Boolean).join(" · ");
+}
 
 function SourceRow({ source, busy, onRefresh, onRemove }: { source: KnowledgeSource; busy: boolean; onRefresh: () => void; onRemove: () => void }) {
   const working = source.status === "queued" || source.status === "reading";
@@ -66,15 +75,40 @@ export function KnowledgeCard() {
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // null: not chosen yet. A company that has websites sees one calm line; a company with none sees the whole card to start with.
+  const [open, setOpen] = useState<boolean | null>(null);
   const set = (data: KnowledgeStatus) => qc.setQueryData(KEY, data);
   const fail = (e: any) => setError(e.message || "That didn't work. Please try again.");
-  const add = useMutation({ mutationFn: (u: string) => addKnowledgeSource(u), onSuccess: (d) => (set(d), setUrl("")), onError: fail });
+  const add = useMutation({ mutationFn: (u: string) => addKnowledgeSource(u), onSuccess: (d) => (set(d), setUrl(""), setOpen(true)), onError: fail });
   const refresh = useMutation({ mutationFn: (id: string) => refreshKnowledgeSource(id), onSuccess: set, onError: fail });
   const remove = useMutation({ mutationFn: (id: string) => removeKnowledgeSource(id), onSuccess: set, onError: fail });
   const saveNotes = useMutation({ mutationFn: (text: string) => saveKnowledgeNotes(text), onSuccess: (d) => (set(d), setNotes(null)), onError: fail });
   const data = q.data;
   const busy = add.isPending || refresh.isPending || remove.isPending;
   const noteText = notes ?? data?.notes ?? "";
+  const hasSources = Boolean(data && data.sources.length > 0);
+  const expanded = open ?? (data ? !hasSources : false);
+
+  if (!expanded)
+    return (
+      <section className="card px-5 py-4 mb-8" aria-labelledby="knowledge-title">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="h-10 w-10 shrink-0 grid place-items-center rounded-2xl bg-surface-2 text-fg-2">
+            <BookOpen className="w-5 h-5" aria-hidden />
+          </div>
+          <div className="flex-1 min-w-[12rem]">
+            <h2 id="knowledge-title" className="text-[16px] font-semibold">
+              Knowledge base
+            </h2>
+            <p className="text-[13.5px] text-fg-2">{data ? knowledgeSummary(data) : q.error ? "Could not be loaded." : "Loading…"}</p>
+          </div>
+          {data && data.sources.some((x) => x.status === "failed") && <Pill tone="danger">Needs a look</Pill>}
+          <button type="button" className={btn("secondary", "sm")} aria-expanded={false} onClick={() => setOpen(true)}>
+            <Settings2 className="w-4 h-4" aria-hidden /> Manage
+          </button>
+        </div>
+      </section>
+    );
 
   return (
     <section className="card p-6 mb-8" aria-labelledby="knowledge-title">
@@ -90,6 +124,11 @@ export function KnowledgeCard() {
             Give Riwo your website and it learns every product, service and page, so it can talk to customers like someone who works for you. Read it again with Refresh whenever your website changes. It also reads again by itself every day.
           </p>
         </div>
+        {hasSources && (
+          <button type="button" className={btn("ghost", "sm")} aria-expanded onClick={() => setOpen(false)}>
+            <ChevronUp className="w-4 h-4" aria-hidden /> Hide
+          </button>
+        )}
       </div>
 
       {error && (

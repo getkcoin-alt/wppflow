@@ -7,6 +7,7 @@ import {
   type RuleDraft,
 } from "../../services/api";
 import { Field, Notice } from "../ui/Page";
+import { HowItWorks, MoreOptions } from "../ui/MoreOptions";
 import { Sheet } from "../ui/Sheet";
 import { btn, inputCls, selectCls, textareaCls } from "../ui/styles";
 import { WebsiteReader } from "./WebsiteReader";
@@ -179,6 +180,7 @@ function Body({
   return (
     <Sheet
       open
+      medium
       onClose={onClose}
       title="Welcome people from other countries"
       subtitle={
@@ -230,8 +232,9 @@ function Body({
         </>
       }
     >
+      <HowItWorks open={!editing}>
       <ol
-        className="rounded-2xl bg-surface-2 ring-1 ring-line px-4 py-3 mb-5 text-[14px] leading-relaxed space-y-1 list-decimal list-inside"
+        className="rounded-2xl bg-surface-2 ring-1 ring-line px-4 py-3 text-[14px] leading-relaxed space-y-1 list-decimal list-inside"
         aria-label="What this does"
       >
         <li>
@@ -252,6 +255,7 @@ function Body({
           <li>Your team takes it from there.</li>
         )}
       </ol>
+      </HowItWorks>
       {error && (
         <div className="mb-4">
           <Notice tone="error">{error}</Notice>
@@ -479,6 +483,7 @@ function Body({
                   for example “Found us: Website”.
                 </p>
               </div>
+              <MoreOptions title="Limits and fallback" hint="How many answers Riwo gives, and what it says when it can't help">
               <Field
                 label="Riwo answers at most"
                 hint={`Then your hand-over message is sent and Riwo stops. Up to ${ctx.chat.maxReplies}. Each answer uses one of your daily Riwo requests.`}
@@ -505,6 +510,7 @@ function Body({
                   className={textareaCls}
                 />
               </Field>
+              </MoreOptions>
             </>
           )}
         </div>
