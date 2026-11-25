@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useIsPhone } from "../../hooks/useMedia";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Briefcase, Globe2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Bot, Briefcase, Globe2, Plus, Sparkles } from "lucide-react";
 import {
   addAutomation,
   fetchAutomationContext,
@@ -19,7 +18,7 @@ import { AbroadRecipe } from "./AbroadRecipe";
 import { SalesRecipe } from "./SalesRecipe";
 import { AgentRecipe } from "./AgentRecipe";
 import { WorkflowBuilder, type BuilderInitial } from "./workflow/WorkflowBuilder";
-import { Insights } from "./workflow/Insights";
+import { RuleList } from "./RuleList";
 import { KnowledgeCard } from "./KnowledgeCard";
 import { AssignmentRule } from "./AssignmentRule";
 import { blankRule, describeRule, endSentence, withOwnTimezone } from "../../utils/automationText";
@@ -87,7 +86,6 @@ export function Automations({
     [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const phone = useIsPhone();
   const templates = useQuery({
     queryKey: ["automation-templates"],
     queryFn: fetchAutomationTemplates,
@@ -165,7 +163,7 @@ export function Automations({
     </section>
   );
 
-  // the ideas (describe it, the knowledge base, ready-made helpers) and the rules the company already has: on a phone the rules come first
+  // the rules the company already has come first, on every screen; the ideas (describe it, the knowledge base, ready-made helpers) follow
   const ideas = (
     <>
       {!automations.some((a) => a.actionType === "workflow") && (
@@ -254,54 +252,15 @@ export function Automations({
           </div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {automations.map((a) => {
-            const sentence = describeRule(ruleOf(a), countryName);
-            return (
-              <article key={a.id} className="card p-6 flex flex-col">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-[18px] font-semibold">{a.name}</h2>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {a.config?.pilot?.enabled && <Pill tone="gold">Test mode</Pill>}
-                    <Pill tone={a.isEnabled ? "ok" : "neutral"} dot>
-                      {a.isEnabled ? "Live" : "Paused"}
-                    </Pill>
-                  </div>
-                </div>
-                <p className="mt-3 text-[14px] text-fg-2">{sentence.when},</p>
-                <p className="mt-1 text-[15px] text-fg leading-relaxed">{endSentence(sentence.then)}</p>
-                {a.actionType === "workflow" && <Insights id={a.id} />}
-                <p className="mt-4 text-[12.5px] text-fg-3">
-                  Completed executions: {a.executionsCount}
-                  {a.config?.cooldownHours ? ` · waits ${a.config.cooldownHours} h before repeating` : ""}
-                </p>
-                <div className="mt-5 pt-4 border-t border-line flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <button disabled={busy} onClick={() => void run(() => toggleAutomationApi(a.id))} className={btn("secondary", "sm")}>
-                      {a.isEnabled ? "Pause" : "Enable"}
-                    </button>
-                    <button disabled={busy} onClick={() => edit(a)} className={btn("ghost", "sm")} aria-label={`Edit ${a.name}`}>
-                      <Pencil className="w-4 h-4" /> Edit
-                    </button>
-                    {a.config?.pilot?.enabled && (
-                      <button disabled={busy} onClick={() => void switchOnForEveryone(a)} className={btn("ghost", "sm")} aria-label={`Run ${a.name} for everyone`}>
-                        For everyone
-                      </button>
-                    )}
-                  </div>
-                  <button
-                    disabled={busy}
-                    aria-label={`Delete ${a.name}`}
-                    className="h-9 w-9 grid place-items-center rounded-full text-fg-3 hover:text-danger hover:bg-danger/10 transition"
-                    onClick={() => void run(() => removeAutomation(a.id))}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <RuleList
+          rules={automations}
+          busy={busy}
+          describe={(a) => describeRule(ruleOf(a), countryName)}
+          onToggle={(a) => void run(() => toggleAutomationApi(a.id))}
+          onEdit={edit}
+          onRemove={(a) => void run(() => removeAutomation(a.id))}
+          onForEveryone={(a) => void switchOnForEveryone(a)}
+        />
       )}
 
     </>
@@ -434,17 +393,11 @@ export function Automations({
         }}
       />
 
-      {phone ? (
-        <>
-          {rules}
-          {ideas}
-        </>
-      ) : (
-        <>
-          {ideas}
-          {rules}
-        </>
+      {rules}
+      {automations.length > 0 && (
+        <h2 className="mt-10 mb-4 text-[20px] font-semibold">Set up more</h2>
       )}
+      {ideas}
       {gallery}
     </Page>
   );

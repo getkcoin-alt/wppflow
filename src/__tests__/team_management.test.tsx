@@ -215,6 +215,36 @@ describe("Team screen", () => {
     ).toBeTruthy();
   });
 
+  it("asks before removing a teammate, by name, inside the row, and removes only after yes", async () => {
+    api.deleteTenantUser.mockResolvedValue({ status: "success" });
+    view();
+    fireEvent.click(await screen.findByRole("button", { name: "Remove Shared Sam" }));
+    expect(api.deleteTenantUser).not.toHaveBeenCalled();
+    const row = screen.getByText("sam@acme.test").closest("li") as HTMLElement;
+    expect(within(row).getByRole("alertdialog", { name: "Remove Shared Sam?" })).toBeTruthy();
+    expect(within(row).getByText("Remove Shared Sam from the workspace?")).toBeTruthy();
+    fireEvent.click(within(row).getByRole("button", { name: "Keep" }));
+    expect(api.deleteTenantUser).not.toHaveBeenCalled();
+    expect(within(row).getByRole("button", { name: "Remove Shared Sam" })).toBeTruthy();
+    fireEvent.click(within(row).getByRole("button", { name: "Remove Shared Sam" }));
+    fireEvent.click(within(row).getByRole("button", { name: "Yes, remove" }));
+    await waitFor(() => expect(api.deleteTenantUser).toHaveBeenCalledWith("3"));
+  });
+
+  it("asks before cancelling an invitation, and cancels only after yes", async () => {
+    api.cancelInvitation.mockResolvedValue({ status: "success" });
+    view();
+    const row = (await screen.findByText("meera@acme.test")).closest("li") as HTMLElement;
+    fireEvent.click(within(row).getByRole("button", { name: "Cancel the invitation for meera@acme.test" }));
+    expect(api.cancelInvitation).not.toHaveBeenCalled();
+    expect(within(row).getByText("The link will stop working.")).toBeTruthy();
+    fireEvent.click(within(row).getByRole("button", { name: "Keep it" }));
+    expect(api.cancelInvitation).not.toHaveBeenCalled();
+    fireEvent.click(within(row).getByRole("button", { name: "Cancel the invitation for meera@acme.test" }));
+    fireEvent.click(within(row).getByRole("button", { name: "Yes, cancel it" }));
+    await waitFor(() => expect(api.cancelInvitation).toHaveBeenCalledWith("i1"));
+  });
+
   it("changes a teammate's category from their role dropdown", async () => {
     view();
     const select = await screen.findByLabelText("Role for Karnveer");

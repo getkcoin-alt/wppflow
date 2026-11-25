@@ -188,8 +188,45 @@ describe("your own rules", () => {
     expect(within(card).getByText(/Completed executions: 3 · waits 2 h before repeating/)).toBeDefined();
     fireEvent.click(within(card).getByRole("button", { name: "Pause" }));
     await waitFor(() => expect(api.toggleAutomationApi).toHaveBeenCalledWith("r1"));
+    // deleting asks first, in the card: one click on the bin deletes nothing
     fireEvent.click(within(card).getByRole("button", { name: "Delete Stop" }));
+    expect(api.removeAutomation).not.toHaveBeenCalled();
+    expect(within(card).getByRole("alertdialog", { name: "Delete Stop?" })).toBeDefined();
+    fireEvent.click(within(card).getByRole("button", { name: "Keep it" }));
+    expect(api.removeAutomation).not.toHaveBeenCalled();
+    fireEvent.click(within(card).getByRole("button", { name: "Delete Stop" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Yes, delete it" }));
     await waitFor(() => expect(api.removeAutomation).toHaveBeenCalledWith("r1"));
+  });
+
+  it("shows the company's own rules before the ideas for new ones, on every screen size", async () => {
+    wrap([saved({ id: "r1", name: "Welcome new customers", isEnabled: true })]);
+    const rule = await screen.findByRole("heading", { name: "Welcome new customers", level: 2 });
+    const more = screen.getByRole("heading", { name: "Set up more" });
+    const knowledge = screen.getByRole("heading", { name: "Knowledge base" });
+    expect(rule.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(rule.compareDocumentPosition(knowledge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("counts what is live and what is paused, and can show only one of them", async () => {
+    wrap([saved({ id: "a", name: "Open rule", isEnabled: true }), saved({ id: "b", name: "Quiet rule", isEnabled: false }), saved({ id: "c", name: "Other quiet rule", isEnabled: false })]);
+    expect(await screen.findByText("1 live · 2 paused")).toBeDefined();
+    const show = within(screen.getByRole("group", { name: "Show rules" }));
+    fireEvent.click(show.getByRole("button", { name: /^live/ }));
+    expect(screen.getByRole("heading", { name: "Open rule", level: 2 })).toBeDefined();
+    expect(screen.queryByRole("heading", { name: "Quiet rule", level: 2 })).toBeNull();
+    fireEvent.click(show.getByRole("button", { name: /^paused/ }));
+    expect(screen.queryByRole("heading", { name: "Open rule", level: 2 })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Quiet rule", level: 2 })).toBeDefined();
+    expect(show.getByRole("button", { name: /^paused/ }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(show.getByRole("button", { name: /^all/ }));
+    expect(screen.getAllByRole("heading", { level: 2 }).filter((h) => /rule/.test(h.textContent || "") && h.closest("article")).length).toBe(3);
+  });
+
+  it("a single rule needs no counting", async () => {
+    wrap([saved()]);
+    await screen.findByRole("heading", { name: "Welcome new customers", level: 2 });
+    expect(screen.queryByRole("group", { name: "Show rules" })).toBeNull();
   });
 
   it("can add the customer to the sales pipeline, and says so in plain words", async () => {

@@ -101,7 +101,9 @@ export function UserManagement({
     [busy, setBusy] = useState(false),
     [editing, setEditing] = useState<string | null>(null),
     [draft, setDraft] = useState(""),
-    [inviteChoice, setInviteChoice] = useState("agent:general");
+    [inviteChoice, setInviteChoice] = useState("agent:general"),
+    // which "are you sure?" is open: "remove:<member id>" or "cancel:<invitation id>"
+    [asking, setAsking] = useState<string | null>(null);
   const members: Member[] = data?.users || [];
   const invitations: Invitation[] = data?.invitations || [];
   const run = async (fn: () => Promise<any>) => {
@@ -279,20 +281,28 @@ export function UserManagement({
                         ? "Resend email"
                         : "Send new link"}
                     </button>
-                    <button
-                      disabled={busy}
-                      className={`${btn("ghost", "sm")} !text-danger`}
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Cancel this invitation? The link will stop working.",
-                          )
-                        )
-                          void run(() => cancelInvitation(inv.id));
-                      }}
-                    >
-                      Cancel
-                    </button>
+                    {asking === `cancel:${inv.id}` ? (
+                      <span role="alertdialog" aria-label={`Cancel the invitation for ${inv.email}?`} className="flex flex-wrap items-center gap-1">
+                        <span className="text-[13.5px] text-fg mr-1">The link will stop working.</span>
+                        <button
+                          disabled={busy}
+                          className={btn("danger", "sm")}
+                          onClick={() => {
+                            setAsking(null);
+                            void run(() => cancelInvitation(inv.id));
+                          }}
+                        >
+                          Yes, cancel it
+                        </button>
+                        <button className={btn("ghost", "sm")} onClick={() => setAsking(null)}>
+                          Keep it
+                        </button>
+                      </span>
+                    ) : (
+                      <button disabled={busy} className={`${btn("ghost", "sm")} !text-danger`} aria-label={`Cancel the invitation for ${inv.email}`} onClick={() => setAsking(`cancel:${inv.id}`)}>
+                        Cancel
+                      </button>
+                    )}
                   </div>
                 </li>
               );
@@ -411,34 +421,44 @@ export function UserManagement({
                   </Pill>
                 </div>
                 <div className="flex items-center gap-1 ml-auto">
-                  {u.membershipRole !== "owner" && (
-                    <>
-                      <button
-                        disabled={busy}
-                        className={btn("ghost", "sm")}
-                        onClick={() =>
-                          void run(() =>
-                            updateTenantUser(u.id, {
-                              status:
-                                u.status === "active" ? "suspended" : "active",
-                            }),
-                          )
-                        }
-                      >
-                        {u.status === "active" ? "Suspend" : "Restore"}
-                      </button>
-                      <button
-                        disabled={busy}
-                        className={`${btn("ghost", "sm")} !text-danger`}
-                        onClick={() => {
-                          if (confirm("Remove this member from the workspace?"))
+                  {u.membershipRole !== "owner" &&
+                    (asking === `remove:${u.id}` ? (
+                      <span role="alertdialog" aria-label={`Remove ${u.name || u.email}?`} className="flex flex-wrap items-center gap-1">
+                        <span className="text-[13.5px] text-fg mr-1">Remove {u.name || u.email} from the workspace?</span>
+                        <button
+                          disabled={busy}
+                          className={btn("danger", "sm")}
+                          onClick={() => {
+                            setAsking(null);
                             void run(() => deleteTenantUser(u.id));
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </>
-                  )}
+                          }}
+                        >
+                          Yes, remove
+                        </button>
+                        <button className={btn("ghost", "sm")} onClick={() => setAsking(null)}>
+                          Keep
+                        </button>
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          disabled={busy}
+                          className={btn("ghost", "sm")}
+                          onClick={() =>
+                            void run(() =>
+                              updateTenantUser(u.id, {
+                                status: u.status === "active" ? "suspended" : "active",
+                              }),
+                            )
+                          }
+                        >
+                          {u.status === "active" ? "Suspend" : "Restore"}
+                        </button>
+                        <button disabled={busy} className={`${btn("ghost", "sm")} !text-danger`} aria-label={`Remove ${u.name || u.email}`} onClick={() => setAsking(`remove:${u.id}`)}>
+                          Remove
+                        </button>
+                      </>
+                    ))}
                 </div>
               </li>
             ))}
