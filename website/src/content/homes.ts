@@ -62,6 +62,29 @@ export const HOMES_STEPS = [
   ["Choose your plan", "You have 14 days of the Growth plan, free. Choose a plan inside the app when you are ready."],
 ];
 
+export const HOMES_MCP = {
+  title: "Manage your real estate WhatsApp inbox from Claude or ChatGPT",
+  intro: "Connect your agency's Scriwo Homes workspace to an AI assistant through Model Context Protocol (MCP). Ask it to read buyer and tenant enquiries, reply on WhatsApp, brief a consultant and organise follow-ups, using the numbers and permissions you choose.",
+  plan: "AI agent access is included in Business and Enterprise. An owner or administrator sets it up in Developers → AI agents.",
+  clients: [
+    { title: "Claude", body: "Connect Claude Code or Claude Desktop to Scriwo's MCP server using the setup provided in your workspace." },
+    { title: "ChatGPT", body: "Use a custom MCP connection where your ChatGPT plan and workspace allow it. Scriwo also provides an OpenAPI Actions setup for a custom GPT." },
+    { title: "Other AI assistants", body: "Use Cursor, VS Code or another client that supports remote MCP. Your assistant needs tool access; connection options depend on the client." },
+  ],
+  prompts: [
+    { title: "Catch up on property enquiries", prompt: "Summarise the buyer and tenant chats waiting for a reply. Include the budget, preferred area and bedrooms they mentioned." },
+    { title: "Prepare the next reply", prompt: "Draft a follow-up for the Dubai Marina buyer using our saved replies. Show it to me before sending it on WhatsApp." },
+    { title: "Hand over to a consultant", prompt: "Assign this chat to Aisha, add a private note with the buyer's requirements and create a task to call them tomorrow." },
+  ],
+  steps: [
+    "Open Developers → AI agents in your Homes workspace. Create an agent and choose which WhatsApp numbers it can access.",
+    "Choose Read only, Read and reply or Full inbox control. Set message limits and expiry, then copy the connection setup into your chosen assistant.",
+    "Ask for an enquiry summary first. With the relevant permissions, your assistant can send text replies, add notes, assign chats, apply existing labels, close or reopen conversations, and create or complete follow-up tasks.",
+  ],
+  control: "You control each agent's permissions, numbers, message limits and expiry, can review its activity and can revoke access. Starting chats with new numbers requires a separate owner setting. Information the assistant reads is shared with the AI service you connect, under that service's terms.",
+  scope: "Listings, property matching and viewing bookings are managed in Homes. MCP access currently covers inbox work and follow-up tasks.",
+};
+
 export const HOMES_FAQS = [
   { q: "Is this a different product from Scriwo?", a: "No. Scriwo Homes is Scriwo's AI CRM with the real-estate layer switched on and a property pipeline set up for you, on its own address. Everything in the main product is in it, at the same price." },
   { q: "How does the free trial work?", a: "You sign up first, with no card. Your workspace starts on the Growth plan for 14 days, and you choose a plan inside the app when you are ready." },
@@ -70,4 +93,6 @@ export const HOMES_FAQS = [
   { q: "Does it connect to Property Finder, Bayut or my calendar?", a: "Not yet. Listings are added in Scriwo, and viewings produce a calendar file you can open anywhere. We will tell you when an integration is ready." },
   { q: "Is it the official WhatsApp Business API?", a: "No. Scriwo works with the WhatsApp numbers your agents already use, linked by scanning a QR code. It is independent and not affiliated with WhatsApp or Meta, and WhatsApp can restrict a number that behaves badly, so broadcasts go only to people who opted in." },
   { q: "Which languages does it work in?", a: "Riwo replies in the language the customer writes in, including Arabic and English, and listings are matched across Arabic and English. The screens are in English." },
+  { q: "Can I manage my real estate WhatsApp inbox from Claude, ChatGPT or another AI assistant?", a: `${HOMES_MCP.intro} Claude and other remote MCP clients can use Scriwo's MCP server. ChatGPT can use a custom MCP connection where available, or Scriwo's OpenAPI Actions setup. ${HOMES_MCP.plan}` },
+  { q: "What can my connected AI assistant do for the agency?", a: `Depending on the permissions you give it, it can read and search chats, send text replies, add private notes, assign conversations, apply existing labels, close or reopen chats, and create or complete follow-up tasks. ${HOMES_MCP.scope} ${HOMES_MCP.control}` },
 ];
