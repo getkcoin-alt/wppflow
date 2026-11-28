@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -66,15 +66,58 @@ export function RewoVisitorBot() {
     },
   ]);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [viewportStyle, setViewportStyle] = useState<CSSProperties>({});
 
   // Auto-scroll when messages update
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      const conversation = conversationRef.current;
+      conversation?.scrollTo({ top: conversation.scrollHeight });
     }
   }, [messages, loading, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const viewport = window.visualViewport;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const updateViewport = () => {
+      setViewportStyle({
+        top: viewport?.offsetTop ?? 0,
+        left: viewport?.offsetLeft ?? 0,
+        width: viewport?.width ?? window.innerWidth,
+        height: viewport?.height ?? window.innerHeight,
+      });
+      document.body.style.overflow = window.matchMedia("(max-width: 639px)").matches ? "hidden" : previousOverflow;
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+    updateViewport();
+    // Opening on a phone should leave room to read before the keyboard is requested.
+    if (window.matchMedia("(min-width: 640px) and (hover: hover)").matches) {
+      inputRef.current?.focus({ preventScroll: true });
+    } else {
+      panelRef.current?.focus({ preventScroll: true });
+    }
+    viewport?.addEventListener("resize", updateViewport);
+    viewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      viewport?.removeEventListener("resize", updateViewport);
+      viewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+      window.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+      if (launcherRef.current) launcherRef.current.focus({ preventScroll: true });
+      else if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [isOpen]);
 
   // Delayed teaser balloon entrance (after 2.5s)
   useEffect(() => {
@@ -89,9 +132,6 @@ export function RewoVisitorBot() {
   const handleOpen = () => {
     setIsOpen(true);
     setShowTeaser(false);
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 150);
   };
 
   const handleClose = () => {
@@ -203,7 +243,7 @@ export function RewoVisitorBot() {
       return (
         <div key={idx} className={`leading-relaxed ${isBullet ? "flex items-start gap-1.5 pl-1 my-0.5" : "my-0.5"}`}>
           {isBullet && <span className="text-leaf text-xs font-bold leading-5">•</span>}
-          <span>
+          <span className="min-w-0 [overflow-wrap:anywhere]">
             {parts.map((p, pIdx) => {
               if (p.startsWith("**") && p.endsWith("**")) {
                 return (
@@ -223,7 +263,7 @@ export function RewoVisitorBot() {
   return (
     <>
       {/* Floating Trigger Button & Living Halo (Fixed at bottom right) */}
-      <div className="fixed bottom-16 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 sm:bottom-6 sm:right-6 z-50 flex max-w-[calc(100%-2rem)] flex-col items-end">
         {/* Living Teaser Bubble */}
         {showTeaser && !isOpen && (
           <div className="rewo-teaser-float relative mb-3 max-w-[280px] sm:max-w-[320px] rounded-2xl bg-surface/95 backdrop-blur-xl p-3.5 shadow-pop hairline text-xs sm:text-sm text-fg transition-all duration-300">
@@ -274,6 +314,7 @@ export function RewoVisitorBot() {
             />
 
             <button
+              ref={launcherRef}
               onClick={handleOpen}
               aria-label="Open Riwo AI Concierge"
               className="relative flex h-14 items-center gap-3 rounded-full bg-surface pl-2 pr-4 py-2 text-fg shadow-pop hairline transition-all duration-300 hover:scale-105 active:scale-95 group-hover:border-gold/50"
@@ -306,10 +347,11 @@ export function RewoVisitorBot() {
 
       {/* Main Glassmorphic Chat Modal */}
       {isOpen && (
-        <div className="rewo-spring-up fixed bottom-4 right-3 left-3 sm:left-auto sm:bottom-6 sm:right-6 z-50 flex flex-col w-auto sm:w-[420px] h-[580px] max-h-[85vh] rounded-3xl bg-surface/95 backdrop-blur-2xl shadow-pop hairline overflow-hidden">
+        <div className="rewo-viewport" style={viewportStyle} data-compact={typeof viewportStyle.height === "number" && viewportStyle.height < 440 ? "true" : undefined}>
+        <div ref={panelRef} role="dialog" aria-labelledby="rewo-dialog-title" tabIndex={-1} className="rewo-panel rewo-spring-up flex min-h-0 min-w-0 flex-col rounded-3xl bg-surface/95 backdrop-blur-2xl shadow-pop hairline overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-line px-4 py-3 bg-surface-2/60 backdrop-blur-md">
-            <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-3 py-2 sm:px-4 sm:py-3 bg-surface-2/60 backdrop-blur-md">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-2 ring-gold/40 shadow-sm bg-surface-2 overflow-visible">
                 <img
                   src="/brand/riwo-hold.webp"
@@ -325,8 +367,8 @@ export function RewoVisitorBot() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-semibold text-fg">Riwo AI</h3>
-                  <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-medium text-gold uppercase tracking-wider">
+                  <h3 id="rewo-dialog-title" className="text-sm font-semibold text-fg">Riwo AI</h3>
+                  <span className="hidden sm:inline rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-medium text-gold uppercase tracking-wider">
                     Concierge
                   </span>
                 </div>
@@ -337,18 +379,18 @@ export function RewoVisitorBot() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 onClick={handleClose}
                 aria-label="Minimize"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-fg-3 hover:bg-surface-3 hover:text-fg transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-fg-3 hover:bg-surface-3 hover:text-fg transition-colors"
               >
                 <Minimize2 className="h-4 w-4" />
               </button>
               <button
                 onClick={handleClose}
                 aria-label="Close"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-fg-3 hover:bg-surface-3 hover:text-fg transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-fg-3 hover:bg-surface-3 hover:text-fg transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -356,20 +398,20 @@ export function RewoVisitorBot() {
           </div>
 
           {/* Conversation Stream */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs sm:text-sm">
+          <div ref={conversationRef} data-riwo-messages className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3.5 text-sm">
             {messages.map((m) => (
               <div
                 key={m.id}
                 className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 transition-all duration-200 ${
+                  className={`min-w-0 max-w-[95%] sm:max-w-[85%] rounded-2xl px-3.5 py-2.5 transition-all duration-200 ${
                     m.sender === "user"
                       ? "bg-brand-solid text-white rounded-br-none shadow-sm"
                       : "bg-surface-2 text-fg hairline rounded-bl-none shadow-card"
                   }`}
                 >
-                  <div className="break-words">{renderFormatted(m.text)}</div>
+                  <div className="[overflow-wrap:anywhere]">{renderFormatted(m.text)}</div>
 
                   {/* High-Converting CTA Buttons inside Bot responses */}
                   {m.sender === "bot" && m.ctaType && (
@@ -428,21 +470,20 @@ export function RewoVisitorBot() {
               </div>
             )}
 
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Quick FAQ Interactive Chips */}
-          <div className="border-t border-line/60 bg-surface px-3 py-2">
+          <div className="rewo-questions min-w-0 shrink-0 border-t border-line/60 bg-surface px-3 py-2">
             <p className="mb-1.5 text-[10px] uppercase tracking-wider font-semibold text-fg-3">
               Frequently Asked
             </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 scrollbar-none">
               {DEFAULT_QUESTIONS.map((q, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(q.question)}
                   disabled={loading}
-                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-fg-2 hairline transition-all hover:bg-surface-3 hover:text-fg hover:border-gold/30 active:scale-95 disabled:opacity-50"
+                  className="min-h-11 shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-fg-2 hairline transition-all hover:bg-surface-3 hover:text-fg hover:border-gold/30 active:scale-95 disabled:opacity-50"
                 >
                   {q.label}
                 </button>
@@ -451,7 +492,7 @@ export function RewoVisitorBot() {
           </div>
 
           {/* Input Bar */}
-          <div className="p-3 bg-surface border-t border-line">
+          <div className="min-w-0 shrink-0 p-3 bg-surface border-t border-line">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -466,18 +507,19 @@ export function RewoVisitorBot() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Riwo anything about Scriwo..."
                 disabled={loading}
-                className="flex-1 rounded-full bg-surface-2 px-4 py-2 text-xs sm:text-sm text-fg placeholder:text-fg-3 hairline focus:outline-none focus:ring-1 focus:ring-gold/60 transition-all"
+                aria-label="Message to Riwo"
+                className="min-h-11 min-w-0 flex-1 rounded-full bg-surface-2 px-4 py-2 text-base text-fg placeholder:text-fg-3 hairline focus:outline-none focus:ring-1 focus:ring-gold/60 transition-all"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
                 aria-label="Send message"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-solid text-white transition-all hover:bg-brand-hover hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-white transition-all hover:bg-brand-hover hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
               >
                 <Send className="h-4 w-4" />
               </button>
             </form>
-            <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-fg-3">
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-1 px-1 text-[10px] text-fg-3">
               <span>Powered by Scriwo AI Engine</span>
               <a
                 href="https://app.scriwo.com/?signup=1"
@@ -489,6 +531,7 @@ export function RewoVisitorBot() {
               </a>
             </div>
           </div>
+        </div>
         </div>
       )}
     </>

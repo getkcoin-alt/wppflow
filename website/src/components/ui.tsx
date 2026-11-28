@@ -8,7 +8,7 @@ import type { Faq } from "@/content/faqs";
 import { TRIAL_LABEL, trialUrl } from "@/lib/signup";
 
 export function Container({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`mx-auto max-w-page px-4 sm:px-6 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-full min-w-0 max-w-page px-4 sm:px-6 ${className}`}>{children}</div>;
 }
 
 export function PageHero({ eyebrow, title, intro, children }: { eyebrow: string; title: ReactNode; intro: ReactNode; children?: ReactNode }) {
