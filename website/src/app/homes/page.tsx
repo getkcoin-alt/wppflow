@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Gift, ShieldCheck, UserCheck } from "lucide-react";
 import { Container, Crumbs, CtaBand, FaqList, PageHero, SectionTitle } from "@/components/ui";
 import { JsonLd } from "@/components/JsonLd";
-import { HOMES, HOMES_DATA, HOMES_DATA_NOTE, HOMES_FAQS, HOMES_LOST_LEAD, HOMES_OFFER, HOMES_PROS, HOMES_STEPS, HOMES_WONT } from "@/content/homes";
+import { HOMES, HOMES_DATA, HOMES_DATA_NOTE, HOMES_FAQS, HOMES_LOST_LEAD, HOMES_MCP, HOMES_OFFER, HOMES_PROS, HOMES_STEPS, HOMES_WONT } from "@/content/homes";
 import { faqPage } from "@/lib/jsonld";
 import { trialUrl } from "@/lib/signup";
 import { trackAttrs } from "@/lib/analytics";
@@ -89,6 +89,49 @@ export default function HomesPage() {
             </div>
           ))}
         </div>
+      </Container>
+
+      <Container className="mt-24">
+        <section id="whatsapp-mcp" aria-labelledby="homes-mcp-title">
+          <p className="eyebrow">Your agency, connected through MCP</p>
+          <h2 id="homes-mcp-title" className="mt-3 max-w-3xl text-3xl leading-tight sm:text-4xl">{HOMES_MCP.title}</h2>
+          <p className="mt-5 max-w-3xl leading-relaxed text-fg-2">{HOMES_MCP.intro}</p>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {HOMES_MCP.clients.map((client) => (
+              <div key={client.title} className="card p-6">
+                <h3 className="text-xl">{client.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-fg-2">{client.body}</p>
+              </div>
+            ))}
+          </div>
+          <h3 className="mt-10 text-2xl">Ask it like you would brief a consultant</h3>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            {HOMES_MCP.prompts.map((example) => (
+              <figure key={example.title} className="card p-6">
+                <figcaption className="font-semibold">{example.title}</figcaption>
+                <blockquote className="mt-3 text-sm leading-relaxed text-fg-2">“{example.prompt}”</blockquote>
+              </figure>
+            ))}
+          </div>
+          <div className="mt-8 grid gap-8 lg:grid-cols-2">
+            <div>
+              <h3 className="text-2xl">Connect your assistant</h3>
+              <p className="mt-3 text-sm leading-relaxed text-fg-2">{HOMES_MCP.plan}</p>
+              <ol className="mt-5 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-fg-2">
+                {HOMES_MCP.steps.map((step) => <li key={step}>{step}</li>)}
+              </ol>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a href={HOMES.appUrl} className="btn-primary">Open your Homes workspace <ArrowRight className="h-4 w-4" aria-hidden="true" /></a>
+                <Link href="/pricing" className="btn-ghost">See Business and Enterprise</Link>
+              </div>
+            </div>
+            <div className="card self-start p-7">
+              <h3 className="text-xl">Access chosen by your agency</h3>
+              <p className="mt-3 text-sm leading-relaxed text-fg-2">{HOMES_MCP.control}</p>
+              <p className="mt-4 text-sm leading-relaxed text-fg-2">{HOMES_MCP.scope}</p>
+            </div>
+          </div>
+        </section>
       </Container>
 
       <Container className="mt-24 grid gap-10 lg:grid-cols-[1fr_1fr]">

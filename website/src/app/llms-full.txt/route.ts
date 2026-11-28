@@ -10,6 +10,7 @@ import { yearlyOf } from "@/content/plans";
 import { getCatalogue, taxNote } from "@/lib/catalogue";
 import { RIWO, RIWO_ACTIONS, RIWO_AUTOMATIC, RIWO_FAQS, RIWO_STEPS } from "@/content/riwo";
 import { PARTNERS, PARTNER_FAQS, PARTNER_STEPS, PARTNER_TOPICS } from "@/content/partners";
+import { HOMES_MCP } from "@/content/homes";
 
 // Prices come from the product and are looked at again every five minutes.
 export const revalidate = 300;
@@ -62,6 +63,10 @@ export async function GET() {
     for (const s of p.sections) out.push(`### ${s.heading}`, ...s.body, ...(s.list || []).map((l) => `- ${l}`), ...(s.links || []).map((l) => `- [${l.label}](${absolute(l.href)})`), "");
   }
   out.push(`## White-label and reseller partnerships`, `URL: ${absolute("/white-label")}`, "", PARTNERS.intro, "", ...PARTNER_STEPS.map(([t, b], i) => `${i + 1}. ${t}: ${b}`), "", "Agreed with our team:", ...PARTNER_TOPICS.map((t) => `- ${t}`), "", ...PARTNER_FAQS.flatMap((q) => [`Q: ${q.q}`, `A: ${q.a}`]), "");
+  out.push(`## Scriwo Homes: ${HOMES_MCP.title}`, `URL: ${absolute("/homes#whatsapp-mcp")}`, "", HOMES_MCP.intro, HOMES_MCP.plan, "",
+    ...HOMES_MCP.clients.map((client) => `- ${client.title}: ${client.body}`), "",
+    ...HOMES_MCP.prompts.map((example) => `- ${example.title}: ${example.prompt}`), "",
+    ...HOMES_MCP.steps.map((step, i) => `${i + 1}. ${step}`), "", HOMES_MCP.control, HOMES_MCP.scope, "");
   out.push("## Locations", ...CITIES.map((c) => `- WhatsApp CRM ${c.name} (${c.region}, ${c.country}): ${c.local} ${absolute(`/whatsapp-crm/${c.slug}`)}`), "");
   out.push("## Contact", `- Contact form: ${absolute("/contact")}`, `- Sales on WhatsApp: ${SITE.whatsappDisplay}`);
   return new Response(out.join("\n"), { headers: { "Content-Type": "text/plain; charset=utf-8" } });
